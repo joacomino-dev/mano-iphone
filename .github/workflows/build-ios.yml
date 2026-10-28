@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main, master]
-    paths: ['mano/**', '.github/workflows/build-ios.yml']
+    paths: ['mano/**', 'mano-source.zip', '.github/workflows/build-ios.yml']
 permissions:
   contents: read
 concurrency:
@@ -20,7 +20,7 @@ jobs:
       - name: Expand initial browser upload, when present
         run: |
           if [ -f mano-source.zip ]; then
-            unzip -q mano-source.zip
+            unzip -qo mano-source.zip
             git add mano
             git rm -- mano-source.zip
             git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Expand reviewed Mano app sources'
