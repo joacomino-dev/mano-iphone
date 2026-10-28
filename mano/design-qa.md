@@ -1,5 +1,13 @@
 # Mano visual QA
 
+## MemSwipe 0.2 session redesign — 28 October 2026
+
+The latest device feedback supersedes the original fan layout. Keep teal, ivory paper and ink seals; introduce MemSwipe name/icon, floating-photo welcome and Iniciar sesión. One random session auto-groups explicit Vision matches; no mode tabs. Foreground is upright/centered, back polaroids stack behind, discard chevron is leftmost and Terminar sesión is prominent.
+
+Verified in browser: five Next actions visit five distinct photos and return to the first; center tap cycles too. Four individual keeps leave the fifth bundle member visible. Multi-selection keep advances progress by five and undo restores it. Demo discard survives closing/reopening the session and Recover removes it from the queue without deletion. Focus returns to #start-trigger on finishing and enters #session-heading on start. Rear cards have inert, aria-hidden=true and tabindex=-1. No mode buttons remain. Video filtering produces one card with a playback control. iPhone and Pixel layouts have no horizontal overflow; foreground center offset is under 0.001px and settled rotation is none; object-fit=contain preserves the complete image. Reduced-motion card transitions are immediate and floating/arrival effects are disabled.
+
+Source QA found and resolved the last-member anchor, transition focus and invisible rear-media controls. Sixteen domain tests and TypeScript pass; protected mobile runtime remains unchanged. Native camera-roll actions and physical-device behavior are not claimed verified. No real asset was deleted, favorited or moved during QA.
+
 final result: passed
 
 Scope: implemented browser preview of the selected design. This result does not certify native PhotoKit execution or physical-device behavior.

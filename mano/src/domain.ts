@@ -7,7 +7,7 @@ export type Filter = { seal: number | 'all' | 'none'; order: 'oldest' | 'newest'
 export const LEVELS = ['Blanco', 'Rojo', 'Verde', 'Negro', 'Azul', 'Morado', 'Naranja', 'Dorado'];
 export const DAYS = [7, 14, 30, 60, 120, 240, 365, Infinity];
 export const initialState = (): RecordState => ({ marks: {}, pending: [], favorites: [], removed: [], history: [] });
-export const initialFilter: Filter = { seal: 'all', order: 'oldest', media: 'all', includeWaiting: false };
+export const initialFilter: Filter = { seal: 'all', order: 'random', media: 'all', includeWaiting: false };
 export function decide(state: RecordState, ids: string[], action: Decision['action'], now = Date.now()): RecordState {
   const unique = [...new Set(ids)].filter(id => !state.removed.includes(id) && !state.pending.includes(id) && !state.favorites.includes(id));
   if (!unique.length) return state;
@@ -44,6 +44,12 @@ export function eligible(assets: Asset[], state: RecordState, filter: Filter, no
 export function nextHand(queue: Asset[], similar: boolean) {
   if (!queue.length) return []; if (!similar || !queue[0].group) return [queue[0]];
   return queue.filter(a => a.group === queue[0].group).slice(0, 7);
+}
+export function nextSessionHand(assets: Asset[], state: RecordState, filter: Filter = initialFilter, now = Date.now(), seed = 1): Asset[] {
+  const queue = eligible(assets, state, filter, now, seed);
+  const first = queue[0];
+  if (!first) return [];
+  return first.group ? queue.filter(a => a.group === first.group).slice(0, 5) : [first];
 }
 export function reviewedCount(assets: Asset[], state: RecordState) {
   const decided = new Set([...Object.keys(state.marks), ...state.pending, ...state.favorites, ...state.removed]);

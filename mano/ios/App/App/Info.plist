@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>es</string>
 	<key>CFBundleDisplayName</key>
-        <string>Mano</string>
+        <string>MemSwipe</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -23,9 +23,9 @@
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-<string>Mano necesita leer tu carrete para comparar fotos y vídeos, marcar favoritos, organizar álbumes y borrar solo los descartes que confirmes. El análisis se realiza en tu iPhone.</string>
+<string>MemSwipe necesita leer tu carrete para comparar fotos y vídeos, marcar favoritos, organizar álbumes y borrar solo los descartes que confirmes. El análisis se realiza en tu iPhone.</string>
 <key>NSPhotoLibraryAddUsageDescription</key>
-<string>Mano organiza las fotos que eliges en tus álbumes de Fotos.</string>
+<string>MemSwipe organiza las fotos que eliges en tus álbumes de Fotos.</string>
 <key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

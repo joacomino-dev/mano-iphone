@@ -23,4 +23,4 @@ export function thumbnail(asset: Asset, size = 900): Promise<string> {
   if (!cache.has(key)) cache.set(key, Library.thumbnail({ id: asset.id, size }).then(r => Capacitor.convertFileSrc(r.path)).catch(e => { cache.delete(key); throw e; }));
   return cache.get(key)!;
 }
-export const demoAssets: Asset[] = Array.from({ length: 20 }, (_, i) => ({ id: `demo-${i}`, kind: i === 9 ? 'video' : i === 14 ? 'live' : 'photo', date: Date.now() - (20 - i) * 3600000, width: 1000, height: 1500, duration: i === 9 ? 12 : 0, group: `trip-${Math.floor(i / 5)}`, demo: true }));
+export const demoAssets: Asset[] = Array.from({ length: 20 }, (_, i) => ({ id: `demo-${i}`, kind: i === 9 ? 'video' : i === 14 ? 'live' : 'photo', date: Date.now() - (20 - i) * 3600000, width: 1000, height: 1500, duration: i === 9 ? 12 : 0, group: i<5?'trip-a':i>=10&&i<15?'trip-b':undefined, demo: true }));

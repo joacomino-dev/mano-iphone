@@ -1,6 +1,10 @@
-# Mano — archivo personal
+# MemSwipe — recuerdos que se quedan
 
 Una app de iPhone para revisar Fotos mediante una mano de cartas. Interfaz verde petróleo, papel y sellos de tinta; sin cuenta propia, anuncios, suscripciones ni API de reconocimiento de pago.
+
+La bienvenida muestra fotos flotantes y «Iniciar sesión». Cada sesión mezcla al azar fotos, vídeos y Live Photos; cuando un elemento pertenece a un grupo visual analizado, aparece automáticamente un bundle de polaroids. La foto principal queda centrada y recta; tocarla o pulsar Siguiente la pasa al final. Puedes seleccionar varias girando la pila o elegir todas. Los filtros permiten cambiar el orden.
+
+El nombre visible y el icono son MemSwipe; el identificador interno y las claves de datos se conservan para actualizar la instalación existente.
 
 ## Uso
 
@@ -8,6 +12,7 @@ Una app de iPhone para revisar Fotos mediante una mano de cartas. Interfaz verde
 - Tocar el centro de la primera carta la pasa al fondo. Tocar su control de selección permite elegir varias y decidir juntas.
 - Mantener pulsado inspecciona la foto sin sello. Soltar vuelve a la mano.
 - Terminar abre la revisión. Mantener pulsado un descarte y arrastrarlo a la derecha lo recupera. También hay un botón accesible Recuperar.
+- Finalizar sesión vuelve a la bienvenida y conserva los descartes pendientes; no los borra.
 - El borrado real solo ocurre después de la revisión y la confirmación de Fotos. Favoritos y fotos ocultas se vuelven a proteger antes de borrar.
 - Álbum añade las seleccionadas a un álbum real existente. No las saca de la biblioteca general.
 - Vídeos y Live Photos tienen reproducción nativa. Las fotos RAW/HEIF y otros formatos admitidos por Fotos usan su vista previa sin convertir ni reemplazar el original.

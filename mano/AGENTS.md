@@ -2,6 +2,8 @@
 
 ## Mano product constraints
 
+- Latest physical-device feedback supersedes the old fan mock: product name MemSwipe; start on a floating-photo welcome screen with «Iniciar sesión»; one random session with automatic similar bundles, no one-by-one/similar mode tabs. Main photo stays centered and upright, other polaroids stack behind; center tap/next control cycles the stack. Brief bundle arrival cue, prominent «Terminar sesión», discard arrow at the left edge. Keep teal/ivory/ink visual language. All QA on native personal library must be non-destructive: no deletion confirmations; use demo for discard/recovery flows.
+
 - Selected visual: second mock of the latest set, teal archive / ivory paper / ink seals. Preserve it.
 - All photos, videos and Live Photos are native PhotoKit assets. Never upload originals. Preview uses generated demonstration photos and separate local state.
 - Swipe decisions must remain undoable; deletion is a separate session review and Photos confirmation.
