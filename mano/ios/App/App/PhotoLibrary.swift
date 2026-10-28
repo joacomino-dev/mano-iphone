@@ -26,11 +26,16 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "favorite", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "deleteAssets", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "preview", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "analyze", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "analyze", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "cancelAnalysis", returnType: CAPPluginReturnPromise)
     ]
     private let imageManager = PHCachingImageManager()
     private let analysisQueue = DispatchQueue(label: "work.joaquin.mano.vision", qos: .utility)
     private var analyzing = false
+    private let cancelLock = NSLock()
+    private var cancelRequested = false
+    private func cancelled() -> Bool { cancelLock.lock(); defer { cancelLock.unlock() }; return cancelRequested }
+    @objc func cancelAnalysis(_ call: CAPPluginCall) { cancelLock.lock(); cancelRequested = true; cancelLock.unlock(); call.resolve() }
     private var livePreview: UIViewController?
     private var status: String {
         switch PHPhotoLibrary.authorizationStatus(for: .readWrite) {
@@ -60,7 +65,8 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
             result.enumerateObjects { item, _, _ in
                 let kind = item.mediaType == .video ? "video" : item.mediaSubtypes.contains(.photoLive) ? "live" : "photo"
                 items.append(["id": item.localIdentifier, "kind": kind, "date": (item.creationDate?.timeIntervalSince1970 ?? 0) * 1000,
-                              "width": item.pixelWidth, "height": item.pixelHeight, "duration": item.duration])
+                              "width": item.pixelWidth, "height": item.pixelHeight, "duration": item.duration,
+                              "modified": (item.modificationDate?.timeIntervalSince1970 ?? 0) * 1000])
             }
             call.resolve(["assets": items, "status": self.status])
         }
@@ -102,8 +108,11 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         guard allowed(call), let ids = call.getArray("ids", String.self) else { return }
         let value = call.getBool("value") ?? true
         let result = PHAsset.fetchAssets(withLocalIdentifiers: ids, options: nil)
-        guard result.count == ids.count else { call.reject("Alguna foto ya no está disponible."); return }
-        change(call, block: { result.enumerateObjects { item, _, _ in PHAssetChangeRequest(for: item).isFavorite = value } })
+        var present = Set<String>(); result.enumerateObjects { item, _, _ in present.insert(item.localIdentifier) }
+        let missing = ids.filter { !present.contains($0) }
+        guard missing.isEmpty || call.getBool("ignoreMissing") == true else { call.reject("Alguna foto ya no está disponible."); return }
+        if result.count == 0 { call.resolve(["missing": missing]); return }
+        change(call, block: { result.enumerateObjects { item, _, _ in PHAssetChangeRequest(for: item).isFavorite = value } }, result: ["missing": missing])
     }
     @objc func addToAlbum(_ call: CAPPluginCall) {
         guard allowed(call), let ids = call.getArray("ids", String.self), let albumId = call.getString("albumId"),
@@ -148,16 +157,18 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         guard allowed(call), let ids = call.getArray("ids", String.self) else { return }
         DispatchQueue.main.async {
             guard !self.analyzing else { call.reject("Ya hay un análisis en curso."); return }; self.analyzing = true
+            self.cancelLock.lock(); self.cancelRequested = false; self.cancelLock.unlock()
             self.analysisQueue.async {
                 defer { DispatchQueue.main.async { self.analyzing = false } }
                 let threshold = Float(min(0.6, max(0.05, call.getDouble("threshold") ?? 0.28)))
                 let fetched = PHAsset.fetchAssets(withLocalIdentifiers: ids, options: nil)
                 var items: [PHAsset] = []; fetched.enumerateObjects { item, _, _ in items.append(item) }
                 items.sort { ($0.creationDate ?? .distantPast) < ($1.creationDate ?? .distantPast) }
-                var prints: [(String, VNFeaturePrintObservation)] = []; var skipped = 0
+                var prints: [(index: Int, hash: UInt64, feature: VNFeaturePrintObservation)] = []; var skipped = 0
                 var parent = Array(0..<items.count)
                 func root(_ n: Int) -> Int { var k = n; while parent[k] != k { k = parent[k] }; return k }
                 for (index, item) in items.enumerated() {
+                    if self.cancelled() { break }
                     autoreleasepool {
                         let options = PHImageRequestOptions(); options.isSynchronous = true; options.isNetworkAccessAllowed = false
                         options.deliveryMode = .highQualityFormat; options.resizeMode = .fast
@@ -168,23 +179,43 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                         do {
                             try VNImageRequestHandler(cgImage: cgImage, options: [:]).perform([request])
                             guard let print = request.results?.first as? VNFeaturePrintObservation else { skipped += 1; return }
-                            // Compare every existing representative: no upload, and includes distant dates.
+                            // A coarse luminance signature shortlists cross-date candidates. Bound
+                            // expensive Vision comparisons to 64 per image, rather than all prints.
+                            let signature = self.imageHash(cgImage)
+                            let candidates = prints.indices.sorted {
+                                (prints[$0].hash ^ signature).nonzeroBitCount < (prints[$1].hash ^ signature).nonzeroBitCount
+                            }.prefix(64)
                             var nearest: (Int, Float)?
-                            for (i, existing) in prints.enumerated() {
+                            for i in candidates {
+                                if self.cancelled() { break }
                                 var distance: Float = 1
-                                try print.computeDistance(&distance, to: existing.1)
+                                try print.computeDistance(&distance, to: prints[i].feature)
                                 if distance < threshold && (nearest == nil || distance < nearest!.1) { nearest = (i, distance) }
                             }
-                            if let nearest, let originalIndex = items.firstIndex(where: { $0.localIdentifier == prints[nearest.0].0 }) { parent[index] = root(originalIndex) }
-                            else { prints.append((item.localIdentifier, print)) }
+                            if let nearest { parent[index] = root(prints[nearest.0].index) }
+                            else { prints.append((index, signature, print)) }
                         } catch { skipped += 1 }
                     }
                     if index % 10 == 0 || index == items.count - 1 { self.notifyListeners("analysisProgress", data: ["done": index + 1, "total": items.count]) }
                 }
                 var groups: [Int: [String]] = [:]
                 for i in items.indices { groups[root(i), default: []].append(items[i].localIdentifier) }
-                call.resolve(["groups": groups.values.filter { $0.count > 1 }, "skipped": skipped])
+                call.resolve(["groups": groups.values.filter { $0.count > 1 }, "skipped": skipped, "cancelled": self.cancelled()])
             }
+        }
+    }
+    private func imageHash(_ image: CGImage) -> UInt64 {
+        var pixels = [UInt8](repeating: 0, count: 72)
+        return pixels.withUnsafeMutableBytes { buffer in
+            guard let context = CGContext(data: buffer.baseAddress, width: 9, height: 8, bitsPerComponent: 8,
+                                          bytesPerRow: 9, space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return 0 }
+            context.interpolationQuality = .low
+            context.draw(image, in: CGRect(x: 0, y: 0, width: 9, height: 8))
+            var hash: UInt64 = 0
+            for y in 0..<8 { for x in 0..<8 {
+                if buffer[y * 9 + x] > buffer[y * 9 + x + 1] { hash |= UInt64(1) << (y * 8 + x) }
+            } }
+            return hash
         }
     }
 }

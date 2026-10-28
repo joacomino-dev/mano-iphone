@@ -41,6 +41,8 @@ npm run sync:ios
 
 `src/ManoApp.tsx` contiene la interfaz compartida; `src/domain.ts` la cola y los sellos; `ios/App/App/PhotoLibrary.swift` el puente PhotoKit/Vision. Las fotos incluidas en la demostración son generadas; el navegador nunca accede a tus originales ni realiza borrados reales.
 
+El análisis se puede detener desde Sellos. Una huella visual rápida limita a 64 los candidatos comparados con Vision por imagen; los grupos siguen siendo sugerencias que debes revisar. Un análisis parcial de iCloud no se marca como terminado: Actualizar o volver a abrir permite intentarlo otra vez. La biblioteca y sus fechas de modificación invalidan la marca de análisis completado cuando cambian.
+
 ## Compilación gratuita e instalación
 
 El workflow del repositorio usa únicamente runners estándar y se bloquea si el repositorio es privado. Compila el dispositivo iPhone sin firma y produce `Mano-AltStore/Mano-unsigned.ipa` como artefacto. No necesita certificados, contraseña de Apple, suscripción Developer ni secretos en GitHub. El job inicial puede expandir un `mano-source.zip` subido desde navegador y dejar el código normal en el repositorio; después ya no modifica fuentes.

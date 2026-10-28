@@ -51,3 +51,11 @@ Scope: implemented browser preview of the selected design. This result does not 
 - [x] Preserve mobile runtime and independent native build entry.
 - [x] Separate real photo operations from browser demonstration.
 - [ ] Compile Swift on macOS and verify a signed personal installation on the physical iPhone.
+
+## Agent regression, 28 October 2026
+
+Three focused QA agents checked visual/accessibility behavior, functional flows, and the PhotoKit/Vision bridge. Fixed progress counting for keeps; nested selection-key propagation; modal focus restoration/containment; singular discard copy; and discard contrast (5.17:1). Parent browser regression confirms Enter/Space select without cycling, and Volver restores #filter-trigger. Functional agent confirms keeps, undo, multi-selection, duplicate decisions, and review focus restoration.
+
+Native source fixes cover restored Photos identifiers, missing assets during favorite undo, incomplete analysis retry, library modification fingerprints, cancellable analysis and a 64-candidate shortlist for expensive Vision comparisons. A follow-up source review found an analysis-refresh race; the effect now waits for analysis to finish before claiming the new fingerprint. These native changes require a new macOS compile and physical iPhone checks.
+
+Eleven domain tests, TypeScript, 28-file runtime integrity check, web production build and native web bundle passed. The earlier Swift build passed before this patch; the new Swift build is tracked separately. No personal photo was read or modified during these tests.

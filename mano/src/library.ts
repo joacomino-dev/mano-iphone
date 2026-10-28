@@ -7,10 +7,11 @@ type LibraryPlugin = {
   thumbnail(options: { id: string; size?: number }): Promise<{ path: string }>;
   albums(): Promise<{ albums: Album[] }>;
   addToAlbum(options: { ids: string[]; albumId: string }): Promise<void>;
-  favorite(options: { ids: string[]; value: boolean }): Promise<void>;
+  favorite(options: { ids: string[]; value: boolean; ignoreMissing?: boolean }): Promise<{ missing: string[] }>;
   deleteAssets(options: { ids: string[] }): Promise<{ deleted: string[] }>;
   preview(options: { id: string }): Promise<void>;
-  analyze(options: { ids: string[]; threshold: number }): Promise<{ groups: string[][]; skipped: number }>;
+  analyze(options: { ids: string[]; threshold: number }): Promise<{ groups: string[][]; skipped: number; cancelled: boolean }>;
+  cancelAnalysis(): Promise<void>;
   addListener(event: 'analysisProgress', cb: (data: { done: number; total: number }) => void): Promise<{ remove(): Promise<void> }>;
 };
 export const isNative = Capacitor.isNativePlatform();
@@ -18,7 +19,7 @@ export const Library = registerPlugin<LibraryPlugin>('PhotoLibrary');
 const cache = new Map<string, Promise<string>>();
 export function thumbnail(asset: Asset, size = 900): Promise<string> {
   if (asset.demo) return Promise.resolve('/assets/photos/lake.png');
-  const key = `${asset.id}:${size}`;
+  const key = `${asset.id}:${asset.modified??0}:${size}`;
   if (!cache.has(key)) cache.set(key, Library.thumbnail({ id: asset.id, size }).then(r => Capacitor.convertFileSrc(r.path)).catch(e => { cache.delete(key); throw e; }));
   return cache.get(key)!;
 }

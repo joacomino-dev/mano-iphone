@@ -1,5 +1,5 @@
 export type MediaKind = 'photo' | 'video' | 'live';
-export type Asset = { id: string; kind: MediaKind; date: number; width: number; height: number; duration: number; group?: string; demo?: boolean };
+export type Asset = { id: string; kind: MediaKind; date: number; width: number; height: number; duration: number; modified?: number; group?: string; demo?: boolean };
 export type Mark = { level: number; due: number; keptAt: number };
 export type Decision = { ids: string[]; action: 'keep' | 'discard' | 'favorite'; previous: Record<string, Mark | null>; at: number };
 export type RecordState = { marks: Record<string, Mark>; pending: string[]; favorites: string[]; removed: string[]; history: Decision[] };
@@ -44,6 +44,21 @@ export function eligible(assets: Asset[], state: RecordState, filter: Filter, no
 export function nextHand(queue: Asset[], similar: boolean) {
   if (!queue.length) return []; if (!similar || !queue[0].group) return [queue[0]];
   return queue.filter(a => a.group === queue[0].group).slice(0, 7);
+}
+export function reviewedCount(assets: Asset[], state: RecordState) {
+  const decided = new Set([...Object.keys(state.marks), ...state.pending, ...state.favorites, ...state.removed]);
+  return assets.filter(a => decided.has(a.id)).length;
+}
+export function reconcileLibrary(state: RecordState, fresh: Asset[]): RecordState {
+  const present = new Set(fresh.map(a=>a.id));
+  // Native enumeration excludes current favorites. A returned ID is no longer favorited,
+  // and a formerly deleted ID returned by Photos has been restored by the user.
+  return {...state, favorites:state.favorites.filter(id=>!present.has(id)), removed:state.removed.filter(id=>!present.has(id))};
+}
+export function libraryFingerprint(assets: Asset[]) {
+  let n=2166136261;
+  for(const a of [...assets].sort((a,b)=>a.id.localeCompare(b.id))) for(const c of `${a.id}:${a.modified??0}`) n=Math.imul(n^c.charCodeAt(0),16777619);
+  return `${assets.length}:${n>>>0}`;
 }
 export function readState(key: string): RecordState {
   try { const s = JSON.parse(localStorage.getItem(key) || 'null');
