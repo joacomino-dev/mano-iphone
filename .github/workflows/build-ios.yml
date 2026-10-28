@@ -1,0 +1,65 @@
+name: Build Mano for AltStore
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+    paths: ['mano/**', '.github/workflows/build-ios.yml']
+permissions:
+  contents: read
+concurrency:
+  group: mano-ios-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  prepare:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Expand initial browser upload, when present
+        run: |
+          if [ -f mano-source.zip ]; then
+            unzip -q mano-source.zip
+            git add mano
+            git rm -- mano-source.zip
+            git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Expand reviewed Mano app sources'
+            git push
+          fi
+  ios:
+    needs: prepare
+    if: github.event.repository.private == false
+    # Standard public-repository runner. Never change to a paid larger runner.
+    runs-on: macos-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: mano
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: mano/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm test && npm run check:runtime && npm run build
+      - run: npm run sync:ios
+      - name: Build unsigned iPhone app
+        run: |
+          xcodebuild -version
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/ios CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' build
+      - name: Package for personal signing in AltStore
+        run: |
+          mkdir -p build/package/Payload
+          cp -R build/ios/Build/Products/Release-iphoneos/App.app build/package/Payload/Mano.app
+          cd build/package
+          ditto -c -k --keepParent Payload Mano-unsigned.ipa
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Mano-AltStore
+          path: mano/build/package/Mano-unsigned.ipa
+          retention-days: 14
+          if-no-files-found: error
