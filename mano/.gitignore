@@ -1,0 +1,11 @@
+node_modules/
+dist/
+test-results/
+playwright-report/
+build/
+.env*
+*.p12
+*.mobileprovision
+*.ipa
+*.xcarchive
+work/
