@@ -7,6 +7,7 @@ import Vision
 import AVFoundation
 import AVKit
 import CryptoKit
+import ImageIO
 
 @objc(ManoBridgeController)
 class ManoBridgeController: CAPBridgeViewController {
@@ -29,6 +30,8 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "cancelThumbnailPreparation", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "albums", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "addToAlbum", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "createAlbum", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "metadata", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "favorite", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "deleteAssets", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "preview", returnType: CAPPluginReturnPromise),
@@ -43,6 +46,10 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
     private let videoQueue = DispatchQueue(label: "work.joaquin.mano.video-cache", qos: .userInitiated)
     private let thumbnailQueue = DispatchQueue(label: "work.joaquin.mano.thumbnail-cache", qos: .userInitiated)
     private var thumbnailJobs: [String: PreparedThumbnailJob] = [:]
+    private let metadataQueue = DispatchQueue(label: "work.joaquin.mano.metadata", qos: .utility)
+    private var metadataJobs: [String: LocalMetadataJob] = [:]
+    private var exifCache: [String: CachedAssetExif] = [:]
+    private var exifCacheOrder: [String] = []
     private var videoJobs: [String: PreparedVideoJob] = [:]
     private var pinnedVideos: [String: String] = [:] // Cache key -> Photos identifier; never logged.
     private let videoCacheLimit: Int64 = 1024 * 1024 * 1024
@@ -191,6 +198,144 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         let result = PHAsset.fetchAssets(withLocalIdentifiers: ids, options: nil)
         guard result.count == ids.count, album.canPerform(.addContent) else { call.reject("No se pueden añadir esos elementos a este álbum."); return }
         change(call, block: { PHAssetCollectionChangeRequest(for: album)?.addAssets(result) })
+    }
+    @objc func createAlbum(_ call: CAPPluginCall) {
+        guard allowed(call) else { return }
+        guard let rawTitle = call.getString("title"), let rawIDs = call.getArray("ids", String.self) else {
+            call.reject("Escribe un nombre y selecciona las fotos del álbum.", "INVALID_ALBUM_INPUT"); return
+        }
+        let title = rawTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty, title.count <= 100,
+              title.rangeOfCharacter(from: .newlines) == nil,
+              !title.unicodeScalars.contains(where: { $0.value < 32 || $0.value == 127 }),
+              !rawIDs.isEmpty, rawIDs.count <= 500, rawIDs.allSatisfy({ !$0.isEmpty }) else {
+            call.reject("Usa un nombre de 1 a 100 caracteres y selecciona entre 1 y 500 elementos.", "INVALID_ALBUM_INPUT"); return
+        }
+        let ids = Array(Set(rawIDs))
+        let selected = PHAsset.fetchAssets(withLocalIdentifiers: ids, options: nil)
+        guard selected.count == ids.count else {
+            call.reject("Alguna foto ya no está disponible. Actualiza tu selección antes de crear el álbum.", "ASSET_UNAVAILABLE"); return
+        }
+        DispatchQueue.main.async {
+            var albumID: String?
+            // Creation and membership are a single PhotoKit transaction: a
+            // failed addition must not leave an unexpected empty album behind.
+            PHPhotoLibrary.shared().performChanges({
+                let request = PHAssetCollectionChangeRequest.creationRequestForAssetCollection(withTitle: title)
+                request.addAssets(selected)
+                albumID = request.placeholderForCreatedAssetCollection.localIdentifier
+            }) { success, error in
+                guard success, let albumID else {
+                    call.reject(error?.localizedDescription ?? "Fotos no confirmó la creación del álbum.", "ALBUM_CREATE_FAILED"); return
+                }
+                call.resolve(["album": ["id": albumID, "title": title], "added": ids.count])
+            }
+        }
+    }
+    @objc func metadata(_ call: CAPPluginCall) {
+        guard allowed(call), let item = asset(call) else { return }
+        let includeExif = call.getBool("includeExif") ?? false
+        metadataQueue.async {
+            let kind = item.mediaType == .video ? "video" : item.mediaSubtypes.contains(.photoLive) ? "live" : "photo"
+            var result: [String: Any] = ["id": item.localIdentifier, "kind": kind,
+                "width": item.pixelWidth, "height": item.pixelHeight, "duration": item.duration,
+                "isFavorite": item.isFavorite, "isHidden": item.isHidden]
+            if let date = item.creationDate { result["creationDate"] = date.timeIntervalSince1970 * 1000 }
+            if let date = item.modificationDate { result["modified"] = date.timeIntervalSince1970 * 1000 }
+            if let location = item.location {
+                var coordinates: [String: Double] = ["latitude": location.coordinate.latitude, "longitude": location.coordinate.longitude]
+                if location.verticalAccuracy >= 0, location.altitude.isFinite { coordinates["altitude"] = location.altitude }
+                result["location"] = coordinates
+            }
+            // PHAssetResource descriptors expose filename/UTI without fetching
+            // their data. Never use private fileSize KVC or request cloud bytes.
+            let resources = PHAssetResource.assetResources(for: item)
+            let resource = resources.first { item.mediaType == .video ? $0.type == .video : $0.type == .photo } ?? resources.first
+            if let resource {
+                result["filename"] = resource.originalFilename
+                result["uniformTypeIdentifier"] = resource.uniformTypeIdentifier
+            }
+            guard item.mediaType == .image else { result["exifStatus"] = "notApplicable"; call.resolve(result); return }
+            let key = item.localIdentifier + "-\(item.modificationDate?.timeIntervalSince1970 ?? 0)"
+            if let cached = self.exifCache[key] {
+                result["exifStatus"] = cached.status
+                if !cached.fields.isEmpty { result["exif"] = cached.fields }
+                self.exifCacheOrder.removeAll { $0 == key }; self.exifCacheOrder.append(key)
+                call.resolve(result); return
+            }
+            guard includeExif else { result["exifStatus"] = "notRequested"; call.resolve(result); return }
+            if let job = self.metadataJobs[key] {
+                job.waiters.append((call, result)); return
+            }
+            // Optional details never occupy an unbounded native request queue.
+            guard self.metadataJobs.count < 4 else { result["exifStatus"] = "unavailable"; call.resolve(result); return }
+            let job = LocalMetadataJob(asset: item, waiter: (call, result))
+            self.metadataJobs[key] = job
+            let timeout = DispatchWorkItem { [weak self, weak job] in
+                guard let self, let job else { return }
+                self.finishMetadata(key, job: job, fields: nil)
+            }
+            job.timeout = timeout
+            self.metadataQueue.asyncAfter(deadline: .now() + 5, execute: timeout)
+            let options = PHContentEditingInputRequestOptions()
+            options.isNetworkAccessAllowed = false
+            // Read the original header rather than asking Photos to render an
+            // edited full-resolution image. We never write an editing output.
+            options.canHandleAdjustmentData = { _ in true }
+            job.requestID = item.requestContentEditingInput(with: options) { [weak self, weak job] input, _ in
+                guard let self, let job else { return }
+                self.metadataQueue.async {
+                    guard self.metadataJobs[key] === job else { return }
+                    guard let url = input?.fullSizeImageURL, url.isFileURL else {
+                        self.finishMetadata(key, job: job, fields: nil); return
+                    }
+                    self.finishMetadata(key, job: job, fields: self.localExif(url))
+                }
+            }
+        }
+    }
+    private func finishMetadata(_ key: String, job: LocalMetadataJob, fields: [String: Any]?) {
+        guard metadataJobs[key] === job else { return }
+        metadataJobs.removeValue(forKey: key); job.timeout?.cancel()
+        if let requestID = job.requestID { job.asset.cancelContentEditingInputRequest(requestID) }
+        let status = fields == nil ? "unavailable" : fields!.isEmpty ? "absent" : "available"
+        // A cloud-only failure is intentionally not cached: a later user action
+        // may have made the original local without changing its modification date.
+        if let fields {
+            exifCache[key] = CachedAssetExif(status: status, fields: fields)
+            exifCacheOrder.removeAll { $0 == key }; exifCacheOrder.append(key)
+            while exifCacheOrder.count > 256 { exifCache.removeValue(forKey: exifCacheOrder.removeFirst()) }
+        }
+        for waiter in job.waiters {
+            let call = waiter.0
+            var result = waiter.1
+            result["exifStatus"] = status
+            if let fields, !fields.isEmpty { result["exif"] = fields }
+            call.resolve(result)
+        }
+    }
+    private func localExif(_ url: URL) -> [String: Any]? {
+        let options = [kCGImageSourceShouldCache: false] as CFDictionary
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, options),
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, options) as? [String: Any] else { return nil }
+        let exif = properties[kCGImagePropertyExifDictionary as String] as? [String: Any] ?? [:]
+        let tiff = properties[kCGImagePropertyTIFFDictionary as String] as? [String: Any] ?? [:]
+        var fields: [String: Any] = [:]
+        for (name, value) in [("cameraMake", tiff[kCGImagePropertyTIFFMake as String]),
+                              ("cameraModel", tiff[kCGImagePropertyTIFFModel as String]),
+                              ("lensModel", exif[kCGImagePropertyExifLensModel as String]),
+                              ("dateTimeOriginal", exif[kCGImagePropertyExifDateTimeOriginal as String])] {
+            if let text = value as? String, !text.isEmpty { fields[name] = String(text.prefix(256)) }
+        }
+        for (name, value) in [("fNumber", exif[kCGImagePropertyExifFNumber as String]),
+                              ("exposureTime", exif[kCGImagePropertyExifExposureTime as String]),
+                              ("focalLength", exif[kCGImagePropertyExifFocalLength as String]),
+                              ("orientation", properties[kCGImagePropertyOrientation as String])] {
+            if let number = value as? NSNumber, number.doubleValue.isFinite, number.doubleValue > 0 { fields[name] = number.doubleValue }
+        }
+        if let values = exif[kCGImagePropertyExifISOSpeedRatings as String] as? [NSNumber],
+           let iso = values.first, iso.doubleValue.isFinite, iso.doubleValue > 0 { fields["iso"] = iso.doubleValue }
+        return fields
     }
     @objc func deleteAssets(_ call: CAPPluginCall) {
         guard allowed(call), let ids = call.getArray("ids", String.self), !ids.isEmpty else { call.reject("No hay descartes para borrar."); return }
@@ -501,6 +646,19 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
 }
 
 private enum VideoPreparationFailure: Error { case tooLarge, cacheFull, cancelled, writeFailed, unavailable }
+
+private struct CachedAssetExif {
+    let status: String
+    let fields: [String: Any]
+}
+
+private final class LocalMetadataJob {
+    let asset: PHAsset
+    var waiters: [(CAPPluginCall, [String: Any])]
+    var requestID: PHContentEditingInputRequestID?
+    var timeout: DispatchWorkItem?
+    init(asset: PHAsset, waiter: (CAPPluginCall, [String: Any])) { self.asset = asset; self.waiters = [waiter] }
+}
 
 private final class PreparedThumbnailJob {
     let call: CAPPluginCall

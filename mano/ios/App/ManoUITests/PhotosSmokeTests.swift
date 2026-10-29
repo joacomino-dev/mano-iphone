@@ -20,13 +20,8 @@ final class PhotosSmokeTests: XCTestCase {
             add(screenshot)
         }
 
-        let start = app.buttons["Iniciar sesión"].firstMatch
-        guard start.waitForExistence(timeout: 120) else {
-            XCTFail("The real welcome screen did not expose Iniciar sesión.\n\(app.debugDescription)")
-            return
-        }
-        start.tap()
-
+        // Welcome requests Photos immediately. Grant the real OS prompt BEFORE
+        // touching Iniciar sesión; a covered/disabled start button is not a failure.
         // This prompt is an expected step: address SpringBoard directly rather
         // than an interruption monitor or simulated permission response.
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
@@ -43,7 +38,15 @@ final class PhotosSmokeTests: XCTestCase {
         }
         fullAccess.tap()
 
-        let finish = app.buttons["Terminar sesión"].firstMatch
+        let start = app.buttons["Iniciar sesión"].firstMatch
+        guard start.waitForExistence(timeout: 120) else {
+            XCTFail("The authorized welcome screen did not expose Iniciar sesión.\n\(app.debugDescription)")
+            return
+        }
+        XCTAssertTrue(start.isHittable, "Authorized welcome must permit starting a session.")
+        start.tap()
+
+        let finish = app.buttons["Finalizar sesión"].firstMatch
         guard finish.waitForExistence(timeout: 90) else {
             XCTFail("Full Photos authorization and bounded media warmup did not open the real review session.\n\(app.debugDescription)")
             return
@@ -52,5 +55,60 @@ final class PhotosSmokeTests: XCTestCase {
         // The shell independently requires the native prepareVideo bytes marker.
         // Do not invoke native bridge methods or bypass the real session UI here.
         print("MEMSWIPE_UI_AUTHORIZED_SESSION_OK")
+
+        // Safe native mutation: a new album containing only simulator fixtures.
+        // No discard, delete, favorites or real-device operations are performed.
+        let album = app.buttons["Álbum"].firstMatch
+        XCTAssertTrue(album.waitForExistence(timeout: 15))
+        album.tap()
+        let create = app.buttons["Crear nuevo álbum"].firstMatch
+        XCTAssertTrue(create.waitForExistence(timeout: 15))
+        create.tap()
+        let name = app.textFields["Por ejemplo, Verano"].firstMatch
+        XCTAssertTrue(name.waitForExistence(timeout: 15))
+        name.tap()
+        let fixtureAlbum = "CocoWash CI Generated"
+        name.typeText(fixtureAlbum)
+        let save = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Crear y añadir ")).firstMatch
+        XCTAssertTrue(save.waitForExistence(timeout: 10))
+        // The form button dismisses its own keyboard; do not inject JS or native calls.
+        save.tap()
+        XCTAssertTrue(album.waitForExistence(timeout: 30))
+        let returnedToSession = NSPredicate(format: "hittable == true")
+        expectation(for: returnedToSession, evaluatedWith: album)
+        waitForExpectations(timeout: 30)
+        album.tap()
+        let createdAlbum = app.buttons[fixtureAlbum].firstMatch
+        XCTAssertTrue(createdAlbum.waitForExistence(timeout: 30), "Created native album must be returned by PhotoKit.")
+        app.buttons["Cerrar"].firstMatch.tap()
+        print("COCOWASH_UI_GENERATED_ALBUM_OK")
+
+        // Enable Geek through ordinary draft filters, then open the explicit
+        // inspection button. Nonempty metadata rendering proves the native read.
+        app.buttons["Filtros"].firstMatch.tap()
+        let geek = app.switches.matching(NSPredicate(format: "label CONTAINS %@", "Modo Geek")).firstMatch
+        XCTAssertTrue(geek.waitForExistence(timeout: 15))
+        for _ in 0..<4 {
+            if geek.isHittable { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(geek.isHittable, "Geek switch must be reachable in filters.")
+        geek.tap()
+        let apply = app.buttons["Aplicar filtros"].firstMatch
+        for _ in 0..<3 {
+            if apply.isHittable { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(apply.isHittable)
+        apply.tap()
+        let inspect = app.buttons["Ampliar y anclar"].firstMatch
+        XCTAssertTrue(inspect.waitForExistence(timeout: 30))
+        inspect.tap()
+        XCTAssertTrue(app.staticTexts["Modo Geek"].firstMatch.waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts["Ancho"].firstMatch.waitForExistence(timeout: 30))
+        XCTAssertTrue(app.staticTexts["Alto"].firstMatch.exists)
+        XCTAssertTrue(app.staticTexts["Solo datos disponibles localmente. Sin descargar originales."].firstMatch.exists)
+        app.buttons["Cerrar"].firstMatch.tap()
+        print("COCOWASH_UI_LOCAL_METADATA_OK")
     }
 }

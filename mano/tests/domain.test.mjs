@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { initialState, initialFilter, decide, undo, restore, eligible, nextHand, nextSessionHand, reviewedCount, reconcileLibrary, libraryFingerprint } from '../src/domain.ts';
+import { initialState, initialFilter, decide, undo, restore, eligible, nextHand, nextSessionHand, reviewedCount, reconcileLibrary, libraryFingerprint, matchesDate, validateRecordState } from '../src/domain.ts';
 const photo=(id,date=0)=>({id,kind:'photo',date,width:100,height:150,duration:0});
 test('discard is only a reversible queue, not removal',()=>{const s=decide(initialState(),['a','b','a'],'discard',0);assert.deepEqual(s.pending,['a','b']);assert.deepEqual(s.removed,[]);assert.deepEqual(undo(s),initialState());});
 test('keep waits a week, then returns; second keep advances seal and undo restores it',()=>{const s=decide(initialState(),['a'],'keep',100);assert.equal(eligible([photo('a')],s,initialFilter,101).length,0);assert.equal(eligible([photo('a')],s,initialFilter,100+7*86400000).length,1);const twice=decide(s,['a'],'keep',200);assert.equal(twice.marks.a.level,2);assert.deepEqual(undo(twice),s);});
@@ -52,4 +52,64 @@ test('session defaults to deterministic random choice for the same seed and filt
   assert.equal(selected[0].id,eligible(assets,initialState(),{...initialFilter,order:'random'},0,98)[0].id);
   assert.ok(new Set([1,2,98,101].map(seed=>nextSessionHand(assets,initialState(),undefined,0,seed)[0].id)).size>1);
   assert.deepEqual(nextSessionHand(assets,initialState(),{...initialFilter,media:'video'},0,98),[]);
+});
+
+test('date presets use creation milliseconds and include rolling boundaries without future dates',()=>{
+  const now=Date.UTC(2026,9,29,12); const day=86400000;
+  for(const [dateRange,days] of [['24h',1],['7d',7],['30d',30]]){
+    const filter={...initialFilter,dateRange};
+    assert.equal(matchesDate(now-days*day,filter,now),true);
+    assert.equal(matchesDate(now-days*day-1,filter,now),false);
+    assert.equal(matchesDate(now,filter,now),true); assert.equal(matchesDate(now+1,filter,now),false);
+    assert.deepEqual(eligible([{...photo('old',now-days*day-1),modified:now},photo('new',now)],initialState(),filter,now).map(a=>a.id),['new']);
+  }
+  assert.equal(matchesDate(0,initialFilter,now),true);
+});
+
+test('custom dates include the complete local final day and reject invalid or reversed ranges',()=>{
+  const f={...initialFilter,dateRange:'custom',from:'2026-10-01',to:'2026-10-02'};
+  assert.equal(matchesDate(new Date(2026,9,1).getTime()-1,f),false);
+  assert.equal(matchesDate(new Date(2026,9,1).getTime(),f),true);
+  assert.equal(matchesDate(new Date(2026,9,3).getTime()-1,f),true);
+  assert.equal(matchesDate(new Date(2026,9,3).getTime(),f),false);
+  assert.equal(matchesDate(new Date(2026,9,2).getTime(),{...f,from:'2026-10-03'}),false);
+  assert.equal(matchesDate(0,{...f,from:'2026-02-30'}),false);
+  assert.equal(matchesDate(0,{...f,to:'2026-1-2'}),false);
+});
+
+test('custom end uses next local midnight across spring and fall DST changes',()=>{
+  const previous=process.env.TZ; process.env.TZ='America/New_York';
+  try{
+    for(const [day,next,expectedHours] of [['2026-03-08','2026-03-09',23],['2026-11-01','2026-11-02',25]]){
+      const start=new Date(`${day}T00:00:00`).getTime(); const end=new Date(`${next}T00:00:00`).getTime();
+      assert.equal((end-start)/3600000,expectedHours);
+      const filter={...initialFilter,dateRange:'custom',from:day,to:day};
+      assert.equal(matchesDate(start,filter),true);assert.equal(matchesDate(end-1,filter),true);assert.equal(matchesDate(end,filter),false);
+    }
+    process.env.TZ='America/Santiago';
+    const nextMidnight=new Date('2026-09-07T00:00:00').getTime();
+    const midnightShift={...initialFilter,dateRange:'custom',from:'2026-09-06',to:'2026-09-06'};
+    assert.equal(matchesDate(nextMidnight-1,midnightShift),true);
+    assert.equal(matchesDate(nextMidnight,midnightShift),false);
+  }finally{if(previous===undefined)delete process.env.TZ;else process.env.TZ=previous;}
+});
+
+test('history retains ten whole decisions with cloned hand context for exact undo restoration',()=>{
+  let state=initialState(); const context={handIds:['b','a'],rotated:['a'],selected:['b'],group:'x',filter:{...initialFilter,media:'video'}};
+  for(let i=0;i<12;i++)state=decide(state,[`a${i}`],'keep',i,context);
+  assert.equal(state.history.length,10); assert.equal(state.history[0].at,2);
+  context.handIds.reverse();context.rotated.push('b');context.filter.media='photo';
+  const last=state.history.at(-1);assert.deepEqual(last.context.handIds,['b','a']);assert.deepEqual(last.context.rotated,['a']);assert.equal(last.context.filter.media,'video');
+  state=undo(state);assert.equal(state.marks.a11,undefined);assert.equal(state.history.length,9);
+  for(let i=0;i<9;i++)state=undo(state);
+  assert.ok(state.marks.a0);assert.ok(state.marks.a1);assert.equal(state.history.length,0);
+});
+
+test('legacy record validation trims history without mutating original or losing decisions',()=>{
+  let state=initialState();for(let i=0;i<12;i++)state=decide(state,[`a${i}`],'keep',i);
+  const legacy={...state,history:[...state.history,...state.history]};
+  const result=validateRecordState(legacy);assert.equal(result.history.length,10);assert.equal(Object.keys(result.marks).length,12);assert.equal(legacy.history.length,20);
+  assert.equal(validateRecordState({...state,marks:null}),null);
+  assert.equal(validateRecordState({...state,favorites:{}}),null);
+  assert.equal(validateRecordState({...state,marks:{bad:{level:99,due:1,keptAt:0}}}),null);
 });

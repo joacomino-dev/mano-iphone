@@ -1,10 +1,10 @@
-# MemSwipe — recuerdos que se quedan
+# CocoWash — recuerdos que se quedan
 
 Una app de iPhone para revisar Fotos mediante una mano de cartas. Interfaz verde petróleo, papel y sellos de tinta; sin cuenta propia, anuncios, suscripciones ni API de reconocimiento de pago.
 
 La bienvenida muestra fotos flotantes y «Iniciar sesión». Cada sesión mezcla al azar fotos, vídeos y Live Photos; cuando un elemento pertenece a un grupo visual analizado, aparece automáticamente un bundle de polaroids. La foto principal queda centrada y recta; tocarla o pulsar Siguiente la pasa al final. Puedes seleccionar varias girando la pila o elegir todas. Los filtros permiten cambiar el orden.
 
-El nombre visible y el icono son MemSwipe; el identificador interno y las claves de datos se conservan para actualizar la instalación existente.
+El nombre visible y el icono son CocoWash; el identificador interno y las claves de datos se conservan para actualizar la instalación existente.
 
 ## Uso
 
@@ -54,7 +54,7 @@ El workflow del repositorio usa únicamente runners estándar y se bloquea si el
 
 1. Descargar el artefacto de una ejecución verde de Actions y extraer el `.ipa`.
 2. Conectar el iPhone al PC y abrir iLoader con la misma cuenta de Apple usada para la instalación existente. Cualquier autenticación, confianza del dispositivo o Modo Desarrollador se completa personalmente.
-3. Elegir el iPhone y usar **Import IPA** para firmar e instalar el archivo. Abrir MemSwipe, pulsar **Iniciar sesión** y permitir acceso completo a Fotos para revisar todo el carrete.
+3. Elegir el iPhone y usar **Import IPA** para firmar e instalar el archivo. Abrir CocoWash, permitir acceso completo a Fotos en la bienvenida y pulsar **Iniciar sesión** para revisar todo el carrete.
 4. Renovar la firma antes de siete días mediante **Import IPA**, con la misma cuenta y el identificador `work.joaquin.mano`. Actualizar la instalación existente; no desinstalarla.
 
 La instalación personal elegida usa iLoader; no requiere instalar AltStore, SideStore ni una VPN.
@@ -64,3 +64,9 @@ La compilación no demuestra funcionamiento en un iPhone real. La verificación 
 ## Precarga y vídeo (0.3)
 
 Antes de empezar se preparan los próximos10 elementos, siguiendo el orden real y los bundles, con progreso y cancelación. La ventana se renueva al avanzar. Dos preparaciones simultáneas; las miniaturas quedan listas para mostrarse y los vídeos se descargan a una caché local temporal. Reproducir abre el vídeo dentro de la tarjeta; pantalla completa queda como alternativa explícita. Los vídeos demasiado grandes o no disponibles permiten reintentar o usar la reproducción nativa. Los originales no se alteran. El tamaño de caché es limitado y sus archivos en uso se protegen contra expulsión.
+
+## CocoWash0.4
+
+Sesiones guardadas con continuidad exacta y Regresar de10 pasos. Filtros por24h/7d/30d o calendario inclusivo, Modo Geek local y creación de álbumes en Fotos. Mantener pulsado amplía; arrastrar al gancho ancla; pellizcar permite zoom, tocar fuera o Cerrar vuelve a las cartas. Cabecera compacta, polaroids adaptadas al archivo y nueva identidad vectorial. Sin cambiar bundle ni claves anteriores.
+
+La revisión final tiene Eliminar/Deshacer todo primero. Eliminar solicita solo la confirmación de Apple; cancelar conserva la cola. Finalizar y guardar pendientes no borra archivos. El historial rápido registra decisiones de conservar/eliminar/favorita; añadir a álbum no se revierte con Regresar. Datos EXIF solo cuando locales; no se descargan originales para inspección.

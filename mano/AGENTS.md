@@ -81,3 +81,11 @@ When any text-entry control loses focus, dismiss the simulated keyboard. If the 
 - Keep the home indicator as the topmost safe-area layer in the z-index above everything else in the prototype.
 
 - Latest physical feedback (29 October): Photos access and manual deletion confirmed working by user. Phone disconnected for continuing development. Prepare first10 actual upcoming assets before review; maintain rolling window, visible progress/cancel and bounded2 transfers. Video posters must display and videos should play inline inside their centered card with explicit fullscreen fallback. All downloaded originals stay in bounded app cache, never overwrite Photos. Native video/cache and cancellation must be tested in simulator with generated media.
+
+## CocoWash approved scope
+
+- User greenlit full CocoWash plan on29October: petroleum #1D4042 / cream #F2E7D5 / terracotta #B44238, coconut washing smiling brain mascot; philosophy Lo que importa, se queda. This supersedes MemSwipe name but preserves bundle ID and old storage.
+- Header Filters left, animated status/isotipo center, Finalizar sesión right. Larger aspect-correct centered polaroids, no letterbox/crop, no duplicate hints/session banner.
+- Persist active session including seed/context/history10 and record atomically; Regresar restores exact media/bundle. Review primary Eliminar/Deshacer todo first; one Apple confirmation only, never deletion from swipe.
+- Date presets24h/7d/30d/custom inclusive local days, friendly draft filters, optional local Geek metadata. Hold to smoothly inspect, drag to pin, pinch/pan when pinned, outside/close to release. Buttons provide alternatives to gestures.
+- Welcome requests Photos on first appearance,15 random miniature sample/5–6 falling at once; reduced motion static. Create native album from selection.

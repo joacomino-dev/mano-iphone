@@ -214,8 +214,10 @@ log_pid=$!
 sleep 2
 kill -0 "$log_pid" || { echo 'ERROR: simulator unified-log stream failed.' >&2; cat "$log_file"; exit 1; }
 
-# XCTest owns exactly one app launch, taps Iniciar sesión, explicitly allows FULL
-# access in SpringBoard, and requires Terminar sesión. Disable simulator cloning
+# XCTest owns exactly one app launch, explicitly allows FULL access on welcome,
+# then taps Iniciar sesión and requires Finalizar sesión after warmup. It also
+# creates a fixture-only album and reads local Geek metadata through the UI.
+# Disable simulator cloning
 # and parallel runs so that the test uses this exact generated-photo-only device.
 bounded 600 xcodebuild -project ios/App/App.xcodeproj -scheme ManoSmoke \
   -configuration Release -sdk iphonesimulator -destination "platform=iOS Simulator,id=$simulator_id" \
@@ -231,6 +233,12 @@ grep -q 'MEMSWIPE_UI_AUTHORIZED_SESSION_OK' "$smoke_dir/ui-test.log" || {
   echo 'ERROR: UI test did not reach the authorized real session. Packaging is blocked.' >&2
   exit 1
 }
+for marker in COCOWASH_UI_GENERATED_ALBUM_OK COCOWASH_UI_LOCAL_METADATA_OK; do
+  grep -q "$marker" "$smoke_dir/ui-test.log" || {
+    echo "ERROR: UI test did not prove $marker through the real generated-media UI. Packaging is blocked." >&2
+    exit 1
+  }
+done
 
 # Successful UI assertions alone cannot pass: require the original native
 # PhotoKit enumeration and a nonempty prepared local video from actual JS calls.

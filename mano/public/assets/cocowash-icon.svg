@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" fill="none" role="img" aria-labelledby="title"><title id="title">CocoWash</title><desc>Isotipo vectorial editable. Coco de mirada pícara, tapa abierta y cerebro sonriente; una esponja toca directamente su parte superior.</desc><path fill="#1D4042" d="M0 0H1024V1024H0Z"/><g transform="translate(40 12) scale(3.7)">
+<g id="lid" stroke="#122D2E" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">
+ <path fill="#AF6742" d="M74 144C44 132 33 105 48 76C59 53 84 35 106 38C119 40 124 51 118 65C108 94 95 122 74 144Z"/>
+ <path fill="#F2E7D5" d="M73 131C53 121 48 103 59 82C70 61 89 48 103 50C109 51 110 57 107 64C99 85 88 113 73 131Z"/>
+</g>
+<g id="arm" stroke-linecap="round" stroke-linejoin="round">
+ <path d="M202 175C228 158 231 143 219 124L198 96" stroke="#122D2E" stroke-width="19"/>
+ <path d="M202 175C228 158 231 143 219 124L198 96" stroke="#F2E7D5" stroke-width="10"/>
+</g>
+<g id="coconut" stroke="#122D2E" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">
+ <path fill="#AF6742" d="M66 147C56 174 67 207 90 223C115 242 151 244 177 226C202 209 211 178 203 150Z"/>
+ <path fill="#955135" stroke="none" d="M69 181C83 214 115 230 147 226C169 223 190 209 200 190C190 220 170 236 142 239C107 241 79 219 69 198Z"/>
+ <ellipse cx="135" cy="148" rx="69" ry="19" fill="#F2E7D5"/>
+</g>
+<g id="brain" stroke="#122D2E" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">
+ <path fill="#EF9A98" d="M95 150C81 145 78 133 85 123C78 109 87 97 99 96C100 82 115 76 126 82C138 69 154 74 160 86C174 81 187 92 186 104C200 111 203 125 195 136C195 147 183 152 172 152Z"/>
+ <path d="M99 120C98 113 101 108 107 106M139 87C135 93 137 100 142 102" stroke="#DC787D" stroke-width="4.5"/>
+ <path d="M111 115C114 121 122 122 127 117M153 113C157 119 165 118 168 113" stroke-width="4.7"/>
+ <path fill="#122D2E" d="M132 129C140 134 147 133 154 127C156 138 147 144 141 141C136 139 134 134 132 129Z" stroke-width="2"/>
+</g>
+<g id="sponge-contact" stroke="#122D2E" stroke-width="4.8" stroke-linecap="round" stroke-linejoin="round">
+ <path fill="#E9BC65" d="M158 78C155 70 162 65 169 68L194 77C202 80 204 86 200 93L194 104C191 110 185 111 180 106L160 93C154 90 153 84 158 78Z"/>
+ <path d="M168 79L168 79M183 96L183 96" stroke="#955135" stroke-width="3.8"/>
+ <path fill="#F2E7D5" d="M197 99C191 98 189 93 191 88L194 82C189 82 187 86 184 84C179 80 184 72 191 72C202 72 211 86 205 96C203 100 200 102 197 99Z"/>
+</g>
+<g id="foam" fill="#F2E7D5" stroke="#122D2E" stroke-width="4">
+ <path d="M69 144C65 136 71 132 77 134C79 126 87 128 89 134C97 132 100 140 94 145L80 150C73 151 68 149 69 144Z"/>
+</g>
+<g id="coconut-face" stroke="#122D2E" stroke-width="5.3" stroke-linecap="round" stroke-linejoin="round">
+ <path fill="#F2E7D5" d="M104 181C104 199 119 208 131 198C138 193 138 182 136 175Z"/>
+ <path fill="#F2E7D5" d="M146 176C147 194 162 201 174 190C181 184 182 175 179 169Z"/>
+ <path d="M102 181L137 172M144 176L180 166" stroke-width="6.5"/>
+ <path fill="#122D2E" stroke="none" d="M123 177L135 174C137 184 133 189 128 187C123 186 123 181 123 177ZM166 171L178 167C181 176 176 182 171 181C166 179 166 175 166 171Z"/>
+ <path d="M135 216C143 222 153 218 157 212" stroke-width="5.8"/>
+</g></g></svg>

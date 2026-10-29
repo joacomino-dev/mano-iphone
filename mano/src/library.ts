@@ -1,12 +1,23 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import type { Asset } from './domain';
 export type Album = { id: string; title: string };
+export type AssetMetadata = {
+  id: string; kind: Asset['kind']; filename?: string; uniformTypeIdentifier?: string;
+  width: number; height: number; creationDate?: number; modified?: number; duration: number;
+  isFavorite: boolean; isHidden: boolean;
+  location?: { latitude: number; longitude: number; altitude?: number };
+  exifStatus: 'notRequested' | 'available' | 'absent' | 'unavailable' | 'notApplicable';
+  exif?: { cameraMake?: string; cameraModel?: string; lensModel?: string; dateTimeOriginal?: string;
+    iso?: number; fNumber?: number; exposureTime?: number; focalLength?: number; orientation?: number };
+};
 type LibraryPlugin = {
   authorize(): Promise<{ status: string }>;
   assets(): Promise<{ assets: Asset[]; status: string }>;
   thumbnail(options: { id: string; size?: number; requestId?: string }): Promise<{ path: string }>;
   albums(): Promise<{ albums: Album[] }>;
   addToAlbum(options: { ids: string[]; albumId: string }): Promise<void>;
+  createAlbum(options: { title: string; ids: string[] }): Promise<{ album: Album; added: number }>;
+  metadata(options: { id: string; includeExif?: boolean }): Promise<AssetMetadata>;
   favorite(options: { ids: string[]; value: boolean; ignoreMissing?: boolean }): Promise<{ missing: string[] }>;
   deleteAssets(options: { ids: string[] }): Promise<{ deleted: string[] }>;
   preview(options: { id: string }): Promise<void>;
