@@ -49,6 +49,9 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm test && npm run check:runtime && npm run build
       - run: npm run sync:ios
+      - name: Smoke test installed app bridge and PhotoKit on iPhone simulator
+        timeout-minutes: 23
+        run: bash scripts/test-ios-simulator.sh
       - name: Build unsigned iPhone app
         run: |
           xcodebuild -version
