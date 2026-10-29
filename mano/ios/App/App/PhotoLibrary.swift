@@ -12,6 +12,7 @@ class ManoBridgeController: CAPBridgeViewController {
     override func capacitorDidLoad() {
         super.capacitorDidLoad()
         bridge?.registerPluginInstance(PhotoLibraryPlugin())
+        NSLog("MEMSWIPE_BRIDGE_READY")
     }
     override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
 }
@@ -58,6 +59,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         PHPhotoLibrary.requestAuthorization(for: .readWrite) { _ in call.resolve(["status": self.status]) }
     }
     @objc func assets(_ call: CAPPluginCall) {
+        NSLog("MEMSWIPE_PHOTOS_REQUEST status=%@", status)
         guard ["authorized", "limited"].contains(status) else { call.resolve(["assets": [], "status": status]); return }
         DispatchQueue.global(qos: .userInitiated).async {
             let options = PHFetchOptions()
