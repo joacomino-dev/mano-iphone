@@ -79,3 +79,5 @@ When any text-entry control loses focus, dismiss the simulated keyboard. If the 
 - Fixed phone chrome should not animate with pushed screens. Screen content can animate; the status bar, camera cutout, and preview chrome should stay put.
 - Keep the keyboard below the home indicator/safe area layer in z-index, and above ordinary app UI while visible.
 - Keep the home indicator as the topmost safe-area layer in the z-index above everything else in the prototype.
+
+- Latest physical feedback (29 October): Photos access and manual deletion confirmed working by user. Phone disconnected for continuing development. Prepare first10 actual upcoming assets before review; maintain rolling window, visible progress/cancel and bounded2 transfers. Video posters must display and videos should play inline inside their centered card with explicit fullscreen fallback. All downloaded originals stay in bounded app cache, never overwrite Photos. Native video/cache and cancellation must be tested in simulator with generated media.

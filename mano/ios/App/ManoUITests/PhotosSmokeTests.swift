@@ -8,7 +8,8 @@ final class PhotosSmokeTests: XCTestCase {
 
     @MainActor
     func testFullPhotosAuthorizationStartsSession() throws {
-        // Only runs on the disposable CI simulator seeded with one generated image.
+        // Only runs on the disposable CI simulator seeded with generated public
+        // photo + H.264 fixtures. No native deletion or personal device is used.
         let app = XCUIApplication()
         app.resetAuthorizationStatus(for: .photos)
         app.launch()
@@ -44,9 +45,12 @@ final class PhotosSmokeTests: XCTestCase {
 
         let finish = app.buttons["Terminar sesión"].firstMatch
         guard finish.waitForExistence(timeout: 90) else {
-            XCTFail("Full Photos authorization did not open the real review session.\n\(app.debugDescription)")
+            XCTFail("Full Photos authorization and bounded media warmup did not open the real review session.\n\(app.debugDescription)")
             return
         }
+        XCTAssertTrue(finish.isHittable, "Session toolbar must be usable after media warmup finishes.")
+        // The shell independently requires the native prepareVideo bytes marker.
+        // Do not invoke native bridge methods or bypass the real session UI here.
         print("MEMSWIPE_UI_AUTHORIZED_SESSION_OK")
     }
 }

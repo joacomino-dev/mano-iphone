@@ -60,3 +60,7 @@ El workflow del repositorio usa únicamente runners estándar y se bloquea si el
 La instalación personal elegida usa iLoader; no requiere instalar AltStore, SideStore ni una VPN.
 
 La compilación no demuestra funcionamiento en un iPhone real. La verificación física pendiente comprueba permisos, miniaturas, iCloud y reproducción sin confirmar ningún borrado. Los flujos de descarte y recuperación se prueban con las imágenes generadas de la demostración.
+
+## Precarga y vídeo (0.3)
+
+Antes de empezar se preparan los próximos10 elementos, siguiendo el orden real y los bundles, con progreso y cancelación. La ventana se renueva al avanzar. Dos preparaciones simultáneas; las miniaturas quedan listas para mostrarse y los vídeos se descargan a una caché local temporal. Reproducir abre el vídeo dentro de la tarjeta; pantalla completa queda como alternativa explícita. Los vídeos demasiado grandes o no disponibles permiten reintentar o usar la reproducción nativa. Los originales no se alteran. El tamaño de caché es limitado y sus archivos en uso se protegen contra expulsión.

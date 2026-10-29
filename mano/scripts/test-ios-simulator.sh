@@ -127,14 +127,81 @@ bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.p
 test "$bundle_id" = work.joaquin.mano || { echo 'ERROR: unexpected application bundle identifier.' >&2; exit 1; }
 test -f public/assets/photos/lake.png || { echo 'ERROR: generated test photo missing.' >&2; exit 1; }
 
+# The official macos-26 ARM inventory does not advertise ffmpeg:
+# https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md
+# Generate a silent, tiny H.264 fixture with the already-required Apple SDK instead.
+# This is runner-only test media derived from our public image, never a user asset.
+cat > "$smoke_dir/make-video.swift" <<'SWIFT'
+import AppKit
+import AVFoundation
+import CoreVideo
+import Foundation
+
+func fail(_ message: String) -> Never {
+    fputs("ERROR: generated video fixture: \(message)\n", stderr)
+    exit(1)
+}
+let width = 320, height = 240
+guard CommandLine.arguments.count == 3,
+      let image = NSImage(contentsOfFile: CommandLine.arguments[1]),
+      let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil)
+else { fail("public source image could not be decoded") }
+let output = URL(fileURLWithPath: CommandLine.arguments[2])
+if FileManager.default.fileExists(atPath: output.path) {
+    try FileManager.default.removeItem(at: output)
+}
+let writer = try AVAssetWriter(outputURL: output, fileType: .mp4)
+let input = AVAssetWriterInput(mediaType: .video, outputSettings: [
+    AVVideoCodecKey: AVVideoCodecType.h264,
+    AVVideoWidthKey: width, AVVideoHeightKey: height
+])
+input.expectsMediaDataInRealTime = false
+let adaptor = AVAssetWriterInputPixelBufferAdaptor(assetWriterInput: input,
+    sourcePixelBufferAttributes: [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32ARGB,
+        kCVPixelBufferWidthKey as String: width, kCVPixelBufferHeightKey as String: height])
+guard writer.canAdd(input) else { fail("writer cannot accept H.264 input") }
+writer.add(input)
+guard writer.startWriting() else { fail(writer.error?.localizedDescription ?? "writer did not start") }
+writer.startSession(atSourceTime: .zero)
+var buffer: CVPixelBuffer?
+guard CVPixelBufferCreate(kCFAllocatorDefault, width, height, kCVPixelFormatType_32ARGB,
+    [kCVPixelBufferCGImageCompatibilityKey as String: true, kCVPixelBufferCGBitmapContextCompatibilityKey as String: true] as CFDictionary,
+    &buffer) == kCVReturnSuccess, let pixels = buffer else { fail("pixel buffer allocation failed") }
+CVPixelBufferLockBaseAddress(pixels, [])
+guard let context = CGContext(data: CVPixelBufferGetBaseAddress(pixels), width: width, height: height,
+    bitsPerComponent: 8, bytesPerRow: CVPixelBufferGetBytesPerRow(pixels), space: CGColorSpaceCreateDeviceRGB(),
+    bitmapInfo: CGImageAlphaInfo.noneSkipFirst.rawValue) else { fail("drawing context unavailable") }
+context.draw(cgImage, in: CGRect(x: 0, y: 0, width: CGFloat(width), height: CGFloat(height)))
+CVPixelBufferUnlockBaseAddress(pixels, [])
+let deadline = Date().addingTimeInterval(20)
+for frame in 0..<24 {
+    while !input.isReadyForMoreMediaData {
+        guard writer.status == .writing, Date() < deadline else { fail("encoder readiness timed out") }
+        Thread.sleep(forTimeInterval: 0.01)
+    }
+    guard adaptor.append(pixels, withPresentationTime: CMTime(value: Int64(frame), timescale: 12))
+    else { fail(writer.error?.localizedDescription ?? "frame rejected") }
+}
+input.markAsFinished()
+let done = DispatchSemaphore(value: 0)
+writer.finishWriting { done.signal() }
+guard done.wait(timeout: .now() + 20) == .success, writer.status == .completed
+else { fail(writer.error?.localizedDescription ?? "finalization failed") }
+let bytes = (try FileManager.default.attributesOfItem(atPath: output.path)[.size] as? NSNumber)?.int64Value ?? 0
+guard bytes > 0 else { fail("empty output") }
+print("Generated public test video bytes=\(bytes)")
+SWIFT
+bounded 120 xcrun swift "$smoke_dir/make-video.swift" "$PWD/public/assets/photos/lake.png" "$smoke_dir/lake-fixture.mp4"
+test -s "$smoke_dir/lake-fixture.mp4" || { echo 'ERROR: generated MP4 missing or empty.' >&2; exit 1; }
+
 bounded 60 xcrun simctl boot "$simulator_id"
 bounded 240 xcrun simctl bootstatus "$simulator_id" -b
 simulator_booted=1
 # ARM CI failure screenshot showed the installed icon while this command still
 # awaited completion at 60s. Allow one bounded cold install; do not retry blindly.
 bounded 180 xcrun simctl install "$simulator_id" "$app"
-# This dedicated simulator contains only this generated public fixture; never real photos.
-bounded 60 xcrun simctl addmedia "$simulator_id" "$PWD/public/assets/photos/lake.png"
+# Only generated public fixtures are imported; never real photos or videos.
+bounded 60 xcrun simctl addmedia "$simulator_id" "$PWD/public/assets/photos/lake.png" "$smoke_dir/lake-fixture.mp4"
 # Do not pregrant Photos: on this iOS runtime that can leave .readWrite
 # notDetermined. XCTest requests permission through the real app and OS dialog.
 
@@ -166,24 +233,28 @@ grep -q 'MEMSWIPE_UI_AUTHORIZED_SESSION_OK' "$smoke_dir/ui-test.log" || {
 }
 
 # Successful UI assertions alone cannot pass: require the original native
-# PhotoKit enumeration count from the actual JS call. Allow log flush, not relaunch.
+# PhotoKit enumeration and a nonempty prepared local video from actual JS calls.
+# The small fresh library fits the session's <=10-item warmup; no test bypass API.
+# Allow log flush, not relaunch.
 deadline=$((SECONDS + 15))
 while [ "$SECONDS" -lt "$deadline" ]; do
   sleep 1
   read_status="$(python3 - "$log_file" <<'PY'
 import re, sys
 text = open(sys.argv[1], errors='replace').read()
-matches = re.findall(r'MEMSWIPE_PHOTOS_READ_OK count=(\d+)\b', text)
-print('positive' if any(int(count) >= 1 for count in matches) else 'zero' if matches else 'waiting')
+photos = re.findall(r'MEMSWIPE_PHOTOS_READ_OK count=(\d+)\b', text)
+videos = re.findall(r'MEMSWIPE_VIDEO_PREPARED_OK bytes=(\d+)\b', text)
+print('positive' if any(int(count) >= 1 for count in photos) and any(int(size) >= 1 for size in videos) else 'waiting')
 PY
 )"
   if [ "$read_status" = positive ]; then
     grep 'MEMSWIPE_PHOTOS_READ_OK count=' "$log_file"
-    echo 'PASS: real UI granted full Photos access, entered the session, and JavaScript invoked native PhotoKit with >=1 generated photo.'
+    grep 'MEMSWIPE_VIDEO_PREPARED_OK bytes=' "$log_file"
+    echo 'PASS: real UI granted full Photos access, completed session warmup, read native PhotoKit, and prepared a nonempty local generated video.'
     exit 0
   fi
   kill -0 "$log_pid" || { echo 'ERROR: unified-log stream ended before the PhotoKit assertion.' >&2; break; }
 done
 tail -n 120 "$log_file"
-echo 'ERROR: no runtime MEMSWIPE_PHOTOS_READ_OK count>=1 after app launch. JS/native bridge or PhotoKit read failed; packaging is blocked.' >&2
+echo 'ERROR: missing runtime MEMSWIPE_PHOTOS_READ_OK count>=1 or MEMSWIPE_VIDEO_PREPARED_OK bytes>=1 after authorized session start. PhotoKit/video warmup has NOT passed; packaging is blocked.' >&2
 exit 1
