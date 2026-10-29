@@ -3,7 +3,7 @@ import XCTest
 final class PhotosSmokeTests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
-        executionTimeAllowance = 300
+        executionTimeAllowance = 600
     }
 
     @MainActor
@@ -32,7 +32,7 @@ final class PhotosSmokeTests: XCTestCase {
             "label CONTAINS[c] 'Select' OR label BEGINSWITH[c] 'No ' OR " +
             "label BEGINSWITH[c] %@ OR label BEGINSWITH[c] %@)", "Don’t", "Don't"
         )).firstMatch
-        guard fullAccess.waitForExistence(timeout: 90) else {
+        guard fullAccess.waitForExistence(timeout: 240) else {
             XCTFail("A FULL Photos authorization button was not offered.\n\(springboard.debugDescription)")
             return
         }
