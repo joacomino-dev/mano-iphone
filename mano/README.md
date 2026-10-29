@@ -53,12 +53,10 @@ El análisis se puede detener desde Sellos. Una huella visual rápida limita a 6
 El workflow del repositorio usa únicamente runners estándar y se bloquea si el repositorio es privado. Compila el dispositivo iPhone sin firma y produce `Mano-AltStore/Mano-unsigned.ipa` como artefacto. No necesita certificados, contraseña de Apple, suscripción Developer ni secretos en GitHub. El job inicial puede expandir un `mano-source.zip` subido desde navegador y dejar el código normal en el repositorio; después ya no modifica fuentes.
 
 1. Descargar el artefacto de una ejecución verde de Actions y extraer el `.ipa`.
-2. Instalar AltServer/AltStore Classic siguiendo su guía oficial para Windows. Los pasos de Apple, confianza del dispositivo, Modo Desarrollador y cualquier autenticación se realizan personalmente.
-3. Abrir el `.ipa` desde Mis apps en AltStore y conceder el acceso a Fotos que quieras revisar.
-4. Renovar la firma antes de siete días; comprobar que AltStore puede contactar con AltServer. Mantener el identificador `work.joaquin.mano` al actualizar para conservar datos.
+2. Conectar el iPhone al PC y abrir iLoader con la misma cuenta de Apple usada para la instalación existente. Cualquier autenticación, confianza del dispositivo o Modo Desarrollador se completa personalmente.
+3. Elegir el iPhone y usar **Import IPA** para firmar e instalar el archivo. Abrir MemSwipe, pulsar **Iniciar sesión** y permitir acceso completo a Fotos para revisar todo el carrete.
+4. Renovar la firma antes de siete días mediante **Import IPA**, con la misma cuenta y el identificador `work.joaquin.mano`. Actualizar la instalación existente; no desinstalarla.
 
-No se garantiza que servicios externos mantengan su plan gratuito indefinidamente. Nunca introducir datos de pago para habilitar este workflow: cualquier solicitud de verificación o facturación debe revisarse antes de continuar.
+La instalación personal elegida usa iLoader; no requiere instalar AltStore, SideStore ni una VPN.
 
-Guías oficiales: https://faq.altstore.io/altstore-classic/how-to-install-altstore-windows y https://faq.altstore.io/altstore-classic/your-altstore.
-
-La compilación no demuestra funcionamiento en un iPhone real. Verificar allí permisos, iCloud, reproducción, gestos y primero un borrado de fotos desechables con recuperación en Fotos.
+La compilación no demuestra funcionamiento en un iPhone real. La verificación física pendiente comprueba permisos, miniaturas, iCloud y reproducción sin confirmar ningún borrado. Los flujos de descarte y recuperación se prueban con las imágenes generadas de la demostración.

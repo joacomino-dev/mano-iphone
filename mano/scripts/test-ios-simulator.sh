@@ -116,10 +116,10 @@ echo "Smoke simulator: $(sed -n '3p' "$smoke_dir/selection.txt") (fresh ephemera
 simulator_id="$(bounded 60 xcrun simctl create "MemSwipe-smoke-${GITHUB_RUN_ID:-local}-$$" "$device_type" "$runtime_id")"
 [[ "$simulator_id" =~ ^[0-9A-Fa-f-]{36}$ ]] || { echo 'ERROR: simulator creation returned no valid UUID.' >&2; exit 1; }
 
-bounded 900 xcodebuild -project ios/App/App.xcodeproj -scheme App \
+bounded 900 xcodebuild -project ios/App/App.xcodeproj -scheme ManoSmoke \
   -configuration Release -sdk iphonesimulator -destination "platform=iOS Simulator,id=$simulator_id" \
   -derivedDataPath build/simulator-smoke/DerivedData \
-  CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' build \
+  CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' build-for-testing \
   > "$smoke_dir/build.log" 2>&1 || { tail -n 100 "$smoke_dir/build.log"; exit 1; }
 app="$smoke_dir/DerivedData/Build/Products/Release-iphonesimulator/App.app"
 test -d "$app" || { echo 'ERROR: simulator app was not built.' >&2; exit 1; }
@@ -135,12 +135,11 @@ simulator_booted=1
 bounded 180 xcrun simctl install "$simulator_id" "$app"
 # This dedicated simulator contains only this generated public fixture; never real photos.
 bounded 60 xcrun simctl addmedia "$simulator_id" "$PWD/public/assets/photos/lake.png"
-# Fresh runtime TCC services may still cold-start after bootstatus completes.
-# Permit that startup, but fail closed if Photos permission cannot be granted.
-bounded 120 xcrun simctl privacy "$simulator_id" grant photos "$bundle_id"
+# Do not pregrant Photos: on this iOS runtime that can leave .readWrite
+# notDetermined. XCTest requests permission through the real app and OS dialog.
 
 log_file="$smoke_dir/photos-read.log"
-python3 "$helper" 300 xcrun simctl spawn "$simulator_id" log stream \
+python3 "$helper" 900 xcrun simctl spawn "$simulator_id" log stream \
   --style compact --level debug \
   --predicate "$log_predicate" \
   > "$log_file" 2>&1 &
@@ -148,17 +147,29 @@ log_pid=$!
 sleep 2
 kill -0 "$log_pid" || { echo 'ERROR: simulator unified-log stream failed.' >&2; cat "$log_file"; exit 1; }
 
-# Library.assets() is invoked by the real bundled JS on mount. A Swift source string,
-# a successful build or a zero-photo read is never sufficient to pass this gate.
-# Let cold WKWebView initialization finish. Absence of the native marker must not
-# trigger repeated process termination. Retry once only after a real zero-photo
-# read proves that JS/the bridge started, followed by a Photos indexing grace.
-bounded 60 xcrun simctl launch --terminate-running-process "$simulator_id" "$bundle_id"
-deadline=$((SECONDS + 150))
-zero_since=-1
-relaunches=0
+# XCTest owns exactly one app launch, taps Iniciar sesión, explicitly allows FULL
+# access in SpringBoard, and requires Terminar sesión. Disable simulator cloning
+# and parallel runs so that the test uses this exact generated-photo-only device.
+bounded 600 xcodebuild -project ios/App/App.xcodeproj -scheme ManoSmoke \
+  -configuration Release -sdk iphonesimulator -destination "platform=iOS Simulator,id=$simulator_id" \
+  -derivedDataPath build/simulator-smoke/DerivedData \
+  -resultBundlePath build/simulator-smoke/PhotosSmoke.xcresult \
+  -only-testing:ManoUITests/PhotosSmokeTests/testFullPhotosAuthorizationStartsSession \
+  -parallel-testing-enabled NO -maximum-concurrent-test-simulator-destinations 1 \
+  -test-timeouts-enabled YES -maximum-test-execution-time-allowance 300 \
+  CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' test-without-building \
+  > "$smoke_dir/ui-test.log" 2>&1 || { tail -n 120 "$smoke_dir/ui-test.log"; exit 1; }
+tail -n 25 "$smoke_dir/ui-test.log"
+grep -q 'MEMSWIPE_UI_AUTHORIZED_SESSION_OK' "$smoke_dir/ui-test.log" || {
+  echo 'ERROR: UI test did not reach the authorized real session. Packaging is blocked.' >&2
+  exit 1
+}
+
+# Successful UI assertions alone cannot pass: require the original native
+# PhotoKit enumeration count from the actual JS call. Allow log flush, not relaunch.
+deadline=$((SECONDS + 15))
 while [ "$SECONDS" -lt "$deadline" ]; do
-  sleep 5
+  sleep 1
   read_status="$(python3 - "$log_file" <<'PY'
 import re, sys
 text = open(sys.argv[1], errors='replace').read()
@@ -168,16 +179,8 @@ PY
 )"
   if [ "$read_status" = positive ]; then
     grep 'MEMSWIPE_PHOTOS_READ_OK count=' "$log_file"
-    echo 'PASS: installed app JavaScript invoked native PhotoLibrary.assets and PhotoKit read >=1 generated photo.'
+    echo 'PASS: real UI granted full Photos access, entered the session, and JavaScript invoked native PhotoKit with >=1 generated photo.'
     exit 0
-  fi
-  if [ "$read_status" = zero ] && [ "$relaunches" -eq 0 ]; then
-    if [ "$zero_since" -lt 0 ]; then zero_since=$SECONDS; fi
-    if [ "$((SECONDS - zero_since))" -ge 20 ]; then
-      echo 'Observed a real zero-photo read; relaunching once after 20s indexing grace.' >&2
-      bounded 60 xcrun simctl launch --terminate-running-process "$simulator_id" "$bundle_id"
-      relaunches=1
-    fi
   fi
   kill -0 "$log_pid" || { echo 'ERROR: unified-log stream ended before the PhotoKit assertion.' >&2; break; }
 done
