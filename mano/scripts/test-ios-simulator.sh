@@ -35,6 +35,7 @@ simulator_id=''
 log_pid=''
 simulator_booted=0
 log_predicate='process == "App" OR process CONTAINS "WebKit"'
+failure_predicate="$log_predicate OR process == \"installd\" OR process == \"installcoordinationd\" OR process == \"lsd\" OR process == \"SpringBoard\""
 cleanup() {
   local result=$?
   trap - EXIT INT TERM
@@ -43,7 +44,7 @@ cleanup() {
     echo 'Collecting diagnostics from the generated-photo-only ephemeral simulator.' >&2
     bounded 40 xcrun simctl io "$simulator_id" screenshot --type=png "$smoke_dir/failure.png"
     bounded 60 xcrun simctl spawn "$simulator_id" log show --last 5m --style compact \
-      --predicate "$log_predicate" > "$smoke_dir/failure-unified.log" 2>&1
+      --predicate "$failure_predicate" > "$smoke_dir/failure-unified.log" 2>&1
     tail -n 100 "$smoke_dir/failure-unified.log" >&2
   fi
   if [ -n "$log_pid" ]; then
@@ -129,7 +130,9 @@ test -f public/assets/photos/lake.png || { echo 'ERROR: generated test photo mis
 bounded 60 xcrun simctl boot "$simulator_id"
 bounded 240 xcrun simctl bootstatus "$simulator_id" -b
 simulator_booted=1
-bounded 60 xcrun simctl install "$simulator_id" "$app"
+# ARM CI failure screenshot showed the installed icon while this command still
+# awaited completion at 60s. Allow one bounded cold install; do not retry blindly.
+bounded 180 xcrun simctl install "$simulator_id" "$app"
 # This dedicated simulator contains only this generated public fixture; never real photos.
 bounded 60 xcrun simctl addmedia "$simulator_id" "$PWD/public/assets/photos/lake.png"
 # Fresh runtime TCC services may still cold-start after bootstatus completes.
