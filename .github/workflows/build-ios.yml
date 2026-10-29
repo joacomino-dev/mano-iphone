@@ -53,6 +53,19 @@ jobs:
       - name: Smoke test installed app bridge and PhotoKit on iPhone simulator
         timeout-minutes: 38
         run: bash scripts/test-ios-simulator.sh
+      - name: Keep failed simulator diagnostics (generated test photo only)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MemSwipe-simulator-diagnostics
+          path: |
+            mano/build/simulator-smoke/photos-read.log
+            mano/build/simulator-smoke/failure-unified.log
+            mano/build/simulator-smoke/failure.png
+            mano/build/simulator-smoke/build.log
+            mano/build/simulator-smoke/selection.txt
+          retention-days: 7
+          if-no-files-found: warn
       - name: Build unsigned iPhone app
         run: |
           xcodebuild -version
