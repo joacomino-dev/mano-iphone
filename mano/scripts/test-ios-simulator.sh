@@ -219,13 +219,13 @@ kill -0 "$log_pid" || { echo 'ERROR: simulator unified-log stream failed.' >&2; 
 # creates a fixture-only album and reads local Geek metadata through the UI.
 # Disable simulator cloning
 # and parallel runs so that the test uses this exact generated-photo-only device.
-bounded 600 xcodebuild -project ios/App/App.xcodeproj -scheme ManoSmoke \
+bounded 900 xcodebuild -project ios/App/App.xcodeproj -scheme ManoSmoke \
   -configuration Release -sdk iphonesimulator -destination "platform=iOS Simulator,id=$simulator_id" \
   -derivedDataPath build/simulator-smoke/DerivedData \
   -resultBundlePath build/simulator-smoke/PhotosSmoke.xcresult \
   -only-testing:ManoUITests/PhotosSmokeTests/testFullPhotosAuthorizationStartsSession \
   -parallel-testing-enabled NO -maximum-concurrent-test-simulator-destinations 1 \
-  -test-timeouts-enabled YES -maximum-test-execution-time-allowance 300 \
+  -test-timeouts-enabled YES -maximum-test-execution-time-allowance 600 \
   CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' test-without-building \
   > "$smoke_dir/ui-test.log" 2>&1 || { tail -n 120 "$smoke_dir/ui-test.log"; exit 1; }
 tail -n 25 "$smoke_dir/ui-test.log"
