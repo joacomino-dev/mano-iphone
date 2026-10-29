@@ -8,8 +8,11 @@ mkdir -p build/simulator-smoke
 smoke_dir="$PWD/build/simulator-smoke"
 helper="$smoke_dir/run-bounded.py"
 cat > "$helper" <<'PY'
-import os, signal, subprocess, sys
+import os, shlex, signal, subprocess, sys
 seconds = int(sys.argv[1])
+command_display = shlex.join(sys.argv[2:])
+# stderr keeps UUID/SDK command-substitution stdout machine-readable.
+print(f'RUN (timeout={seconds}s): {command_display}', file=sys.stderr, flush=True)
 process = subprocess.Popen(sys.argv[2:], start_new_session=True)
 def stop(signum, frame):
     try: os.killpg(process.pid, signal.SIGKILL)
@@ -24,7 +27,7 @@ except subprocess.TimeoutExpired:
     try: os.killpg(process.pid, signal.SIGKILL)
     except ProcessLookupError: pass
     process.wait()
-    print(f'ERROR: command exceeded {seconds}s: {sys.argv[2]}', file=sys.stderr)
+    print(f'ERROR: command exceeded {seconds}s: {command_display}', file=sys.stderr, flush=True)
     sys.exit(124)
 PY
 bounded() { python3 "$helper" "$@"; }
@@ -100,7 +103,9 @@ bounded 240 xcrun simctl bootstatus "$simulator_id" -b
 bounded 60 xcrun simctl install "$simulator_id" "$app"
 # This dedicated simulator contains only this generated public fixture; never real photos.
 bounded 60 xcrun simctl addmedia "$simulator_id" "$PWD/public/assets/photos/lake.png"
-bounded 30 xcrun simctl privacy "$simulator_id" grant photos "$bundle_id"
+# Fresh runtime TCC services may still cold-start after bootstatus completes.
+# Permit that startup, but fail closed if Photos permission cannot be granted.
+bounded 120 xcrun simctl privacy "$simulator_id" grant photos "$bundle_id"
 
 log_file="$smoke_dir/photos-read.log"
 python3 "$helper" 180 xcrun simctl spawn "$simulator_id" log stream \
