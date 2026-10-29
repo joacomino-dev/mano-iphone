@@ -17,6 +17,11 @@ if(!project.includes('PrivacyInfo.xcprivacy in Resources')) {
 fs.writeFileSync(pbx,project);
 const main='ios/App/App/Base.lproj/Main.storyboard';
 fs.writeFileSync(main,fs.readFileSync(main,'utf8').replace('customClass="CAPBridgeViewController" customModule="Capacitor"','customClass="ManoBridgeController" customModule="App" customModuleProvider="target"'));
+const scene='ios/App/App/SceneDelegate.swift';
+if(fs.existsSync(scene)){
+ const source=fs.readFileSync(scene,'utf8');
+ if(!source.includes('rootViewController = ManoBridgeController()'))throw new Error('Native scene must instantiate ManoBridgeController; Photos would not be registered.');
+}
 const plist='ios/App/App/Info.plist'; let info=fs.readFileSync(plist,'utf8');
 if(!info.includes('NSPhotoLibraryUsageDescription'))info=info.replace('<key>LSRequiresIPhoneOS</key>','<key>NSPhotoLibraryUsageDescription</key>\n<string>Mano necesita leer tu carrete para comparar fotos y vídeos, marcar favoritos, organizar álbumes y borrar solo los descartes que confirmes. El análisis se realiza en tu iPhone.</string>\n<key>NSPhotoLibraryAddUsageDescription</key>\n<string>Mano organiza las fotos que eliges en tus álbumes de Fotos.</string>\n<key>LSRequiresIPhoneOS</key>');
 info=info.replace('<string>en</string>','<string>es</string>');

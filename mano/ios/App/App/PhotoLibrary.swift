@@ -9,7 +9,10 @@ import CryptoKit
 
 @objc(ManoBridgeController)
 class ManoBridgeController: CAPBridgeViewController {
-    override func capacitorDidLoad() { bridge?.registerPluginInstance(PhotoLibraryPlugin()) }
+    override func capacitorDidLoad() {
+        super.capacitorDidLoad()
+        bridge?.registerPluginInstance(PhotoLibraryPlugin())
+    }
     override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
 }
 
@@ -68,6 +71,8 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                               "width": item.pixelWidth, "height": item.pixelHeight, "duration": item.duration,
                               "modified": (item.modificationDate?.timeIntervalSince1970 ?? 0) * 1000])
             }
+            // Runtime smoke-test signal: no asset IDs, names, paths or image data.
+            NSLog("MEMSWIPE_PHOTOS_READ_OK count=%d status=%@", items.count, self.status)
             call.resolve(["assets": items, "status": self.status])
         }
     }
