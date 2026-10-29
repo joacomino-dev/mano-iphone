@@ -30,11 +30,11 @@ jobs:
     needs: prepare
     if: github.event.repository.private == false
     # Standard public-repository runner. Never change to a paid larger runner.
-    runs-on: macos-15-intel
+    runs-on: macos-26
     # Includes bounded cold-start readiness; this remains the standard free runner.
     timeout-minutes: 45
     env:
-      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
     defaults:
       run:
         working-directory: mano
