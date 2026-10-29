@@ -29,8 +29,8 @@ jobs:
   ios:
     needs: prepare
     if: github.event.repository.private == false
-    # Standard public-repository runner. Never change to a paid larger runner.
-    runs-on: macos-26
+    # Standard free Intel runner: avoids current hosted ARM capacity failures. Never use -large/-xlarge.
+    runs-on: macos-26-intel
     # Includes bounded cold-start readiness; this remains the standard free runner.
     timeout-minutes: 45
     env:
