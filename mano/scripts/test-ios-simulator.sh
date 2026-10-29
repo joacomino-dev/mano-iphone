@@ -33,6 +33,7 @@ PY
 bounded() { python3 "$helper" "$@"; }
 simulator_id=''
 log_pid=''
+boot_pid=''
 simulator_booted=0
 log_predicate='process == "App" OR process CONTAINS "WebKit"'
 failure_predicate="$log_predicate OR process == \"installd\" OR process == \"installcoordinationd\" OR process == \"lsd\" OR process == \"SpringBoard\""
@@ -46,6 +47,11 @@ cleanup() {
     bounded 60 xcrun simctl spawn "$simulator_id" log show --last 5m --style compact \
       --predicate "$failure_predicate" > "$smoke_dir/failure-unified.log" 2>&1
     tail -n 100 "$smoke_dir/failure-unified.log" >&2
+  fi
+  if [ -n "$boot_pid" ]; then
+    kill -TERM "$boot_pid" 2>/dev/null
+    wait "$boot_pid" 2>/dev/null
+    tail -n 30 "$smoke_dir/bootstatus.log" >&2
   fi
   if [ -n "$log_pid" ]; then
     kill -TERM "$log_pid" 2>/dev/null
@@ -115,6 +121,13 @@ device_type="$(sed -n '2p' "$smoke_dir/selection.txt")"
 echo "Smoke simulator: $(sed -n '3p' "$smoke_dir/selection.txt") (fresh ephemeral device)"
 simulator_id="$(bounded 60 xcrun simctl create "MemSwipe-smoke-${GITHUB_RUN_ID:-local}-$$" "$device_type" "$runtime_id")"
 [[ "$simulator_id" =~ ^[0-9A-Fa-f-]{36}$ ]] || { echo 'ERROR: simulator creation returned no valid UUID.' >&2; exit 1; }
+
+# Cold Intel iOS runtimes migrate their data on first boot. Start that work
+# alongside compilation, then require real boot completion before installation.
+bounded 60 xcrun simctl boot "$simulator_id"
+python3 "$helper" 900 xcrun simctl bootstatus "$simulator_id" -b \
+  > "$smoke_dir/bootstatus.log" 2>&1 &
+boot_pid=$!
 
 bounded 900 xcodebuild -project ios/App/App.xcodeproj -scheme ManoSmoke \
   -configuration Release -sdk iphonesimulator -destination "platform=iOS Simulator,id=$simulator_id" \
@@ -194,8 +207,14 @@ SWIFT
 bounded 120 xcrun swift "$smoke_dir/make-video.swift" "$PWD/public/assets/photos/lake.png" "$smoke_dir/lake-fixture.mp4"
 test -s "$smoke_dir/lake-fixture.mp4" || { echo 'ERROR: generated MP4 missing or empty.' >&2; exit 1; }
 
-bounded 60 xcrun simctl boot "$simulator_id"
-bounded 240 xcrun simctl bootstatus "$simulator_id" -b
+if wait "$boot_pid"; then
+  boot_pid=''
+else
+  boot_pid=''
+  tail -n 40 "$smoke_dir/bootstatus.log" >&2
+  echo 'ERROR: first-boot migration did not complete within 900s. No app test or packaging was accepted.' >&2
+  exit 1
+fi
 simulator_booted=1
 # ARM CI failure screenshot showed the installed icon while this command still
 # awaited completion at 60s. Allow one bounded cold install; do not retry blindly.
