@@ -33,10 +33,19 @@ PY
 bounded() { python3 "$helper" "$@"; }
 simulator_id=''
 log_pid=''
+simulator_booted=0
+log_predicate='process == "App" OR process CONTAINS "WebKit"'
 cleanup() {
   local result=$?
   trap - EXIT INT TERM
   set +e
+  if [ "$result" -ne 0 ] && [ "$simulator_booted" -eq 1 ]; then
+    echo 'Collecting diagnostics from the generated-photo-only ephemeral simulator.' >&2
+    bounded 40 xcrun simctl io "$simulator_id" screenshot --type=png "$smoke_dir/failure.png"
+    bounded 60 xcrun simctl spawn "$simulator_id" log show --last 5m --style compact \
+      --predicate "$log_predicate" > "$smoke_dir/failure-unified.log" 2>&1
+    tail -n 100 "$smoke_dir/failure-unified.log" >&2
+  fi
   if [ -n "$log_pid" ]; then
     kill -TERM "$log_pid" 2>/dev/null
     wait "$log_pid" 2>/dev/null
@@ -119,6 +128,7 @@ test -f public/assets/photos/lake.png || { echo 'ERROR: generated test photo mis
 
 bounded 60 xcrun simctl boot "$simulator_id"
 bounded 240 xcrun simctl bootstatus "$simulator_id" -b
+simulator_booted=1
 bounded 60 xcrun simctl install "$simulator_id" "$app"
 # This dedicated simulator contains only this generated public fixture; never real photos.
 bounded 60 xcrun simctl addmedia "$simulator_id" "$PWD/public/assets/photos/lake.png"
@@ -127,9 +137,9 @@ bounded 60 xcrun simctl addmedia "$simulator_id" "$PWD/public/assets/photos/lake
 bounded 120 xcrun simctl privacy "$simulator_id" grant photos "$bundle_id"
 
 log_file="$smoke_dir/photos-read.log"
-python3 "$helper" 180 xcrun simctl spawn "$simulator_id" log stream \
+python3 "$helper" 300 xcrun simctl spawn "$simulator_id" log stream \
   --style compact --level debug \
-  --predicate 'process == "App" AND eventMessage CONTAINS "MEMSWIPE_PHOTOS_READ_OK"' \
+  --predicate "$log_predicate" \
   > "$log_file" 2>&1 &
 log_pid=$!
 sleep 2
@@ -137,24 +147,37 @@ kill -0 "$log_pid" || { echo 'ERROR: simulator unified-log stream failed.' >&2; 
 
 # Library.assets() is invoked by the real bundled JS on mount. A Swift source string,
 # a successful build or a zero-photo read is never sufficient to pass this gate.
-# Relaunch permits asynchronous simulator Photos indexing to finish, bounded to 100s.
-deadline=$((SECONDS + 100))
+# Let cold WKWebView initialization finish. Absence of the native marker must not
+# trigger repeated process termination. Retry once only after a real zero-photo
+# read proves that JS/the bridge started, followed by a Photos indexing grace.
+bounded 60 xcrun simctl launch --terminate-running-process "$simulator_id" "$bundle_id"
+deadline=$((SECONDS + 150))
+zero_since=-1
+relaunches=0
 while [ "$SECONDS" -lt "$deadline" ]; do
-  bounded 20 xcrun simctl launch --terminate-running-process "$simulator_id" "$bundle_id"
   sleep 5
-  if python3 - "$log_file" <<'PY'
+  read_status="$(python3 - "$log_file" <<'PY'
 import re, sys
 text = open(sys.argv[1], errors='replace').read()
 matches = re.findall(r'MEMSWIPE_PHOTOS_READ_OK count=(\d+)\b', text)
-sys.exit(0 if any(int(count) >= 1 for count in matches) else 1)
+print('positive' if any(int(count) >= 1 for count in matches) else 'zero' if matches else 'waiting')
 PY
-  then
-    cat "$log_file"
+)"
+  if [ "$read_status" = positive ]; then
+    grep 'MEMSWIPE_PHOTOS_READ_OK count=' "$log_file"
     echo 'PASS: installed app JavaScript invoked native PhotoLibrary.assets and PhotoKit read >=1 generated photo.'
     exit 0
   fi
+  if [ "$read_status" = zero ] && [ "$relaunches" -eq 0 ]; then
+    if [ "$zero_since" -lt 0 ]; then zero_since=$SECONDS; fi
+    if [ "$((SECONDS - zero_since))" -ge 20 ]; then
+      echo 'Observed a real zero-photo read; relaunching once after 20s indexing grace.' >&2
+      bounded 60 xcrun simctl launch --terminate-running-process "$simulator_id" "$bundle_id"
+      relaunches=1
+    fi
+  fi
   kill -0 "$log_pid" || { echo 'ERROR: unified-log stream ended before the PhotoKit assertion.' >&2; break; }
 done
-cat "$log_file"
+tail -n 120 "$log_file"
 echo 'ERROR: no runtime MEMSWIPE_PHOTOS_READ_OK count>=1 after app launch. JS/native bridge or PhotoKit read failed; packaging is blocked.' >&2
 exit 1
