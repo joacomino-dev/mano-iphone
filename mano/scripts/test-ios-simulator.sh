@@ -54,7 +54,26 @@ trap 'exit 143' TERM
 # Runner-image reference (Xcode 26.3 shares the preinstalled iOS 26.2 runtime):
 # https://github.com/actions/runner-images/blob/main/images/macos/toolsets/toolset-15.json
 # Discover what this exact runner exposes; never download runtimes or guess UDIDs.
-bounded 60 xcrun simctl list -j > "$smoke_dir/inventory.json"
+# Nondefault Xcode can require CoreSimulator cache rebuild before direct access.
+# Runner maintainer's prewarm guidance: https://github.com/actions/runner-images/issues/12862
+# Retry only this read-only startup probe; no simulator or app success is inferred.
+simulator_ready=0
+for attempt in 1 2; do
+  echo "CoreSimulator readiness attempt $attempt/2 (up to 180s)" >&2
+  if bounded 180 xcrun simctl list > /dev/null; then
+    simulator_ready=1
+    break
+  fi
+  if [ "$attempt" -lt 2 ]; then
+    echo 'CoreSimulator is not ready; allow cache rebuild and retry once.' >&2
+    sleep 5
+  fi
+done
+if [ "$simulator_ready" -ne 1 ]; then
+  echo 'ERROR: CoreSimulator did not become ready after two bounded probes. PhotoKit smoke test has NOT passed; packaging is blocked.' >&2
+  exit 1
+fi
+bounded 120 xcrun simctl list -j > "$smoke_dir/inventory.json"
 sdk_version="$(bounded 30 xcrun --sdk iphonesimulator --show-sdk-version)"
 python3 - "$smoke_dir/inventory.json" "$sdk_version" > "$smoke_dir/selection.txt" <<'PY'
 import json, sys
