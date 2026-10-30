@@ -218,7 +218,8 @@
 .inspection-actions .inspection-close{padding:0 var(--cw-space-4);background:var(--cw-paper);color:var(--cw-ink);font-weight:600;white-space:nowrap}
 .inspection-pin{padding:0 var(--cw-space-4);background:var(--cw-teal-800);box-shadow:inset 0 0 0 1px var(--cw-line-on-bg);pointer-events:none}
 .geek-panel{width:100%;max-height:28%;overflow:auto;box-sizing:border-box;flex-shrink:0;padding:var(--cw-space-3) var(--cw-space-4);border-radius:var(--cw-radius-md);background:var(--cw-teal-800);box-shadow:inset 0 0 0 1px var(--cw-line-on-bg);color:var(--cw-paper);font-size:var(--cw-text-xs);user-select:text}
-.geek-panel strong{font:500 var(--cw-text-xs) var(--cw-font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--cw-yellow)}
+/* No text-transform: WebKit exposes transformed text to VoiceOver and XCTest. */
+.geek-panel strong{font:500 var(--cw-text-xs) var(--cw-font-mono);letter-spacing:.08em;color:var(--cw-yellow)}
 .geek-panel dl{margin:var(--cw-space-2) 0}.geek-panel dl>div{display:grid;grid-template-columns:96px 1fr;gap:var(--cw-space-3);padding:var(--cw-space-1) 0;border-bottom:1px solid rgba(242,231,213,.1)}
 .geek-panel dt{color:var(--cw-on-bg-soft)}.geek-panel dd{margin:0;overflow-wrap:anywhere;font-family:var(--cw-font-mono)}.geek-panel small{color:var(--cw-on-bg-soft);font-size:var(--cw-text-xs)}
 .mano-app:has(.inspection.is-pinned) .archive-header,.mano-app:has(.inspection.is-pinned) .archive-tools{visibility:hidden}
