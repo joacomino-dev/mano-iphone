@@ -1,28 +1,30 @@
 # CocoWash — estado operativo conocido
 
 - Actualizado: 2026-10-30, America/Bogota. Snapshot local, no estado en tiempo real.
-- Checkout: `C:/Users/Joaco/OneDrive/Documentos/ChatGPT/iPhone`; main,
-  HEAD `0a6d32d65d273b1408ef79bedc728acf9579fad1`, dirty. Inventario de Fase 0:
-  31 rutas staged, 3 unstaged (solapan), 27 untracked. Encima, sin stage: rediseño
-  CW-CL-002 en mano/src/{ManoApp.tsx,Filters.tsx,prototype.css} + docs. No commit; remoto no consultado.
-- Último Claude: CW-CL-003 (render nativo simulado, 2 correcciones CSS) sobre CW-CL-002, rediseño visual completo «Sello y papel» autorizado por
-  el usuario e implementado en local. Checks Node PASS; capturas solo de la demo. Informe
-  [CLAUDE_REDESIGN](../ai-handoff/CLAUDE_REDESIGN_CW-CL-002.md).
-- Último Codex: CW-CX-003, recepción, revisión técnica, orden aprobado actualizado
-  y Fase 0 completada. Sin cambios a aplicación, assets, configuración ni dependencias.
-- Activas/reservas: Claude liberó ManoApp/Filters/prototype.css al entregar. Codex reserva revisión de semántica
-  Favoritos/cartas, alcance Reduce Motion, contratos nativos, lógica de avisos y QA.
+- Remoto: `origin/main` contiene CocoWash 0.4 (Codex), los arreglos del runner Intel,
+  el rediseño «Sello y papel» (8e73093) y los documentos de colaboración/handoff.
+- Checkout: `C:/Users/Joaco/OneDrive/Documentos/ChatGPT/iPhone`; main local sincronizada
+  con origin/main + **1 commit local sin push** (mano/CLAUDE.md y mano/tools/). Ver CW-HO-004.
+  Sin publicar a propósito: `CURRENT.md` (notas operativas privadas de Codex, sin seguimiento).
+- Último Claude: CW-CL-005, publicación y preparación de la compilación. Antes: CW-CL-002/003
+  (rediseño y render nativo simulado). Informe [CLAUDE_REDESIGN](../ai-handoff/CLAUDE_REDESIGN_CW-CL-002.md).
+- Último Codex: CW-CX-003, recepción, revisión técnica, orden aprobado actualizado y Fase 0 completada.
 - Protección: respaldo externo verificado en
-  `C:/Users/Joaco/CocoWash-Backups/20261030T173452Z-pre-redesign/`.
-  ZIP con .git/índice/fuentes/locales, SHA256 por archivo y restauración aislada;
-  git fsck/HEAD/refs/stage/status correctos. Documentos finales en handoff-addendum.
-  Excluye dependencias/build/cachés/work/outputs y no respalda Fotos ni datos iPhone.
-- Pendiente integrar: trabajo previo y entregas Codex/Claude sin commit. Copia local
-  permite trabajo secuencial recuperable; no autoriza commits ni paralelismo.
-- Bloqueo vigente: ninguno para revisar. Integrar requiere revisión del diff por
-  Codex, QA en macOS/simulador (hoja nativa, VoiceOver, Dynamic Type, vídeo) y
-  autorización de commit. Playwright test:runtime no se ejecutó.
-- Próximo: Codex recibe CW-HO-003 y revisa el diff mixto y sus dependencias.
+  `C:/Users/Joaco/CocoWash-Backups/20261030T173452Z-pre-redesign/` (estado previo al rediseño).
+- CI: run iOS [41124449495](https://github.com/joacomino-dev/mano-iphone/actions/runs/41124449495)
+  sobre 8e73093, en curso al cerrar Claude; resultado sin consultar. Un push que toque `mano/**`
+  en main cancela el run en curso del mismo ref (`cancel-in-progress`).
+- Pendiente: revisión del diff por Codex (CW-HO-003), QA en dispositivo (hoja nativa, VoiceOver,
+  Dynamic Type, vídeo), release/IPA verificado. Playwright test:runtime no se ejecutó.
+- Próximo: Codex recibe CW-HO-004 y lanza la compilación.
+
+## CW-HO-004 — compilación lista para lanzar, Claude → Codex
+
+**Lista, no recibida.** main local = origin/main + 1 commit local (mano/CLAUDE.md, mano/tools/
+de Codex). Para compilar: comprobar que el run 41124449495 terminó (o aceptar cancelarlo), luego
+`git push origin main` desde la raíz: el workflow «Build Mano for AltStore» arranca solo por tocar
+`mano/**`. Alternativa sin push: *Run workflow* (workflow_dispatch) en Actions. El IPA sale como
+artefacto `Mano-AltStore`; publicar release solo tras verificar el run (ver CURRENT.md).
 
 ## CW-HO-003 — rediseño entregado, Claude → Codex
 

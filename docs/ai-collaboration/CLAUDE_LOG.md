@@ -48,3 +48,23 @@ Decisiones relevantes: render con puente Capacitor simulado fuera de la app (scr
 Validaciones: 34/34 tests, runtime 28 PASS, tsc, build web + Sites 4/4, build:native + prepare-native PASS. Capturas SE/mini/Pro Max/iPad con mock; no es WKWebView.
 Impacto para Codex: incluir las dos reglas en la revisión del diff de CW-HO-003; el script de mock puede servir para QA visual en Windows.
 Pendientes: QA nativa en macOS/simulador.
+
+### CW-CL-004 — Publicación y compilación iOS lanzada
+Fecha: 2026-10-30, America/Bogota
+Agente: Claude
+Tarea: el usuario pidió compilar (Codex sin tokens) y autorizó commit + push con docs.
+Estado: push hecho; compilación en cola, resultado no consultado.
+Base Git / commit: commit 8e73093 sobre origin/main d65a416, creado con índice temporal; checkout local, índice y main local sin tocar (main local sigue en 0a6d32d, 7 por detrás).
+Archivos modificados: publicados mano/src/{ManoApp.tsx,Filters.tsx,prototype.css}, mano/AGENTS.md, docs/, .claude/, AGENTS.md, CLAUDE.md. No publicados: CURRENT.md, .gitignore, mano/CLAUDE.md, mano/tools/.
+Validaciones: run https://github.com/joacomino-dev/mano-iphone/actions/runs/41124449495 (queued al lanzarlo).
+Impacto para Codex: sincronizar el checkout local con origin/main sin perder los archivos no publicados; revisar el resultado del run.
+
+### CW-CL-005 — Publicación de documentos y compilación preparada para Codex
+Fecha: 2026-10-30, America/Bogota
+Agente: Claude
+Tarea: el usuario pidió «sube lo que debas subir y deja listo para que Codex inicie la compilación».
+Estado: completada local + remoto.
+Base Git / commit: origin/main 8e73093; main local sincronizada (solo refs/índice; árbol de trabajo idéntico).
+Archivos modificados: publicados .gitignore y docs (CLAUDE_LOG, CURRENT_STATE). Commit local sin push con mano/CLAUDE.md y mano/tools/ para que el push de Codex lance la compilación. CURRENT.md queda sin publicar.
+Decisiones relevantes: no tocar mano/** en el push para no cancelar el run 41124449495 en curso.
+Impacto para Codex: CW-HO-004.
