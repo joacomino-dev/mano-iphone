@@ -116,16 +116,29 @@ echo "Smoke simulator: $(sed -n '3p' "$smoke_dir/selection.txt") (fresh ephemera
 simulator_id="$(bounded 60 xcrun simctl create "MemSwipe-smoke-${GITHUB_RUN_ID:-local}-$$" "$device_type" "$runtime_id")"
 [[ "$simulator_id" =~ ^[0-9A-Fa-f-]{36}$ ]] || { echo 'ERROR: simulator creation returned no valid UUID.' >&2; exit 1; }
 
+# SwiftPM: run 41140716793 failed because the runner's global SwiftPM state pointed at
+# a capacitor-swift-pm clone that no longer existed. A custom -packageCachePath (run
+# 41142509421) skipped package resolution entirely ("Missing package product
+# 'CapApp-SPM'"), so keep Xcode's default resolution and reset only the disposable
+# runner's global SwiftPM state, then resolve explicitly and verify before building.
+rm -rf "$HOME/Library/Caches/org.swift.swiftpm" "$HOME/Library/org.swift.swiftpm"
+bounded 240 xcodebuild -resolvePackageDependencies -project ios/App/App.xcodeproj -scheme ManoSmoke \
+  -derivedDataPath build/simulator-smoke/DerivedData \
+  > "$smoke_dir/resolve.log" 2>&1 || { tail -n 60 "$smoke_dir/resolve.log"; echo 'ERROR: Swift package resolution failed.' >&2; exit 1; }
+test -d build/simulator-smoke/DerivedData/SourcePackages/checkouts/capacitor-swift-pm || {
+  tail -n 60 "$smoke_dir/resolve.log"
+  echo 'ERROR: capacitor-swift-pm was not resolved; CapApp-SPM cannot build.' >&2
+  exit 1
+}
+grep -E 'Resolved source packages|capacitor-swift-pm|CapApp-SPM' "$smoke_dir/resolve.log" || true
+
 # Build BEFORE booting. Run 41124449495 overlapped first-boot data migration with
 # compilation: ibtool/actool (which use CoreSimulator services) stalled 15 min
-# without compiling any app Swift. Unbooted, this build took ~3.5 min (run 40964299983)
-# and ~2 min (run 41132758705); 480s keeps the step budget for the import below.
-# Private SwiftPM cache: run 41140716793 failed resolving capacitor-swift-pm because the
-# runner's global cache pointed at a missing clone. The device build in the workflow reuses it.
-bounded 480 xcodebuild -project ios/App/App.xcodeproj -scheme ManoSmoke \
+# without compiling any app Swift. Unbooted, this build took ~2–3.5 min
+# (runs 40964299983, 41132758705); 420s keeps the step budget below 38 min.
+bounded 420 xcodebuild -project ios/App/App.xcodeproj -scheme ManoSmoke \
   -configuration Release -sdk iphonesimulator -destination "platform=iOS Simulator,id=$simulator_id" \
   -derivedDataPath build/simulator-smoke/DerivedData \
-  -packageCachePath build/simulator-smoke/PackageCache \
   CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' build-for-testing \
   > "$smoke_dir/build.log" 2>&1 || { tail -n 100 "$smoke_dir/build.log"; exit 1; }
 app="$smoke_dir/DerivedData/Build/Products/Release-iphonesimulator/App.app"
@@ -201,12 +214,12 @@ SWIFT
 bounded 120 xcrun swift "$smoke_dir/make-video.swift" "$PWD/public/assets/photos/lake.png" "$smoke_dir/lake-fixture.mp4"
 test -s "$smoke_dir/lake-fixture.mp4" || { echo 'ERROR: generated MP4 missing or empty.' >&2; exit 1; }
 
-# Cold Intel iOS runtimes migrate their data on first boot: observed 4m48s
-# (run 41124449495); 240s was too short (run 40964299983). Wait sequentially.
+# Cold Intel iOS runtimes migrate their data on first boot: observed 2m55s–4m48s
+# (runs 41132758705, 41124449495); 240s was too short (run 40964299983). Wait sequentially.
 bounded 60 xcrun simctl boot "$simulator_id"
-if ! bounded 600 xcrun simctl bootstatus "$simulator_id" -b > "$smoke_dir/bootstatus.log" 2>&1; then
+if ! bounded 480 xcrun simctl bootstatus "$simulator_id" -b > "$smoke_dir/bootstatus.log" 2>&1; then
   tail -n 40 "$smoke_dir/bootstatus.log" >&2
-  echo 'ERROR: first-boot migration did not complete within 600s. No app test or packaging was accepted.' >&2
+  echo 'ERROR: first-boot migration did not complete within 480s. No app test or packaging was accepted.' >&2
   exit 1
 fi
 simulator_booted=1
@@ -237,7 +250,6 @@ kill -0 "$log_pid" || { echo 'ERROR: simulator unified-log stream failed.' >&2; 
 bounded 900 xcodebuild -project ios/App/App.xcodeproj -scheme ManoSmoke \
   -configuration Release -sdk iphonesimulator -destination "platform=iOS Simulator,id=$simulator_id" \
   -derivedDataPath build/simulator-smoke/DerivedData \
-  -packageCachePath build/simulator-smoke/PackageCache \
   -resultBundlePath build/simulator-smoke/PhotosSmoke.xcresult \
   -only-testing:ManoUITests/PhotosSmokeTests/testFullPhotosAuthorizationStartsSession \
   -parallel-testing-enabled NO -maximum-concurrent-test-simulator-destinations 1 \

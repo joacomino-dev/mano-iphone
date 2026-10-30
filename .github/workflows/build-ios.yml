@@ -63,6 +63,8 @@ jobs:
             mano/build/simulator-smoke/failure-unified.log
             mano/build/simulator-smoke/failure.png
             mano/build/simulator-smoke/build.log
+            mano/build/simulator-smoke/resolve.log
+            mano/build/simulator-smoke/bootstatus.log
             mano/build/simulator-smoke/ui-test.log
             mano/build/simulator-smoke/PhotosSmoke.xcresult
             mano/build/simulator-smoke/selection.txt
@@ -71,7 +73,7 @@ jobs:
       - name: Build unsigned iPhone app
         run: |
           xcodebuild -version
-          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/ios -packageCachePath build/simulator-smoke/PackageCache CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' build
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/ios CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' build
       - name: Package for personal signing in AltStore
         run: |
           mkdir -p build/package/Payload
