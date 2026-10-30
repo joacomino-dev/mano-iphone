@@ -21,7 +21,7 @@ final class PhotosSmokeTests: XCTestCase {
         }
 
         // Welcome requests Photos immediately. Grant the real OS prompt BEFORE
-        // touching Iniciar sesión; a covered/disabled start button is not a failure.
+        // touching Empezar a revisar; a covered/disabled start button is not a failure.
         // This prompt is an expected step: address SpringBoard directly rather
         // than an interruption monitor or simulated permission response.
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
@@ -38,15 +38,18 @@ final class PhotosSmokeTests: XCTestCase {
         }
         fullAccess.tap()
 
-        let start = app.buttons["Iniciar sesión"].firstMatch
+        // Fresh simulator state: no saved session, so the CTA is not «Continuar revisión».
+        let start = app.buttons["Empezar a revisar"].firstMatch
         guard start.waitForExistence(timeout: 120) else {
-            XCTFail("The authorized welcome screen did not expose Iniciar sesión.\n\(app.debugDescription)")
+            XCTFail("The authorized welcome screen did not expose Empezar a revisar.\n\(app.debugDescription)")
             return
         }
         XCTAssertTrue(start.isHittable, "Authorized welcome must permit starting a session.")
         start.tap()
 
-        let finish = app.buttons["Finalizar sesión"].firstMatch
+        // Session header «Terminar» (#review-trigger); its label may append a hidden
+        // discard count, and the review sheet's «Terminar …» buttons are not mounted yet.
+        let finish = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Terminar")).firstMatch
         guard finish.waitForExistence(timeout: 90) else {
             XCTFail("Full Photos authorization and bounded media warmup did not open the real review session.\n\(app.debugDescription)")
             return
@@ -61,7 +64,7 @@ final class PhotosSmokeTests: XCTestCase {
         let album = app.buttons["Álbum"].firstMatch
         XCTAssertTrue(album.waitForExistence(timeout: 15))
         album.tap()
-        let create = app.buttons["Crear nuevo álbum"].firstMatch
+        let create = app.buttons["Crear álbum nuevo"].firstMatch
         XCTAssertTrue(create.waitForExistence(timeout: 15))
         create.tap()
         let name = app.textFields["Por ejemplo, Verano"].firstMatch

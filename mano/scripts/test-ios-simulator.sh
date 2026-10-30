@@ -33,7 +33,6 @@ PY
 bounded() { python3 "$helper" "$@"; }
 simulator_id=''
 log_pid=''
-boot_pid=''
 simulator_booted=0
 log_predicate='process == "App" OR process CONTAINS "WebKit"'
 failure_predicate="$log_predicate OR process == \"installd\" OR process == \"installcoordinationd\" OR process == \"lsd\" OR process == \"SpringBoard\""
@@ -47,11 +46,6 @@ cleanup() {
     bounded 60 xcrun simctl spawn "$simulator_id" log show --last 5m --style compact \
       --predicate "$failure_predicate" > "$smoke_dir/failure-unified.log" 2>&1
     tail -n 100 "$smoke_dir/failure-unified.log" >&2
-  fi
-  if [ -n "$boot_pid" ]; then
-    kill -TERM "$boot_pid" 2>/dev/null
-    wait "$boot_pid" 2>/dev/null
-    tail -n 30 "$smoke_dir/bootstatus.log" >&2
   fi
   if [ -n "$log_pid" ]; then
     kill -TERM "$log_pid" 2>/dev/null
@@ -122,14 +116,10 @@ echo "Smoke simulator: $(sed -n '3p' "$smoke_dir/selection.txt") (fresh ephemera
 simulator_id="$(bounded 60 xcrun simctl create "MemSwipe-smoke-${GITHUB_RUN_ID:-local}-$$" "$device_type" "$runtime_id")"
 [[ "$simulator_id" =~ ^[0-9A-Fa-f-]{36}$ ]] || { echo 'ERROR: simulator creation returned no valid UUID.' >&2; exit 1; }
 
-# Cold Intel iOS runtimes migrate their data on first boot. Start that work
-# alongside compilation, then require real boot completion before installation.
-bounded 60 xcrun simctl boot "$simulator_id"
-python3 "$helper" 900 xcrun simctl bootstatus "$simulator_id" -b \
-  > "$smoke_dir/bootstatus.log" 2>&1 &
-boot_pid=$!
-
-bounded 900 xcodebuild -project ios/App/App.xcodeproj -scheme ManoSmoke \
+# Build BEFORE booting. Run 41124449495 overlapped first-boot data migration with
+# compilation: ibtool/actool (which use CoreSimulator services) stalled 15 min
+# without compiling any app Swift. Unbooted, this build took ~3.5 min (run 40964299983).
+bounded 600 xcodebuild -project ios/App/App.xcodeproj -scheme ManoSmoke \
   -configuration Release -sdk iphonesimulator -destination "platform=iOS Simulator,id=$simulator_id" \
   -derivedDataPath build/simulator-smoke/DerivedData \
   CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' build-for-testing \
@@ -207,12 +197,12 @@ SWIFT
 bounded 120 xcrun swift "$smoke_dir/make-video.swift" "$PWD/public/assets/photos/lake.png" "$smoke_dir/lake-fixture.mp4"
 test -s "$smoke_dir/lake-fixture.mp4" || { echo 'ERROR: generated MP4 missing or empty.' >&2; exit 1; }
 
-if wait "$boot_pid"; then
-  boot_pid=''
-else
-  boot_pid=''
+# Cold Intel iOS runtimes migrate their data on first boot: observed 4m48s
+# (run 41124449495); 240s was too short (run 40964299983). Wait sequentially.
+bounded 60 xcrun simctl boot "$simulator_id"
+if ! bounded 600 xcrun simctl bootstatus "$simulator_id" -b > "$smoke_dir/bootstatus.log" 2>&1; then
   tail -n 40 "$smoke_dir/bootstatus.log" >&2
-  echo 'ERROR: first-boot migration did not complete within 900s. No app test or packaging was accepted.' >&2
+  echo 'ERROR: first-boot migration did not complete within 600s. No app test or packaging was accepted.' >&2
   exit 1
 fi
 simulator_booted=1
@@ -234,7 +224,7 @@ sleep 2
 kill -0 "$log_pid" || { echo 'ERROR: simulator unified-log stream failed.' >&2; cat "$log_file"; exit 1; }
 
 # XCTest owns exactly one app launch, explicitly allows FULL access on welcome,
-# then taps Iniciar sesión and requires Finalizar sesión after warmup. It also
+# then taps Empezar a revisar and requires Terminar after warmup. It also
 # creates a fixture-only album and reads local Geek metadata through the UI.
 # Disable simulator cloning
 # and parallel runs so that the test uses this exact generated-photo-only device.
