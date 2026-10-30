@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-30",
+  "sourceHead": "0a6d32d65d273b1408ef79bedc728acf9579fad1",
+  "source": "dirty working tree; see PROJECT_MAP.md",
+  "url": "http://127.0.0.1:4183/",
+  "browser": "156.0.4314.56",
+  "viewport": {
+    "width": 1100,
+    "height": 1100
+  },
+  "deviceScaleFactor": 1,
+  "reducedMotion": "reduce",
+  "iphoneScreen": {
+    "width": 393,
+    "height": 852
+  },
+  "pixelScreen": {
+    "width": 427,
+    "height": 952
+  },
+  "media": "generated demo only",
+  "pageErrors": [],
+  "trackedWorkingFilesFingerprint": {
+    "algorithm": "SHA256 over sorted git ls-files mano .github paths: UTF-8 path + NUL + raw-file SHA256 bytes",
+    "fileCount": 114,
+    "sha256": "4fe3dd50c4bf445b51368e5a48b24ab27da02e490b553c31e8b5e28f596f97ca"
+  },
+  "initialUnstagedDiffSha256": "3f2f7658d3b202d46b61ba836bc06588b66ab237f7325b01d637c7cbc0ee16be",
+  "initialStagedDiffSha256": "30f23e4357666276380b27cfc2655453b46f8fecbde7cca6d2037e96ca28ff11"
+}

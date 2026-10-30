@@ -1,0 +1,15 @@
+{
+  "date": "2026-10-30",
+  "intervention": "CW-CL-002 redesign «Sello y papel»",
+  "sourceHead": "0a6d32d65d273b1408ef79bedc728acf9579fad1",
+  "source": "dirty working tree (Fase 0 base + CW-CL-002 unstaged UI changes); not committed",
+  "url": "http://localhost:4184/ (Vite dev, same app as 4183 reference)",
+  "browser": "Microsoft Edge 156.0.4314.56 via Playwright channel msedge",
+  "viewport": { "width": 1100, "height": 1100 },
+  "deviceScaleFactor": 1,
+  "reducedMotion": "reduce for 01–11; no-preference for 12–13 (frames ~30 ms after a decision)",
+  "presets": ["iPhone 393x852", "Pixel 10 427x952 (07 only; no Android plugin)"],
+  "media": "generated demo only (lake.png, demo-video.mp4); no personal photos",
+  "notDemonstrated": ["installed WKWebView", "native Radix sheet", "Dynamic Type", "VoiceOver", "real PhotoKit/iCloud/Live Photo", "short-height iPhones"],
+  "consoleErrors": ["one 404 resource also present before the redesign; not a pageerror"]
+}

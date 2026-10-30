@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "cocowash-demo",
+      "runtimeExecutable": "C:\\Users\\Joaco\\AppData\\Local\\OpenAI\\Codex\\runtimes\\cua_node\\5c41f77a7900391c\\bin\\node.exe",
+      "runtimeArgs": ["mano/node_modules/vite/bin/vite.js", "mano", "--host", "127.0.0.1", "--port", "4183", "--strictPort"],
+      "port": 4183
+    }
+  ]
+}
