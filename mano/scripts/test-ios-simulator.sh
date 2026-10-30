@@ -120,9 +120,12 @@ simulator_id="$(bounded 60 xcrun simctl create "MemSwipe-smoke-${GITHUB_RUN_ID:-
 # compilation: ibtool/actool (which use CoreSimulator services) stalled 15 min
 # without compiling any app Swift. Unbooted, this build took ~3.5 min (run 40964299983)
 # and ~2 min (run 41132758705); 480s keeps the step budget for the import below.
+# Private SwiftPM cache: run 41140716793 failed resolving capacitor-swift-pm because the
+# runner's global cache pointed at a missing clone. The device build in the workflow reuses it.
 bounded 480 xcodebuild -project ios/App/App.xcodeproj -scheme ManoSmoke \
   -configuration Release -sdk iphonesimulator -destination "platform=iOS Simulator,id=$simulator_id" \
   -derivedDataPath build/simulator-smoke/DerivedData \
+  -packageCachePath build/simulator-smoke/PackageCache \
   CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' build-for-testing \
   > "$smoke_dir/build.log" 2>&1 || { tail -n 100 "$smoke_dir/build.log"; exit 1; }
 app="$smoke_dir/DerivedData/Build/Products/Release-iphonesimulator/App.app"
@@ -234,6 +237,7 @@ kill -0 "$log_pid" || { echo 'ERROR: simulator unified-log stream failed.' >&2; 
 bounded 900 xcodebuild -project ios/App/App.xcodeproj -scheme ManoSmoke \
   -configuration Release -sdk iphonesimulator -destination "platform=iOS Simulator,id=$simulator_id" \
   -derivedDataPath build/simulator-smoke/DerivedData \
+  -packageCachePath build/simulator-smoke/PackageCache \
   -resultBundlePath build/simulator-smoke/PhotosSmoke.xcresult \
   -only-testing:ManoUITests/PhotosSmokeTests/testFullPhotosAuthorizationStartsSession \
   -parallel-testing-enabled NO -maximum-concurrent-test-simulator-destinations 1 \

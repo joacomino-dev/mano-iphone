@@ -71,7 +71,7 @@ jobs:
       - name: Build unsigned iPhone app
         run: |
           xcodebuild -version
-          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/ios CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' build
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/ios -packageCachePath build/simulator-smoke/PackageCache CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' build
       - name: Package for personal signing in AltStore
         run: |
           mkdir -p build/package/Payload
