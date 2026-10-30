@@ -35,7 +35,7 @@ simulator_id=''
 log_pid=''
 simulator_booted=0
 log_predicate='process == "App" OR process CONTAINS "WebKit"'
-failure_predicate="$log_predicate OR process == \"installd\" OR process == \"installcoordinationd\" OR process == \"lsd\" OR process == \"SpringBoard\""
+failure_predicate="$log_predicate OR process == \"installd\" OR process == \"installcoordinationd\" OR process == \"lsd\" OR process == \"SpringBoard\" OR process == \"assetsd\" OR process == \"photolibraryd\""
 cleanup() {
   local result=$?
   trap - EXIT INT TERM
@@ -118,8 +118,9 @@ simulator_id="$(bounded 60 xcrun simctl create "MemSwipe-smoke-${GITHUB_RUN_ID:-
 
 # Build BEFORE booting. Run 41124449495 overlapped first-boot data migration with
 # compilation: ibtool/actool (which use CoreSimulator services) stalled 15 min
-# without compiling any app Swift. Unbooted, this build took ~3.5 min (run 40964299983).
-bounded 600 xcodebuild -project ios/App/App.xcodeproj -scheme ManoSmoke \
+# without compiling any app Swift. Unbooted, this build took ~3.5 min (run 40964299983)
+# and ~2 min (run 41132758705); 480s keeps the step budget for the import below.
+bounded 480 xcodebuild -project ios/App/App.xcodeproj -scheme ManoSmoke \
   -configuration Release -sdk iphonesimulator -destination "platform=iOS Simulator,id=$simulator_id" \
   -derivedDataPath build/simulator-smoke/DerivedData \
   CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' build-for-testing \
@@ -210,7 +211,9 @@ simulator_booted=1
 # awaited completion at 60s. Allow one bounded cold install; do not retry blindly.
 bounded 180 xcrun simctl install "$simulator_id" "$app"
 # Only generated public fixtures are imported; never real photos or videos.
-bounded 60 xcrun simctl addmedia "$simulator_id" "$PWD/public/assets/photos/lake.png" "$smoke_dir/lake-fixture.mp4"
+# The first import creates the fresh device's Photos library: ~60s even ~4 min
+# after boot (run 40966694363); right after boot it exceeded 60s (run 41132758705).
+bounded 180 xcrun simctl addmedia "$simulator_id" "$PWD/public/assets/photos/lake.png" "$smoke_dir/lake-fixture.mp4"
 # Do not pregrant Photos: on this iOS runtime that can leave .readWrite
 # notDetermined. XCTest requests permission through the real app and OS dialog.
 
