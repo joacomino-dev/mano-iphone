@@ -251,7 +251,8 @@
 .field{display:flex;flex-direction:column;gap:var(--cw-space-2);margin:var(--cw-space-4) 0 0;font-size:var(--cw-text-sm);font-weight:600}
 .field-label{margin:var(--cw-space-4) 0 var(--cw-space-2);font-size:var(--cw-text-sm);font-weight:600}
 .field select,.new-album input,.date-fields input{box-sizing:border-box;width:100%;min-width:0;min-height:var(--cw-control);padding:0 var(--cw-space-3);border:1.5px solid var(--cw-line-strong);border-radius:var(--cw-radius-md);
-  background:var(--cw-field);color:var(--cw-ink);font:400 var(--cw-text-md) var(--cw-font)}
+  /* 16px minimum: iOS WebKit zooms the whole page into smaller fields on focus. */
+  background:var(--cw-field);color:var(--cw-ink);font:400 1rem var(--cw-font)}
 .field select{appearance:none;-webkit-appearance:none;padding-right:40px;background:var(--cw-field) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 256 256'%3E%3Cpath fill='none' stroke='%23122D2E' stroke-width='24' stroke-linecap='round' stroke-linejoin='round' d='M208 96l-80 80-80-80'/%3E%3C/svg%3E") right 14px center/14px no-repeat}
 .check-field{display:flex;align-items:center;gap:var(--cw-space-2);min-height:var(--cw-touch)}
 /* Album list */
