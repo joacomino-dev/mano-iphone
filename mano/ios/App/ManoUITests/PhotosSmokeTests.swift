@@ -12,6 +12,12 @@ final class PhotosSmokeTests: XCTestCase {
         // photo + H.264 fixtures. No native deletion or personal device is used.
         let app = XCUIApplication()
         app.resetAuthorizationStatus(for: .photos)
+        // Log any system alert XCTest has to handle mid-test (run 41166497344 lost a
+        // «Cerrar» tap to one). Returning false keeps XCTest's default handling.
+        addUIInterruptionMonitor(withDescription: "System alert") { alert in
+            print("COCOWASH_UI_INTERRUPTION label=\(alert.label) buttons=\(alert.buttons.allElementsBoundByIndex.map(\.label))")
+            return false
+        }
         app.launch()
         defer {
             let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
@@ -90,7 +96,7 @@ final class PhotosSmokeTests: XCTestCase {
         album.tap()
         let createdAlbum = app.buttons[fixtureAlbum].firstMatch
         XCTAssertTrue(createdAlbum.waitForExistence(timeout: 30), "Created native album must be returned by PhotoKit.")
-        app.buttons["Cerrar"].firstMatch.tap()
+        XCTAssertTrue(closeOverlay(app, until: finish), "«Cerrar» must close the album sheet.")
         print("COCOWASH_UI_GENERATED_ALBUM_OK")
 
         // Enable Geek in Ajustes (display settings apply immediately), then hold a
@@ -112,9 +118,11 @@ final class PhotosSmokeTests: XCTestCase {
         }
         XCTAssertTrue(geek.isHittable, "Geek switch must be reachable in Ajustes.")
         geek.tap()
-        app.buttons["Cerrar"].firstMatch.tap()
-        expectation(for: returnedToSession, evaluatedWith: finish)
-        waitForExpectations(timeout: 30)
+        guard closeOverlay(app, until: finish) else {
+            attachScreenshot(app, "Filtros y ajustes did not close")
+            XCTFail("«Cerrar» must close Filtros y ajustes and return to the session.")
+            return
+        }
         // Gate: Modo Geek adds an explicit «Ver datos del archivo» control to the top
         // card (a real button, like the old «Ampliar y anclar»). It opens the anchored
         // view whose Geek panel proves the native metadata read.
@@ -124,7 +132,7 @@ final class PhotosSmokeTests: XCTestCase {
             XCTFail("Modo Geek must add the data control to the top card.")
             return
         }
-        info.tap()
+        info.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
         guard app.staticTexts["Anclada"].firstMatch.waitForExistence(timeout: 15) else {
             attachScreenshot(app, "Data control did not open the anchored view")
             XCTFail("The data control must open the anchored view.")
@@ -134,8 +142,12 @@ final class PhotosSmokeTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Ancho"].firstMatch.waitForExistence(timeout: 30))
         XCTAssertTrue(app.staticTexts["Alto"].firstMatch.exists)
         XCTAssertTrue(app.staticTexts["Solo datos disponibles localmente. Sin descargar originales."].firstMatch.exists)
-        app.buttons["Cerrar"].firstMatch.tap()
         print("COCOWASH_UI_LOCAL_METADATA_OK")
+        guard closeOverlay(app, until: finish) else {
+            attachScreenshot(app, "Anchored view did not close")
+            print("COCOWASH_UI_PROBE skipped: anchored view did not close")
+            return
+        }
 
         // Diagnostic probes, not gates. Synthesized double tap and press-and-drag on
         // the card did not reach the anchored view in runs 41162917606/41164527679
@@ -150,16 +162,37 @@ final class PhotosSmokeTests: XCTestCase {
         press.doubleTap()
         let doubleTapped = app.staticTexts["Anclada"].firstMatch.waitForExistence(timeout: 6)
         print(doubleTapped ? "COCOWASH_UI_DOUBLE_TAP_OK" : "COCOWASH_UI_DOUBLE_TAP_UNCONFIRMED")
-        if doubleTapped { app.buttons["Cerrar"].firstMatch.tap(); _ = finish.waitForExistence(timeout: 10) }
+        if doubleTapped, !closeOverlay(app, until: finish) { print("COCOWASH_UI_PROBE stopped: anchored view did not close"); return }
         let dock = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.89))
         press.press(forDuration: 1.0, thenDragTo: dock, withVelocity: .slow, thenHoldForDuration: 0.4)
         attachScreenshot(app, "After hold and drag to the anchor dock")
         if app.staticTexts["Anclada"].firstMatch.waitForExistence(timeout: 6) {
             print("COCOWASH_UI_ANCHOR_GESTURE_OK")
-            app.buttons["Cerrar"].firstMatch.tap()
+            _ = closeOverlay(app, until: finish)
         } else {
             print("COCOWASH_UI_ANCHOR_GESTURE_UNCONFIRMED")
         }
+    }
+
+    /// Taps «Cerrar» (sheet header or anchored view) by coordinate and confirms the
+    /// session is usable again. A system interruption handled mid-tap invalidates
+    /// a targeted element and fails the test outright (run 41166497344); a
+    /// coordinate tap is re-aimed on each attempt and the result is checked.
+    @MainActor private func closeOverlay(_ app: XCUIApplication, until session: XCUIElement) -> Bool {
+        for attempt in 1...3 {
+            let close = app.buttons["Cerrar"].firstMatch
+            if close.waitForExistence(timeout: 5), close.isHittable {
+                close.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            }
+            let deadline = Date().addingTimeInterval(8)
+            while Date() < deadline {
+                // Both overlays own the only exact «Cerrar»; gone + session hittable = closed.
+                if !app.buttons["Cerrar"].firstMatch.exists && session.exists && session.isHittable { return true }
+                Thread.sleep(forTimeInterval: 0.25)
+            }
+            print("COCOWASH_UI_CLOSE_RETRY \(attempt)")
+        }
+        return false
     }
 
     @MainActor private func attachScreenshot(_ app: XCUIApplication, _ name: String) {
