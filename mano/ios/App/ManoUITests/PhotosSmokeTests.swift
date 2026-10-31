@@ -96,8 +96,13 @@ final class PhotosSmokeTests: XCTestCase {
         // Enable Geek in Ajustes (display settings apply immediately), then hold a
         // photo and drag it to the bottom anchor dock. Metadata proves the native read.
         app.buttons["Filtros"].firstMatch.tap()
-        let settingsTab = app.buttons["Ajustes"].firstMatch
-        XCTAssertTrue(settingsTab.waitForExistence(timeout: 15))
+        // The section switch uses aria-pressed, which WebKit exposes as a toggle,
+        // not a plain button: match the exact label across element types.
+        let settingsTab = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Ajustes")).firstMatch
+        guard settingsTab.waitForExistence(timeout: 15) else {
+            XCTFail("Filtros y ajustes did not expose the Ajustes section.\n\(app.debugDescription)")
+            return
+        }
         settingsTab.tap()
         let geek = app.switches.matching(NSPredicate(format: "label CONTAINS %@", "Modo Geek")).firstMatch
         XCTAssertTrue(geek.waitForExistence(timeout: 15))
@@ -114,7 +119,10 @@ final class PhotosSmokeTests: XCTestCase {
         let photo = app.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.32))
         let dock = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.89))
         photo.press(forDuration: 0.8, thenDragTo: dock)
-        XCTAssertTrue(app.staticTexts["Anclada"].firstMatch.waitForExistence(timeout: 15), "Hold and drag to the dock must anchor the photo.")
+        guard app.staticTexts["Anclada"].firstMatch.waitForExistence(timeout: 15) else {
+            XCTFail("Hold and drag to the dock must anchor the photo.\n\(app.debugDescription)")
+            return
+        }
         XCTAssertTrue(app.staticTexts["Modo Geek"].firstMatch.waitForExistence(timeout: 15))
         XCTAssertTrue(app.staticTexts["Ancho"].firstMatch.waitForExistence(timeout: 30))
         XCTAssertTrue(app.staticTexts["Alto"].firstMatch.exists)
