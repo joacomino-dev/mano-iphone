@@ -25,14 +25,14 @@ final class PhotosSmokeTests: XCTestCase {
         for step in 1...3 {
             let next = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Continuar")).firstMatch
             guard next.waitForExistence(timeout: step == 1 ? 120 : 15) else {
-                XCTFail("Onboarding card \(step) did not offer Continuar.\n\(app.debugDescription)")
+                XCTFail("Onboarding card \(step) did not offer Continuar.")
                 return
             }
             next.tap()
         }
         let allow = app.buttons["Permitir acceso a Fotos"].firstMatch
         guard allow.waitForExistence(timeout: 15) else {
-            XCTFail("The privacy card did not offer the Photos request.\n\(app.debugDescription)")
+            XCTFail("The privacy card did not offer the Photos request.")
             return
         }
         allow.tap()
@@ -100,7 +100,7 @@ final class PhotosSmokeTests: XCTestCase {
         // not a plain button: match the exact label across element types.
         let settingsTab = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Ajustes")).firstMatch
         guard settingsTab.waitForExistence(timeout: 15) else {
-            XCTFail("Filtros y ajustes did not expose the Ajustes section.\n\(app.debugDescription)")
+            XCTFail("Filtros y ajustes did not expose the Ajustes section.")
             return
         }
         settingsTab.tap()
@@ -115,12 +115,30 @@ final class PhotosSmokeTests: XCTestCase {
         app.buttons["Cerrar"].firstMatch.tap()
         expectation(for: returnedToSession, evaluatedWith: finish)
         waitForExpectations(timeout: 30)
-        // Upper photo area: clear of the select mark (top-left) and a video's centred Play.
-        let photo = app.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.32))
+        // Press on the real top card, not a fixed screen point: the 320×240 video
+        // fixture yields a short landscape card whose top edge sits below y≈0.32
+        // (run 41159459492). Its upper part avoids the select mark and centred Play.
+        // No app.debugDescription on failure: a WebView dump can stall for minutes.
+        let card = app.descendants(matching: .any).matching(NSPredicate(format:
+            "label BEGINSWITH %@ OR label BEGINSWITH %@ OR label BEGINSWITH %@", "Foto 1 de", "Vídeo 1 de", "Live Photo 1 de")).firstMatch
+        let press: XCUICoordinate
+        if card.waitForExistence(timeout: 10), card.frame.height > 80 {
+            press = card.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2))
+        } else {
+            // The card is centred in its stack; 36 % of the stack height lies inside
+            // even the landscape card and above its Play button.
+            let stack = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Pila de recuerdos")).firstMatch
+            XCTAssertTrue(stack.waitForExistence(timeout: 10), "The card stack must be on screen.")
+            press = stack.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.36))
+        }
         let dock = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.89))
-        photo.press(forDuration: 0.8, thenDragTo: dock)
+        press.press(forDuration: 0.8, thenDragTo: dock)
+        let afterAnchor = XCTAttachment(screenshot: app.screenshot())
+        afterAnchor.name = "After hold and drag to the anchor dock"
+        afterAnchor.lifetime = .keepAlways
+        add(afterAnchor)
         guard app.staticTexts["Anclada"].firstMatch.waitForExistence(timeout: 15) else {
-            XCTFail("Hold and drag to the dock must anchor the photo.\n\(app.debugDescription)")
+            XCTFail("Hold and drag to the dock must anchor the photo.")
             return
         }
         XCTAssertTrue(app.staticTexts["Modo Geek"].firstMatch.waitForExistence(timeout: 15))
