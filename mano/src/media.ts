@@ -106,12 +106,14 @@ export class VideoStore {
     for (const [key, asset] of this.wanted) if (!next.has(key)) {
       this.cancel(key);
       this.queue = this.queue.filter(q => videoKey(q.asset) !== key);
-      if (this.states.get(key)?.status === 'ready') released.push(asset.id);
+      // Unpin whatever left, ready or not: a preparation cancelled here may still
+      // have been committed (and pinned) natively before the cancel arrived.
+      released.push(asset.id);
       this.states.delete(key); this.retries.delete(key);
     }
     this.wanted = next;
     for (const asset of next.values()) if (this.get(asset).status === 'idle') this.enqueue(asset, false);
-    if (released.length && !assets[0]?.demo) void Library.releasePreparedVideos({ ids: released }).catch(() => {});
+    if (released.length && Capacitor.isNativePlatform()) void Library.releasePreparedVideos({ ids: released }).catch(() => {});
     this.pump();
   }
 
@@ -132,9 +134,6 @@ export class VideoStore {
     this.retries.delete(key); this.set(key, { status: 'idle', progress: 0 });
     this.ensure(asset);
   }
-
-  /** A loaded file the WebView could not decode: let the user try fullscreen. */
-  markPlaybackFailed(asset: Asset) { this.set(videoKey(asset), { status: 'error', progress: 0, failure: 'playback' }); }
 
   dispose() {
     this.disposed = true;

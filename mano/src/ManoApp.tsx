@@ -121,7 +121,7 @@ export function ManoApp() {
   const [notice,setNotice] = useState(''); const [error,setError] = useState(''); const [inspect,setInspect] = useState<Asset|null>(null);
   const [analyzing,setAnalyzing] = useState(false); const [progress,setProgress] = useState({done:0,total:0});
   const reduced = useReducedMotion(); const seed = useRef(saved?.seed??Math.floor(Math.random()*100000));
-  const gesture = useRef<{x:number;y:number;held:boolean;timer:ReturnType<typeof setTimeout>|null;id:string;review:boolean;pinch?:number;zone?:string}|null>(null);
+  const gesture = useRef<{x:number;y:number;t0:number;held:boolean;timer:ReturnType<typeof setTimeout>|null;id:string;review:boolean;element?:Element;asset?:Asset;pinch?:number;zone?:string}|null>(null);
   const pointers = useRef(new Map<number,{x:number;y:number}>());const lastTap=useRef<{id:string;at:number;x:number;y:number}|null>(null);const tapTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
   const [drag,setDrag] = useState({x:0,y:0});
   const analysisStarted=useRef('');
@@ -159,7 +159,7 @@ export function ManoApp() {
     request.then(result=>{if(alive&&['authorized','limited'].includes(result.status)){setAssets(savedGroups(result.assets));setLimited(result.status==='limited');setConnected(true);setState(s=>reconcileLibrary(s,result.assets));}}).catch(e=>{initialLibrary.current=null;if(alive)setLoadError(e instanceof Error?e.message:'Inténtalo de nuevo en un momento.');});return()=>{alive=false;};},[]);
   useEffect(()=>loadLibrary(),[]);
   // Returning from Ajustes: pick up a newly granted (or revoked) permission.
-  useEffect(()=>{if(demo)return;const recheck=()=>{if(document.visibilityState!=='visible')return;void Library.permissionStatus().then(({status})=>{setPermission(previous=>{if(previous!==status&&['authorized','limited'].includes(status)&&!connected){initialLibrary.current=null;loadLibrary();}return status as PhotoPermission;});setLimited(status==='limited');}).catch(()=>{});};document.addEventListener('visibilitychange',recheck);return()=>document.removeEventListener('visibilitychange',recheck);},[connected]);
+  useEffect(()=>{if(demo)return;const recheck=()=>{if(document.visibilityState!=='visible')return;void Library.permissionStatus().then(({status})=>{setPermission(status as PhotoPermission);setLimited(status==='limited');if(['authorized','limited'].includes(status)&&!connected){initialLibrary.current=null;loadLibrary();}}).catch(()=>{});};document.addEventListener('visibilitychange',recheck);return()=>document.removeEventListener('visibilitychange',recheck);},[connected]);
   const queue = useMemo(()=>eligible(assets,state,filter,Date.now(),seed.current),[assets,state,filter,session]);
   // Geek is a display preference: toggling it must not reset bundles or anchors.
   const filterKey=JSON.stringify({...filter,geek:undefined});
@@ -174,6 +174,7 @@ export function ManoApp() {
   useEffect(()=>{if(!session)return;const frame=requestAnimationFrame(()=>document.getElementById('session-heading')?.focus({preventScroll:true}));return()=>cancelAnimationFrame(frame);},[session]);
   const hand=[...baseHand].sort((a,b)=>rotated.indexOf(a.id)-rotated.indexOf(b.id));
   const windowHandKey=baseHand.map(a=>`${a.id}:${a.modified??0}`).join('|');
+  useEffect(()=>{const g=gesture.current;if(g&&!g.review&&!baseHand.some(a=>a.id===g.id)){if(g.timer)clearTimeout(g.timer);gesture.current=null;pointers.current.clear();}},[windowHandKey]);
   const upcoming=useMemo(()=>{
     const next=upcomingSessionAssets(assets,state,filter,Date.now(),seed.current);
     return [...baseHand,...next].filter((a,i,all)=>all.findIndex(b=>b.id===a.id)===i).slice(0,10);
@@ -235,18 +236,31 @@ export function ManoApp() {
     const distance=Math.hypot(Math.max(box.left-clientX,0,clientX-box.right),Math.max(box.top-clientY,0,clientY-box.bottom));
     setAnchor(dragY>16?Math.max(0,Math.min(1,1-Math.max(0,distance-64)/200)):0);return dragY>64&&distance<=64;};
   const zoneOf=(x:number,y:number)=>x>45?'keep':x< -45?'discard':y< -45?'favorite':'';
+  // Gesture timing uses each event's own timeStamp (when the finger acted), not
+  // when a busy main thread got round to the handler or a timer: under load
+  // queued moves can run before a 380 ms timer, and a re-render between two taps
+  // can push handler time past the double-tap window.
+  const HOLD_MS=380;
+  const hold=(g:NonNullable<typeof gesture.current>)=>{if(g.held)return;if(g.timer){clearTimeout(g.timer);g.timer=null;}g.held=true;haptic(g.review?'selection':'medium');
+    if(!g.review&&g.element&&g.asset){inspectOrigin.current=windowOf(g.element);setPeek({x:0,y:0});setAnchor(0);setPinnedInspect(false);hookHover.current=false;setOverHook(false);setInspect(g.asset);}};
   const start=(e:PointerEvent,asset:Asset,review=false)=>{if(busy||(e.target as HTMLElement).closest('button'))return;
+    // A finger lifted while its card unmounted never reached end(): drop stale ids.
+    if(!gesture.current)pointers.current.clear();
     pointers.current.set(e.pointerId,{x:e.clientX,y:e.clientY});
     const current=gesture.current;
     // Second finger on the top card: a pinch-out opens the anchored, zoomable view.
-    if(current&&!current.review&&!current.held&&pointers.current.size===2){if(current.timer)clearTimeout(current.timer);current.timer=null;const [a,b]=[...pointers.current.values()];current.pinch=Math.hypot(b.x-a.x,b.y-a.y);setDrag({x:0,y:0});e.currentTarget.setPointerCapture(e.pointerId);return;}
+    if(current&&!current.review&&!current.held&&pointers.current.size===2){if(current.timer)clearTimeout(current.timer);current.timer=null;const [a,b]=[...pointers.current.values()];current.pinch=Math.hypot(b.x-a.x,b.y-a.y);setDrag(d=>d.x||d.y?{x:0,y:0}:d);e.currentTarget.setPointerCapture(e.pointerId);return;}
     e.currentTarget.setPointerCapture(e.pointerId);
-    const element=e.currentTarget;const g={x:e.clientX,y:e.clientY,held:false,timer:null as ReturnType<typeof setTimeout>|null,id:asset.id,review};
-    g.timer=setTimeout(()=>{g.held=true;haptic(review?'selection':'medium');if(!review){inspectOrigin.current=windowOf(element);setPeek({x:0,y:0});setAnchor(0);setPinnedInspect(false);hookHover.current=false;setOverHook(false);setInspect(asset);}},380);gesture.current=g;};
+    const g:NonNullable<typeof gesture.current>={x:e.clientX,y:e.clientY,t0:e.timeStamp,held:false,timer:null,id:asset.id,review,element:e.currentTarget,asset};
+    g.timer=setTimeout(()=>{g.timer=null;hold(g);},HOLD_MS);gesture.current=g;};
   const move=(e:PointerEvent)=>{const g=gesture.current;if(!g)return;if(pointers.current.has(e.pointerId))pointers.current.set(e.pointerId,{x:e.clientX,y:e.clientY});
     if(g.pinch){const [a,b]=[...pointers.current.values()];if(a&&b&&Math.hypot(b.x-a.x,b.y-a.y)/g.pinch>1.25){const asset=hand.find(h=>h.id===g.id);gesture.current=null;if(asset)openPinned(asset,e.currentTarget);}return;}
     const x=e.clientX-g.x,y=e.clientY-g.y;
-    if(!g.held&&Math.hypot(x,y)>10&&g.timer){clearTimeout(g.timer);g.timer=null;}
+    if(!g.held&&Math.hypot(x,y)>10&&g.timer){
+      // The finger stayed within slop for the whole hold time: it is a hold, even
+      // if the timer has not run yet. Otherwise this is the start of a swipe.
+      if(e.timeStamp-g.t0>=HOLD_MS)hold(g);else{clearTimeout(g.timer);g.timer=null;}
+    }
     if(g.held&&!g.review){
       // One dock at the bottom. Proximity fills it progressively; it arms only
       // after a deliberate downward drag that reaches it (fewer accidents).
@@ -255,14 +269,15 @@ export function ManoApp() {
     }else if(!g.review&&!g.held||g.review&&g.held){setDrag({x,y});if(!g.review){const zone=zoneOf(x,y);if(zone!==(g.zone??'')){g.zone=zone;if(zone)haptic('selection');}}}};
   const end=(e:PointerEvent)=>{pointers.current.delete(e.pointerId);const g=gesture.current;if(!g)return;if(g.pinch){if(!pointers.current.size){gesture.current=null;}return;}if(g.timer)clearTimeout(g.timer);const x=e.clientX-g.x,y=e.clientY-g.y;
     if(g.held&&!g.review&&!hookHover.current)hookHover.current=anchorAt(e.clientX,e.clientY,y);
-    gesture.current=null;setDrag({x:0,y:0});setPeek({x:0,y:0});setAnchor(0);if(g.held&&!g.review&&hookHover.current){setPinnedInspect(true);haptic('rigid');}else{setPinnedInspect(false);setInspect(null);}
-    hookHover.current=false;setOverHook(false);
+    // Only touch state that changed: a plain tap must not re-render the whole app.
+    gesture.current=null;setDrag(d=>d.x||d.y?{x:0,y:0}:d);setPeek(p=>p.x||p.y?{x:0,y:0}:p);setAnchor(0);if(g.held&&!g.review&&hookHover.current){setPinnedInspect(true);haptic('rigid');}else if(g.held){setPinnedInspect(false);setInspect(null);}
+    if(hookHover.current){hookHover.current=false;setOverHook(false);}
     if(g.review){if(g.held&&x>65){setState(s=>restore(s,g.id));setNotice('Foto recuperada');haptic('light');}return;}if(g.held)return;
     if(Math.abs(x)>65&&Math.abs(x)>Math.abs(y))void act(x>0?'keep':'discard');else if(y< -70&&Math.abs(y)>Math.abs(x))void act('favorite');
     else if(Math.hypot(x,y)<10){
       // Double tap = look closer. A single tap on a group waits a beat so the
       // second tap lands on the same photo rather than the next one.
-      const now=performance.now(),previous=lastTap.current;
+      const now=e.timeStamp,previous=lastTap.current;
       if(previous&&previous.id===g.id&&now-previous.at<300&&Math.hypot(e.clientX-previous.x,e.clientY-previous.y)<30){lastTap.current=null;if(tapTimer.current)clearTimeout(tapTimer.current);const asset=hand.find(h=>h.id===g.id);if(asset)openPinned(asset,e.currentTarget);return;}
       lastTap.current={id:g.id,at:now,x:e.clientX,y:e.clientY};
       if(hand[0]?.id===g.id){if(hand.length>1){if(tapTimer.current)clearTimeout(tapTimer.current);tapTimer.current=setTimeout(()=>{tapTimer.current=null;cycle();},260);}}else select(g.id);}};
@@ -357,7 +372,7 @@ export function ManoApp() {
       <div hidden={sheetTab!=='settings'}><DisplaySettingsPanel display={display} change={setDisplay} geek={!!filter.geek} setGeek={value=>setFilter(f=>({...f,geek:value}))} library={libraryActions}/></div>
     </Sheet>
     <Sheet open={sheet==='albums'} close={()=>setSheet(null)} title="Guardar en un álbum" description="Las fotos seguirán también en tu carrete." error={error} returnTo="album-trigger"><p className="sheet-intro"><strong>{targets.length}</strong> seleccionada{targets.length>1?'s':''}</p><button className="album-row album-new" onClick={()=>setCreatingAlbum(v=>!v)} disabled={busy}><span className="row-icon"><PlusIcon size={20} weight="bold"/></span>Crear álbum nuevo</button>{creatingAlbum&&<div className="new-album"><label className="field">Nombre del álbum<AlbumInput value={newAlbum} change={setNewAlbum}/></label><button className="sheet-action" onClick={createAlbum} disabled={busy||!newAlbum.trim()}>Crear y añadir {targets.length} elemento{targets.length===1?'':'s'}</button></div>}{albums.map(a=><button className="album-row" key={a.id} onClick={()=>addAlbum(a)} disabled={busy}><span className="row-icon"><FolderOpenIcon size={20}/></span>{a.title}<CaretRightIcon size={16} weight="bold"/></button>)}</Sheet>
-    <Sheet open={sheet==='review'} close={()=>setSheet(null)} title="Una última mirada" description="Recupera lo que quieras conservar antes de eliminar." error={error} returnTo={session?'review-trigger':'start-trigger'}><p className="sheet-intro">{reviewAssets.length?<><strong>{reviewAssets.length} descarte{reviewAssets.length===1?'':'s'}</strong>. Aún no se ha borrado nada.</>:'No tienes descartes pendientes.'}</p>
+    <Sheet open={sheet==='review'} close={()=>setSheet(null)} title="Una última mirada" description="Recupera lo que quieras conservar antes de eliminar." error={error} returnTo={session?'review-trigger':'filter-trigger'}><p className="sheet-intro">{reviewAssets.length?<><strong>{reviewAssets.length} descarte{reviewAssets.length===1?'':'s'}</strong>. Aún no se ha borrado nada.</>:'No tienes descartes pendientes.'}</p>
       {reviewAssets.length>0&&<><p className="review-hint">Mantén pulsada una foto y deslízala a la derecha para recuperarla.</p><Carousel ariaLabel="Revisar descartes" draggingEnabled={false} className="review-carousel"><div className="review-grid">{reviewAssets.map(a=><article key={a.id} className="review-card paper" onPointerDown={e=>start(e,a,true)} onPointerMove={move} onPointerUp={end} onPointerCancel={cancel} style={gesture.current?.id===a.id?{transform:`translateX(${Math.max(0,drag.x)}px)`}:undefined}><div className="review-photo"><Photo asset={a}/></div><button className="recover-button" onPointerDown={e=>e.stopPropagation()} onClick={()=>{setState(s=>restore(s,a.id));setNotice('Elemento recuperado');}}><ArrowCounterClockwiseIcon size={16}/>Recuperar</button></article>)}</div></Carousel>
         <div className="review-primary"><button className="sheet-action danger" onClick={commitDelete} disabled={busy}><TrashIcon size={20}/>{busy?'Esperando a Fotos…':`Eliminar ${reviewAssets.length}`}</button><p className="sheet-fine">Fotos te pedirá confirmación. Lo eliminado queda en «Eliminado» durante 30 días y el cambio también se aplica en iCloud y tus dispositivos sincronizados.</p><button className="sheet-action quiet" disabled={busy} onClick={()=>{setState(s=>({...s,pending:[],history:s.history.filter(d=>d.action!=='discard')}));setNotice('Todos los descartes recuperados');}}><ArrowCounterClockwiseIcon size={18}/>Deshacer todo</button></div></>}
       <div className="sheet-footer"><button className="sheet-action secondary" onClick={()=>setSheet(null)} disabled={busy}>Seguir revisando</button><button className={`sheet-action ${reviewAssets.length?'secondary':''}`} onClick={closeSession} disabled={busy}>{reviewAssets.length?'Terminar sin eliminar':'Terminar revisión'}</button></div>
