@@ -158,3 +158,41 @@ same bundle/keys/permissions).
   balance per screen aims at the golden split ≈ 62 / 24 / 14 (dominant surface /
   secondary / accents): tour, sheets, review and end of round are paper-dominant
   cards on a teal frame; the session is a deliberate exception (the photo leads).
+
+## CocoWash 0.6 decisions — 31 October 2026 (user request, CW-CL-020)
+
+Requested by the user and implemented directly. Functional protections are
+unchanged (deletion only from the review with the Photos confirmation and the
+favourites recheck; demo-only destructive QA; protected preview runtime; same
+bundle, keys and permissions; `cocowash-media://` and `native.html` CSP untouched).
+
+- Order: chronological by default («Más antiguas»), also «Más recientes», «Más
+  pesadas», «Más ligeras», «Al azar». Saved pre-0.6 filters with the old random
+  default become chronological once (`Filter.v = 2` keeps a random picked later).
+- Weight: what deleting an item frees = sum of all its PhotoKit resources, read
+  from the resource descriptor's `fileSize` (no public API; guarded with
+  `responds(to:)`, never fetches data, cached in Caches/ManoSizes.json). Shown in
+  the VHS OSD under the duration (Ajustes › Vídeos › Peso, on by default), in
+  «Eliminar N · X MB», in the end-of-round summary and in Modo Geek. Decimal units
+  like iOS (1 GB = 10⁹ B), Spanish comma.
+- iCloud: Ajustes › «Fotos en iCloud». Default «Ahorrar iCloud»: cards use what is
+  already on the iPhone (a smaller local version gets the quiet chip «iCloud ·
+  vista ligera»; none → «Descargar vista previa»); nothing downloads until the
+  person anchors/zooms (a «Descargando de iCloud… N %» pill) or taps «Descargar y
+  ver · X MB» on a video. «Descargar siempre» keeps the 0.5 behaviour.
+- «Más tarde» (ask me later): fourth decision, swipe down or the footer button.
+  Keeps marks, moves the item to the end of the pile (also out of its similar
+  group), undoable, persisted in `RecordState.later`; its own clean-up shortcut.
+  Stamp: coffee postmark with a clock (`--cw-stamp-later`, 6.6:1 on ivory).
+- Clean-up shortcuts (Filtros › «Limpieza rápida», with live counts): Más tarde,
+  Capturas (PhotoKit screenshot / screen-recording subtypes), Baja calidad and
+  Texto y documentos (Vision on a 512 px local preview: text coverage/lines,
+  faces, Laplacian sharpness, brightness, iOS 18 aesthetics score and utility;
+  thresholds in `insights.ts`). Text with faces is kept last. Analysis runs in the
+  background after weights, pauses during warm-up/similar search, never uploads.
+- Filter sheet order: Limpieza rápida → Contenido → Fecha → Orden → Sellos.
+- End of round: after «Eliminar N» the reward leads — «Liberaste X» with photos /
+  videos sent to «Eliminado recientemente», the lifetime total, and the honest
+  note that space returns fully when that album is emptied (30 days). Before
+  deleting it says how much the pending discards would free.
+- Version 0.6.0 (build 6).

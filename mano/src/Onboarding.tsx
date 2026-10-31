@@ -148,9 +148,10 @@ export function Onboarding({ requestAccess, finish }: { requestAccess: () => Pro
             <h1 ref={heading} tabIndex={-1}>{card.title}</h1>
             {card.text && <p>{card.text}</p>}
             {card.key === 'how' && <ul className="ob-rows">
-              <Row art={<Stamp kind="keep"/>} title={<>Conservar <small>→ derecha</small></>}>Se queda. Vuelve más adelante y su sello sube de nivel (I a VIII).</Row>
-              <Row art={<Stamp kind="discard"/>} title={<>Descartar <small>← izquierda</small></>}>Va a Descartes para revisarla. No se borra de Fotos; se recupera.</Row>
-              <Row art={<Stamp kind="favorite"/>} title={<>Favorita <small>↑ arriba</small></>}>Se queda y se marca como favorita en Fotos.</Row>
+              <Row art={<Stamp kind="keep"/>} title={<>Conservar <small>→ derecha</small></>}>Se queda; vuelve luego con más sello.</Row>
+              <Row art={<Stamp kind="discard"/>} title={<>Descartar <small>← izquierda</small></>}>A Descartes. Siempre se recupera.</Row>
+              <Row art={<Stamp kind="favorite"/>} title={<>Favorita <small>↑ arriba</small></>}>Se queda y es favorita en Fotos.</Row>
+              <Row art={<Stamp kind="later"/>} title={<>Más tarde <small>↓ abajo</small></>}>¿Dudas? Vuelve al final de la pila.</Row>
             </ul>}
             {card.key === 'group' && <ul className="ob-rows">
               <Row on={phase === 'tap'} art={<HandTapIcon size={22} weight="bold"/>} title="Toca la foto">En un grupo de parecidas, pasa a la siguiente al instante.</Row>

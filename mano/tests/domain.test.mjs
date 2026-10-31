@@ -44,13 +44,15 @@ test('session keeps unmarked priority and respects configurable chronological or
   assert.equal(nextSessionHand(assets,state,{...initialFilter,order:'newest'},1)[0].id,'unmarked-new');
 });
 
-test('session defaults to deterministic random choice for the same seed and filters media',()=>{
+test('session defaults to chronological order; random stays deterministic per seed and media filters',()=>{
   const assets=Array.from({length:30},(_,i)=>photo(`asset-${i}`,i));
-  assert.equal(initialFilter.order,'random');
-  const selected=nextSessionHand(assets,initialState(),undefined,0,98);
-  assert.deepEqual(selected,nextSessionHand(assets,initialState(),undefined,0,98));
-  assert.equal(selected[0].id,eligible(assets,initialState(),{...initialFilter,order:'random'},0,98)[0].id);
-  assert.ok(new Set([1,2,98,101].map(seed=>nextSessionHand(assets,initialState(),undefined,0,seed)[0].id)).size>1);
+  assert.equal(initialFilter.order,'oldest');
+  assert.equal(nextSessionHand(assets,initialState(),undefined,0,98)[0].id,'asset-0');
+  const random={...initialFilter,order:'random'};
+  const selected=nextSessionHand(assets,initialState(),random,0,98);
+  assert.deepEqual(selected,nextSessionHand(assets,initialState(),random,0,98));
+  assert.equal(selected[0].id,eligible(assets,initialState(),random,0,98)[0].id);
+  assert.ok(new Set([1,2,98,101].map(seed=>nextSessionHand(assets,initialState(),random,0,seed)[0].id)).size>1);
   assert.deepEqual(nextSessionHand(assets,initialState(),{...initialFilter,media:'video'},0,98),[]);
 });
 

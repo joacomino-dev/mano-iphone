@@ -15,7 +15,8 @@ export function PixelText({ text, pixel, className }: { text: string; pixel: num
 }
 
 /** Camcorder timestamp: only the letters. The time/date/place stack (left) and
- * an independent duration (right) are sized to the visible frame and never
+ * a right column — duration, then the weight (what deleting it frees) — are
+ * sized to the visible frame and never
  * overflow: the pixel shrinks first, then the place line drops. Missing data
  * simply drops out, so 1–4 values all read as composed rather than incomplete. */
 export function VhsOverlay({ asset, place, settings, label = true }: { asset: Asset; place?: Place; settings: VideoMeta; label?: boolean }) {
@@ -29,14 +30,14 @@ export function VhsOverlay({ asset, place, settings, label = true }: { asset: As
   const layout = vhsLayout(asset, place, settings);
   const placeLine = settings.location ? placeLabel(place, true, 22) : undefined;
   // Parents re-render on every drag frame; measure the type only when it changes.
-  const linesKey = layout.lines.join('|');
-  const fit = useMemo(() => fitOsd(layout.lines, layout.duration, box, placeLine), [linesKey, layout.duration, box, placeLine]);
+  const linesKey = layout.lines.join('|'), rightKey = layout.right.join('|');
+  const fit = useMemo(() => fitOsd(layout.lines, layout.right, box, placeLine), [linesKey, rightKey, box, placeLine]);
   if (layout.empty) return null;
-  const spoken = [...layout.lines, layout.duration ? `duración ${layout.duration}` : ''].filter(Boolean).join(', ');
+  const spoken = [...layout.lines, layout.duration ? `duración ${layout.duration}` : '', layout.size ? `pesa ${layout.size.replace('KB', 'kilobytes').replace('MB', 'megabytes').replace('GB', 'gigabytes')}` : ''].filter(Boolean).join(', ');
   return <div ref={host} className="vhs-osd" style={{ '--px': `${fit.pixel}px`, '--vhs-pad': `${fit.pad}px` } as CSSProperties} role={label ? 'img' : undefined} aria-label={label ? spoken : undefined} aria-hidden={label ? undefined : true}>
     <div className="vhs-band">
       {fit.lines.length > 0 && <div className="vhs-lines">{fit.lines.map(line => <PixelText key={line} text={line} pixel={fit.pixel} className="vhs-line"/>)}</div>}
-      {layout.duration && <PixelText key={`d-${layout.duration}`} text={layout.duration} pixel={fit.pixel} className="vhs-duration"/>}
+      {layout.right.length > 0 && <div className="vhs-right">{layout.right.map(line => <PixelText key={line} text={line} pixel={fit.pixel} className="vhs-duration"/>)}</div>}
     </div>
   </div>;
 }

@@ -1,11 +1,12 @@
 import { Capacitor } from '@capacitor/core';
 import type { Asset } from './domain';
-import { Library, isNative, thumbnail } from './library';
-import { cacheBytes, cardPixels, previewQuality, zoomPixels } from './preview';
+import { Library, isNative, thumbnailInfo } from './library';
+import { cacheBytes, cardPixels, cloudDownloads, previewQuality, zoomPixels } from './preview';
 
 /** Poster only. Videos prepare separately (VideoStore) so a slow or failed
- * video download can never take its poster down with it, and vice versa. */
-export type PreparedMedia = { poster: string };
+ * video download can never take its poster down with it, and vice versa.
+ * `cloud`: the poster is the smaller version already on the iPhone (iCloud). */
+export type PreparedMedia = { poster: string; cloud?: boolean };
 const aborted = () => new DOMException('Preparación cancelada', 'AbortError');
 function decodePoster(src: string, signal: AbortSignal) {
   return new Promise<void>((resolve, reject) => {
@@ -25,41 +26,50 @@ function decodePoster(src: string, signal: AbortSignal) {
  * another component's thumbnail. */
 export async function prepareReviewAsset(asset: Asset, signal: AbortSignal): Promise<PreparedMedia> {
   if (signal.aborted) throw aborted();
-  if (asset.demo) {
-    const poster = await thumbnail(asset, cardPixels(asset));
-    await decodePoster(poster, signal);
-    return { poster };
-  }
-  const poster = await nativeThumbnail(asset, cardPixels(asset), 'review', signal);
-  await decodePoster(poster, signal);
-  return { poster };
+  const { src, cloud } = asset.demo ? await thumbnailInfo(asset, cardPixels(asset)) : await nativeThumbnail(asset, cardPixels(asset), 'review', signal, cloudDownloads());
+  await decodePoster(src, signal);
+  return { poster: src, cloud };
 }
 
 /** One native preview request owned by the caller's signal: cancelled natively
- * on abort, its file path converted for the WebView. */
-async function nativeThumbnail(asset: Asset, size: number, prefix: string, signal: AbortSignal, track?: (cancel: () => void) => void) {
+ * on abort, its file path converted for the WebView. `network` false stays on
+ * the iPhone; `onProgress` follows an iCloud download (0–1). */
+async function nativeThumbnail(asset: Asset, size: number, prefix: string, signal: AbortSignal, network: boolean, track?: (cancel: () => void) => void, onProgress?: (value: number) => void) {
   const requestId = `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const cancel = () => { void Library.cancelThumbnailPreparation({ requestId }).catch(() => {}); };
   track?.(cancel);
   signal.addEventListener('abort', cancel, { once: true });
+  const listener = onProgress ? Library.addListener('mediaPreparationProgress', event => { if (event.requestId === requestId) onProgress(event.progress); }) : undefined;
   try {
-    const image = await Library.thumbnail({ id: asset.id, size, requestId, cacheBytes: cacheBytes(previewQuality()) });
+    const image = await Library.thumbnail({ id: asset.id, size, requestId, cacheBytes: cacheBytes(previewQuality()), network });
     if (signal.aborted) throw aborted();
-    return Capacitor.convertFileSrc(image.path);
+    return { src: Capacitor.convertFileSrc(image.path), cloud: !!image.cloud };
   } catch (error) {
     cancel();
     throw error;
-  } finally { signal.removeEventListener('abort', cancel); }
+  } finally { signal.removeEventListener('abort', cancel); void listener?.then(l => l.remove()).catch(() => {}); }
+}
+/** Demonstration only: an iCloud download that takes a moment, with progress. */
+function simulateDownload(signal: AbortSignal, onProgress?: (value: number) => void, ms = 1400) {
+  return new Promise<void>((resolve, reject) => {
+    if (signal.aborted) return reject(aborted());
+    const started = performance.now();
+    const timer = setInterval(() => { const value = Math.min(1, (performance.now() - started) / ms); onProgress?.(value); if (value >= 1) { clearInterval(timer); resolve(); } }, 80);
+    signal.addEventListener('abort', () => { clearInterval(timer); reject(aborted()); }, { once: true });
+  });
 }
 
 /** The larger preview for the anchored/zoomed view, on demand and one at a
  * time (the previous request is cancelled natively). Decoded off screen, so the
- * caller can swap it into the same <img> without a blank frame or reframing. */
+ * caller can swap it into the same <img> without a blank frame or reframing.
+ * Anchoring is asking to look closer, so this one may download from iCloud;
+ * `onProgress` lets the view say so while it happens. */
 let cancelZoom: (() => void) | null = null;
-export async function loadZoomPreview(asset: Asset, signal: AbortSignal): Promise<string> {
+export async function loadZoomPreview(asset: Asset, signal: AbortSignal, onProgress?: (value: number) => void): Promise<string> {
   cancelZoom?.(); cancelZoom = null;
   const size = zoomPixels(asset);
-  const src = asset.demo || !isNative ? await thumbnail(asset, size) : await nativeThumbnail(asset, size, 'zoom', signal, cancel => { cancelZoom = cancel; });
+  if (asset.demo && asset.cloud) await simulateDownload(signal, onProgress);
+  const src = asset.demo || !isNative ? (await thumbnailInfo(asset, size, false, true)).src : (await nativeThumbnail(asset, size, 'zoom', signal, true, cancel => { cancelZoom = cancel; }, onProgress)).src;
   if (signal.aborted) throw aborted();
   await decodePoster(src, signal);
   return src;
@@ -68,7 +78,7 @@ export async function loadZoomPreview(asset: Asset, signal: AbortSignal): Promis
 /* ---------- Video preparation ---------- */
 
 /** Internal cause; the UI turns it into one plain message and one recovery. */
-export type VideoFailure = 'download' | 'permission' | 'unavailable' | 'tooLarge' | 'prepare' | 'playback';
+export type VideoFailure = 'download' | 'permission' | 'unavailable' | 'tooLarge' | 'prepare' | 'playback' | 'cloud';
 export type VideoState = { status: 'idle' | 'queued' | 'loading' | 'ready' | 'error'; progress: number; url?: string; failure?: VideoFailure };
 type Job = { asset: Asset; requestId: string; cancelled: boolean };
 const idle: VideoState = { status: 'idle', progress: 0 };
@@ -77,6 +87,7 @@ const failureFor = (error: unknown): VideoFailure | 'busy' | 'cancelled' => {
   const code = (error as { code?: string })?.code ?? '';
   const message = error instanceof Error ? error.message : '';
   if (code === 'PREPARATION_BUSY') return 'busy';
+  if (code === 'IN_CLOUD') return 'cloud';
   if (code === 'PREPARATION_CANCELLED' || (error as Error)?.name === 'AbortError') return 'cancelled';
   if (code === 'VIDEO_DOWNLOAD_FAILED' || code === 'PREPARATION_TIMEOUT') return 'download';
   if (code === 'VIDEO_TOO_LARGE') return 'tooLarge';
@@ -84,8 +95,9 @@ const failureFor = (error: unknown): VideoFailure | 'busy' | 'cancelled' => {
   if (/Permite acceso/.test(message)) return 'permission';
   return 'prepare';
 };
-export function videoFailureCopy(failure?: VideoFailure): { message: string; action: 'retry' | 'settings' | 'fullscreen' | null } {
+export function videoFailureCopy(failure?: VideoFailure): { message: string; action: 'retry' | 'settings' | 'fullscreen' | 'download' | null } {
   switch (failure) {
+    case 'cloud': return { message: 'Está en iCloud. Decide sin descargarlo o descárgalo para verlo.', action: 'download' };
     case 'download': return { message: 'No se pudo descargar de iCloud. Revisa tu conexión.', action: 'retry' };
     case 'permission': return { message: 'CocoWash necesita acceso a este vídeo.', action: 'settings' };
     case 'unavailable': return { message: 'Este vídeo ya no está en Fotos.', action: null };
@@ -106,6 +118,8 @@ export class VideoStore {
   private byRequest = new Map<string, string>();
   private wanted = new Map<string, Asset>();
   private retries = new Map<string, number>();
+  /** Videos the person chose to download although «Ahorrar iCloud» is on. */
+  private allowed = new Set<string>();
   private progressListener?: Promise<{ remove(): Promise<void> }>;
   private disposed = false;
 
@@ -153,6 +167,14 @@ export class VideoStore {
     const key = videoKey(asset);
     if (this.disposed || this.get(asset).status !== 'error') return;
     this.retries.delete(key); this.set(key, { status: 'idle', progress: 0 });
+    this.ensure(asset);
+  }
+
+  /** «Descargar y ver»: this one video may come from iCloud now. */
+  download(asset: Asset) {
+    const key = videoKey(asset);
+    if (this.disposed) return;
+    this.allowed.add(key); this.retries.delete(key); this.set(key, { status: 'idle', progress: 0 });
     this.ensure(asset);
   }
 
@@ -213,10 +235,18 @@ export class VideoStore {
     this.set(key, { status: 'loading', progress: 0 });
     try {
       let url: string;
-      if (asset.demo) url = '/assets/demo-video.mp4';
-      else {
+      const network = cloudDownloads() || this.allowed.has(key);
+      if (asset.demo) {
+        if (asset.cloud && !network) throw Object.assign(new Error('En iCloud'), { code: 'IN_CLOUD' });
+        if (asset.cloud) {
+          const controller = new AbortController(); const watch = setInterval(() => { if (job.cancelled || this.disposed) controller.abort(); }, 100);
+          try { await simulateDownload(controller.signal, value => { const current = this.states.get(key); if (current?.status === 'loading') this.set(key, { ...current, progress: value * .95 }); }, 1800); }
+          finally { clearInterval(watch); }
+        }
+        url = '/assets/demo-video.mp4';
+      } else {
         this.listen();
-        const result = await Library.prepareVideo({ id: asset.id, requestId: job.requestId });
+        const result = await Library.prepareVideo({ id: asset.id, requestId: job.requestId, network });
         url = result.url ?? Capacitor.convertFileSrc(result.path);
       }
       if (job.cancelled || this.disposed) return;

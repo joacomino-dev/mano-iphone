@@ -1,10 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
-import { PushPinIcon, XIcon, PlusIcon, MinusIcon } from '@phosphor-icons/react';
-import { Library, thumbnail, type AssetMetadata } from './library';
+import { PushPinIcon, XIcon, PlusIcon, MinusIcon, CloudArrowDownIcon } from '@phosphor-icons/react';
+import { Library, thumbnail, inCloudError, type AssetMetadata } from './library';
 import { InlineVideo } from './InlineVideo';
 import { loadZoomPreview, type VideoState } from './media';
 import { cardPixels } from './preview';
+import { formatBytes } from './meta';
 import type { Asset } from './domain';
 
 export type InspectOrigin={x:number;y:number;width:number;height:number};
@@ -15,15 +16,18 @@ const follow={type:'spring',stiffness:900,damping:60,mass:.6} as const;
 
 /** Hold = isolate in place (a 3 % lift, no zoom jump); drag down to the single
  * dock to anchor; anchored = fit to screen with pinch/pan and controls. */
-export type InspectVideo={state:VideoState;retry:()=>void;fullscreen:()=>void;openSettings:()=>void};
+export type InspectVideo={state:VideoState;retry:()=>void;download:()=>void;fullscreen:()=>void;openSettings:()=>void};
 export function Inspector({asset,src,pinned,origin,drag,anchor,armed,geek,close,pin,video}: {asset:Asset;src?:string;pinned:boolean;origin?:InspectOrigin;drag:{x:number;y:number};anchor:number;armed:boolean;geek:boolean;close:()=>void;pin:()=>void;video?:InspectVideo}) {
- const [posterError,setPosterError]=useState(false);const [posterRetry,setPosterRetry]=useState(0);const [poster,setPoster]=useState(src);useEffect(()=>{let alive=true;if(src){setPoster(src);return;}setPosterError(false);thumbnail(asset,cardPixels(asset),posterRetry>0).then(value=>{if(alive)setPoster(value);}).catch(()=>{if(alive)setPosterError(true);});return()=>{alive=false;};},[asset.id,src,posterRetry]);
+ // An iCloud-only photo (no local preview under «Ahorrar iCloud») is not an
+ // error: it says so, and anchoring downloads it (loadZoomPreview below).
+ const [posterError,setPosterError]=useState(false);const [posterCloud,setPosterCloud]=useState(false);const [posterRetry,setPosterRetry]=useState(0);const [poster,setPoster]=useState(src);useEffect(()=>{let alive=true;if(src){setPoster(src);return;}setPosterError(false);setPosterCloud(false);thumbnail(asset,cardPixels(asset),posterRetry>0).then(value=>{if(alive)setPoster(value);}).catch(e=>{if(!alive)return;if(inCloudError(e))setPosterCloud(true);else setPosterError(true);});return()=>{alive=false;};},[asset.id,src,posterRetry]);
  const outer=useRef<HTMLDivElement>(null);const reduced=useReducedMotion();const frame=useRef<HTMLDivElement>(null);
  // Anchored on purpose: fetch the larger preview once, decode it off screen and
  // swap it into the same <img> (same box, same object-fit): no blank frame and
- // no reframing. The card-size poster stays if this fails.
- const [sharp,setSharp]=useState('');
- useEffect(()=>{if(!pinned||asset.kind==='video')return;const controller=new AbortController();loadZoomPreview(asset,controller.signal).then(setSharp).catch(()=>{});return()=>controller.abort();},[pinned,asset.id]);
+ // no reframing. The card-size poster stays if this fails. Anchoring may fetch
+ // from iCloud: the progress pill says so only while bytes actually arrive.
+ const [sharp,setSharp]=useState('');const [fetching,setFetching]=useState(0);
+ useEffect(()=>{if(!pinned||asset.kind==='video')return;const controller=new AbortController();loadZoomPreview(asset,controller.signal,value=>setFetching(Math.max(.01,Math.min(.99,value)))).then(setSharp).catch(()=>{}).finally(()=>{if(!controller.signal.aborted)setFetching(0);});return()=>{controller.abort();setFetching(0);};},[pinned,asset.id]);
  const [space,setSpace]=useState<{target:Box;origin:Box;scale:number}|null>(null);
  const [meta,setMeta]=useState<AssetMetadata|null>(null);const [metaError,setMetaError]=useState('');const [zoom,setZoom]=useState(1);const [pan,setPan]=useState({x:0,y:0});
  const points=useRef(new Map<number,{x:number;y:number}>());const base=useRef({distance:0,zoom:1,x:0,y:0,panX:0,panY:0});
@@ -49,7 +53,8 @@ export function Inspector({asset,src,pinned,origin,drag,anchor,armed,geek,close,
  const up=(e:PointerEvent)=>{points.current.delete(e.pointerId);rebase();};
  useEffect(()=>{if(zoom===1)setPan({x:0,y:0});},[zoom]);
  const expanded=meta?{...meta,...meta.exif,...meta.location}:null;
- const values=expanded?Object.entries(expanded).filter(([key,value])=>!['id','exifStatus','exif','location'].includes(key)&&value!==undefined&&value!==null).map(([key,value])=>[({latitude:'Latitud',longitude:'Longitud',altitude:'Altitud',filename:'Archivo',width:'Ancho',height:'Alto',creationDate:'Capturada',modified:'Modificada',duration:'Duración',kind:'Tipo',uniformTypeIdentifier:'Formato',cameraMake:'Fabricante',cameraModel:'Cámara',lensModel:'Objetivo',fNumber:'Apertura',exposureTime:'Exposición',dateTimeOriginal:'Fecha EXIF',orientation:'Orientación',camera:'Cámara',lens:'Objetivo',iso:'ISO',aperture:'Apertura',shutter:'Exposición',focalLength:'Distancia focal',isFavorite:'Favorita',isHidden:'Oculta'} as Record<string,string>)[key]??key,key.toLowerCase().includes('date')&&typeof value==='number'?new Date(value).toLocaleString('es'):typeof value==='boolean'?(value?'Sí':'No'):String(value)]):[];
+ const weight=formatBytes(asset.bytes);
+ const values=expanded?[...(weight?[['Peso',weight]]:[]),...Object.entries(expanded).filter(([key,value])=>!['id','exifStatus','exif','location'].includes(key)&&value!==undefined&&value!==null).map(([key,value])=>[({latitude:'Latitud',longitude:'Longitud',altitude:'Altitud',filename:'Archivo',width:'Ancho',height:'Alto',creationDate:'Capturada',modified:'Modificada',duration:'Duración',kind:'Tipo',uniformTypeIdentifier:'Formato',cameraMake:'Fabricante',cameraModel:'Cámara',lensModel:'Objetivo',fNumber:'Apertura',exposureTime:'Exposición',dateTimeOriginal:'Fecha EXIF',orientation:'Orientación',camera:'Cámara',lens:'Objetivo',iso:'ISO',aperture:'Apertura',shutter:'Exposición',focalLength:'Distancia focal',isFavorite:'Favorita',isHidden:'Oculta'} as Record<string,string>)[key]??key,key.toLowerCase().includes('date')&&typeof value==='number'?new Date(value).toLocaleString('es'):typeof value==='boolean'?(value?'Sí':'No'):String(value)])]:[];
  // Transform the anchored-size frame back onto the card: crisp image, no layout animation.
  const toBox=(box:Box,lift=1,offset={x:0,y:0})=>space?{x:box.x+box.width/2-(space.target.x+space.target.width/2)+offset.x,y:box.y+box.height/2-(space.target.y+space.target.height/2)+offset.y,scale:box.width/space.target.width*lift}:{x:0,y:0,scale:1};
  const finger={x:drag.x/(space?.scale??1),y:drag.y/(space?.scale??1)};
@@ -60,8 +65,9 @@ export function Inspector({asset,src,pinned,origin,drag,anchor,armed,geek,close,
   {space&&<motion.div ref={frame} className="inspection-photo" tabIndex={pinned?0:-1} style={{left:space.target.x,top:space.target.y,width:space.target.width,height:space.target.height,'--inspect-ratio':asset.width/asset.height} as CSSProperties}
    initial={reduced?false:atOrigin} animate={pose} exit={reduced?{opacity:0,transition:{duration:0}}:{...atOrigin,transition:settle}}
    transition={reduced?{duration:0}:pinned?settle:(drag.x||drag.y)?follow:settle} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onClick={e=>e.stopPropagation()}>
-   {pinned&&video?<div className="inspection-media"><InlineVideo asset={asset} state={video.state} mode="full" retry={video.retry} fullscreen={video.fullscreen} openSettings={video.openSettings}>{poster?<img src={poster} alt="" draggable={false}/>:null}</InlineVideo></div>
-    :poster?<img src={pinned&&sharp?sharp:poster} alt="Recuerdo ampliado" draggable={false} style={{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}}/>:<span>{posterError?'No se pudo cargar la imagen.':''}{posterError&&pinned&&<button onClick={()=>setPosterRetry(v=>v+1)}>Reintentar</button>}</span>}
+   {pinned&&video?<div className="inspection-media"><InlineVideo asset={asset} state={video.state} mode="full" retry={video.retry} download={video.download} fullscreen={video.fullscreen} openSettings={video.openSettings}>{poster?<img src={poster} alt="" draggable={false}/>:null}</InlineVideo></div>
+    :poster||(pinned&&sharp)?<img src={pinned&&sharp?sharp:poster} alt="Recuerdo ampliado" draggable={false} style={{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}}/>:<span>{posterCloud?(pinned?'':'En iCloud. Ancla para descargarla.'):posterError?'No se pudo cargar la imagen.':''}{posterError&&pinned&&<button onClick={()=>setPosterRetry(v=>v+1)}>Reintentar</button>}</span>}
+   {pinned&&fetching>0&&<span className="cloud-download" role="status"><CloudArrowDownIcon size={16} weight="bold"/>Descargando de iCloud… {Math.round(fetching*100)} %</span>}
   </motion.div>}
   <motion.div layout={!reduced} className={`inspection-dock ${pinned?'is-pinned':''} ${armed?'is-armed':''}`} data-inspection-hook style={{'--anchor':anchor} as CSSProperties}
    initial={reduced?false:{opacity:0,y:16}} animate={{opacity:1,y:0}} exit={reduced?{opacity:0,transition:{duration:0}}:{opacity:0,y:16}} transition={reduced?{duration:0}:{type:'spring',stiffness:420,damping:36}}>

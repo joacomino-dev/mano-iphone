@@ -1,4 +1,4 @@
-import { eligible, initialFilter, type Asset, type Filter, type RecordState } from './domain.ts';
+import { eligible, handOf, initialFilter, type Asset, type Filter, type RecordState } from './domain.ts';
 
 /** Flatten the actual upcoming hands, rather than preloading unrelated queue neighbours. */
 export function upcomingSessionAssets(assets: Asset[], state: RecordState, filter: Filter = initialFilter, now = Date.now(), seed = 1, limit = 10): Asset[] {
@@ -8,7 +8,7 @@ export function upcomingSessionAssets(assets: Asset[], state: RecordState, filte
   const count = Math.max(0, Math.floor(limit));
   while (queue.length && result.length < count) {
     const first = queue[0];
-    const hand = first.group ? queue.filter(a => a.group === first.group).slice(0, 5) : [first];
+    const hand = handOf(queue, first, state.later);
     const ids = new Set(hand.map(a => a.id));
     for (const asset of hand) if (!seen.has(asset.id) && result.length < count) { seen.add(asset.id); result.push(asset); }
     queue = queue.filter(a => !ids.has(a.id));

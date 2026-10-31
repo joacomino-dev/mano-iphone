@@ -24,7 +24,7 @@ test('inactive session still preserves record while unknown version and invalid 
 
 test('unversioned session migrates defaults and context defensively without touching input',()=>{
   const draft={active:true,seed:1,filter:{media:'video',order:'bogus'},context:{handIds:['a','a',3],selected:'bad'}};
-  const session=validateSession(draft);assert.equal(session.version,1);assert.equal(session.filter.media,'video');assert.equal(session.filter.order,'random');
+  const session=validateSession(draft);assert.equal(session.version,1);assert.equal(session.filter.media,'video');assert.equal(session.filter.order,'oldest');
   assert.deepEqual(session.context.handIds,['a']);assert.deepEqual(session.context.rotated,[]);assert.deepEqual(session.context.selected,[]);assert.equal(session.updatedAt,0);
   assert.equal(draft.version,undefined);assert.equal(draft.context.handIds.length,3);
 });

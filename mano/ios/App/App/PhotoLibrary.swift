@@ -130,6 +130,9 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "releasePreparedVideos", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "analyze", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "cancelAnalysis", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "sizes", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "classify", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "cancelClassify", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "permissionStatus", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "openSettings", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "manageLimitedAccess", returnType: CAPPluginReturnPromise),
@@ -162,6 +165,18 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
     private var cancelRequested = false
     private func cancelled() -> Bool { cancelLock.lock(); defer { cancelLock.unlock() }; return cancelRequested }
     @objc func cancelAnalysis(_ call: CAPPluginCall) { cancelLock.lock(); cancelRequested = true; cancelLock.unlock(); call.resolve() }
+    // Library weight and clean-up signals: serial queues own their caches, which
+    // persist in Caches keyed by identifier + modification date (no image data).
+    private let sizeQueue = DispatchQueue(label: "work.joaquin.mano.sizes", qos: .utility)
+    private var sizeCache: [String: Any]?
+    private var sizeSavedAt = Date.distantPast
+    private let classifyQueue = DispatchQueue(label: "work.joaquin.mano.insights", qos: .utility)
+    private var insightCache: [String: Any]?
+    private var insightSavedAt = Date.distantPast
+    private let classifyLock = NSLock()
+    private var classifyCancelled = false
+    private func classifyStopped() -> Bool { classifyLock.lock(); defer { classifyLock.unlock() }; return classifyCancelled }
+    @objc func cancelClassify(_ call: CAPPluginCall) { classifyLock.lock(); classifyCancelled = true; classifyLock.unlock(); call.resolve() }
     private var livePreview: UIViewController?
     private var status: String {
         switch PHPhotoLibrary.authorizationStatus(for: .readWrite) {
@@ -273,7 +288,8 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                 items.append(["id": item.localIdentifier, "kind": kind, "date": (item.creationDate?.timeIntervalSince1970 ?? 0) * 1000,
                               "width": item.pixelWidth, "height": item.pixelHeight, "duration": item.duration,
                               "modified": (item.modificationDate?.timeIntervalSince1970 ?? 0) * 1000,
-                              "hasLocation": item.location != nil])
+                              "hasLocation": item.location != nil,
+                              "screenshot": item.mediaSubtypes.contains(.photoScreenshot) || item.mediaSubtypes.contains(.videoScreenRecording)])
             }
             // Runtime smoke-test signal: no asset IDs, names, paths or image data.
             NSLog("MEMSWIPE_PHOTOS_READ_OK count=%d status=%@", items.count, self.status)
@@ -288,16 +304,23 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         let size = min(3072, max(200, call.getInt("size") ?? 900))
         // LRU bound for this cache, chosen by the profile (0 = leave as is).
         let cacheLimit = Int64(min(max(call.getInt("cacheBytes") ?? 0, 0), 600 * 1024 * 1024))
+        // «Ahorrar iCloud» (network false): only what is already on the iPhone. When
+        // just a smaller local version exists it is returned marked `cloud` and cached
+        // apart, so a later download at full preview size is never shadowed by it.
+        let network = call.getBool("network") ?? true
         let started = Date()
         let folder = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("ManoThumbnails", isDirectory: true)
         let fingerprint = item.localIdentifier + "-\(size)-\(item.modificationDate?.timeIntervalSince1970 ?? 0)"
-        let name = SHA256.hash(data: Data(fingerprint.utf8)).map { String(format: "%02x", $0) }.joined() + ".jpg"
-        let path = folder.appendingPathComponent(name)
+        let digest: (String) -> String = { text in SHA256.hash(data: Data(text.utf8)).map { String(format: "%02x", $0) }.joined() + ".jpg" }
+        let path = folder.appendingPathComponent(digest(fingerprint))
+        let litePath = folder.appendingPathComponent(digest(fingerprint + "-lite"))
         thumbnailQueue.async {
             guard self.thumbnailJobs[token] == nil else { call.reject("Esa vista previa ya se está preparando.", "PREPARATION_BUSY"); return }
-            if let bytes = self.videoSize(path), bytes > 0 {
-                try? FileManager.default.setAttributes([.modificationDate: Date()], ofItemAtPath: path.path)
-                call.resolve(["path": path.path]); return
+            for (file, lite) in [(path, false), (litePath, true)] where !lite || !network {
+                if let bytes = self.videoSize(file), bytes > 0 {
+                    try? FileManager.default.setAttributes([.modificationDate: Date()], ofItemAtPath: file.path)
+                    call.resolve(["path": file.path, "cloud": lite]); return
+                }
             }
             let job = PreparedThumbnailJob(call: call)
             self.thumbnailJobs[token] = job
@@ -309,33 +332,47 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
             self.thumbnailQueue.asyncAfter(deadline: .now() + 60, execute: timeout)
             // requestImage produces a video's poster without requesting/exporting
             // its full AVAsset. One final result settles this promise exactly once.
-            let options = PHImageRequestOptions()
-            options.isNetworkAccessAllowed = true; options.deliveryMode = .highQualityFormat; options.resizeMode = .fast
-            job.photoRequest = self.imageManager.requestImage(for: item, targetSize: CGSize(width: CGFloat(size), height: CGFloat(size)), contentMode: .aspectFit, options: options) { [weak self, weak job] image, info in
-                guard let self, let job else { return }
-                self.thumbnailQueue.async {
-                    guard self.thumbnailJobs[token] === job else { return }
-                    if (info?[PHImageResultIsDegradedKey] as? Bool) == true { return }
-                    if (info?[PHImageCancelledKey] as? Bool) == true {
-                        self.stopThumbnail(token, job: job, message: "Preparación cancelada.", code: "PREPARATION_CANCELLED"); return
+            func request(lite: Bool) {
+                let options = PHImageRequestOptions()
+                options.isNetworkAccessAllowed = network && !lite
+                options.deliveryMode = lite ? .fastFormat : .highQualityFormat; options.resizeMode = .fast
+                if network {
+                    // Only called while iCloud bytes arrive: the card shows the download.
+                    options.progressHandler = { [weak self] progress, _, _, _ in
+                        self?.notifyListeners("mediaPreparationProgress", data: ["requestId": token, "phase": "download", "progress": progress])
                     }
-                    guard let data = image?.jpegData(compressionQuality: 0.88) else {
-                        self.stopThumbnail(token, job: job, message: "No se pudo descargar la vista previa. Comprueba tu conexión a iCloud.", code: "THUMBNAIL_UNAVAILABLE"); return
-                    }
-                    do {
-                        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-                        try data.write(to: path, options: .atomic)
-                        job.timeout?.cancel(); self.thumbnailJobs.removeValue(forKey: token)
-                        call.resolve(["path": path.path])
-                        // Measurement signal for the quality profiles: no ids, names or paths.
-                        NSLog("COCOWASH_PREVIEW size=%ld bytes=%ld ms=%ld", size, data.count, Int(Date().timeIntervalSince(started) * 1000))
-                        self.thumbnailWrites += 1
-                        if cacheLimit > 0, self.thumbnailWrites % 16 == 1 { self.pruneThumbnails(folder, limit: cacheLimit) }
-                    } catch {
-                        self.stopThumbnail(token, job: job, message: "No se pudo guardar la vista previa. Libera espacio y reintenta.", code: "CACHE_WRITE_FAILED")
+                }
+                job.photoRequest = self.imageManager.requestImage(for: item, targetSize: CGSize(width: CGFloat(size), height: CGFloat(size)), contentMode: .aspectFit, options: options) { [weak self, weak job] image, info in
+                    guard let self, let job else { return }
+                    self.thumbnailQueue.async {
+                        guard self.thumbnailJobs[token] === job else { return }
+                        if !lite, (info?[PHImageResultIsDegradedKey] as? Bool) == true { return }
+                        if (info?[PHImageCancelledKey] as? Bool) == true {
+                            self.stopThumbnail(token, job: job, message: "Preparación cancelada.", code: "PREPARATION_CANCELLED"); return
+                        }
+                        guard let data = image?.jpegData(compressionQuality: 0.88) else {
+                            if !network && !lite { request(lite: true); return }
+                            if network { self.stopThumbnail(token, job: job, message: "No se pudo descargar la vista previa. Comprueba tu conexión a iCloud.", code: "THUMBNAIL_UNAVAILABLE") }
+                            else { self.stopThumbnail(token, job: job, message: "Esta foto está en iCloud y aún no tiene vista previa en el iPhone.", code: "IN_CLOUD") }
+                            return
+                        }
+                        let file = lite ? litePath : path
+                        do {
+                            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+                            try data.write(to: file, options: .atomic)
+                            job.timeout?.cancel(); self.thumbnailJobs.removeValue(forKey: token)
+                            call.resolve(["path": file.path, "cloud": lite])
+                            // Measurement signal for the quality profiles: no ids, names or paths.
+                            NSLog("COCOWASH_PREVIEW size=%ld bytes=%ld ms=%ld lite=%d", size, data.count, Int(Date().timeIntervalSince(started) * 1000), lite ? 1 : 0)
+                            self.thumbnailWrites += 1
+                            if cacheLimit > 0, self.thumbnailWrites % 16 == 1 { self.pruneThumbnails(folder, limit: cacheLimit) }
+                        } catch {
+                            self.stopThumbnail(token, job: job, message: "No se pudo guardar la vista previa. Libera espacio y reintenta.", code: "CACHE_WRITE_FAILED")
+                        }
                     }
                 }
             }
+            request(lite: false)
         }
     }
     @objc func cancelThumbnailPreparation(_ call: CAPPluginCall) {
@@ -452,7 +489,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                 result["location"] = coordinates
             }
             // PHAssetResource descriptors expose filename/UTI without fetching
-            // their data. Never use private fileSize KVC or request cloud bytes.
+            // their data. Never request cloud bytes here; the weight comes from sizes().
             let resources = PHAssetResource.assetResources(for: item)
             let resource = resources.first { item.mediaType == .video ? $0.type == .video : $0.type == .photo } ?? resources.first
             if let resource {
@@ -593,6 +630,9 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
             call.reject("Falta el identificador de preparación.", "INVALID_REQUEST"); return
         }
         let key = videoKey(item)
+        // «Ahorrar iCloud» (network false): a video that is only in iCloud is not
+        // downloaded; JS shows its poster, weight and an explicit «Descargar y ver».
+        let network = call.getBool("network") ?? true
         videoQueue.async {
             guard self.videoJobs[token] == nil else { call.reject("Ese vídeo ya se está preparando.", "PREPARATION_BUSY"); return }
             do {
@@ -623,7 +663,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
             // keeps progressing is never killed; a stalled one fails clearly.
             self.armVideoWatchdog(job)
             let options = PHVideoRequestOptions()
-            options.isNetworkAccessAllowed = true
+            options.isNetworkAccessAllowed = network
             options.version = .current
             options.deliveryMode = .highQualityFormat
             options.progressHandler = { [weak self, weak job] progress, error, stop, _ in
@@ -640,6 +680,9 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                         self.stopVideo(job, message: "Preparación cancelada.", code: "PREPARATION_CANCELLED"); return
                     }
                     guard let asset else {
+                        if !network, (info?[PHImageResultIsInCloudKey] as? Bool) == true {
+                            self.stopVideo(job, message: "Este vídeo está en iCloud.", code: "IN_CLOUD"); return
+                        }
                         let error = info?[PHImageErrorKey] as? NSError
                         let network = error?.domain == NSURLErrorDomain || (error?.domain.contains("Cloud") ?? false)
                         self.stopVideo(job, message: network ? "No se pudo descargar el vídeo desde iCloud. Comprueba la conexión y reintenta." : "Este vídeo no está disponible ahora mismo.",
@@ -895,6 +938,125 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                 call.resolve(["groups": groups.values.filter { $0.count > 1 }, "skipped": skipped, "cancelled": self.cancelled()])
             }
         }
+    }
+    /// Bytes each asset occupies in the library: every resource Photos keeps for it
+    /// (original, edits, Live Photo motion), i.e. what deleting it frees. There is
+    /// no public size API: the resource descriptor's `fileSize` is read without
+    /// fetching any data, guarded so an iOS without it yields no value, never a crash.
+    @objc func sizes(_ call: CAPPluginCall) {
+        guard allowed(call), let ids = call.getArray("ids", String.self) else { return }
+        sizeQueue.async {
+            var cache = self.sizeCache ?? self.loadCache("ManoSizes.json"); var changed = false
+            let fetched = PHAsset.fetchAssets(withLocalIdentifiers: Array(ids.prefix(2000)), options: nil)
+            let selector = NSSelectorFromString("fileSize")
+            var result: [String: Int] = [:]
+            fetched.enumerateObjects { item, _, _ in
+                let key = item.localIdentifier + "-\(item.modificationDate?.timeIntervalSince1970 ?? 0)"
+                if let cached = cache[key] as? Int { result[item.localIdentifier] = cached; return }
+                var total = 0
+                for resource in PHAssetResource.assetResources(for: item) where resource.responds(to: selector) {
+                    total += (resource.value(forKey: "fileSize") as? NSNumber)?.intValue ?? 0
+                }
+                if total > 0 { cache[key] = total; result[item.localIdentifier] = total; changed = true }
+            }
+            self.sizeCache = cache
+            // The file holds the whole library: write it at most every 20 s, and on
+            // the caller's last chunk (`flush`), not after every chunk.
+            if changed, call.getBool("flush") == true || Date().timeIntervalSince(self.sizeSavedAt) > 20 {
+                self.saveCache(cache, "ManoSizes.json"); self.sizeSavedAt = Date()
+            }
+            call.resolve(["sizes": result])
+        }
+    }
+    /// Signals for the clean-up filters from a small preview that is already on the
+    /// iPhone (never downloaded or uploaded): recognised text coverage and lines,
+    /// faces, sharpness (Laplacian variance) and brightness, plus Apple's aesthetics
+    /// score and «utility» flag on iOS 18+. JS decides the categories from these.
+    @objc func classify(_ call: CAPPluginCall) {
+        guard allowed(call), let ids = call.getArray("ids", String.self) else { return }
+        classifyQueue.async {
+            // Reset here, in queue order: a cancel sent for the chunk still running
+            // must stop that chunk, not be cleared by the call queued behind it.
+            self.classifyLock.lock(); self.classifyCancelled = false; self.classifyLock.unlock()
+            var cache = self.insightCache ?? self.loadCache("ManoInsights.json"); var changed = false
+            let fetched = PHAsset.fetchAssets(withLocalIdentifiers: Array(ids.prefix(400)), options: nil)
+            var results: [String: Any] = [:]; var skipped = 0
+            fetched.enumerateObjects { item, _, stop in
+                if self.classifyStopped() { stop.pointee = true; return }
+                guard item.mediaType == .image else { return }
+                let key = item.localIdentifier + "-\(item.modificationDate?.timeIntervalSince1970 ?? 0)"
+                if let cached = cache[key] { results[item.localIdentifier] = cached; return }
+                autoreleasepool {
+                    var image: UIImage?
+                    for mode in [PHImageRequestOptionsDeliveryMode.highQualityFormat, .fastFormat] where image == nil {
+                        let options = PHImageRequestOptions(); options.isSynchronous = true; options.isNetworkAccessAllowed = false
+                        options.deliveryMode = mode; options.resizeMode = .fast
+                        self.imageManager.requestImage(for: item, targetSize: CGSize(width: 512, height: 512), contentMode: .aspectFit, options: options) { value, _ in image = value }
+                    }
+                    guard let cgImage = image?.cgImage, let metrics = self.insights(cgImage) else { skipped += 1; return }
+                    cache[key] = metrics; results[item.localIdentifier] = metrics; changed = true
+                }
+            }
+            self.insightCache = cache
+            if changed, call.getBool("flush") == true || self.classifyStopped() || Date().timeIntervalSince(self.insightSavedAt) > 20 {
+                self.saveCache(cache, "ManoInsights.json"); self.insightSavedAt = Date()
+            }
+            call.resolve(["results": results, "skipped": skipped, "cancelled": self.classifyStopped()])
+        }
+    }
+    private func insights(_ image: CGImage) -> [String: Any]? {
+        let text = VNRecognizeTextRequest(); text.recognitionLevel = .fast; text.usesLanguageCorrection = false
+        let faces = VNDetectFaceRectanglesRequest()
+        do { try VNImageRequestHandler(cgImage: image, options: [:]).perform([text, faces]) } catch { return nil }
+        var coverage = 0.0, lines = 0
+        for observation in text.results ?? [] where (observation.topCandidates(1).first?.confidence ?? 0) >= 0.3 {
+            coverage += Double(observation.boundingBox.width * observation.boundingBox.height); lines += 1
+        }
+        let (sharp, luma) = sharpness(image)
+        var result: [String: Any] = ["text": min(1, coverage), "lines": lines, "faces": faces.results?.count ?? 0, "sharp": sharp, "luma": luma]
+        if #available(iOS 18.0, *) {
+            // Separate: unsupported hardware (e.g. some simulators) only loses the score.
+            let aesthetics = VNCalculateImageAestheticsScoresRequest()
+            if (try? VNImageRequestHandler(cgImage: image, options: [:]).perform([aesthetics])) != nil, let score = aesthetics.results?.first {
+                result["score"] = Double(score.overallScore); result["utility"] = score.isUtility
+            }
+        }
+        return result
+    }
+    /// Variance of the Laplacian on a 256 px grey copy (low = blurred) and mean
+    /// brightness 0–1 (very low = too dark).
+    private func sharpness(_ image: CGImage) -> (Double, Double) {
+        let width = 256, height = max(3, min(512, Int(Double(image.height) / Double(max(1, image.width)) * 256)))
+        var pixels = [UInt8](repeating: 0, count: width * height)
+        let drawn: Bool = pixels.withUnsafeMutableBytes { buffer in
+            guard let context = CGContext(data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8,
+                                          bytesPerRow: width, space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return false }
+            context.interpolationQuality = .medium
+            context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+            return true
+        }
+        guard drawn else { return (0, 0) }
+        var sum = 0.0, squares = 0.0, count = 0.0, light = 0.0
+        for value in pixels { light += Double(value) }
+        for y in 1..<(height - 1) { for x in 1..<(width - 1) {
+            let i = y * width + x
+            let v = 4 * Double(pixels[i]) - Double(pixels[i - 1]) - Double(pixels[i + 1]) - Double(pixels[i - width]) - Double(pixels[i + width])
+            sum += v; squares += v * v; count += 1
+        } }
+        let mean = sum / max(1, count)
+        return (squares / max(1, count) - mean * mean, light / Double(pixels.count) / 255)
+    }
+    private func cacheFile(_ name: String) -> URL {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent(name)
+    }
+    private func loadCache(_ name: String) -> [String: Any] {
+        guard let data = try? Data(contentsOf: cacheFile(name)),
+              let value = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return [:] }
+        return value
+    }
+    private func saveCache(_ cache: [String: Any], _ name: String) {
+        guard let data = try? JSONSerialization.data(withJSONObject: cache) else { return }
+        try? data.write(to: cacheFile(name), options: .atomic)
     }
     private func imageHash(_ image: CGImage) -> UInt64 {
         var pixels = [UInt8](repeating: 0, count: 72)

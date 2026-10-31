@@ -1,14 +1,14 @@
 import type { ReactNode } from 'react';
-import { CameraIcon, FilmStripIcon, HandTapIcon, BooksIcon, ImageSquareIcon } from '@phosphor-icons/react';
+import { CameraIcon, FilmStripIcon, HandTapIcon, BooksIcon, ImageSquareIcon, CloudArrowDownIcon } from '@phosphor-icons/react';
 import type { Asset } from './domain';
-import { DATE_FORMATS, formatDate, formatTime, polaroidCaption, type DateFormat, type DisplaySettings } from './meta';
+import { DATE_FORMATS, formatDate, formatTime, polaroidCaption, type CloudMode, type DateFormat, type DisplaySettings } from './meta';
 import { VhsOverlay } from './Vhs';
 import { haptic } from './haptics';
 import { PREVIEW_PROFILES, PREVIEW_QUALITIES, type PreviewQuality } from './preview';
 
 // Format samples only: a fixed illustrative moment, never attributed to a real file.
 const SAMPLE_DATE = new Date(2021, 5, 17, 14, 25).getTime();
-const SAMPLE: Asset = { id: 'sample', kind: 'video', date: SAMPLE_DATE, width: 1000, height: 1500, duration: 84, hasLocation: true, demo: true };
+const SAMPLE: Asset = { id: 'sample', kind: 'video', date: SAMPLE_DATE, width: 1000, height: 1500, duration: 84, hasLocation: true, demo: true, bytes: 148_300_000 };
 const SAMPLE_PLACE = { locality: 'Quito', country: 'Ecuador' };
 const SAMPLE_PHOTO = '/assets/demo/postcard-2.svg';
 const QUALITY_COPY: Record<PreviewQuality, [string, string]> = {
@@ -17,6 +17,10 @@ const QUALITY_COPY: Record<PreviewQuality, [string, string]> = {
   high: ['Alta calidad', 'Más detalle al anclar y ampliar; usa más espacio y, con iCloud, más datos.'],
 };
 const QUALITY = PREVIEW_QUALITIES.map(q => [q, ...QUALITY_COPY[q]] as const);
+const CLOUD: [CloudMode, string, string][] = [
+  ['save', 'Ahorrar iCloud', 'Decides con la vista que ya está en tu iPhone. Solo se descarga al anclar, ampliar o pulsar «Descargar y ver»: no gastas datos ni espacio en lo que vas a borrar.'],
+  ['always', 'Descargar siempre', 'Cada carta se descarga con nitidez completa. Más cómodo con buena conexión y espacio libre.'],
+];
 const facts = (q: PreviewQuality) => { const p = PREVIEW_PROFILES[q]; return `Carta hasta ${p.cardMax} px · al ampliar ${p.zoom} px · caché ${p.cacheMB} MB`; };
 const locale = typeof navigator !== 'undefined' ? navigator.language || 'es' : 'es';
 
@@ -63,6 +67,7 @@ export function DisplaySettingsPanel({ display, change, geek, setGeek, library }
       {video.time && <Choice label="Formato horario" value={video.hour12} options={[[true, `12 h · ${formatTime(SAMPLE_DATE, true, true)}`], [false, `24 h · ${formatTime(SAMPLE_DATE, false)}`]]} change={hour12 => setVideo({ hour12 })}/>}
       <Switch label="Ubicación" checked={video.location} change={location => setVideo({ location })}/>
       <Switch label="Duración" checked={video.duration} change={duration => setVideo({ duration })}/>
+      <Switch label="Peso" hint="Lo que liberas si lo eliminas." checked={video.size} change={size => setVideo({ size })}/>
     </fieldset>
     <fieldset>
       <legend><ImageSquareIcon size={18}/>Calidad de vista previa</legend>
@@ -71,6 +76,13 @@ export function DisplaySettingsPanel({ display, change, geek, setGeek, library }
         {QUALITY.map(([value, label]) => <button key={value} aria-pressed={display.quality === value} onClick={() => { haptic('selection'); change({ ...display, quality: value }); }}>{label}</button>)}
       </div>
       {QUALITY.filter(([value]) => value === display.quality).map(([value, , text]) => <p key={value} className="setting-note" role="status">{text}<small>{facts(value)}</small></p>)}
+    </fieldset>
+    <fieldset>
+      <legend><CloudArrowDownIcon size={18}/>Fotos en iCloud</legend>
+      <div className="filter-chips" role="group" aria-label="Fotos en iCloud">
+        {CLOUD.map(([value, label]) => <button key={value} aria-pressed={display.cloud === value} onClick={() => { haptic('selection'); change({ ...display, cloud: value }); }}>{label}</button>)}
+      </div>
+      {CLOUD.filter(([value]) => value === display.cloud).map(([value, , text]) => <p key={value} className="setting-note" role="status">{text}</p>)}
     </fieldset>
     <fieldset>
       <legend><HandTapIcon size={18}/>Experiencia</legend>

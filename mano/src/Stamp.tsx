@@ -6,9 +6,10 @@ import { DAYS } from './domain';
  * so no decision depends on colour alone:
  *  - keep: round turquoise seal with a check (or the seal level once kept);
  *  - discard: dashed graphite ticket with a tray, «a revisión», never deletion;
- *  - favorite: pink heart.
+ *  - favorite: pink heart;
+ *  - later: coffee postmark with a clock, «Más tarde» (a letter to open later).
  * Deletion has no stamp at all: it only exists as «Eliminar N» in the review. */
-export type StampKind = 'keep' | 'discard' | 'favorite';
+export type StampKind = 'keep' | 'discard' | 'favorite' | 'later';
 export const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
 /** What a kept seal level means for the person: when the photo comes back. */
 export function sealRest(level: number) {
@@ -42,9 +43,19 @@ function FavoriteHeart() {
   </svg>;
 }
 
+function LaterPostmark() {
+  return <svg viewBox="0 0 160 64" aria-hidden="true" focusable="false">
+    <circle cx="32" cy="32" r="27" fill="var(--stamp-fill, none)" stroke="currentColor" strokeWidth="3.5"/>
+    <circle cx="32" cy="32" r="20" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+    <path d="M32 19v13l9 6" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M64 14c8-5 16 5 24 0s16 5 24 0 16 5 24 0 16 5 20 2M64 50c8-5 16 5 24 0s16 5 24 0 16 5 24 0 16 5 20 2" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+    <text className="stamp-word" x="67" y="37">MÁS TARDE</text>
+  </svg>;
+}
+
 export function Stamp({ kind, level, className = '' }: { kind: StampKind; level?: number; className?: string }) {
   return <span className={`stamp stamp-${kind} ${className}`} aria-hidden="true">
-    {kind === 'keep' ? <KeepSeal level={level}/> : kind === 'discard' ? <DiscardTicket/> : <FavoriteHeart/>}
+    {kind === 'keep' ? <KeepSeal level={level}/> : kind === 'discard' ? <DiscardTicket/> : kind === 'later' ? <LaterPostmark/> : <FavoriteHeart/>}
   </span>;
 }
 
@@ -52,8 +63,8 @@ export function Stamp({ kind, level, className = '' }: { kind: StampKind; level?
  * pure decoration over the stack (no pointer events, no state), so it never
  * delays the next gesture. Reduce Motion: the same stamp, no travel or scale. */
 export function DecisionStamp({ kind, reduced, done }: { kind: StampKind; reduced: boolean; done: () => void }) {
-  const travel = kind === 'keep' ? { x: [0, 0, 0, 96], y: [0, 0, 0, 0] } : kind === 'discard' ? { x: [0, 0, 0, -96], y: [0, 0, 0, 0] } : { x: [0, 0, 0, 0], y: [0, 0, 0, -96] };
-  const tilt = kind === 'keep' ? -10 : kind === 'discard' ? 8 : 0;
+  const travel = kind === 'keep' ? { x: [0, 0, 0, 96], y: [0, 0, 0, 0] } : kind === 'discard' ? { x: [0, 0, 0, -96], y: [0, 0, 0, 0] } : kind === 'later' ? { x: [0, 0, 0, 0], y: [0, 0, 0, 96] } : { x: [0, 0, 0, 0], y: [0, 0, 0, -96] };
+  const tilt = kind === 'keep' ? -10 : kind === 'discard' ? 8 : kind === 'later' ? -4 : 0;
   return <motion.div className={`decision-stamp is-${kind}`} aria-hidden="true"
     initial={false}
     animate={reduced ? { opacity: [0, 1, 1, 0] } : { opacity: [0, 1, 1, 0], scale: [1.35, 1, 1, .9], rotate: tilt, ...travel }}

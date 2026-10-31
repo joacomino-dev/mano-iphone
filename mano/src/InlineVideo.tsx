@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type SyntheticEvent } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { PlayIcon, PauseIcon, CornersOutIcon, ArrowClockwiseIcon, GearSixIcon, SpeakerHighIcon, SpeakerSlashIcon } from '@phosphor-icons/react';
+import { PlayIcon, PauseIcon, CornersOutIcon, ArrowClockwiseIcon, GearSixIcon, SpeakerHighIcon, SpeakerSlashIcon, CloudArrowDownIcon } from '@phosphor-icons/react';
 import type { Asset } from './domain';
 import type { Place } from './library';
 import { videoFailureCopy, type VideoState } from './media';
-import type { VideoMeta } from './meta';
+import { formatBytes, type VideoMeta } from './meta';
 import { CocoLoader, Deferred } from './Loader';
 import { VhsOverlay } from './Vhs';
 import { haptic } from './haptics';
@@ -24,9 +24,11 @@ const useDocumentVisible = () => {
  *   gesture (swipes, hold, tap). If iOS refuses to start, or Reduce Motion asks
  *   for no autoplay, one explicit «Reproducir» chip appears instead.
  * - full: the anchored view opened on purpose — sound, timeline and fullscreen.
- * The element is released when the card leaves; the poster stays underneath. */
-export function InlineVideo({ asset, state, active = true, mode = 'card', retry, fullscreen, openSettings, meta, place, children }: {
-  asset: Asset; state: VideoState; active?: boolean; mode?: 'card' | 'full'; retry: () => void; fullscreen: () => void; openSettings: () => void;
+ * The element is released when the card leaves; the poster stays underneath.
+ * A video only in iCloud (with «Ahorrar iCloud») is not downloaded by itself:
+ * its poster, weight and VHS letters stay, and «Descargar y ver» asks for it. */
+export function InlineVideo({ asset, state, active = true, mode = 'card', retry, download, fullscreen, openSettings, meta, place, children }: {
+  asset: Asset; state: VideoState; active?: boolean; mode?: 'card' | 'full'; retry: () => void; download: () => void; fullscreen: () => void; openSettings: () => void;
   meta?: VideoMeta; place?: Place; children: ReactNode;
 }) {
   const player = useRef<HTMLVideoElement>(null);
@@ -42,6 +44,7 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
   const [blocked, setBlocked] = useState(false);
   const [chosen, setChosen] = useState(false);
   const [playError, setPlayError] = useState(false);
+  const [fetching, setFetching] = useState(false);
   const url = state.status === 'ready' ? state.url : undefined;
 
   // Release decoder/network resources when the card changes or unmounts. The
@@ -49,6 +52,7 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
   // previous cleanup removed, and React would not set an unchanged prop again.
   useEffect(() => {
     setPlaying(false); setFrame(false); setTime(0); setPlayError(false); setBlocked(false); setChosen(false);
+    if (url) setFetching(false);
     const video = player.current;
     if (video && url && video.getAttribute('src') !== url) { video.src = url; video.load(); }
     return () => { if (video) { video.pause(); video.removeAttribute('src'); video.load(); } };
@@ -85,6 +89,8 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
   };
   const seek = (value: number) => { const video = player.current; if (video && Number.isFinite(value)) { video.currentTime = value; setTime(value); } };
 
+  // The download label belongs to the request the person made; a failure ends it.
+  useEffect(() => { if (state.status === 'error') setFetching(false); }, [state.status]);
   const failure = playError ? 'playback' : state.status === 'error' ? state.failure : undefined;
   const copy = failure ? videoFailureCopy(failure) : null;
   const loading = !failure && (state.status === 'queued' || state.status === 'loading' || state.status === 'idle');
@@ -101,14 +107,14 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
       onWaiting={() => setWaiting(true)} onPlaying={() => setWaiting(false)} onCanPlay={() => setWaiting(false)}
       onTimeUpdate={full ? e => setTime(e.currentTarget.currentTime) : e => { if (!time) setTime(e.currentTarget.currentTime); }}
       onError={() => { setPlaying(false); setPlayError(true); }}/>}
-    {!full && meta && (meta.date || meta.time || meta.location || meta.duration) && <VhsOverlay asset={asset} place={place} settings={meta}/>}
+    {!full && meta && (meta.date || meta.time || meta.location || meta.duration || meta.size) && <VhsOverlay asset={asset} place={place} settings={meta}/>}
 
     <AnimatePresence initial={false}>
       {(loading || chip) && <motion.div key="center" className="video-center"
         initial={reduced ? false : { opacity: 0, scale: .9 }} animate={{ opacity: 1, scale: 1 }} exit={reduced ? { opacity: 0, transition: { duration: 0 } } : { opacity: 0, scale: .92 }}
         transition={{ type: 'spring', stiffness: 460, damping: 34 }}>
-        {loading ? <Deferred><span className="video-preparing" role="status"><CocoLoader progress={progress} size={56} label={percent ? `Preparando vídeo, ${percent} %` : 'Preparando vídeo'}/>
-          <span>{percent ? `Preparando… ${percent} %` : 'Preparando vídeo…'}</span></span></Deferred>
+        {loading ? <Deferred><span className="video-preparing" role="status"><CocoLoader progress={progress} size={56} label={fetching ? `Descargando de iCloud, ${percent} %` : percent ? `Preparando vídeo, ${percent} %` : 'Preparando vídeo'}/>
+          <span>{fetching ? `Descargando de iCloud… ${percent} %` : percent ? `Preparando… ${percent} %` : 'Preparando vídeo…'}</span></span></Deferred>
           : <button className="video-chip" onClick={choose} aria-label={`${blocked ? 'Toca para reproducir' : 'Reproducir'} vídeo de ${clock(length)}`}><PlayIcon weight="fill" size={18}/>{blocked ? 'Toca para reproducir' : 'Reproducir'}</button>}
       </motion.div>}
     </AnimatePresence>
@@ -124,8 +130,9 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
       <button onClick={enterFullscreen} aria-label="Pantalla completa"><CornersOutIcon size={20} weight="bold"/></button>
     </div>}
 
-    {copy && <div className="video-error" role="alert">
+    {copy && <div className={`video-error ${copy.action === 'download' ? 'is-cloud' : ''}`} role={copy.action === 'download' ? 'status' : 'alert'}>
       <span>{copy.message}</span>
+      {copy.action === 'download' && <button onPointerDown={stop} onClick={e => { e.stopPropagation(); haptic('light'); setFetching(true); download(); }}><CloudArrowDownIcon size={18} weight="bold"/>Descargar y ver{formatBytes(asset.bytes) ? ` · ${formatBytes(asset.bytes)}` : ''}</button>}
       {copy.action === 'retry' && <button onClick={() => { setPlayError(false); retry(); }}><ArrowClockwiseIcon size={18} weight="bold"/>Reintentar</button>}
       {copy.action === 'fullscreen' && <button onClick={fullscreen}><CornersOutIcon size={18} weight="bold"/>Ver en pantalla completa</button>}
       {copy.action === 'settings' && <button onClick={openSettings}><GearSixIcon size={18} weight="bold"/>Abrir Ajustes</button>}

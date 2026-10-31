@@ -47,18 +47,21 @@ export function pixelPath(text: string) {
 }
 
 /** OSD fit: the largest pixel size (3 → 1 in half steps) at which the stack and
- * the duration fit inside the visible frame, padding included. If even 1 px is
- * too wide, the optional line (the place) is dropped first. Height may use at
- * most 45 % of the frame so the type never covers the picture. */
-export function fitOsd(lines: string[], duration: string | undefined, box: { width: number; height: number }, optional?: string) {
+ * the right column (duration, weight) fit inside the visible frame, padding
+ * included. If even 1 px is too wide, the optional line (the place) is dropped
+ * first. Height may use at most 45 % of the frame so the type never covers the
+ * picture. */
+export function fitOsd(lines: string[], right: string | string[] | undefined, box: { width: number; height: number }, optional?: string) {
+  const column = (Array.isArray(right) ? right : [right]).filter((line): line is string => !!line);
   const pad = Math.max(8, Math.round(Math.min(box.width, box.height) * .045));
   const target = Math.max(1, Math.min(3, Math.round(Math.min(box.width, box.height * 1.4) / 140 * 2) / 2));
   const widthOf = (text: string) => pixelPath(text).width;
   const fits = (set: string[], px: number) => {
     const stack = set.length ? Math.max(...set.map(widthOf)) : 0;
-    const dur = duration ? widthOf(duration) + (set.length ? 6 : 0) : 0;
-    const height = set.length ? set.length * 7 + (set.length - 1) * 3 : duration ? 7 : 0;
-    return (stack + dur) * px <= box.width - pad * 2 && height * px <= (box.height - pad * 2) * .45;
+    const side = column.length ? Math.max(...column.map(widthOf)) + (set.length ? 6 : 0) : 0;
+    const rows = Math.max(set.length, column.length);
+    const height = rows ? rows * 7 + (rows - 1) * 3 : 0;
+    return (stack + side) * px <= box.width - pad * 2 && height * px <= (box.height - pad * 2) * .45;
   };
   const attempt = (set: string[]) => { for (let px = target; px >= 1; px -= .5) if (fits(set, px)) return px; return 0; };
   const px = attempt(lines);

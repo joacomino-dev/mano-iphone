@@ -5,16 +5,20 @@ import { normalizeQuality, type PreviewQuality } from './preview.ts';
 /** Display preferences only. They never change which files enter a session. */
 export type DateFormat = 'dmy' | 'd-mon-y' | 'mon-d-y' | 'iso';
 export type PhotoMeta = { date: boolean; time: boolean; location: boolean; dateFormat: DateFormat; hour12: boolean };
-export type VideoMeta = { date: boolean; time: boolean; location: boolean; duration: boolean; dateFormat: DateFormat; hour12: boolean };
-export type DisplaySettings = { photo: PhotoMeta; video: VideoMeta; haptics: boolean; quality: PreviewQuality };
+export type VideoMeta = { date: boolean; time: boolean; location: boolean; duration: boolean; size: boolean; dateFormat: DateFormat; hour12: boolean };
+/** iCloud originals: `save` shows what is already on the iPhone and downloads
+ * only on request (anchor, zoom, «Descargar y ver»); `always` downloads as needed. */
+export type CloudMode = 'save' | 'always';
+export type DisplaySettings = { photo: PhotoMeta; video: VideoMeta; haptics: boolean; quality: PreviewQuality; cloud: CloudMode };
 export const DISPLAY_KEY = 'cocowash-display-v1';
 export const ONBOARDING_KEY = 'cocowash-onboarding-v1';
 export const DATE_FORMATS: DateFormat[] = ['dmy', 'd-mon-y', 'mon-d-y', 'iso'];
 export const defaultDisplay: DisplaySettings = {
   photo: { date: true, time: false, location: true, dateFormat: 'd-mon-y', hour12: false },
-  video: { date: true, time: true, location: true, duration: true, dateFormat: 'mon-d-y', hour12: true },
+  video: { date: true, time: true, location: true, duration: true, size: true, dateFormat: 'mon-d-y', hour12: true },
   haptics: true,
   quality: 'balanced',
+  cloud: 'save',
 };
 
 export function normalizeDisplay(value: unknown): DisplaySettings {
@@ -31,7 +35,7 @@ export function normalizeDisplay(value: unknown): DisplaySettings {
   };
   return { photo: pick(input.photo, defaultDisplay.photo), video: pick(input.video, defaultDisplay.video),
     haptics: typeof input.haptics === 'boolean' ? input.haptics : defaultDisplay.haptics,
-    quality: normalizeQuality(input.quality) };
+    quality: normalizeQuality(input.quality), cloud: input.cloud === 'always' ? 'always' : 'save' };
 }
 export function readDisplay(storage?: Pick<Storage, 'getItem'>): DisplaySettings {
   try { return normalizeDisplay(JSON.parse((storage ?? localStorage).getItem(DISPLAY_KEY) || 'null')); }
@@ -94,7 +98,19 @@ export function polaroidCaption(asset: Asset, place: Place | undefined, settings
   return { where, when, empty: !where && !when };
 }
 
-/** VHS OSD: a top-left stack (time, date, place) and an independent duration. */
+/** Decimal units, as iOS reports storage (1 GB = 10⁹ bytes), Spanish comma:
+ * 820 KB · 3,4 MB · 148 MB · 1,2 GB. Unknown or zero → undefined. */
+export function formatBytes(bytes: number | undefined, locale = 'es'): string | undefined {
+  if (typeof bytes !== 'number' || !Number.isFinite(bytes) || bytes <= 0) return undefined;
+  // Pick the unit after rounding: 999,97 MB reads «1 GB», never «1000 MB».
+  const [unit, size] = bytes >= 999.5e6 ? ['GB', 1e9] : bytes >= 999.5e3 ? ['MB', 1e6] : ['KB', 1e3];
+  const value = Math.max(unit === 'KB' ? 1 : 0, bytes / size);
+  const digits = unit !== 'KB' && value < 10 ? 1 : 0;
+  return `${new Intl.NumberFormat(locale, { maximumFractionDigits: digits }).format(value)} ${unit}`;
+}
+
+/** VHS OSD: a top-left stack (time, date, place) and a right column with the
+ * duration and the weight (what deleting the video would free). */
 export function vhsLayout(asset: Asset, place: Place | undefined, settings: VideoMeta, locale = 'es') {
   const lines = [
     settings.time ? formatTime(asset.date, settings.hour12, true) : undefined,
@@ -102,5 +118,7 @@ export function vhsLayout(asset: Asset, place: Place | undefined, settings: Vide
     settings.location ? placeLabel(place, true, 22) : undefined,
   ].filter((line): line is string => !!line);
   const duration = settings.duration ? formatDuration(asset.duration) : undefined;
-  return { lines, duration, empty: !lines.length && !duration };
+  const size = settings.size ? formatBytes(asset.bytes, locale)?.toLocaleUpperCase(locale) : undefined;
+  const right = [duration, size].filter((line): line is string => !!line);
+  return { lines, duration, size, right, empty: !lines.length && !right.length };
 }
