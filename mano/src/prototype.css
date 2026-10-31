@@ -115,7 +115,7 @@
 /* ---------- Card stack ---------- */
 .hand-space{position:relative;flex:1;min-height:100px;margin-top:var(--cw-space-3);container-type:size}
 .polaroid-stack{position:absolute;inset:0;isolation:isolate}
-.photo-card{position:absolute;left:50%;top:51%;translate:-50% -50%;box-sizing:border-box;max-width:100%;padding:8px 8px 30px;border-radius:var(--cw-radius-xs);
+.photo-card{-webkit-touch-callout:none;position:absolute;left:50%;top:51%;translate:-50% -50%;box-sizing:border-box;max-width:100%;padding:8px 8px 30px;border-radius:var(--cw-radius-xs);
   transform-origin:50% 60%;box-shadow:var(--cw-shadow-1);touch-action:none;cursor:grab;transition:width var(--cw-base) var(--cw-ease),height var(--cw-base) var(--cw-ease),box-shadow var(--cw-base) var(--cw-ease)}
 .photo-card.front{box-shadow:var(--cw-shadow-2)}
 /* Videos: a tape-black frame with a slimmer foot (no caption; the OSD carries
@@ -212,7 +212,7 @@
 
 /* ---------- Inspector ---------- */
 /* Peek: the photo lifts in place over a dimmed stack. Anchored: fit + controls. */
-.inspection{position:absolute;z-index:80;inset:0;pointer-events:none;overflow:hidden}
+.inspection{-webkit-touch-callout:none;position:absolute;z-index:80;inset:0;pointer-events:none;overflow:hidden}
 .inspection.is-pinned{pointer-events:auto}
 .inspection-shade{position:absolute;inset:0;background:var(--cw-shade);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .inspection-photo{position:absolute;overflow:hidden;touch-action:none;border-radius:var(--cw-radius-xs);outline:none;background:var(--cw-teal-800);box-shadow:0 18px 40px rgba(4,18,19,.5);transform-origin:50% 50%;will-change:transform}
