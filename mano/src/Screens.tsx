@@ -73,7 +73,7 @@ const plural = (n: number, one: string, many: string) => `${n.toLocaleString('es
  * next round; with any pending, «Una última mirada» leads, since deletion only
  * happens there (Fotos confirms). «Cerrar» in that review comes back here.
  * After «Eliminar N», the reward leads: how much space this round freed. */
-export function SessionDone({ stats, pending, pendingBytes, lifetime, again, review }: { stats: RoundStats; pending: number; pendingBytes: number; lifetime: number; again: () => void; review: () => void }) {
+export function SessionDone({ stats, pending, pendingBytes, pendingPartial, lifetime, again, review }: { stats: RoundStats; pending: number; pendingBytes: number; pendingPartial: boolean; lifetime: number; again: () => void; review: () => void }) {
   const reduced = useReducedMotion();
   const total = stats.keep + stats.discard + stats.favorite + stats.later;
   const freed = stats.freedPhotos + stats.freedVideos > 0;
@@ -86,8 +86,8 @@ export function SessionDone({ stats, pending, pendingBytes, lifetime, again, rev
     <motion.div className="done-stamp" initial={reduced ? false : { scale: 1.6, opacity: 0, rotate: -14 }} animate={{ scale: 1, opacity: 1, rotate: -6 }} transition={{ type: 'spring', stiffness: 380, damping: 18, delay: .05 }} aria-hidden="true">{freed ? 'Liberado' : 'Guardado'}</motion.div>
     <motion.h1 {...rise(reduced, .12)}>{freed ? 'Espacio recuperado.' : total ? 'Buena ronda.' : 'Revisión guardada.'}</motion.h1>
     {freed && <motion.section {...rise(reduced, .16)} className="done-freed" aria-label="Espacio liberado">
-      <span className="freed-label">Liberaste</span>
-      <motion.strong className="freed-amount" initial={reduced ? false : { scale: .6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 16, delay: .3 }}>{freedLabel ? `${stats.freedPartial ? '~' : ''}${freedLabel}` : plural(stats.freedPhotos + stats.freedVideos, 'archivo', 'archivos')}</motion.strong>
+      <span className="freed-label">{stats.freedPartial && freedLabel ? 'Liberaste al menos' : 'Liberaste'}</span>
+      <motion.strong className="freed-amount" initial={reduced ? false : { scale: .6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 16, delay: .3 }}>{freedLabel ? freedLabel : plural(stats.freedPhotos + stats.freedVideos, 'archivo', 'archivos')}</motion.strong>
       <span className="freed-items">{items} a «Eliminado recientemente»</span>
       {lifetime > stats.freed && formatBytes(lifetime) && <span className="freed-total">Con CocoWash ya llevas {formatBytes(lifetime)}</span>}
       <small>El espacio vuelve del todo cuando Fotos vacía «Eliminado recientemente» (30 días) o cuando lo vacías tú.</small>
@@ -101,7 +101,7 @@ export function SessionDone({ stats, pending, pendingBytes, lifetime, again, rev
     <motion.div {...rise(reduced, .24)} className="status-actions">
       {pending > 0 && <button className="primary-empty" onClick={review}><EyeIcon size={20} weight="bold"/>Una última mirada ({pending})</button>}
       <button className={pending > 0 ? 'secondary-empty' : 'primary-empty'} onClick={again}>Seguir revisando<CaretRightIcon size={18} weight="bold"/></button>
-      {pending > 0 && <p className="status-hint">{pendingLabel ? <>Si eliminas {pending === 1 ? 'tu descarte' : `tus ${pending} descartes`} liberas <strong>{pendingLabel}</strong>. Si no, se guardan para la próxima ronda.</> : <>{pending === 1 ? 'Tu descarte se guarda' : `Tus ${pending} descartes se guardan`} para la próxima ronda si no eliminas ahora.</>}</p>}
+      {pending > 0 && <p className="status-hint">{pendingLabel ? <>Si eliminas {pending === 1 ? 'tu descarte' : `tus ${pending} descartes`} liberas {pendingPartial ? 'al menos ' : ''}<strong>{pendingLabel}</strong>. Si no, se guardan para la próxima ronda.</> : <>{pending === 1 ? 'Tu descarte se guarda' : `Tus ${pending} descartes se guardan`} para la próxima ronda si no eliminas ahora.</>}</p>}
     </motion.div>
   </main>;
 }

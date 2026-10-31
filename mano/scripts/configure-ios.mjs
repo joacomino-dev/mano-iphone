@@ -30,5 +30,8 @@ project=fs.readFileSync(pbx,'utf8').replace(/MARKETING_VERSION = [^;]+;/g,'MARKE
 fs.writeFileSync(pbx,project);
 // Landscape is intentionally unsupported for the card-hand UI in this first build.
 info=info.replace(/\s*<string>UIInterfaceOrientationLandscapeLeft<\/string>/g,'').replace(/\s*<string>UIInterfaceOrientationLandscapeRight<\/string>/g,'');
+// App Store: arm64 only (iOS 17+), and only exempt encryption (SHA-256 cache names).
+info=info.replace('<string>armv7</string>','<string>arm64</string>');
+if(!info.includes('ITSAppUsesNonExemptEncryption'))info=info.replace('<key>LSRequiresIPhoneOS</key>','<key>ITSAppUsesNonExemptEncryption</key>\n<false/>\n<key>LSRequiresIPhoneOS</key>');
 fs.writeFileSync(plist,info);
 console.log('PhotoLibrary plugin, Spanish privacy strings and iPhone target configured.');

@@ -12,12 +12,13 @@ export type LibraryIndex = {
   measuring: boolean; analyzing: boolean;
 };
 
-const SIZE_CHUNK = 1000, VISION_CHUNK = 120;
+const SIZE_CHUNK = 200, VISION_CHUNK = 120;
 /** Vision results reach the pile at most this often: each bump re-sorts it. */
 const VISION_REFRESH_MS = 4000;
 
 /** The library's weight and clean-up signals, measured on the iPhone in the
- * background once the library is open: sizes first (fast, descriptor reads),
+ * background once the library is open: weights first (originals on the iPhone,
+ * public API; iCloud-only ones stay unknown),
  * then Vision over photos, oldest first, a chunk at a time. Native caches make
  * later launches near instant. Vision pauses while the similar-photo search,
  * a warm-up or loading runs, and resumes where it stopped. Nothing is sent
@@ -35,7 +36,8 @@ export function useLibraryIndex(assets: Asset[], fingerprint: string, enabled: b
     if (!enabled) return;
     let alive = true; setSized(false);
     void (async () => {
-      const ids = latest.current.map(a => a.id).filter(id => !sizes.current.has(id));
+      // Videos first: they weigh the most and the VHS shows their weight.
+      const ids = [...latest.current].sort((a, b) => Number(b.kind === 'video') - Number(a.kind === 'video')).map(a => a.id).filter(id => !sizes.current.has(id));
       if (ids.length) setMeasuring(true);
       try {
         for (let i = 0; i < ids.length && alive; i += SIZE_CHUNK) {

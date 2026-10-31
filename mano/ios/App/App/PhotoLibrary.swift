@@ -939,25 +939,23 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
             }
         }
     }
-    /// Bytes each asset occupies in the library: every resource Photos keeps for it
-    /// (original, edits, Live Photo motion), i.e. what deleting it frees. There is
-    /// no public size API: the resource descriptor's `fileSize` is read without
-    /// fetching any data, guarded so an iOS without it yields no value, never a crash.
+    /// Weight of each asset's original file when it is on this iPhone, through
+    /// public API only (App Store guideline 2.5.1): a video's file from its
+    /// AVURLAsset, a photo's full-size file from its content editing input. Nothing
+    /// is downloaded: an original that is only in iCloud has no weight yet and is
+    /// asked again on a later call. Live Photo motion and edit sidecars are not
+    /// counted, so the figure never overstates what deleting frees.
     @objc func sizes(_ call: CAPPluginCall) {
         guard allowed(call), let ids = call.getArray("ids", String.self) else { return }
         sizeQueue.async {
             var cache = self.sizeCache ?? self.loadCache("ManoSizes.json"); var changed = false
-            let fetched = PHAsset.fetchAssets(withLocalIdentifiers: Array(ids.prefix(2000)), options: nil)
-            let selector = NSSelectorFromString("fileSize")
+            let fetched = PHAsset.fetchAssets(withLocalIdentifiers: Array(ids.prefix(400)), options: nil)
             var result: [String: Int] = [:]
             fetched.enumerateObjects { item, _, _ in
                 let key = item.localIdentifier + "-\(item.modificationDate?.timeIntervalSince1970 ?? 0)"
                 if let cached = cache[key] as? Int { result[item.localIdentifier] = cached; return }
-                var total = 0
-                for resource in PHAssetResource.assetResources(for: item) where resource.responds(to: selector) {
-                    total += (resource.value(forKey: "fileSize") as? NSNumber)?.intValue ?? 0
-                }
-                if total > 0 { cache[key] = total; result[item.localIdentifier] = total; changed = true }
+                guard let bytes = self.localFileSize(item), bytes > 0 else { return }
+                cache[key] = bytes; result[item.localIdentifier] = bytes; changed = true
             }
             self.sizeCache = cache
             // The file holds the whole library: write it at most every 20 s, and on
@@ -967,6 +965,27 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
             }
             call.resolve(["sizes": result])
         }
+    }
+    /// Called on sizeQueue (never main: PhotoKit answers editing input on main).
+    /// Waits at most 10 s for one local-only PhotoKit answer.
+    private func localFileSize(_ item: PHAsset) -> Int? {
+        let done = DispatchSemaphore(value: 0)
+        var file: URL?
+        if item.mediaType == .video {
+            let options = PHVideoRequestOptions()
+            options.isNetworkAccessAllowed = false; options.version = .original; options.deliveryMode = .highQualityFormat
+            _ = imageManager.requestAVAsset(forVideo: item, options: options) { asset, _, _ in
+                file = (asset as? AVURLAsset)?.url; done.signal()
+            }
+        } else {
+            let options = PHContentEditingInputRequestOptions()
+            options.isNetworkAccessAllowed = false
+            _ = item.requestContentEditingInput(with: options) { input, _ in
+                file = input?.fullSizeImageURL; done.signal()
+            }
+        }
+        guard done.wait(timeout: .now() + 10) == .success, let file, file.isFileURL else { return nil }
+        return (try? file.resourceValues(forKeys: [.fileSizeKey]))?.fileSize
     }
     /// Signals for the clean-up filters from a small preview that is already on the
     /// iPhone (never downloaded or uploaded): recognised text coverage and lines,

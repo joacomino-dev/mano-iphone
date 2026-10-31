@@ -159,6 +159,17 @@ same bundle/keys/permissions).
   secondary / accents): tour, sheets, review and end of round are paper-dominant
   cards on a teal frame; the session is a deliberate exception (the photo leads).
 
+## App Store target — 31 October 2026 (user, durable)
+
+CocoWash is built to ship on the App Store. Use public API only (guideline
+2.5.1: no KVC on private properties, no private selectors), keep
+`PrivacyInfo.xcprivacy` complete for every required-reason API (today:
+UserDefaults CA92.1, file timestamps C617.1), `ITSAppUsesNonExemptEncryption`
+false while only hashing is used, arm64 / iOS 17+. A feature that needs
+non-public behaviour or is not reliable is removed or reduced to what public API
+measures exactly, never estimated. The AltStore workflow is personal testing;
+an App Store build needs the Apple Developer Program, signing and upload.
+
 ## CocoWash 0.6 decisions — 31 October 2026 (user request, CW-CL-020)
 
 Requested by the user and implemented directly. Functional protections are
@@ -169,9 +180,10 @@ bundle, keys and permissions; `cocowash-media://` and `native.html` CSP untouche
 - Order: chronological by default («Más antiguas»), also «Más recientes», «Más
   pesadas», «Más ligeras», «Al azar». Saved pre-0.6 filters with the old random
   default become chronological once (`Filter.v = 2` keeps a random picked later).
-- Weight: what deleting an item frees = sum of all its PhotoKit resources, read
-  from the resource descriptor's `fileSize` (no public API; guarded with
-  `responds(to:)`, never fetches data, cached in Caches/ManoSizes.json). Shown in
+- Weight: size of the original file when it is on the iPhone, public API only
+  (video: AVURLAsset file; photo: content editing input full-size file; nothing
+  downloaded; cached in Caches/ManoSizes.json). iCloud-only originals have no
+  weight; totals with unknowns read «al menos X». Shown in
   the VHS OSD under the duration (Ajustes › Vídeos › Peso, on by default), in
   «Eliminar N · X MB», in the end-of-round summary and in Modo Geek. Decimal units
   like iOS (1 GB = 10⁹ B), Spanish comma.
