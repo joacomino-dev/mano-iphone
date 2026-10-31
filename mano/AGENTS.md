@@ -100,3 +100,47 @@ review. Functional contracts remain protected.
 - Date presets24h/7d/30d/custom inclusive local days, friendly draft filters, optional local Geek metadata. Hold to smoothly inspect, drag to pin, pinch/pan when pinned, outside/close to release. Buttons provide alternatives to gestures.
 - Superseded 30 October (CW-CL-013, user instruction): no landing/welcome page and no falling photos. First launch only: 4-card onboarding (what it is, gestures, essentials, privacy), no skip, Photos requested on the last card; denied → «Abrir Ajustes»; limited access handled. Session starts automatically. Create native album from selection.
 - User decisions 30 October: no expand icon on cards (double tap/pinch, accessible focus-only button); long press isolates in place with minimal scale and one bottom anchor dock (progressive feedback, haptic); header shows the name CocoWash; photos keep Polaroid with place/date caption, videos use a VHS tape frame and pixel OSD (time/date/place/duration, adaptive); display settings live in Ajustes, separate from selection filters; counter reflects the filtered set; loaders branded and non-technical, real errors explicit.
+
+## CocoWash 0.5 decisions — 31 October 2026 (user-approved, CW-CL-017)
+
+Approved by the user after the CW-CL-017 proposal; they supersede the earlier
+"read-only first mission" wording for this work only. Functional protections are
+unchanged (deletion only from the review with the Photos confirmation and the
+favourites recheck, demo-only destructive QA, protected preview runtime/28 hashes,
+same bundle/keys/permissions).
+
+- Colour semantics (one meaning per colour, WCAG AA measured): teal/turquoise =
+  identity and Conservar (#1E7470 on paper); ivory = surfaces; coffee (coconut
+  shell, #8A4B2D / #6E3B22) = structure, contrast and everything that used to be
+  brand red; pink (brain, #EF9A98 on teal / #A3405A on paper) = accent and
+  Favorita; graphite #4E5A68 = Descartar («a revisión», recoverable); red #B3261E
+  only for «Eliminar N» in the review. No yellow (logo sponge is light turquoise
+  #7CCBC2). Text and icons on teal are white.
+- Decisions differ by colour, shape, icon and word: Conservar = round turquoise
+  seal with check (kept photos show the level as a numeral I–VIII, one ink;
+  Filters read «Sello I · vuelve en 7 días»); Descartar = dashed graphite ticket
+  with a tray; Favorita = pink heart. Each decision stamps briefly over the stack
+  without blocking the next gesture; Reduce Motion shows the same stamp without
+  travel. No visible notice after decisions (VoiceOver announcement only).
+- Spacing uses the 4-pt `--cw-space-*` scale through roles (`--cw-gutter`,
+  `--cw-stack`, `--cw-section`, `--cw-icon-gap`, `--cw-card-side`, `--cw-caption`).
+  Header: «Filtros» and «Terminar» same size (≥44 pt), name centred on screen.
+  Polaroid caption: place always left, date always right; missing = empty slot.
+- Tour: large paper card over the empty main screen; own postcard illustrations
+  (no stock photo, no final character). «Continuar» waits one short gesture-demo
+  cycle on first visit only; immediate with Reduce Motion. Names: «Anclar» /
+  «Anclada» for the anchored view, «Ampliar» for zoom.
+- Gestures: a tap advances in a group at once; double tap no longer opens the
+  anchored view (pinch, hold-and-drag to the dock, or the focusable «Anclar»).
+  No loupe, selection or callout menu outside text fields. Saving to an album
+  keeps (undoable) and advances; failure keeps the card.
+- Video: muted looping autoplay on the top card only; no timeline/controls while
+  sorting (only in the anchored view, with sound and fullscreen); explicit chip
+  if iOS refuses or with Reduce Motion. VHS overlay is letters only, fitted to
+  the visible frame; the tape frame stays.
+- «Terminar» ends the round: the summary leads to «Una última mirada (N)» when
+  discards are pending; review closes back to it; pending discards carry over.
+  Review: «Eliminar N» + one sentence + «Recuperar los N descartes».
+- Preview quality profiles in Ajustes (Rápida / Equilibrada default / Alta
+  calidad): card size from real width × screen scale, larger version on anchor
+  swapped in place, bounded native preview cache. Previews only, never originals.

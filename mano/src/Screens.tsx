@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
-import { GearSixIcon, ArrowClockwiseIcon, CaretRightIcon, ImagesIcon } from '@phosphor-icons/react';
+import { GearSixIcon, ArrowClockwiseIcon, CaretRightIcon, ImagesIcon, EyeIcon } from '@phosphor-icons/react';
 import { AnimatedNumber, CocoLoader } from './Loader';
 import type { PhotoPermission } from './library';
 
@@ -44,7 +44,9 @@ export function LoadErrorScreen({ message, retry }: { message: string; retry: ()
   </main>;
 }
 
-/** End of a round: a stamped summary of this session, then continue or review. */
+/** End of a round («Terminar»): a stamped summary. Pending discards stay for the
+ * next round; with any pending, «Una última mirada» leads, since deletion only
+ * happens there (Fotos confirms). «Cerrar» in that review comes back here. */
 export function SessionDone({ stats, pending, again, review }: { stats: { keep: number; discard: number; favorite: number }; pending: number; again: () => void; review: () => void }) {
   const reduced = useReducedMotion();
   const total = stats.keep + stats.discard + stats.favorite;
@@ -57,8 +59,9 @@ export function SessionDone({ stats, pending, again, review }: { stats: { keep: 
       <div><dt>Favoritas</dt><dd><AnimatedNumber value={stats.favorite}/></dd></div>
     </motion.dl> : <motion.p {...rise(reduced, .18)}>Tu progreso está a salvo. Sigue cuando quieras.</motion.p>}
     <motion.div {...rise(reduced, .24)} className="status-actions">
-      <button className="primary-empty" onClick={again}>Seguir revisando<CaretRightIcon size={18} weight="bold"/></button>
-      {pending > 0 && <button className="text-button" onClick={review}>Revisar {pending} descarte{pending === 1 ? '' : 's'}</button>}
+      {pending > 0 && <button className="primary-empty" onClick={review}><EyeIcon size={20} weight="bold"/>Una última mirada ({pending})</button>}
+      <button className={pending > 0 ? 'secondary-empty' : 'primary-empty'} onClick={again}>Seguir revisando<CaretRightIcon size={18} weight="bold"/></button>
+      {pending > 0 && <p className="status-hint">{pending === 1 ? 'Tu descarte se guarda' : `Tus ${pending} descartes se guardan`} para la próxima ronda si no eliminas ahora.</p>}
     </motion.div>
   </main>;
 }

@@ -26,7 +26,7 @@ const plist='ios/App/App/Info.plist'; let info=fs.readFileSync(plist,'utf8');
 if(!info.includes('NSPhotoLibraryUsageDescription'))info=info.replace('<key>LSRequiresIPhoneOS</key>','<key>NSPhotoLibraryUsageDescription</key>\n<string>Mano necesita leer tu carrete para comparar fotos y vídeos, marcar favoritos, organizar álbumes y borrar solo los descartes que confirmes. El análisis se realiza en tu iPhone.</string>\n<key>NSPhotoLibraryAddUsageDescription</key>\n<string>Mano organiza las fotos que eliges en tus álbumes de Fotos.</string>\n<key>LSRequiresIPhoneOS</key>');
 info=info.replace('<string>en</string>','<string>es</string>');
 info=info.replace(/(<key>CFBundleDisplayName<\/key>\s*<string>)[^<]*(<\/string>)/,'$1CocoWash$2').replaceAll('MemSwipe','CocoWash').replaceAll('Mano necesita','CocoWash necesita').replaceAll('Mano organiza','CocoWash organiza');
-project=fs.readFileSync(pbx,'utf8').replace(/MARKETING_VERSION = [^;]+;/g,'MARKETING_VERSION = 0.4.0;').replace(/CURRENT_PROJECT_VERSION = [^;]+;/g,'CURRENT_PROJECT_VERSION = 4;');
+project=fs.readFileSync(pbx,'utf8').replace(/MARKETING_VERSION = [^;]+;/g,'MARKETING_VERSION = 0.5.0;').replace(/CURRENT_PROJECT_VERSION = [^;]+;/g,'CURRENT_PROJECT_VERSION = 5;');
 fs.writeFileSync(pbx,project);
 // Landscape is intentionally unsupported for the card-hand UI in this first build.
 info=info.replace(/\s*<string>UIInterfaceOrientationLandscapeLeft<\/string>/g,'').replace(/\s*<string>UIInterfaceOrientationLandscapeRight<\/string>/g,'');

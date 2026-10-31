@@ -38,6 +38,16 @@ final class PhotosSmokeTests: XCTestCase {
                 XCTFail("Onboarding card \(step) did not offer Continuar.")
                 return
             }
+            // The gestures card keeps «Continuar» disabled for one short demo cycle
+            // (~4 s, first visit only). Wait for it to be enabled, then tap.
+            // Standalone waiter: not registered with the test case, so the later
+            // waitForExpectations(timeout:) never waits on it a second time.
+            let enabled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: next)
+            guard XCTWaiter().wait(for: [enabled], timeout: 30) == .completed else {
+                attachScreenshot(app, "Onboarding card \(step) stayed disabled")
+                XCTFail("Continuar stayed disabled on onboarding card \(step).")
+                return
+            }
             next.tap()
         }
         let allow = app.buttons["Permitir acceso a Fotos"].firstMatch
@@ -78,6 +88,10 @@ final class PhotosSmokeTests: XCTestCase {
 
         // Safe native mutation: a new album containing only simulator fixtures.
         // No discard, delete, favorites or real-device operations are performed.
+        // Saving to an album now also keeps the item and advances: the progress
+        // label («Revisados N de M…») must change once PhotoKit confirms.
+        let progressLabel = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", "Revisados ")).firstMatch
+        let reviewedBefore = progressLabel.waitForExistence(timeout: 15) ? progressLabel.label : ""
         let album = app.buttons["Álbum"].firstMatch
         XCTAssertTrue(album.waitForExistence(timeout: 15))
         album.tap()
@@ -94,6 +108,17 @@ final class PhotosSmokeTests: XCTestCase {
         // The form button dismisses its own keyboard; do not inject JS or native calls.
         save.tap()
         XCTAssertTrue(album.waitForExistence(timeout: 30))
+        if reviewedBefore.isEmpty {
+            print("COCOWASH_UI_ALBUM_ADVANCE_UNCONFIRMED progress label not exposed")
+        } else {
+            let advanced = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == true AND label != %@", reviewedBefore), object: progressLabel)
+            guard XCTWaiter().wait(for: [advanced], timeout: 30) == .completed else {
+                attachScreenshot(app, "Album save did not keep and advance")
+                XCTFail("Saving to an album must keep the item and advance the pile.")
+                return
+            }
+            print("COCOWASH_UI_ALBUM_KEPT_AND_ADVANCED before=\(reviewedBefore) after=\(progressLabel.label)")
+        }
         let returnedToSession = NSPredicate(format: "hittable == true")
         expectation(for: returnedToSession, evaluatedWith: album)
         waitForExpectations(timeout: 30)
@@ -182,20 +207,20 @@ final class PhotosSmokeTests: XCTestCase {
             return
         }
 
-        // Diagnostic probes, not gates. Synthesized double tap and press-and-drag on
-        // the card did not reach the anchored view in runs 41162917606/41164527679
-        // although the same events work in the web preview. Record what XCTest sees
-        // so the next change is based on evidence; verify the gestures on device.
+        // Diagnostic probes, not gates. Synthesized gestures on the card did not reach
+        // the anchored view in runs 41162917606/41164527679 although the same events
+        // work in the web preview. Double tap no longer opens it (a tap advances at
+        // once); a pinch-out does. Record what XCTest sees; verify on device.
         XCTAssertTrue(finish.waitForExistence(timeout: 15))
         let card = app.descendants(matching: .any).matching(NSPredicate(format:
             "label BEGINSWITH %@ OR label BEGINSWITH %@ OR label BEGINSWITH %@", "Foto 1 de", "Vídeo 1 de", "Live Photo 1 de")).firstMatch
         guard card.waitForExistence(timeout: 10) else { print("COCOWASH_UI_PROBE card not exposed"); return }
         print("COCOWASH_UI_PROBE app=\(app.frame) card=\(card.exists ? "\(card.frame)" : "gone") info=\(info.exists ? "\(info.frame)" : "gone")")
         let press = card.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
-        press.doubleTap()
-        let doubleTapped = app.staticTexts["Anclada"].firstMatch.waitForExistence(timeout: 6)
-        print(doubleTapped ? "COCOWASH_UI_DOUBLE_TAP_OK" : "COCOWASH_UI_DOUBLE_TAP_UNCONFIRMED")
-        if doubleTapped, !closeOverlay(app, until: finish) { print("COCOWASH_UI_PROBE stopped: anchored view did not close"); return }
+        card.pinch(withScale: 2.0, velocity: 1.5)
+        let pinched = app.staticTexts["Anclada"].firstMatch.waitForExistence(timeout: 6)
+        print(pinched ? "COCOWASH_UI_PINCH_OK" : "COCOWASH_UI_PINCH_UNCONFIRMED")
+        if pinched, !closeOverlay(app, until: finish) { print("COCOWASH_UI_PROBE stopped: anchored view did not close"); return }
         let dock = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.89))
         press.press(forDuration: 1.0, thenDragTo: dock, withVelocity: .slow, thenHoldForDuration: 0.4)
         attachScreenshot(app, "After hold and drag to the anchor dock")

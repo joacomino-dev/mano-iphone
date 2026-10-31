@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "check:runtime": "node scripts/check-mobile-runtime.mjs",
-    "test": "node --experimental-strip-types --test tests/domain.test.mjs tests/preload.test.mjs tests/session.test.mjs tests/meta.test.mjs",
+    "test": "node --experimental-strip-types --test tests/domain.test.mjs tests/preload.test.mjs tests/session.test.mjs tests/meta.test.mjs tests/album-preview.test.mjs",
     "build:native": "tsc && vite build --config vite.native.config.ts && node scripts/prepare-native.mjs",
     "sync:ios": "npm run build:native && cap sync ios && node scripts/configure-ios.mjs",
     "update:runtime-lock": "node scripts/update-mobile-runtime-lock.mjs",

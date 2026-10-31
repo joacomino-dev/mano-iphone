@@ -1,11 +1,14 @@
 {
   "teal": "#1D4042",
   "cream": "#F2E7D5",
-  "red": "#B44238",
+  "coffee": "#8A4B2D",
   "ink": "#122D2E",
   "coconut": "#AF6742",
   "shade": "#955135",
   "pink": "#EF9A98",
   "pinkShade": "#DC787D",
-  "yellow": "#E9BC65"
+  "sponge": "#7CCBC2",
+  "turquoise": "#1E7470",
+  "graphite": "#4E5A68",
+  "destructive": "#B3261E"
 }

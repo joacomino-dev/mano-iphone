@@ -1,11 +1,12 @@
 import type { Asset } from './domain.ts';
 import type { Place } from './library.ts';
+import { normalizeQuality, type PreviewQuality } from './preview.ts';
 
 /** Display preferences only. They never change which files enter a session. */
 export type DateFormat = 'dmy' | 'd-mon-y' | 'mon-d-y' | 'iso';
 export type PhotoMeta = { date: boolean; time: boolean; location: boolean; dateFormat: DateFormat; hour12: boolean };
 export type VideoMeta = { date: boolean; time: boolean; location: boolean; duration: boolean; dateFormat: DateFormat; hour12: boolean };
-export type DisplaySettings = { photo: PhotoMeta; video: VideoMeta; haptics: boolean };
+export type DisplaySettings = { photo: PhotoMeta; video: VideoMeta; haptics: boolean; quality: PreviewQuality };
 export const DISPLAY_KEY = 'cocowash-display-v1';
 export const ONBOARDING_KEY = 'cocowash-onboarding-v1';
 export const DATE_FORMATS: DateFormat[] = ['dmy', 'd-mon-y', 'mon-d-y', 'iso'];
@@ -13,6 +14,7 @@ export const defaultDisplay: DisplaySettings = {
   photo: { date: true, time: false, location: true, dateFormat: 'd-mon-y', hour12: false },
   video: { date: true, time: true, location: true, duration: true, dateFormat: 'mon-d-y', hour12: true },
   haptics: true,
+  quality: 'balanced',
 };
 
 export function normalizeDisplay(value: unknown): DisplaySettings {
@@ -28,7 +30,8 @@ export function normalizeDisplay(value: unknown): DisplaySettings {
     return out as T;
   };
   return { photo: pick(input.photo, defaultDisplay.photo), video: pick(input.video, defaultDisplay.video),
-    haptics: typeof input.haptics === 'boolean' ? input.haptics : defaultDisplay.haptics };
+    haptics: typeof input.haptics === 'boolean' ? input.haptics : defaultDisplay.haptics,
+    quality: normalizeQuality(input.quality) };
 }
 export function readDisplay(storage?: Pick<Storage, 'getItem'>): DisplaySettings {
   try { return normalizeDisplay(JSON.parse((storage ?? localStorage).getItem(DISPLAY_KEY) || 'null')); }
@@ -81,8 +84,8 @@ export function placeLabel(place: Place | undefined, upper = false, max = 26): s
   return upper ? label.toLocaleUpperCase() : label;
 }
 
-/** Polaroid margin: place reads first (where), date second (when). Missing
- * values are dropped; nothing is invented or left as an empty slot. */
+/** Polaroid margin: place (where) holds the left slot, date (when) the right.
+ * Missing values are never invented; the UI leaves their slot empty. */
 export function polaroidCaption(asset: Asset, place: Place | undefined, settings: PhotoMeta, locale = 'es') {
   const where = settings.location ? placeLabel(place) : undefined;
   const date = settings.date ? formatDate(asset.date, settings.dateFormat, locale) : undefined;

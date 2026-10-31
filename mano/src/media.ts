@@ -1,6 +1,7 @@
 import { Capacitor } from '@capacitor/core';
 import type { Asset } from './domain';
-import { Library, thumbnail } from './library';
+import { Library, isNative, thumbnail } from './library';
+import { cacheBytes, cardPixels, previewQuality, zoomPixels } from './preview';
 
 /** Poster only. Videos prepare separately (VideoStore) so a slow or failed
  * video download can never take its poster down with it, and vice versa. */
@@ -25,23 +26,43 @@ function decodePoster(src: string, signal: AbortSignal) {
 export async function prepareReviewAsset(asset: Asset, signal: AbortSignal): Promise<PreparedMedia> {
   if (signal.aborted) throw aborted();
   if (asset.demo) {
-    const poster = await thumbnail(asset);
+    const poster = await thumbnail(asset, cardPixels(asset));
     await decodePoster(poster, signal);
     return { poster };
   }
-  const requestId = `review-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const poster = await nativeThumbnail(asset, cardPixels(asset), 'review', signal);
+  await decodePoster(poster, signal);
+  return { poster };
+}
+
+/** One native preview request owned by the caller's signal: cancelled natively
+ * on abort, its file path converted for the WebView. */
+async function nativeThumbnail(asset: Asset, size: number, prefix: string, signal: AbortSignal, track?: (cancel: () => void) => void) {
+  const requestId = `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const cancel = () => { void Library.cancelThumbnailPreparation({ requestId }).catch(() => {}); };
+  track?.(cancel);
   signal.addEventListener('abort', cancel, { once: true });
   try {
-    const image = await Library.thumbnail({ id: asset.id, size: 900, requestId });
+    const image = await Library.thumbnail({ id: asset.id, size, requestId, cacheBytes: cacheBytes(previewQuality()) });
     if (signal.aborted) throw aborted();
-    const poster = Capacitor.convertFileSrc(image.path);
-    await decodePoster(poster, signal);
-    return { poster };
+    return Capacitor.convertFileSrc(image.path);
   } catch (error) {
     cancel();
     throw error;
   } finally { signal.removeEventListener('abort', cancel); }
+}
+
+/** The larger preview for the anchored/zoomed view, on demand and one at a
+ * time (the previous request is cancelled natively). Decoded off screen, so the
+ * caller can swap it into the same <img> without a blank frame or reframing. */
+let cancelZoom: (() => void) | null = null;
+export async function loadZoomPreview(asset: Asset, signal: AbortSignal): Promise<string> {
+  cancelZoom?.(); cancelZoom = null;
+  const size = zoomPixels(asset);
+  const src = asset.demo || !isNative ? await thumbnail(asset, size) : await nativeThumbnail(asset, size, 'zoom', signal, cancel => { cancelZoom = cancel; });
+  if (signal.aborted) throw aborted();
+  await decodePoster(src, signal);
+  return src;
 }
 
 /* ---------- Video preparation ---------- */
@@ -113,7 +134,7 @@ export class VideoStore {
     }
     this.wanted = next;
     for (const asset of next.values()) if (this.get(asset).status === 'idle') this.enqueue(asset, false);
-    if (released.length && Capacitor.isNativePlatform()) void Library.releasePreparedVideos({ ids: released }).catch(() => {});
+    if (released.length && isNative) void Library.releasePreparedVideos({ ids: released }).catch(() => {});
     this.pump();
   }
 

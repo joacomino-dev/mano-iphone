@@ -146,6 +146,8 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
     private let videoQueue = DispatchQueue(label: "work.joaquin.mano.video-cache", qos: .userInitiated)
     private let thumbnailQueue = DispatchQueue(label: "work.joaquin.mano.thumbnail-cache", qos: .userInitiated)
     private var thumbnailJobs: [String: PreparedThumbnailJob] = [:]
+    /// Writes since launch; the preview cache is pruned on the first and then every 16th.
+    private var thumbnailWrites = 0
     private let metadataQueue = DispatchQueue(label: "work.joaquin.mano.metadata", qos: .utility)
     private var metadataJobs: [String: LocalMetadataJob] = [:]
     private var exifCache: [String: CachedAssetExif] = [:]
@@ -282,7 +284,11 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         guard allowed(call), let item = asset(call) else { return }
         let token = call.getString("requestId") ?? UUID().uuidString
         guard !token.isEmpty, token.count <= 160 else { call.reject("Identificador de vista previa no válido.", "INVALID_REQUEST"); return }
-        let size = min(1800, max(200, call.getInt("size") ?? 900))
+        // Preview only (card or anchored view, per the quality profile); never the original.
+        let size = min(3072, max(200, call.getInt("size") ?? 900))
+        // LRU bound for this cache, chosen by the profile (0 = leave as is).
+        let cacheLimit = Int64(min(max(call.getInt("cacheBytes") ?? 0, 0), 600 * 1024 * 1024))
+        let started = Date()
         let folder = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("ManoThumbnails", isDirectory: true)
         let fingerprint = item.localIdentifier + "-\(size)-\(item.modificationDate?.timeIntervalSince1970 ?? 0)"
         let name = SHA256.hash(data: Data(fingerprint.utf8)).map { String(format: "%02x", $0) }.joined() + ".jpg"
@@ -321,6 +327,10 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                         try data.write(to: path, options: .atomic)
                         job.timeout?.cancel(); self.thumbnailJobs.removeValue(forKey: token)
                         call.resolve(["path": path.path])
+                        // Measurement signal for the quality profiles: no ids, names or paths.
+                        NSLog("COCOWASH_PREVIEW size=%ld bytes=%ld ms=%ld", size, data.count, Int(Date().timeIntervalSince(started) * 1000))
+                        self.thumbnailWrites += 1
+                        if cacheLimit > 0, self.thumbnailWrites % 16 == 1 { self.pruneThumbnails(folder, limit: cacheLimit) }
                     } catch {
                         self.stopThumbnail(token, job: job, message: "No se pudo guardar la vista previa. Libera espacio y reintenta.", code: "CACHE_WRITE_FAILED")
                     }
@@ -334,6 +344,23 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
             guard let job = self.thumbnailJobs[token] else { call.resolve(["cancelled": false]); return }
             self.stopThumbnail(token, job: job, message: "Preparación cancelada.", code: "PREPARATION_CANCELLED")
             call.resolve(["cancelled": true])
+        }
+    }
+    /// Oldest-used first (hits refresh the modification date) until under `limit`.
+    /// Runs on thumbnailQueue; the file just written is the newest and stays.
+    private func pruneThumbnails(_ folder: URL, limit: Int64) {
+        let keys: [URLResourceKey] = [.contentModificationDateKey, .fileSizeKey]
+        guard let files = try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: keys) else { return }
+        var entries = files.compactMap { url -> (url: URL, used: Date, bytes: Int64)? in
+            guard let values = try? url.resourceValues(forKeys: Set(keys)) else { return nil }
+            return (url, values.contentModificationDate ?? .distantPast, Int64(values.fileSize ?? 0))
+        }
+        var total = entries.reduce(Int64(0)) { $0 + $1.bytes }
+        guard total > limit else { return }
+        entries.sort { $0.used < $1.used }
+        for entry in entries {
+            guard total > limit else { break }
+            if (try? FileManager.default.removeItem(at: entry.url)) != nil { total -= entry.bytes }
         }
     }
     private func stopThumbnail(_ token: String, job: PreparedThumbnailJob, message: String, code: String) {

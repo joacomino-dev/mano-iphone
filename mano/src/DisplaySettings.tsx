@@ -1,14 +1,23 @@
 import type { ReactNode } from 'react';
-import { CameraIcon, FilmStripIcon, HandTapIcon, BooksIcon } from '@phosphor-icons/react';
+import { CameraIcon, FilmStripIcon, HandTapIcon, BooksIcon, ImageSquareIcon } from '@phosphor-icons/react';
 import type { Asset } from './domain';
 import { DATE_FORMATS, formatDate, formatTime, polaroidCaption, type DateFormat, type DisplaySettings } from './meta';
 import { VhsOverlay } from './Vhs';
 import { haptic } from './haptics';
+import { PREVIEW_PROFILES, PREVIEW_QUALITIES, type PreviewQuality } from './preview';
 
 // Format samples only: a fixed illustrative moment, never attributed to a real file.
 const SAMPLE_DATE = new Date(2021, 5, 17, 14, 25).getTime();
 const SAMPLE: Asset = { id: 'sample', kind: 'video', date: SAMPLE_DATE, width: 1000, height: 1500, duration: 84, hasLocation: true, demo: true };
 const SAMPLE_PLACE = { locality: 'Quito', country: 'Ecuador' };
+const SAMPLE_PHOTO = '/assets/demo/postcard-2.svg';
+const QUALITY_COPY: Record<PreviewQuality, [string, string]> = {
+  fast: ['Rápida', 'Ocupa menos espacio y carga antes.'],
+  balanced: ['Equilibrada', 'Nitidez de pantalla en la carta.'],
+  high: ['Alta calidad', 'Más detalle al anclar y ampliar; usa más espacio y, con iCloud, más datos.'],
+};
+const QUALITY = PREVIEW_QUALITIES.map(q => [q, ...QUALITY_COPY[q]] as const);
+const facts = (q: PreviewQuality) => { const p = PREVIEW_PROFILES[q]; return `Carta hasta ${p.cardMax} px · al ampliar ${p.zoom} px · caché ${p.cacheMB} MB`; };
 const locale = typeof navigator !== 'undefined' ? navigator.language || 'es' : 'es';
 
 function Switch({ label, hint, checked, change }: { label: string; hint?: string; checked: boolean; change: (value: boolean) => void }) {
@@ -35,8 +44,8 @@ export function DisplaySettingsPanel({ display, change, geek, setGeek, library }
     <p className="settings-intro">Cambia cómo se ven tus recuerdos. No cambia qué fotos entran en la pila.</p>
     <fieldset>
       <legend><CameraIcon size={18}/>Fotos · Polaroid</legend>
-      <div className="setting-preview" aria-hidden="true"><div className="mini-polaroid paper"><img src="/assets/photos/lake.png" alt="" draggable={false}/>
-        <span className="polaroid-caption">{caption.where && <span className="caption-where">{caption.where}</span>}{caption.when && <span className="caption-when">{caption.when}</span>}</span></div>
+      <div className="setting-preview" aria-hidden="true"><div className="mini-polaroid paper"><img src={SAMPLE_PHOTO} alt="" draggable={false}/>
+        <span className="polaroid-caption"><span className="caption-where">{caption.where}</span>{caption.when && <span className="caption-when">{caption.when}</span>}</span></div>
         <small>Vista previa</small></div>
       <Switch label="Ubicación" hint="Ciudad donde se tomó, si la foto la guarda." checked={photo.location} change={location => setPhoto({ location })}/>
       <Switch label="Fecha" checked={photo.date} change={date => setPhoto({ date })}/>
@@ -46,7 +55,7 @@ export function DisplaySettingsPanel({ display, change, geek, setGeek, library }
     </fieldset>
     <fieldset>
       <legend><FilmStripIcon size={18}/>Vídeos · VHS</legend>
-      <div className="setting-preview" aria-hidden="true"><div className="mini-vhs"><img src="/assets/photos/lake.png" alt="" draggable={false}/><VhsOverlay asset={SAMPLE} place={SAMPLE_PLACE} settings={video} label={false}/></div>
+      <div className="setting-preview" aria-hidden="true"><div className="mini-vhs"><img src={SAMPLE_PHOTO} alt="" draggable={false}/><VhsOverlay asset={SAMPLE} place={SAMPLE_PLACE} settings={video} label={false}/></div>
         <small>Vista previa</small></div>
       <Switch label="Fecha" checked={video.date} change={date => setVideo({ date })}/>
       {video.date && <Choice label="Formato de fecha" value={video.dateFormat} options={dateOptions(true)} change={dateFormat => setVideo({ dateFormat })}/>}
@@ -54,6 +63,14 @@ export function DisplaySettingsPanel({ display, change, geek, setGeek, library }
       {video.time && <Choice label="Formato horario" value={video.hour12} options={[[true, `12 h · ${formatTime(SAMPLE_DATE, true, true)}`], [false, `24 h · ${formatTime(SAMPLE_DATE, false)}`]]} change={hour12 => setVideo({ hour12 })}/>}
       <Switch label="Ubicación" checked={video.location} change={location => setVideo({ location })}/>
       <Switch label="Duración" checked={video.duration} change={duration => setVideo({ duration })}/>
+    </fieldset>
+    <fieldset>
+      <legend><ImageSquareIcon size={18}/>Calidad de vista previa</legend>
+      <p className="settings-intro">Solo cambia cómo se ve la vista previa en CocoWash. Tus originales no se tocan. Se aplica a las siguientes fotos.</p>
+      <div className="filter-chips quality-chips" role="group" aria-label="Calidad de vista previa">
+        {QUALITY.map(([value, label]) => <button key={value} aria-pressed={display.quality === value} onClick={() => { haptic('selection'); change({ ...display, quality: value }); }}>{label}</button>)}
+      </div>
+      {QUALITY.filter(([value]) => value === display.quality).map(([value, , text]) => <p key={value} className="setting-note" role="status">{text}<small>{facts(value)}</small></p>)}
     </fieldset>
     <fieldset>
       <legend><HandTapIcon size={18}/>Experiencia</legend>

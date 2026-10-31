@@ -145,7 +145,7 @@ app="$smoke_dir/DerivedData/Build/Products/Release-iphonesimulator/App.app"
 test -d "$app" || { echo 'ERROR: simulator app was not built.' >&2; exit 1; }
 bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.plist")"
 test "$bundle_id" = work.joaquin.mano || { echo 'ERROR: unexpected application bundle identifier.' >&2; exit 1; }
-test -f public/assets/photos/lake.png || { echo 'ERROR: generated test photo missing.' >&2; exit 1; }
+test -f scripts/fixtures/postcard-fixture.png || { echo 'ERROR: generated test photo missing.' >&2; exit 1; }
 
 # The official macos-26 ARM inventory does not advertise ffmpeg:
 # https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md
@@ -211,8 +211,8 @@ let bytes = (try FileManager.default.attributesOfItem(atPath: output.path)[.size
 guard bytes > 0 else { fail("empty output") }
 print("Generated public test video bytes=\(bytes)")
 SWIFT
-bounded 120 xcrun swift "$smoke_dir/make-video.swift" "$PWD/public/assets/photos/lake.png" "$smoke_dir/lake-fixture.mp4"
-test -s "$smoke_dir/lake-fixture.mp4" || { echo 'ERROR: generated MP4 missing or empty.' >&2; exit 1; }
+bounded 120 xcrun swift "$smoke_dir/make-video.swift" "$PWD/scripts/fixtures/postcard-fixture.png" "$smoke_dir/postcard-fixture.mp4"
+test -s "$smoke_dir/postcard-fixture.mp4" || { echo 'ERROR: generated MP4 missing or empty.' >&2; exit 1; }
 
 # Cold Intel iOS runtimes migrate their data on first boot: observed 2m55s–4m48s
 # (runs 41132758705, 41124449495); 240s was too short (run 40964299983). Wait sequentially.
@@ -231,7 +231,7 @@ bounded 300 xcrun simctl install "$simulator_id" "$app"
 # Only generated public fixtures are imported; never real photos or videos.
 # The first import creates the fresh device's Photos library: ~60s even ~4 min
 # after boot (run 40966694363); right after boot it exceeded 60s (run 41132758705).
-bounded 180 xcrun simctl addmedia "$simulator_id" "$PWD/public/assets/photos/lake.png" "$smoke_dir/lake-fixture.mp4"
+bounded 180 xcrun simctl addmedia "$simulator_id" "$PWD/scripts/fixtures/postcard-fixture.png" "$smoke_dir/postcard-fixture.mp4"
 # Do not pregrant Photos: on this iOS runtime that can leave .readWrite
 # notDetermined. XCTest requests permission through the real app and OS dialog.
 

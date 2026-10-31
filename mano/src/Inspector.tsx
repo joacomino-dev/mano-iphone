@@ -2,6 +2,9 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type 
 import { motion, useReducedMotion } from 'motion/react';
 import { PushPinIcon, XIcon, PlusIcon, MinusIcon } from '@phosphor-icons/react';
 import { Library, thumbnail, type AssetMetadata } from './library';
+import { InlineVideo } from './InlineVideo';
+import { loadZoomPreview, type VideoState } from './media';
+import { cardPixels } from './preview';
 import type { Asset } from './domain';
 
 export type InspectOrigin={x:number;y:number;width:number;height:number};
@@ -12,9 +15,15 @@ const follow={type:'spring',stiffness:900,damping:60,mass:.6} as const;
 
 /** Hold = isolate in place (a 3 % lift, no zoom jump); drag down to the single
  * dock to anchor; anchored = fit to screen with pinch/pan and controls. */
-export function Inspector({asset,src,pinned,origin,drag,anchor,armed,geek,close,pin}: {asset:Asset;src?:string;pinned:boolean;origin?:InspectOrigin;drag:{x:number;y:number};anchor:number;armed:boolean;geek:boolean;close:()=>void;pin:()=>void}) {
- const [posterError,setPosterError]=useState(false);const [posterRetry,setPosterRetry]=useState(0);const [poster,setPoster]=useState(src);useEffect(()=>{let alive=true;if(src){setPoster(src);return;}setPosterError(false);thumbnail(asset,900,posterRetry>0).then(value=>{if(alive)setPoster(value);}).catch(()=>{if(alive)setPosterError(true);});return()=>{alive=false;};},[asset.id,src,posterRetry]);
+export type InspectVideo={state:VideoState;retry:()=>void;fullscreen:()=>void;openSettings:()=>void};
+export function Inspector({asset,src,pinned,origin,drag,anchor,armed,geek,close,pin,video}: {asset:Asset;src?:string;pinned:boolean;origin?:InspectOrigin;drag:{x:number;y:number};anchor:number;armed:boolean;geek:boolean;close:()=>void;pin:()=>void;video?:InspectVideo}) {
+ const [posterError,setPosterError]=useState(false);const [posterRetry,setPosterRetry]=useState(0);const [poster,setPoster]=useState(src);useEffect(()=>{let alive=true;if(src){setPoster(src);return;}setPosterError(false);thumbnail(asset,cardPixels(asset),posterRetry>0).then(value=>{if(alive)setPoster(value);}).catch(()=>{if(alive)setPosterError(true);});return()=>{alive=false;};},[asset.id,src,posterRetry]);
  const outer=useRef<HTMLDivElement>(null);const reduced=useReducedMotion();const frame=useRef<HTMLDivElement>(null);
+ // Anchored on purpose: fetch the larger preview once, decode it off screen and
+ // swap it into the same <img> (same box, same object-fit): no blank frame and
+ // no reframing. The card-size poster stays if this fails.
+ const [sharp,setSharp]=useState('');
+ useEffect(()=>{if(!pinned||asset.kind==='video')return;const controller=new AbortController();loadZoomPreview(asset,controller.signal).then(setSharp).catch(()=>{});return()=>controller.abort();},[pinned,asset.id]);
  const [space,setSpace]=useState<{target:Box;origin:Box;scale:number}|null>(null);
  const [meta,setMeta]=useState<AssetMetadata|null>(null);const [metaError,setMetaError]=useState('');const [zoom,setZoom]=useState(1);const [pan,setPan]=useState({x:0,y:0});
  const points=useRef(new Map<number,{x:number;y:number}>());const base=useRef({distance:0,zoom:1,x:0,y:0,panX:0,panY:0});
@@ -32,7 +41,7 @@ export function Inspector({asset,src,pinned,origin,drag,anchor,armed,geek,close,
   Library.metadata({id:asset.id}).then(value=>{if(alive)setMeta(value);return Library.metadata({id:asset.id,includeExif:true});}).then(value=>{if(alive)setMeta(value);}).catch(()=>{if(alive)setMetaError('Algunos datos no están disponibles en este iPhone.');});return()=>{alive=false;};
  },[asset.id,geek]);
  const rebase=()=>{const p=[...points.current.values()];base.current={distance:p.length>1?Math.hypot(p[1].x-p[0].x,p[1].y-p[0].y):0,zoom,x:p[0]?.x??0,y:p[0]?.y??0,panX:pan.x,panY:pan.y};};
- const down=(e:PointerEvent)=>{if(!pinned)return;e.stopPropagation();e.currentTarget.setPointerCapture(e.pointerId);points.current.set(e.pointerId,{x:e.clientX,y:e.clientY});rebase();};
+ const down=(e:PointerEvent)=>{if(!pinned||video)return;e.stopPropagation();e.currentTarget.setPointerCapture(e.pointerId);points.current.set(e.pointerId,{x:e.clientX,y:e.clientY});rebase();};
  const move=(e:PointerEvent)=>{if(!points.current.has(e.pointerId))return;e.stopPropagation();points.current.set(e.pointerId,{x:e.clientX,y:e.clientY});const p=[...points.current.values()],b=base.current;
   if(p.length>1&&b.distance){setZoom(Math.min(5,Math.max(1,b.zoom*Math.hypot(p[1].x-p[0].x,p[1].y-p[0].y)/b.distance)));}
   else if(zoom>1){const rect=frame.current!.getBoundingClientRect();const maxX=rect.width*(zoom-1)/2,maxY=rect.height*(zoom-1)/2;setPan({x:Math.min(maxX,Math.max(-maxX,b.panX+e.clientX-b.x)),y:Math.min(maxY,Math.max(-maxY,b.panY+e.clientY-b.y))});}
@@ -51,13 +60,14 @@ export function Inspector({asset,src,pinned,origin,drag,anchor,armed,geek,close,
   {space&&<motion.div ref={frame} className="inspection-photo" tabIndex={pinned?0:-1} style={{left:space.target.x,top:space.target.y,width:space.target.width,height:space.target.height,'--inspect-ratio':asset.width/asset.height} as CSSProperties}
    initial={reduced?false:atOrigin} animate={pose} exit={reduced?{opacity:0,transition:{duration:0}}:{...atOrigin,transition:settle}}
    transition={reduced?{duration:0}:pinned?settle:(drag.x||drag.y)?follow:settle} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onClick={e=>e.stopPropagation()}>
-   {poster?<img src={poster} alt="Recuerdo ampliado" draggable={false} style={{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}}/>:<span>{posterError?'No se pudo cargar la imagen.':''}{posterError&&pinned&&<button onClick={()=>setPosterRetry(v=>v+1)}>Reintentar</button>}</span>}
+   {pinned&&video?<div className="inspection-media"><InlineVideo asset={asset} state={video.state} mode="full" retry={video.retry} fullscreen={video.fullscreen} openSettings={video.openSettings}>{poster?<img src={poster} alt="" draggable={false}/>:null}</InlineVideo></div>
+    :poster?<img src={pinned&&sharp?sharp:poster} alt="Recuerdo ampliado" draggable={false} style={{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}}/>:<span>{posterError?'No se pudo cargar la imagen.':''}{posterError&&pinned&&<button onClick={()=>setPosterRetry(v=>v+1)}>Reintentar</button>}</span>}
   </motion.div>}
   <motion.div layout={!reduced} className={`inspection-dock ${pinned?'is-pinned':''} ${armed?'is-armed':''}`} data-inspection-hook style={{'--anchor':anchor} as CSSProperties}
    initial={reduced?false:{opacity:0,y:16}} animate={{opacity:1,y:0}} exit={reduced?{opacity:0,transition:{duration:0}}:{opacity:0,y:16}} transition={reduced?{duration:0}:{type:'spring',stiffness:420,damping:36}}>
    {pinned?<>
     <span className="dock-state"><PushPinIcon weight="fill" size={18}/>Anclada</span>
-    <button aria-label="Reducir zoom" onClick={()=>setZoom(z=>Math.max(1,z-.5))} disabled={zoom<=1}><MinusIcon size={20}/></button><span className="dock-zoom">{Math.round(zoom*100)}%</span><button aria-label="Aumentar zoom" onClick={()=>setZoom(z=>Math.min(5,z+.5))} disabled={zoom>=5}><PlusIcon size={20}/></button>
+    <button aria-label="Reducir zoom" onClick={()=>setZoom(z=>Math.max(1,z-.5))} disabled={zoom<=1}><MinusIcon size={20}/></button><span className="dock-zoom">{Math.round(zoom*100)}%</span><button aria-label="Ampliar" onClick={()=>setZoom(z=>Math.min(5,z+.5))} disabled={zoom>=5||!!video}><PlusIcon size={20}/></button>
     <button className="inspection-close" onClick={close}><XIcon size={18} weight="bold"/>Cerrar</button>
    </>:<button className="dock-target" tabIndex={-1} onClick={pin}><PushPinIcon weight={armed?'fill':'regular'} size={20}/><span>{armed?'Suelta para anclar':'Arrastra aquí para anclar'}</span></button>}
   </motion.div>

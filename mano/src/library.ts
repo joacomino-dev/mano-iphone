@@ -13,7 +13,7 @@ export type AssetMetadata = {
 type LibraryPlugin = {
   authorize(): Promise<{ status: string }>;
   assets(): Promise<{ assets: Asset[]; status: string }>;
-  thumbnail(options: { id: string; size?: number; requestId?: string }): Promise<{ path: string }>;
+  thumbnail(options: { id: string; size?: number; requestId?: string; cacheBytes?: number }): Promise<{ path: string }>;
   albums(): Promise<{ albums: Album[] }>;
   addToAlbum(options: { ids: string[]; albumId: string }): Promise<void>;
   createAlbum(options: { title: string; ids: string[] }): Promise<{ album: Album; added: number }>;
@@ -43,7 +43,7 @@ export const isNative = Capacitor.isNativePlatform();
 export const Library = registerPlugin<LibraryPlugin>('PhotoLibrary');
 const cache = new Map<string, Promise<string>>();
 export function thumbnail(asset: Asset, size = 900, refresh = false): Promise<string> {
-  if (asset.demo) return Promise.resolve('/assets/photos/lake.png');
+  if (asset.demo) return Promise.resolve(demoPostcard(asset));
   const key = `${asset.id}:${asset.modified??0}:${size}`;
   if (refresh) cache.delete(key);
   if (!cache.has(key)) cache.set(key, Library.thumbnail({ id: asset.id, size }).then(r => Capacitor.convertFileSrc(r.path)).catch(e => { cache.delete(key); throw e; }));
@@ -51,6 +51,13 @@ export function thumbnail(asset: Asset, size = 900, refresh = false): Promise<st
 }
 // Demo media spans several days so date filters and the counter can be tried;
 // only some carry a (demonstration) place, to show the layouts without one.
-export const demoAssets: Asset[] = Array.from({ length: 20 }, (_, i) => ({ id: `demo-${i}`, kind: i === 9 || i === 4 ? 'video' : i === 14 ? 'live' : 'photo', date: Date.now() - (i < 6 ? (i + 1) * 3 * 3600000 : i < 13 ? (i - 4) * 86400000 : (i * 3) * 86400000), width: 1000, height: 1500, duration: i === 9 || i === 4 ? 2 : 0, group: i<4?'trip-a':i>=10&&i<14?'trip-b':undefined, hasLocation: i % 3 !== 1, demo: true }));
+// Images are CocoWash's own generated postcards (no people, no stock photos);
+// similar-photo groups share one postcard so they read as «parecidas».
+const POSTCARDS: [number, number][] = [[1000, 1500], [1500, 1000], [1000, 1500], [1200, 1200], [1500, 1000], [1000, 1500]];
+const demoIndex = (asset: Pick<Asset, 'id'>) => Number(asset.id.replace(/\D/g, '')) || 0;
+const postcardOf = (i: number) => i < 4 ? 0 : i >= 10 && i < 14 ? 4 : i % POSTCARDS.length;
+export const demoPostcard = (asset: Pick<Asset, 'id'>) => `/assets/demo/postcard-${postcardOf(demoIndex(asset)) + 1}.svg`;
+export const demoAssets: Asset[] = Array.from({ length: 20 }, (_, i) => { const video = i === 9 || i === 4; const [width, height] = video ? [1500, 1000] : POSTCARDS[postcardOf(i)];
+  return { id: `demo-${i}`, kind: video ? 'video' : i === 14 ? 'live' : 'photo', date: Date.now() - (i < 6 ? (i + 1) * 3 * 3600000 : i < 13 ? (i - 4) * 86400000 : (i * 3) * 86400000), width, height, duration: video ? 2 : 0, group: i<4?'trip-a':i>=10&&i<14?'trip-b':undefined, hasLocation: i % 3 !== 1, demo: true }; });
 const demoPlaces: Place[] = [{ locality: 'Quito', country: 'Ecuador' }, { locality: 'Cartagena', country: 'Colombia' }, { locality: 'Lisboa', country: 'Portugal' }];
-export function demoPlace(asset: Asset): Place { return asset.hasLocation ? demoPlaces[Number(asset.id.replace(/\D/g, '')) % demoPlaces.length] : {}; }
+export function demoPlace(asset: Asset): Place { return asset.hasLocation ? demoPlaces[demoIndex(asset) % demoPlaces.length] : {}; }
