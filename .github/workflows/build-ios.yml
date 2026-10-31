@@ -42,12 +42,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.ref_name }}
+      # No npm cache: run 41199551358 hung 50 min restoring it from the Actions
+      # cache service (past the 45 min job limit). npm ci takes ~20 s uncached.
       - uses: actions/setup-node@v4
+        timeout-minutes: 5
         with:
           node-version: '22'
-          cache: npm
-          cache-dependency-path: mano/package-lock.json
       - run: npm ci --no-audit --no-fund
+        timeout-minutes: 10
       - run: npm test && npm run check:runtime && npm run build
       - run: npm run sync:ios
       - name: Smoke test installed app bridge and PhotoKit on iPhone simulator
