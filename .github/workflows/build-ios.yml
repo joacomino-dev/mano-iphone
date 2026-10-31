@@ -66,6 +66,7 @@ jobs:
             mano/build/simulator-smoke/resolve.log
             mano/build/simulator-smoke/bootstatus.log
             mano/build/simulator-smoke/ui-test.log
+            mano/build/simulator-smoke/ui-test-attempt1.log
             mano/build/simulator-smoke/PhotosSmoke.xcresult
             mano/build/simulator-smoke/selection.txt
           retention-days: 7

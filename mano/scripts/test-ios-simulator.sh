@@ -236,28 +236,54 @@ bounded 180 xcrun simctl addmedia "$simulator_id" "$PWD/public/assets/photos/lak
 # notDetermined. XCTest requests permission through the real app and OS dialog.
 
 log_file="$smoke_dir/photos-read.log"
-python3 "$helper" 900 xcrun simctl spawn "$simulator_id" log stream \
-  --style compact --level debug \
-  --predicate "$log_predicate" \
-  > "$log_file" 2>&1 &
-log_pid=$!
-sleep 2
-kill -0 "$log_pid" || { echo 'ERROR: simulator unified-log stream failed.' >&2; cat "$log_file"; exit 1; }
+start_log_stream() {
+  python3 "$helper" 900 xcrun simctl spawn "$simulator_id" log stream \
+    --style compact --level debug \
+    --predicate "$log_predicate" \
+    >> "$log_file" 2>&1 &
+  log_pid=$!
+  sleep 2
+  kill -0 "$log_pid" || { echo 'ERROR: simulator unified-log stream failed.' >&2; cat "$log_file"; exit 1; }
+}
+: > "$log_file"
+start_log_stream
 
-# XCTest owns exactly one app launch, explicitly allows FULL access on welcome,
-# then taps Empezar a revisar and requires Terminar after warmup. It also
-# creates a fixture-only album and reads local Geek metadata through the UI.
+# XCTest owns exactly one app launch per attempt, walks the onboarding, grants
+# FULL Photos access and requires Terminar after warmup. It also creates a
+# fixture-only album and reads local Geek metadata through the UI.
 # Disable simulator cloning
 # and parallel runs so that the test uses this exact generated-photo-only device.
-bounded 900 xcodebuild -project ios/App/App.xcodeproj -scheme ManoSmoke \
-  -configuration Release -sdk iphonesimulator -destination "platform=iOS Simulator,id=$simulator_id" \
-  -derivedDataPath build/simulator-smoke/DerivedData \
-  -resultBundlePath build/simulator-smoke/PhotosSmoke.xcresult \
-  -only-testing:ManoUITests/PhotosSmokeTests/testFullPhotosAuthorizationStartsSession \
-  -parallel-testing-enabled NO -maximum-concurrent-test-simulator-destinations 1 \
-  -test-timeouts-enabled YES -maximum-test-execution-time-allowance 600 \
-  CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' test-without-building \
-  > "$smoke_dir/ui-test.log" 2>&1 || { tail -n 120 "$smoke_dir/ui-test.log"; exit 1; }
+run_ui_test() {
+  bounded 900 xcodebuild -project ios/App/App.xcodeproj -scheme ManoSmoke \
+    -configuration Release -sdk iphonesimulator -destination "platform=iOS Simulator,id=$simulator_id" \
+    -derivedDataPath build/simulator-smoke/DerivedData \
+    -resultBundlePath build/simulator-smoke/PhotosSmoke.xcresult \
+    -only-testing:ManoUITests/PhotosSmokeTests/testFullPhotosAuthorizationStartsSession \
+    -parallel-testing-enabled NO -maximum-concurrent-test-simulator-destinations 1 \
+    -test-timeouts-enabled YES -maximum-test-execution-time-allowance 600 \
+    CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' test-without-building \
+    > "$smoke_dir/ui-test.log" 2>&1
+}
+if ! run_ui_test; then
+  # Run 41172800749: the XCTest runner itself never started ("failed to
+  # initialize for UI testing ... Timed out waiting for AX loaded notification")
+  # on a loaded simulator; no app code ran. Retry once for exactly that runner
+  # bootstrap failure. Any test assertion or app failure still fails right here.
+  if grep -q -e 'failed to initialize for UI testing' -e 'Timed out waiting for AX loaded notification' "$smoke_dir/ui-test.log"; then
+    echo 'XCTest runner did not initialize accessibility; retrying the UI test once on the same device.' >&2
+    mv "$smoke_dir/ui-test.log" "$smoke_dir/ui-test-attempt1.log"
+    rm -rf "$smoke_dir/PhotosSmoke-attempt1.xcresult"
+    mv "$smoke_dir/PhotosSmoke.xcresult" "$smoke_dir/PhotosSmoke-attempt1.xcresult" 2>/dev/null || true
+    # A fresh bounded log stream covers the whole second attempt.
+    kill -TERM "$log_pid" 2>/dev/null || true
+    wait "$log_pid" 2>/dev/null || true
+    sleep 30
+    start_log_stream
+    run_ui_test || { tail -n 120 "$smoke_dir/ui-test.log"; exit 1; }
+  else
+    tail -n 120 "$smoke_dir/ui-test.log"; exit 1
+  fi
+fi
 tail -n 25 "$smoke_dir/ui-test.log"
 grep -q 'MEMSWIPE_UI_AUTHORIZED_SESSION_OK' "$smoke_dir/ui-test.log" || {
   echo 'ERROR: UI test did not reach the authorized real session. Packaging is blocked.' >&2
