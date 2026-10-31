@@ -161,7 +161,11 @@ final class PhotosSmokeTests: XCTestCase {
             info.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
             opened = anchoredOpened(within: 10)
         }
-        print("COCOWASH_UI_DIAG opened=\(opened) fallback=\(fallback.exists) session=\(finish.exists) info=\(info.exists) infoFrame=\(info.frame) signals=\(anchoredSignals.map(\.exists)) texts=\(app.staticTexts.count) buttons=\(app.buttons.count)")
+        // Read a frame only from an element that still exists: once the anchored
+        // view opens, the card (and this control) leave the accessibility tree, and
+        // resolving a vanished element fails the test (run 41208796103).
+        let infoFrame = info.exists ? "\(info.frame)" : "gone"
+        print("COCOWASH_UI_DIAG opened=\(opened) fallback=\(fallback.exists) session=\(finish.exists) infoFrame=\(infoFrame) signals=\(anchoredSignals.map(\.exists))")
         guard opened else {
             attachScreenshot(app, "Data control did not open the anchored view")
             XCTFail(fallback.exists ? "The anchored view failed to render (see COCOWASH_JS_ERROR)." : "The data control must open the anchored view.")
@@ -186,7 +190,7 @@ final class PhotosSmokeTests: XCTestCase {
         let card = app.descendants(matching: .any).matching(NSPredicate(format:
             "label BEGINSWITH %@ OR label BEGINSWITH %@ OR label BEGINSWITH %@", "Foto 1 de", "Vídeo 1 de", "Live Photo 1 de")).firstMatch
         guard card.waitForExistence(timeout: 10) else { print("COCOWASH_UI_PROBE card not exposed"); return }
-        print("COCOWASH_UI_PROBE app=\(app.frame) card=\(card.frame) hittable=\(card.isHittable) info=\(info.frame)")
+        print("COCOWASH_UI_PROBE app=\(app.frame) card=\(card.exists ? "\(card.frame)" : "gone") info=\(info.exists ? "\(info.frame)" : "gone")")
         let press = card.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
         press.doubleTap()
         let doubleTapped = app.staticTexts["Anclada"].firstMatch.waitForExistence(timeout: 6)
