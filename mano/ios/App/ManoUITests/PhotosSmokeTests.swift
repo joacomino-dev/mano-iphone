@@ -64,8 +64,6 @@ final class PhotosSmokeTests: XCTestCase {
             XCTFail("The privacy card did not offer the Photos request.")
             return
         }
-        allow.tap()
-
         // Grant the real OS prompt. This prompt is an expected step: address
         // SpringBoard directly rather than an interruption monitor or simulated response.
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
@@ -76,8 +74,26 @@ final class PhotosSmokeTests: XCTestCase {
             "label CONTAINS[c] 'Select' OR label BEGINSWITH[c] 'No ' OR " +
             "label BEGINSWITH[c] %@ OR label BEGINSWITH[c] %@)", "Don’t", "Don't"
         )).firstMatch
+        // A tap that started the request turns the button into «Esperando permiso…».
+        // Run 41231549707 tapped once and the request never started (no prompt in
+        // 240 s), like the lost onboarding tap of run 41222676883: repeat a tap
+        // that did not take, at most 3 times, before waiting for the prompt.
+        var requested = false
+        for attempt in 1...3 {
+            if allow.exists { allow.tap() }
+            let deadline = Date().addingTimeInterval(12)
+            while Date() < deadline {
+                if !allow.exists || fullAccess.exists { requested = true; break }
+                Thread.sleep(forTimeInterval: 0.5)
+            }
+            if requested { break }
+            print("COCOWASH_UI_ALLOW_RETRY \(attempt)")
+        }
+        // No debugDescription in failure paths: dumping the WebView hierarchy kept
+        // xcodebuild busy until its 900 s limit (runs 41162917606, 41231549707).
         guard fullAccess.waitForExistence(timeout: 240) else {
-            XCTFail("A FULL Photos authorization button was not offered.\n\(springboard.debugDescription)")
+            attachScreenshot(app, "Photos prompt missing")
+            XCTFail("A FULL Photos authorization button was not offered (request started: \(requested)).")
             return
         }
         fullAccess.tap()
@@ -87,7 +103,8 @@ final class PhotosSmokeTests: XCTestCase {
         // discard count, and the review sheet's «Terminar …» buttons are not mounted yet.
         let finish = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Terminar")).firstMatch
         guard finish.waitForExistence(timeout: 90) else {
-            XCTFail("Full Photos authorization and bounded media warmup did not open the real review session.\n\(app.debugDescription)")
+            attachScreenshot(app, "Session did not open")
+            XCTFail("Full Photos authorization and bounded media warmup did not open the real review session.")
             return
         }
         XCTAssertTrue(finish.isHittable, "Session toolbar must be usable after media warmup finishes.")
