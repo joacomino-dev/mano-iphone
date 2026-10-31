@@ -136,10 +136,35 @@ final class PhotosSmokeTests: XCTestCase {
             XCTFail("Modo Geek must add the data control to the top card.")
             return
         }
-        info.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
-        guard app.staticTexts["Anclada"].firstMatch.waitForExistence(timeout: 15) else {
+        // Any of the anchored view's own elements proves it opened; print what is
+        // on screen either way (run 41203340645 saw none of them after the tap).
+        let anchoredSignals: [XCUIElement] = [
+            app.staticTexts["Anclada"].firstMatch,
+            app.buttons["Reducir zoom"].firstMatch,
+            app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Inspeccionar recuerdo")).firstMatch,
+            app.staticTexts["Modo Geek"].firstMatch,
+        ]
+        let fallback = app.staticTexts["No se pudo abrir la vista ampliada."].firstMatch
+        func anchoredOpened(within seconds: TimeInterval) -> Bool {
+            let deadline = Date().addingTimeInterval(seconds)
+            repeat {
+                if anchoredSignals.contains(where: { $0.exists }) { return true }
+                if fallback.exists { return false }
+                Thread.sleep(forTimeInterval: 0.5)
+            } while Date() < deadline
+            return false
+        }
+        info.tap()
+        var opened = anchoredOpened(within: 10)
+        if !opened, !fallback.exists, info.exists {
+            print("COCOWASH_UI_DIAG data control tap had no effect; retrying by coordinate")
+            info.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            opened = anchoredOpened(within: 10)
+        }
+        print("COCOWASH_UI_DIAG opened=\(opened) fallback=\(fallback.exists) session=\(finish.exists) info=\(info.exists) infoFrame=\(info.frame) signals=\(anchoredSignals.map(\.exists)) texts=\(app.staticTexts.count) buttons=\(app.buttons.count)")
+        guard opened else {
             attachScreenshot(app, "Data control did not open the anchored view")
-            XCTFail("The data control must open the anchored view.")
+            XCTFail(fallback.exists ? "The anchored view failed to render (see COCOWASH_JS_ERROR)." : "The data control must open the anchored view.")
             return
         }
         XCTAssertTrue(app.staticTexts["Modo Geek"].firstMatch.waitForExistence(timeout: 15))

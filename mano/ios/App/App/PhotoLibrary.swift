@@ -134,7 +134,8 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "openSettings", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "manageLimitedAccess", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "haptic", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "place", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "place", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "diagnostic", returnType: CAPPluginReturnPromise)
     ]
     private let geocoder = CLGeocoder()
     private var placeCache: [String: [String: String]] = [:] // Rounded coordinates -> names; memory only.
@@ -176,6 +177,13 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
     }
     @objc func authorize(_ call: CAPPluginCall) {
         PHPhotoLibrary.requestAuthorization(for: .readWrite) { _ in call.resolve(["status": self.status]) }
+    }
+    /// JS error text from the web layer (Release builds do not forward the WebView
+    /// console). Bounded and single-line per entry; no media or user data.
+    @objc func diagnostic(_ call: CAPPluginCall) {
+        let message = String((call.getString("message") ?? "").prefix(1500)).replacingOccurrences(of: "\n", with: " | ")
+        NSLog("COCOWASH_JS_ERROR %@", message)
+        call.resolve()
     }
     /// Reads the current state without ever showing the system prompt.
     @objc func permissionStatus(_ call: CAPPluginCall) { call.resolve(["status": status]) }

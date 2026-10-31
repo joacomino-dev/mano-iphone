@@ -34,6 +34,7 @@ type LibraryPlugin = {
   manageLimitedAccess(): Promise<{ changed: boolean }>;
   haptic(options: { kind: HapticKind }): Promise<void>;
   place(options: { id: string }): Promise<Place & { retry?: string }>;
+  diagnostic(options: { message: string }): Promise<void>;
 };
 export type HapticKind = 'selection' | 'light' | 'soft' | 'medium' | 'rigid' | 'success' | 'warning' | 'error';
 export type Place = { locality?: string; region?: string; country?: string; countryCode?: string };

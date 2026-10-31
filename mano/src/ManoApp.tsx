@@ -18,6 +18,8 @@ import { AnimatedNumber, CocoLoader, Deferred } from './Loader';
 import { Onboarding } from './Onboarding';
 import { AccessScreen, PreparingScreen, LoadErrorScreen, SessionDone } from './Screens';
 import { DisplaySettingsPanel } from './DisplaySettings';
+import { InspectorBoundary } from './Boundary';
+import { installErrorReporting } from './diagnostics';
 import '@fontsource/ibm-plex-mono/latin-500.css';
 import '@fontsource/ibm-plex-sans/latin-400.css';
 import '@fontsource/ibm-plex-sans/latin-500.css';
@@ -148,7 +150,7 @@ export function ManoApp() {
     unsubscribe=pool.subscribe(snapshot=>{const wanted=snapshot.items.filter(i=>first.includes(i.id));if(snapshot.completed===snapshot.total||(wanted.length&&wanted.every(i=>i.status==='ready'||i.status==='error')))queueMicrotask(finish);});warmWait.current=finish;
   });
   const cancelWarmup=()=>{sessionNumber.current++;warmingNow.current=false;prepareWindow([],String(sessionNumber.current));warmWait.current?.();setWarming(false);setLoading(false);const groups=deferredGroups.current;if(groups){deferredGroups.current=null;setAssets(prev=>prev.map(a=>({...a,group:groups.get(a.id)})));}};
-  useEffect(()=>{document.title='CocoWash · Lo que importa, se queda';},[]);
+  useEffect(()=>{document.title='CocoWash · Lo que importa, se queda';installErrorReporting();},[]);
   useEffect(()=>{try{localStorage.setItem(key,JSON.stringify(state));}catch{setError('No hay espacio para guardar la sesión. Libera espacio antes de continuar.');}},[state,key]);
   useEffect(()=>{saveDisplay(display);setHapticsEnabled(display.haptics);},[display]);
   useEffect(()=>{try{localStorage.setItem('cocowash-round-v1',JSON.stringify(stats));}catch{/* summary is optional */}},[stats]);
@@ -362,7 +364,7 @@ export function ManoApp() {
   </>;
   return <div className={`mano-app ${isNative?'on-device':''} ${session?'in-session':'on-screen'}`}>
     {screen}
-    <AnimatePresence>{inspect&&<Inspector key={inspect.id} asset={inspect} src={preloader.current?.get(inspect)?.poster} pinned={pinnedInspect} origin={inspectOrigin.current} drag={peek} anchor={anchor} armed={overHook} geek={!!filter.geek} close={closeInspect} pin={()=>{setPinnedInspect(true);haptic('rigid');}}/>}</AnimatePresence>
+    <AnimatePresence>{inspect&&<InspectorBoundary key={inspect.id} close={closeInspect}><Inspector asset={inspect} src={preloader.current?.get(inspect)?.poster} pinned={pinnedInspect} origin={inspectOrigin.current} drag={peek} anchor={anchor} armed={overHook} geek={!!filter.geek} close={closeInspect} pin={()=>{setPinnedInspect(true);haptic('rigid');}}/></InspectorBoundary>}</AnimatePresence>
     <Sheet open={sheet==='filters'} close={()=>setSheet(null)} title="Filtros y ajustes" description={sheetTab==='filters'?'Elige qué fotos entran en la pila.':'Elige cómo se ven tus recuerdos.'} error={error} returnTo="filter-trigger">
       <div className="sheet-tabs" role="group" aria-label="Sección"><button aria-pressed={sheetTab==='filters'} onClick={()=>{haptic('selection');setSheetTab('filters');}}>Filtros</button><button aria-pressed={sheetTab==='settings'} onClick={()=>{haptic('selection');setSheetTab('settings');}}>Ajustes</button></div>
       <div hidden={sheetTab!=='filters'}>

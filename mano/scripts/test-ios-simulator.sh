@@ -253,6 +253,17 @@ start_log_stream
 # fixture-only album and reads local Geek metadata through the UI.
 # Disable simulator cloning
 # and parallel runs so that the test uses this exact generated-photo-only device.
+# A failing run must show its cause in the job log: the plain tail is mostly
+# XCTest existence polling. Print the test's actions and markers, the app's
+# own JS error reports, then the tail.
+report_ui_failure() {
+  echo '--- XCTest actions and markers ---'
+  grep -aE ' t = +[0-9.]+s (Tap|Press|Double tap|Swipe|Waiting|Added attachment)|COCOWASH_|MEMSWIPE_|error:' "$smoke_dir/ui-test.log" | tail -n 80 || true
+  echo '--- App JS errors (COCOWASH_JS_ERROR) ---'
+  grep -a 'COCOWASH_JS_ERROR' "$log_file" | tail -n 20 || true
+  echo '--- ui-test.log tail ---'
+  tail -n 40 "$smoke_dir/ui-test.log"
+}
 run_ui_test() {
   bounded 900 xcodebuild -project ios/App/App.xcodeproj -scheme ManoSmoke \
     -configuration Release -sdk iphonesimulator -destination "platform=iOS Simulator,id=$simulator_id" \
@@ -279,9 +290,9 @@ if ! run_ui_test; then
     wait "$log_pid" 2>/dev/null || true
     sleep 30
     start_log_stream
-    run_ui_test || { tail -n 120 "$smoke_dir/ui-test.log"; exit 1; }
+    run_ui_test || { report_ui_failure; exit 1; }
   else
-    tail -n 120 "$smoke_dir/ui-test.log"; exit 1
+    report_ui_failure; exit 1
   fi
 fi
 tail -n 25 "$smoke_dir/ui-test.log"

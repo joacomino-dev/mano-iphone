@@ -243,6 +243,9 @@
 .geek-panel strong{font:500 var(--cw-text-xs) var(--cw-font-mono);letter-spacing:.08em;color:var(--cw-yellow)}
 .geek-panel dl{margin:var(--cw-space-2) 0}.geek-panel dl>div{display:grid;grid-template-columns:96px 1fr;gap:var(--cw-space-3);padding:var(--cw-space-1) 0;border-bottom:1px solid rgba(242,231,213,.1)}
 .geek-panel dt{color:var(--cw-on-bg-soft)}.geek-panel dd{margin:0;overflow-wrap:anywhere;font-family:var(--cw-font-mono)}.geek-panel small{color:var(--cw-on-bg-soft);font-size:var(--cw-text-xs)}
+.inspection-fallback{position:absolute;left:50%;top:50%;translate:-50% -50%;display:flex;flex-direction:column;align-items:center;gap:var(--cw-space-3);width:min(300px,80%);text-align:center;color:var(--cw-paper)}
+.inspection-fallback p{margin:0}
+.inspection-fallback button{display:flex;align-items:center;gap:6px;min-height:var(--cw-touch);padding:0 var(--cw-space-4);border:0;border-radius:var(--cw-radius-pill);background:var(--cw-paper);color:var(--cw-ink);font-weight:600}
 .mano-app:has(.inspection.is-pinned) .archive-header,.mano-app:has(.inspection.is-pinned) .archive-tools{visibility:hidden}
 
 /* ---------- Video ---------- */
