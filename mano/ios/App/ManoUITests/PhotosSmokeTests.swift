@@ -28,30 +28,39 @@ final class PhotosSmokeTests: XCTestCase {
 
         // First launch shows the onboarding cards; Photos is requested only on the
         // last one, after the explanation. Every card must be passed (no skip).
-        for step in 1...3 {
-            let next = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Continuar")).firstMatch
-            // The first card waits for a cold simulator to start WebKit and load the
-            // bundle: run 41168418401 (CoreSimulator needed >180 s to answer simctl
-            // list) missed 120 s with unchanged app code. Same bound as Photos (240 s).
-            guard next.waitForExistence(timeout: step == 1 ? 240 : 30) else {
-                attachScreenshot(app, "Onboarding card \(step) missing")
-                XCTFail("Onboarding card \(step) did not offer Continuar.")
-                return
-            }
-            // The gestures card keeps «Continuar» disabled for one short demo cycle
-            // (~4 s, first visit only). Wait for it to be enabled, then tap.
+        let next = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Continuar")).firstMatch
+        let allow = app.buttons["Permitir acceso a Fotos"].firstMatch
+        // The first card waits for a cold simulator to start WebKit and load the
+        // bundle: run 41168418401 (CoreSimulator needed >180 s to answer simctl
+        // list) missed 120 s with unchanged app code. Same bound as Photos (240 s).
+        guard next.waitForExistence(timeout: 240) else {
+            attachScreenshot(app, "Onboarding card 1 missing")
+            XCTFail("Onboarding card 1 did not offer Continuar.")
+            return
+        }
+        // Three cards precede the privacy card. Tap «Continuar» once it is enabled
+        // (the gestures card keeps it disabled for one ~4 s demo cycle, first visit
+        // only) until the privacy card appears. Run 41222676883 lost one of three
+        // fixed taps and then looked for the privacy card one card too early, so a
+        // tap that does not advance is simply repeated, at most 8 times.
+        var taps = 0
+        while !allow.exists && taps < 8 {
+            guard next.waitForExistence(timeout: 30) else { break }
             // Standalone waiter: not registered with the test case, so the later
             // waitForExpectations(timeout:) never waits on it a second time.
             let enabled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: next)
             guard XCTWaiter().wait(for: [enabled], timeout: 30) == .completed else {
-                attachScreenshot(app, "Onboarding card \(step) stayed disabled")
-                XCTFail("Continuar stayed disabled on onboarding card \(step).")
+                attachScreenshot(app, "Onboarding Continuar stayed disabled")
+                XCTFail("Continuar stayed disabled on the onboarding.")
                 return
             }
             next.tap()
+            taps += 1
+            _ = allow.waitForExistence(timeout: 2)
         }
-        let allow = app.buttons["Permitir acceso a Fotos"].firstMatch
+        print("COCOWASH_UI_ONBOARDING taps=\(taps)")
         guard allow.waitForExistence(timeout: 15) else {
+            attachScreenshot(app, "Privacy card missing")
             XCTFail("The privacy card did not offer the Photos request.")
             return
         }
