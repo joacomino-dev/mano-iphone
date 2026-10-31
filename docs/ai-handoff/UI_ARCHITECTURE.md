@@ -5,8 +5,9 @@ stack y colaboración Git en PROJECT_MAP. No reorganizar la app en esta fase.
 
 ## Composición y navegación
 
-`ManoApp.tsx` contiene `Photo`, `Seal`, `Sheet`, `AlbumInput`, `BrandStatus`,
-`Welcome` y la composición principal. No hay carpeta screens ni componentes
+`ManoApp.tsx` contiene `Photo`, `PolaroidCaption`, `Seal`, `Sheet`, `AlbumInput`,
+`BrandStatus` y la composición principal (CW-CL-013: sin `Welcome`; pantallas en
+`Onboarding.tsx`, `Screens.tsx`, ajustes en `DisplaySettings.tsx`, OSD en `Vhs.tsx`). No hay carpeta screens ni componentes
 extraídos para cada pantalla. `session=false` muestra bienvenida; iniciar prepara
 media y activa sesión; `sheet` abre filtros, álbumes o revisión; `inspect` añade
 overlay, con `pinnedInspect` para zoom. Fin de sesión puede guardar pendientes

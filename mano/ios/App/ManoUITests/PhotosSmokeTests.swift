@@ -20,10 +20,25 @@ final class PhotosSmokeTests: XCTestCase {
             add(screenshot)
         }
 
-        // Welcome requests Photos immediately. Grant the real OS prompt BEFORE
-        // touching Empezar a revisar; a covered/disabled start button is not a failure.
-        // This prompt is an expected step: address SpringBoard directly rather
-        // than an interruption monitor or simulated permission response.
+        // First launch shows the onboarding cards; Photos is requested only on the
+        // last one, after the explanation. Every card must be passed (no skip).
+        for step in 1...3 {
+            let next = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Continuar")).firstMatch
+            guard next.waitForExistence(timeout: step == 1 ? 120 : 15) else {
+                XCTFail("Onboarding card \(step) did not offer Continuar.\n\(app.debugDescription)")
+                return
+            }
+            next.tap()
+        }
+        let allow = app.buttons["Permitir acceso a Fotos"].firstMatch
+        guard allow.waitForExistence(timeout: 15) else {
+            XCTFail("The privacy card did not offer the Photos request.\n\(app.debugDescription)")
+            return
+        }
+        allow.tap()
+
+        // Grant the real OS prompt. This prompt is an expected step: address
+        // SpringBoard directly rather than an interruption monitor or simulated response.
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         let fullAccess = springboard.buttons.matching(NSPredicate(format:
             "(label CONTAINS[c] 'Full Access' OR label CONTAINS[c] 'All Photos' OR " +
@@ -38,15 +53,7 @@ final class PhotosSmokeTests: XCTestCase {
         }
         fullAccess.tap()
 
-        // Fresh simulator state: no saved session, so the CTA is not «Continuar revisión».
-        let start = app.buttons["Empezar a revisar"].firstMatch
-        guard start.waitForExistence(timeout: 120) else {
-            XCTFail("The authorized welcome screen did not expose Empezar a revisar.\n\(app.debugDescription)")
-            return
-        }
-        XCTAssertTrue(start.isHittable, "Authorized welcome must permit starting a session.")
-        start.tap()
-
+        // No landing page: once authorized the session prepares and opens by itself.
         // Session header «Terminar» (#review-trigger); its label may append a hidden
         // discard count, and the review sheet's «Terminar …» buttons are not mounted yet.
         let finish = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Terminar")).firstMatch
@@ -86,27 +93,28 @@ final class PhotosSmokeTests: XCTestCase {
         app.buttons["Cerrar"].firstMatch.tap()
         print("COCOWASH_UI_GENERATED_ALBUM_OK")
 
-        // Enable Geek through ordinary draft filters, then open the explicit
-        // inspection button. Nonempty metadata rendering proves the native read.
+        // Enable Geek in Ajustes (display settings apply immediately), then hold a
+        // photo and drag it to the bottom anchor dock. Metadata proves the native read.
         app.buttons["Filtros"].firstMatch.tap()
+        let settingsTab = app.buttons["Ajustes"].firstMatch
+        XCTAssertTrue(settingsTab.waitForExistence(timeout: 15))
+        settingsTab.tap()
         let geek = app.switches.matching(NSPredicate(format: "label CONTAINS %@", "Modo Geek")).firstMatch
         XCTAssertTrue(geek.waitForExistence(timeout: 15))
-        for _ in 0..<4 {
+        for _ in 0..<10 {
             if geek.isHittable { break }
             app.swipeUp()
         }
-        XCTAssertTrue(geek.isHittable, "Geek switch must be reachable in filters.")
+        XCTAssertTrue(geek.isHittable, "Geek switch must be reachable in Ajustes.")
         geek.tap()
-        let apply = app.buttons["Aplicar filtros"].firstMatch
-        for _ in 0..<3 {
-            if apply.isHittable { break }
-            app.swipeUp()
-        }
-        XCTAssertTrue(apply.isHittable)
-        apply.tap()
-        let inspect = app.buttons["Ampliar y anclar"].firstMatch
-        XCTAssertTrue(inspect.waitForExistence(timeout: 30))
-        inspect.tap()
+        app.buttons["Cerrar"].firstMatch.tap()
+        expectation(for: returnedToSession, evaluatedWith: finish)
+        waitForExpectations(timeout: 30)
+        // Upper photo area: clear of the select mark (top-left) and a video's centred Play.
+        let photo = app.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.32))
+        let dock = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.89))
+        photo.press(forDuration: 0.8, thenDragTo: dock)
+        XCTAssertTrue(app.staticTexts["Anclada"].firstMatch.waitForExistence(timeout: 15), "Hold and drag to the dock must anchor the photo.")
         XCTAssertTrue(app.staticTexts["Modo Geek"].firstMatch.waitForExistence(timeout: 15))
         XCTAssertTrue(app.staticTexts["Ancho"].firstMatch.waitForExistence(timeout: 30))
         XCTAssertTrue(app.staticTexts["Alto"].firstMatch.exists)

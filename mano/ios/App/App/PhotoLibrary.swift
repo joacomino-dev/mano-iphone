@@ -6,17 +6,107 @@ import PhotosUI
 import Vision
 import AVFoundation
 import AVKit
+import WebKit
 import CryptoKit
 import ImageIO
+import CoreLocation
+
+/// App-owned cache folder for prepared review videos (never Photos originals).
+let preparedVideoFolder = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+    .appendingPathComponent("MemSwipeVideos", isDirectory: true)
 
 @objc(ManoBridgeController)
 class ManoBridgeController: CAPBridgeViewController {
+    private let mediaStream = PreparedVideoStreamHandler()
+    override func webViewConfiguration(for instanceConfiguration: InstanceConfiguration) -> WKWebViewConfiguration {
+        let configuration = super.webViewConfiguration(for: instanceConfiguration)
+        // Capacitor's file handler answers a <video> "bytes=0-" request by reading the
+        // whole file into memory on the main thread. Prepared videos stream instead.
+        configuration.setURLSchemeHandler(mediaStream, forURLScheme: PreparedVideoStreamHandler.scheme)
+        return configuration
+    }
     override func capacitorDidLoad() {
         super.capacitorDidLoad()
         bridge?.registerPluginInstance(PhotoLibraryPlugin())
         NSLog("MEMSWIPE_BRIDGE_READY")
     }
     override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
+}
+
+/// Serves only finished files from `preparedVideoFolder`, in bounded chunks with
+/// correct 206 range semantics. Every WKURLSchemeTask call happens on the main
+/// thread and never after WebKit stopped the task (that raises an exception).
+final class PreparedVideoStreamHandler: NSObject, WKURLSchemeHandler {
+    static let scheme = "cocowash-media"
+    private let readQueue = DispatchQueue(label: "work.joaquin.mano.video-stream", qos: .userInitiated)
+    private var active = Set<ObjectIdentifier>()
+    private let chunk = 512 * 1024
+
+    func webView(_ webView: WKWebView, start task: WKURLSchemeTask) {
+        let id = ObjectIdentifier(task)
+        active.insert(id)
+        guard let url = task.request.url,
+              url.lastPathComponent.range(of: "^[0-9a-f]{64}\\.(mp4|mov|m4v)$", options: .regularExpression) != nil else {
+            fail(task, URLError(.badURL)); return
+        }
+        let file = preparedVideoFolder.appendingPathComponent(url.lastPathComponent)
+        let range = task.request.value(forHTTPHeaderField: "Range")
+        readQueue.async {
+            guard let size = (try? file.resourceValues(forKeys: [.fileSizeKey]))?.fileSize, size > 0,
+                  let handle = try? FileHandle(forReadingFrom: file) else {
+                DispatchQueue.main.async { self.fail(task, URLError(.fileDoesNotExist)) }; return
+            }
+            defer { try? handle.close() }
+            var lower = 0, upper = size - 1
+            if let range, range.hasPrefix("bytes=") {
+                let bounds = range.dropFirst(6).split(separator: "-", omittingEmptySubsequences: false)
+                if bounds.count == 2 {
+                    if bounds[0].isEmpty, let suffix = Int(bounds[1]) { lower = max(0, size - suffix) }
+                    else { lower = Int(bounds[0]) ?? 0; if let end = Int(bounds[1]) { upper = min(end, size - 1) } }
+                }
+            }
+            guard lower <= upper else {
+                DispatchQueue.main.async {
+                    guard self.active.contains(id) else { return }
+                    guard let response = HTTPURLResponse(url: url, statusCode: 416, httpVersion: "HTTP/1.1", headerFields: ["Content-Range": "bytes */\(size)"]) else { self.fail(task, URLError(.badServerResponse)); return }
+                    task.didReceive(response); task.didFinish(); self.active.remove(id)
+                }
+                return
+            }
+            var headers = ["Content-Type": file.pathExtension == "mov" ? "video/quicktime" : "video/mp4",
+                           "Accept-Ranges": "bytes", "Content-Length": String(upper - lower + 1), "Cache-Control": "no-cache"]
+            if range != nil { headers["Content-Range"] = "bytes \(lower)-\(upper)/\(size)" }
+            guard let response = HTTPURLResponse(url: url, statusCode: range != nil ? 206 : 200, httpVersion: "HTTP/1.1", headerFields: headers) else {
+                DispatchQueue.main.async { self.fail(task, URLError(.badServerResponse)) }; return
+            }
+            var alive = DispatchQueue.main.sync { () -> Bool in
+                guard self.active.contains(id) else { return false }
+                task.didReceive(response); return true
+            }
+            var offset = lower
+            do { try handle.seek(toOffset: UInt64(lower)) } catch { alive = false }
+            while alive && offset <= upper {
+                let data = autoreleasepool { (try? handle.read(upToCount: min(self.chunk, upper - offset + 1))) ?? Data() }
+                if data.isEmpty { break }
+                offset += data.count
+                alive = DispatchQueue.main.sync { () -> Bool in
+                    guard self.active.contains(id) else { return false }
+                    task.didReceive(data); return true
+                }
+            }
+            DispatchQueue.main.async {
+                guard self.active.contains(id) else { return }
+                self.active.remove(id)
+                if offset > upper { task.didFinish() } else { task.didFailWithError(URLError(.cannotDecodeContentData)) }
+            }
+        }
+    }
+    func webView(_ webView: WKWebView, stop task: WKURLSchemeTask) { active.remove(ObjectIdentifier(task)) }
+    private func fail(_ task: WKURLSchemeTask, _ error: Error) {
+        let id = ObjectIdentifier(task)
+        guard active.contains(id) else { return }
+        active.remove(id); task.didFailWithError(error)
+    }
 }
 
 @objc(PhotoLibraryPlugin)
@@ -39,8 +129,17 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "cancelVideoPreparation", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "releasePreparedVideos", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "analyze", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "cancelAnalysis", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "cancelAnalysis", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "permissionStatus", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "openSettings", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "manageLimitedAccess", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "haptic", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "place", returnType: CAPPluginReturnPromise)
     ]
+    private let geocoder = CLGeocoder()
+    private var placeCache: [String: [String: String]] = [:] // Rounded coordinates -> names; memory only.
+    private var placeQueue: [(key: String, location: CLLocation, calls: [CAPPluginCall])] = []
+    private var geocoding = false
     private let imageManager = PHCachingImageManager()
     private let analysisQueue = DispatchQueue(label: "work.joaquin.mano.vision", qos: .utility)
     private let videoQueue = DispatchQueue(label: "work.joaquin.mano.video-cache", qos: .userInitiated)
@@ -54,10 +153,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
     private var pinnedVideos: [String: String] = [:] // Cache key -> Photos identifier; never logged.
     private let videoCacheLimit: Int64 = 1024 * 1024 * 1024
     private let videoFileLimit: Int64 = 512 * 1024 * 1024
-    private var videoFolder: URL {
-        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("MemSwipeVideos", isDirectory: true)
-    }
+    private var videoFolder: URL { preparedVideoFolder }
     private var analyzing = false
     private let cancelLock = NSLock()
     private var cancelRequested = false
@@ -81,6 +177,78 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func authorize(_ call: CAPPluginCall) {
         PHPhotoLibrary.requestAuthorization(for: .readWrite) { _ in call.resolve(["status": self.status]) }
     }
+    /// Reads the current state without ever showing the system prompt.
+    @objc func permissionStatus(_ call: CAPPluginCall) { call.resolve(["status": status]) }
+    @objc func openSettings(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            guard let url = URL(string: UIApplication.openSettingsURLString) else { call.reject("No se pudo abrir Ajustes."); return }
+            UIApplication.shared.open(url) { opened in opened ? call.resolve() : call.reject("No se pudo abrir Ajustes.") }
+        }
+    }
+    @objc func manageLimitedAccess(_ call: CAPPluginCall) {
+        guard status == "limited" else { call.resolve(["changed": false]); return }
+        DispatchQueue.main.async {
+            guard let controller = self.presenter() else { call.reject("No se pudo abrir el selector de Fotos."); return }
+            PHPhotoLibrary.shared().presentLimitedLibraryPicker(from: controller) { _ in call.resolve(["changed": true]) }
+        }
+    }
+    /// Short, contextual feedback; the web layer rate-limits repeated calls.
+    @objc func haptic(_ call: CAPPluginCall) {
+        let kind = call.getString("kind") ?? "light"
+        DispatchQueue.main.async {
+            switch kind {
+            case "selection": UISelectionFeedbackGenerator().selectionChanged()
+            case "success": UINotificationFeedbackGenerator().notificationOccurred(.success)
+            case "warning": UINotificationFeedbackGenerator().notificationOccurred(.warning)
+            case "error": UINotificationFeedbackGenerator().notificationOccurred(.error)
+            case "medium": UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            case "soft": UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+            case "rigid": UIImpactFeedbackGenerator(style: .rigid).impactOccurred(intensity: 0.7)
+            default: UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            }
+            call.resolve()
+        }
+    }
+    /// City/region for an asset's capture location, via Apple's on-device API.
+    /// Coordinates are rounded (~1 km) before lookup; absent location resolves {}.
+    @objc func place(_ call: CAPPluginCall) {
+        guard allowed(call), let item = asset(call) else { return }
+        guard let location = item.location else { call.resolve([:]); return }
+        let lat = (location.coordinate.latitude * 100).rounded() / 100, lng = (location.coordinate.longitude * 100).rounded() / 100
+        let key = "\(lat),\(lng)"
+        DispatchQueue.main.async {
+            if let cached = self.placeCache[key] { call.resolve(cached); return }
+            if let index = self.placeQueue.firstIndex(where: { $0.key == key }) { self.placeQueue[index].calls.append(call); return }
+            self.placeQueue.append((key, CLLocation(latitude: lat, longitude: lng), [call]))
+            self.nextPlace()
+        }
+    }
+    private func nextPlace() {
+        guard !geocoding, !placeQueue.isEmpty else { return }
+        geocoding = true
+        let job = placeQueue.removeFirst()
+        geocoder.reverseGeocodeLocation(job.location, preferredLocale: Locale.current) { placemarks, error in
+            DispatchQueue.main.async {
+                var result: [String: String] = [:]
+                if let mark = placemarks?.first {
+                    if let city = mark.locality ?? mark.subAdministrativeArea ?? mark.administrativeArea ?? mark.name ?? mark.ocean { result["locality"] = city }
+                    if let region = mark.administrativeArea, region != result["locality"] { result["region"] = region }
+                    if let country = mark.country { result["country"] = country }
+                    if let code = mark.isoCountryCode { result["countryCode"] = code }
+                }
+                // Offline/throttled lookups are not cached: a later card may succeed.
+                if error == nil { self.placeCache[job.key] = result } else if result.isEmpty { result["retry"] = "1" }
+                for call in job.calls { call.resolve(result) }
+                // Apple throttles bursts; keep lookups well under its rate limit.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { self.geocoding = false; self.nextPlace() }
+            }
+        }
+    }
+    private func presenter() -> UIViewController? {
+        var top = bridge?.viewController
+        while let presented = top?.presentedViewController, !presented.isBeingDismissed { top = presented }
+        return top
+    }
     @objc func assets(_ call: CAPPluginCall) {
         NSLog("MEMSWIPE_PHOTOS_REQUEST status=%@", status)
         guard ["authorized", "limited"].contains(status) else { call.resolve(["assets": [], "status": status]); return }
@@ -94,7 +262,8 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                 let kind = item.mediaType == .video ? "video" : item.mediaSubtypes.contains(.photoLive) ? "live" : "photo"
                 items.append(["id": item.localIdentifier, "kind": kind, "date": (item.creationDate?.timeIntervalSince1970 ?? 0) * 1000,
                               "width": item.pixelWidth, "height": item.pixelHeight, "duration": item.duration,
-                              "modified": (item.modificationDate?.timeIntervalSince1970 ?? 0) * 1000])
+                              "modified": (item.modificationDate?.timeIntervalSince1970 ?? 0) * 1000,
+                              "hasLocation": item.location != nil])
             }
             // Runtime smoke-test signal: no asset IDs, names, paths or image data.
             NSLog("MEMSWIPE_PHOTOS_READ_OK count=%d status=%@", items.count, self.status)
@@ -349,13 +518,23 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func preview(_ call: CAPPluginCall) {
         guard allowed(call), let item = asset(call) else { return }
         if item.mediaType == .video {
-            let options = PHVideoRequestOptions(); options.isNetworkAccessAllowed = true
-            imageManager.requestPlayerItem(forVideo: item, options: options) { playerItem, _ in
-                guard let playerItem else { call.reject("No se pudo descargar el vídeo desde iCloud."); return }
+            // Fullscreen fallback: a prepared local copy starts instantly; otherwise
+            // AVFoundation streams/downloads through Photos with its own buffering.
+            let present: (AVPlayerItem) -> Void = { playerItem in
                 DispatchQueue.main.async {
+                    guard let host = self.presenter() else { call.reject("No se pudo abrir el reproductor.", "PLAYBACK_FAILED"); return }
                     let controller = AVPlayerViewController(); controller.player = AVPlayer(playerItem: playerItem)
-                    self.bridge?.viewController?.present(controller, animated: true) { controller.player?.play(); call.resolve() }
+                    host.present(controller, animated: true) { controller.player?.play(); call.resolve() }
                 }
+            }
+            if let cached = preparedVideoFile(for: item) { present(AVPlayerItem(url: cached)); return }
+            let options = PHVideoRequestOptions(); options.isNetworkAccessAllowed = true; options.deliveryMode = .automatic
+            imageManager.requestPlayerItem(forVideo: item, options: options) { playerItem, info in
+                guard let playerItem else {
+                    let offline = (info?[PHImageErrorKey] as? NSError)?.domain == NSURLErrorDomain
+                    call.reject(offline ? "Sin conexión con iCloud. Inténtalo con conexión." : "No se pudo abrir el vídeo.", offline ? "VIDEO_DOWNLOAD_FAILED" : "PLAYBACK_FAILED"); return
+                }
+                present(playerItem)
             }
         } else if item.mediaSubtypes.contains(.photoLive) {
             let options = PHLivePhotoRequestOptions(); options.isNetworkAccessAllowed = true; options.deliveryMode = .highQualityFormat
@@ -364,7 +543,8 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                 guard let photo else { call.reject("No se pudo descargar la Live Photo desde iCloud."); return }
                 DispatchQueue.main.async {
                     let controller = LivePhotoController(photo: photo); self.livePreview = controller
-                    self.bridge?.viewController?.present(controller, animated: true) { call.resolve() }
+                    guard let host = self.presenter() else { call.reject("No se pudo abrir la Live Photo."); return }
+                    host.present(controller, animated: true) { call.resolve() }
                 }
             }
         } else { call.resolve() }
@@ -377,8 +557,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         guard let token = call.getString("requestId"), !token.isEmpty, token.count <= 160 else {
             call.reject("Falta el identificador de preparación.", "INVALID_REQUEST"); return
         }
-        let fingerprint = item.localIdentifier + "-\(item.modificationDate?.timeIntervalSince1970 ?? 0)"
-        let key = SHA256.hash(data: Data(fingerprint.utf8)).map { String(format: "%02x", $0) }.joined()
+        let key = videoKey(item)
         videoQueue.async {
             guard self.videoJobs[token] == nil else { call.reject("Ese vídeo ya se está preparando.", "PREPARATION_BUSY"); return }
             do {
@@ -396,7 +575,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                         self.pinnedVideos[key] = item.localIdentifier
                         try? FileManager.default.setAttributes([.modificationDate: Date()], ofItemAtPath: file.path)
                         NSLog("MEMSWIPE_VIDEO_PREPARED_OK bytes=%lld cached=1", bytes)
-                        call.resolve(["path": file.path, "mimeType": self.videoMime(ext), "cached": true, "bytes": bytes]); return
+                        call.resolve(["path": file.path, "url": self.streamURL(file), "mimeType": self.videoMime(ext), "cached": true, "bytes": bytes]); return
                     }
                 }
             } catch { call.reject("No hay espacio para preparar el vídeo.", "CACHE_WRITE_FAILED", error); return }
@@ -405,20 +584,18 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
             }
             let job = PreparedVideoJob(token: token, key: key, assetID: item.localIdentifier, call: call)
             self.videoJobs[token] = job
-            let timeout = DispatchWorkItem { [weak self, weak job] in
-                guard let self, let job else { return }
-                self.stopVideo(job, message: "El vídeo tardó demasiado en descargarse. Comprueba iCloud y vuelve a intentarlo.", code: "PREPARATION_TIMEOUT")
-            }
-            job.timeout = timeout
-            self.videoQueue.asyncAfter(deadline: .now() + 180, execute: timeout)
+            // Inactivity watchdog, not a fixed deadline: a large iCloud download that
+            // keeps progressing is never killed; a stalled one fails clearly.
+            self.armVideoWatchdog(job)
             let options = PHVideoRequestOptions()
             options.isNetworkAccessAllowed = true
             options.version = .current
             options.deliveryMode = .highQualityFormat
-            options.progressHandler = { [weak self, weak job] progress, _, stop, _ in
+            options.progressHandler = { [weak self, weak job] progress, error, stop, _ in
                 guard let self, let job else { stop.pointee = true; return }
                 if job.isCancelled { stop.pointee = true; return }
-                self.notifyListeners("mediaPreparationProgress", data: ["requestId": token, "progress": progress])
+                self.videoQueue.async { if self.videoJobs[token] === job { self.armVideoWatchdog(job) } }
+                self.notifyListeners("mediaPreparationProgress", data: ["requestId": token, "phase": "download", "progress": progress])
             }
             job.photoRequest = self.imageManager.requestAVAsset(forVideo: item, options: options) { [weak self, weak job] asset, audioMix, info in
                 guard let self, let job else { return }
@@ -428,8 +605,15 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                         self.stopVideo(job, message: "Preparación cancelada.", code: "PREPARATION_CANCELLED"); return
                     }
                     guard let asset else {
-                        self.stopVideo(job, message: "No se pudo descargar el vídeo desde iCloud. Comprueba la conexión y reintenta.", code: "VIDEO_UNAVAILABLE"); return
+                        let error = info?[PHImageErrorKey] as? NSError
+                        let network = error?.domain == NSURLErrorDomain || (error?.domain.contains("Cloud") ?? false)
+                        self.stopVideo(job, message: network ? "No se pudo descargar el vídeo desde iCloud. Comprueba la conexión y reintenta." : "Este vídeo no está disponible ahora mismo.",
+                                       code: network ? "VIDEO_DOWNLOAD_FAILED" : "VIDEO_UNAVAILABLE"); return
                     }
+                    self.armVideoWatchdog(job)
+                    // Keep the AVURLAsset alive while copying: Photos' sandbox extension
+                    // for its file URL is tied to that object, not to the URL string.
+                    job.source = asset
                     if let local = asset as? AVURLAsset, local.url.isFileURL {
                         self.copyVideo(local.url, job: job)
                     } else {
@@ -456,6 +640,26 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
             for key in keys { self.pinnedVideos.removeValue(forKey: key) }
             call.resolve(["released": keys.count])
         }
+    }
+    private func videoKey(_ item: PHAsset) -> String {
+        let fingerprint = item.localIdentifier + "-\(item.modificationDate?.timeIntervalSince1970 ?? 0)"
+        return SHA256.hash(data: Data(fingerprint.utf8)).map { String(format: "%02x", $0) }.joined()
+    }
+    private func preparedVideoFile(for item: PHAsset) -> URL? {
+        let key = videoKey(item)
+        return ["mp4", "mov", "m4v"].lazy.map { self.videoFolder.appendingPathComponent(key + "." + $0) }
+            .first { (self.videoSize($0) ?? 0) > 0 }
+    }
+    private func streamURL(_ file: URL) -> String { "\(PreparedVideoStreamHandler.scheme)://localhost/\(file.lastPathComponent)" }
+    /// Called on videoQueue. Restarts the 90 s inactivity window for a live job.
+    private func armVideoWatchdog(_ job: PreparedVideoJob) {
+        job.timeout?.cancel()
+        let timeout = DispatchWorkItem { [weak self, weak job] in
+            guard let self, let job else { return }
+            self.stopVideo(job, message: "El vídeo dejó de descargarse. Comprueba tu conexión a iCloud y reintenta.", code: "PREPARATION_TIMEOUT")
+        }
+        job.timeout = timeout
+        videoQueue.asyncAfter(deadline: .now() + 90, execute: timeout)
     }
     private func videoSize(_ url: URL) -> Int64? {
         ((try? FileManager.default.attributesOfItem(atPath: url.path)[.size]) as? NSNumber)?.int64Value
@@ -487,6 +691,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         videoJobs.removeValue(forKey: job.token)
         if job.photoRequest != PHInvalidImageRequestID { imageManager.cancelImageRequest(job.photoRequest) }
         job.exporter?.cancelExport()
+        job.source = nil
         if let partial = job.partial { try? FileManager.default.removeItem(at: partial) }
         job.call.reject(message, code)
     }
@@ -509,8 +714,11 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         let ext = ["mp4", "mov", "m4v"].contains(source.pathExtension.lowercased()) ? source.pathExtension.lowercased() : "mov"
         let partial = videoFolder.appendingPathComponent("partial-" + UUID().uuidString + "." + ext)
         job.partial = partial
-        do { try reserveVideoSpace(videoSize(source) ?? 0) }
-        catch { failVideo(job, error: error); return }
+        // An unreadable size is not proof of absence: commitVideo reserves the
+        // real byte count again, so only a known size is checked up front.
+        if let size = (try? source.resourceValues(forKeys: [.fileSizeKey]))?.fileSize, size > 0 {
+            do { try reserveVideoSpace(Int64(size)) } catch { failVideo(job, error: error); return }
+        }
         DispatchQueue.global(qos: .userInitiated).async {
             do {
                 guard !job.isCancelled else { throw VideoPreparationFailure.cancelled }
@@ -520,17 +728,26 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                 let output = try FileHandle(forWritingTo: partial)
                 defer { try? output.close() }
                 var bytes: Int64 = 0
+                let total = Int64((try? source.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0)
                 while let data = try input.read(upToCount: 1024 * 1024), !data.isEmpty {
                     guard !job.isCancelled else { throw VideoPreparationFailure.cancelled }
                     bytes += Int64(data.count)
                     guard bytes <= self.videoFileLimit else { throw VideoPreparationFailure.tooLarge }
                     try output.write(contentsOf: data)
+                    if total > 0, bytes % (8 * 1024 * 1024) < 1024 * 1024 {
+                        self.notifyListeners("mediaPreparationProgress", data: ["requestId": job.token, "phase": "prepare", "progress": Double(bytes) / Double(total)])
+                    }
                 }
                 try output.synchronize()
                 self.videoQueue.async { self.commitVideo(job, ext: ext) }
             } catch {
                 try? FileManager.default.removeItem(at: partial)
-                self.videoQueue.async { self.failVideo(job, error: error) }
+                self.videoQueue.async {
+                    // The direct file could not be read (sandbox/format): let AVFoundation
+                    // re-export it instead of failing a video Photos can still decode.
+                    if error is VideoPreparationFailure || job.isCancelled || job.source == nil { self.failVideo(job, error: error) }
+                    else if self.videoJobs[job.token] === job, let asset = job.source { job.partial = nil; self.exportVideo(asset, audioMix: nil, job: job) }
+                }
             }
         }
     }
@@ -551,7 +768,21 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         exporter.audioMix = audioMix
         exporter.shouldOptimizeForNetworkUse = true
         exporter.fileLengthLimit = videoFileLimit
+        // Report real export progress and keep the inactivity watchdog fed while
+        // AVFoundation renders (slow-motion/edited compositions can take a while).
+        var reported: Float = -1
+        let poll = DispatchSource.makeTimerSource(queue: videoQueue)
+        poll.schedule(deadline: .now() + 0.5, repeating: 0.5)
+        poll.setEventHandler { [weak self, weak job] in
+            guard let self, let job, self.videoJobs[job.token] === job else { poll.cancel(); return }
+            if exporter.progress > reported + 0.01 {
+                reported = exporter.progress; self.armVideoWatchdog(job)
+                self.notifyListeners("mediaPreparationProgress", data: ["requestId": job.token, "phase": "prepare", "progress": Double(reported)])
+            }
+        }
+        poll.resume()
         exporter.exportAsynchronously {
+            poll.cancel()
             self.videoQueue.async {
                 guard self.videoJobs[job.token] === job, !job.isCancelled else { try? FileManager.default.removeItem(at: partial); return }
                 guard exporter.status == .completed else {
@@ -575,7 +806,8 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
             job.timeout?.cancel()
             videoJobs.removeValue(forKey: job.token)
             NSLog("MEMSWIPE_VIDEO_PREPARED_OK bytes=%lld cached=0", bytes)
-            job.call.resolve(["path": file.path, "mimeType": videoMime(ext), "cached": false, "bytes": bytes])
+            job.source = nil
+            job.call.resolve(["path": file.path, "url": streamURL(file), "mimeType": videoMime(ext), "cached": false, "bytes": bytes])
         } catch { failVideo(job, error: error) }
     }
     @objc func analyze(_ call: CAPPluginCall) {
@@ -674,6 +906,7 @@ private final class PreparedVideoJob {
     let call: CAPPluginCall
     var photoRequest: PHImageRequestID = PHInvalidImageRequestID
     var exporter: AVAssetExportSession?
+    var source: AVAsset?
     var partial: URL?
     var timeout: DispatchWorkItem?
     private let lock = NSLock()

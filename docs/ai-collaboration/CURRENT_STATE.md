@@ -6,7 +6,8 @@
 - Checkout: `C:/Users/Joaco/OneDrive/Documentos/ChatGPT/iPhone`; main local sincronizada
   con origin/main + **1 commit local sin push** (mano/CLAUDE.md y mano/tools/). Ver CW-HO-004.
   Sin publicar a propósito: `CURRENT.md` (notas operativas privadas de Codex, sin seguimiento).
-- Último Claude: CW-CL-005, publicación y preparación de la compilación. Antes: CW-CL-002/003
+- **CW-CL-013 (sin commit):** mejoras UI/UX del usuario (vídeo, onboarding, anclaje, metadatos Polaroid/VHS, ajustes, contador). Checks Windows verdes; falta CI macOS (Swift + XCTest actualizado) y QA en iPhone de vídeo local/iCloud. Ver CLAUDE_LOG.
+- Último Claude anterior: CW-CL-005, publicación y preparación de la compilación. Antes: CW-CL-002/003
   (rediseño y render nativo simulado). Informe [CLAUDE_REDESIGN](../ai-handoff/CLAUDE_REDESIGN_CW-CL-002.md).
 - Último Codex: CW-CX-003, recepción, revisión técnica, orden aprobado actualizado y Fase 0 completada.
 - Protección: respaldo externo verificado en
@@ -16,11 +17,14 @@
   en main cancela el run en curso del mismo ref (`cancel-in-progress`).
 - Pendiente: revisión del diff por Codex (CW-HO-003), QA en dispositivo (hoja nativa, VoiceOver,
   Dynamic Type, vídeo), release/IPA verificado. Playwright test:runtime no se ejecutó.
-- Próximo: Codex recibe CW-HO-004 y lanza la compilación.
+- CW-CL-006: run 41124449495 falló por bloqueo ibtool/actool con arranque paralelo del simulador; corrección (compilar antes de arrancar + selectores del rediseño) publicada; ver nuevo run en CLAUDE_LOG.
+- Próximo: usuario revisa resultado del run 41124449495. Codex confirmó `in_progress`
+  en CW-CX-004 y se detuvo sin polling. No hizo push: el único commit local añade
+  adaptador/herramientas Windows, no cambia la app que ya se está compilando.
 
 ## CW-HO-004 — compilación lista para lanzar, Claude → Codex
 
-**Lista, no recibida.** main local = origin/main + 1 commit local (mano/CLAUDE.md, mano/tools/
+**Recibida por CW-CX-004; compilación existente confirmada en curso.** main local = origin/main + 1 commit local (mano/CLAUDE.md, mano/tools/
 de Codex). Para compilar: comprobar que el run 41124449495 terminó (o aceptar cancelarlo), luego
 `git push origin main` desde la raíz: el workflow «Build Mano for AltStore» arranca solo por tocar
 `mano/**`. Alternativa sin push: *Run workflow* (workflow_dispatch) en Actions. El IPA sale como

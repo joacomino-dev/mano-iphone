@@ -1,5 +1,5 @@
 export type MediaKind = 'photo' | 'video' | 'live';
-export type Asset = { id: string; kind: MediaKind; date: number; width: number; height: number; duration: number; modified?: number; group?: string; demo?: boolean };
+export type Asset = { id: string; kind: MediaKind; date: number; width: number; height: number; duration: number; modified?: number; group?: string; hasLocation?: boolean; demo?: boolean };
 export type Mark = { level: number; due: number; keptAt: number };
 export type DecisionContext = { handIds: string[]; rotated: string[]; selected: string[]; group?: string; filter?: Filter };
 export type Decision = { ids: string[]; action: 'keep' | 'discard' | 'favorite'; previous: Record<string, Mark | null>; at: number; context?: DecisionContext };
@@ -132,4 +132,17 @@ export function validateRecordState(value: unknown): RecordState | null {
 export function readState(key: string): RecordState {
   try { return validateRecordState(JSON.parse(localStorage.getItem(key) || 'null')) ?? initialState(); }
   catch { return initialState(); }
+}
+/** What the session counter shows: the files the active filters select (media,
+ * capture date, seal), how many of them are already decided and how many remain
+ * in the pile. `decidedHere` keeps items decided under a seal filter in scope
+ * after their seal changes, so the count never shrinks under the person. */
+export function filterScope(assets: Asset[], state: RecordState, filter: Filter, now = Date.now(), decidedHere: ReadonlySet<string> = new Set()) {
+  const removed = new Set(state.removed);
+  const inScope = assets.filter(a => !removed.has(a.id)
+    && (filter.media === 'all' || filter.media === a.kind)
+    && matchesDate(a.date, filter, now)
+    && (filter.seal === 'all' || decidedHere.has(a.id) || (filter.seal === 'none' ? !state.marks[a.id] : state.marks[a.id]?.level === filter.seal)));
+  const remaining = eligible(assets, state, filter, now).length;
+  return { total: inScope.length, remaining, reviewed: Math.max(0, inScope.length - remaining) };
 }
