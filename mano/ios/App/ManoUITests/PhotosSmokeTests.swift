@@ -115,29 +115,19 @@ final class PhotosSmokeTests: XCTestCase {
         app.buttons["Cerrar"].firstMatch.tap()
         expectation(for: returnedToSession, evaluatedWith: finish)
         waitForExpectations(timeout: 30)
-        // Press on the real top card, not a fixed screen point: the 320×240 video
-        // fixture yields a short landscape card whose top edge sits below y≈0.32
-        // (run 41159459492). Its upper part avoids the select mark and centred Play.
-        // No app.debugDescription on failure: a WebView dump can stall for minutes.
-        let card = app.descendants(matching: .any).matching(NSPredicate(format:
-            "label BEGINSWITH %@ OR label BEGINSWITH %@ OR label BEGINSWITH %@", "Foto 1 de", "Vídeo 1 de", "Live Photo 1 de")).firstMatch
-        let press: XCUICoordinate
-        if card.waitForExistence(timeout: 10), card.frame.height > 80 {
-            press = card.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2))
-        } else {
-            // The card is centred in its stack; 36 % of the stack height lies inside
-            // even the landscape card and above its Play button.
-            let stack = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Pila de recuerdos")).firstMatch
-            XCTAssertTrue(stack.waitForExistence(timeout: 10), "The card stack must be on screen.")
-            press = stack.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.36))
+        // Gate: Modo Geek adds an explicit «Ver datos del archivo» control to the top
+        // card (a real button, like the old «Ampliar y anclar»). It opens the anchored
+        // view whose Geek panel proves the native metadata read.
+        let info = app.buttons["Ver datos del archivo"].firstMatch
+        guard info.waitForExistence(timeout: 15) else {
+            attachScreenshot(app, "Geek data control missing")
+            XCTFail("Modo Geek must add the data control to the top card.")
+            return
         }
-        // Gate: an explicit interaction (double tap, the replacement for the old
-        // «Ampliar y anclar» button) opens the anchored view; Geek data proves the
-        // native metadata read exactly as before.
-        press.doubleTap()
+        info.tap()
         guard app.staticTexts["Anclada"].firstMatch.waitForExistence(timeout: 15) else {
-            attachScreenshot(app, "Double tap did not open the anchored view")
-            XCTFail("Double tap on the top card must open the anchored view.")
+            attachScreenshot(app, "Data control did not open the anchored view")
+            XCTFail("The data control must open the anchored view.")
             return
         }
         XCTAssertTrue(app.staticTexts["Modo Geek"].firstMatch.waitForExistence(timeout: 15))
@@ -147,14 +137,24 @@ final class PhotosSmokeTests: XCTestCase {
         app.buttons["Cerrar"].firstMatch.tap()
         print("COCOWASH_UI_LOCAL_METADATA_OK")
 
-        // Diagnostic probe, not a gate: XCTest's synthesized press-and-drag in a
-        // WKWebView did not anchor in runs 41159459492/41162917606 even on the
-        // real card. Record the outcome and evidence; verify on device by hand.
+        // Diagnostic probes, not gates. Synthesized double tap and press-and-drag on
+        // the card did not reach the anchored view in runs 41162917606/41164527679
+        // although the same events work in the web preview. Record what XCTest sees
+        // so the next change is based on evidence; verify the gestures on device.
         XCTAssertTrue(finish.waitForExistence(timeout: 15))
+        let card = app.descendants(matching: .any).matching(NSPredicate(format:
+            "label BEGINSWITH %@ OR label BEGINSWITH %@ OR label BEGINSWITH %@", "Foto 1 de", "Vídeo 1 de", "Live Photo 1 de")).firstMatch
+        guard card.waitForExistence(timeout: 10) else { print("COCOWASH_UI_PROBE card not exposed"); return }
+        print("COCOWASH_UI_PROBE app=\(app.frame) card=\(card.frame) hittable=\(card.isHittable) info=\(info.frame)")
+        let press = card.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
+        press.doubleTap()
+        let doubleTapped = app.staticTexts["Anclada"].firstMatch.waitForExistence(timeout: 6)
+        print(doubleTapped ? "COCOWASH_UI_DOUBLE_TAP_OK" : "COCOWASH_UI_DOUBLE_TAP_UNCONFIRMED")
+        if doubleTapped { app.buttons["Cerrar"].firstMatch.tap(); _ = finish.waitForExistence(timeout: 10) }
         let dock = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.89))
-        press.press(forDuration: 0.8, thenDragTo: dock)
+        press.press(forDuration: 1.0, thenDragTo: dock, withVelocity: .slow, thenHoldForDuration: 0.4)
         attachScreenshot(app, "After hold and drag to the anchor dock")
-        if app.staticTexts["Anclada"].firstMatch.waitForExistence(timeout: 8) {
+        if app.staticTexts["Anclada"].firstMatch.waitForExistence(timeout: 6) {
             print("COCOWASH_UI_ANCHOR_GESTURE_OK")
             app.buttons["Cerrar"].firstMatch.tap()
         } else {

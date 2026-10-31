@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type PointerEvent } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { FolderOpenIcon, FolderSimplePlusIcon, CaretRightIcon, CaretLeftIcon, ArrowCounterClockwiseIcon, ArrowUUpLeftIcon, HeartStraightIcon, StackIcon, TrashIcon, CheckIcon, XIcon, PlayIcon, SlidersHorizontalIcon, ArrowClockwiseIcon, ImageBrokenIcon, PlusIcon, MagnifyingGlassPlusIcon } from '@phosphor-icons/react';
+import { FolderOpenIcon, FolderSimplePlusIcon, CaretRightIcon, CaretLeftIcon, ArrowCounterClockwiseIcon, ArrowUUpLeftIcon, HeartStraightIcon, StackIcon, TrashIcon, CheckIcon, XIcon, PlayIcon, SlidersHorizontalIcon, ArrowClockwiseIcon, ImageBrokenIcon, PlusIcon, MagnifyingGlassPlusIcon, InfoIcon } from '@phosphor-icons/react';
 import { BottomSheet, Carousel, KeyboardInput, useKeyboard } from './mobile';
 import { decide, undo, restore, eligible, nextSessionHand, readState, reconcileLibrary, libraryFingerprint, filterScope, LEVELS, initialFilter, type Asset, type Decision, type Filter, type RecordState } from './domain';
 import { Library, isNative, demoAssets, thumbnail, type Album, type PhotoPermission } from './library';
@@ -326,6 +326,7 @@ export function ManoApp() {
             {index===0&&!tape&&<PolaroidCaption asset={asset} settings={display.photo} place={frontPlace}/>}
             <button tabIndex={index===0?0:-1} className={`pick-toggle ${picked?'selected':''}`} aria-label={`${picked?'Deseleccionar':'Seleccionar'} ${kindLabel.toLowerCase()} ${index+1}`} aria-pressed={picked} onPointerDown={e=>e.stopPropagation()} onClick={()=>{haptic('selection');select(asset.id);}}><CheckIcon size={16} weight="bold"/></button>
             {index===0&&<button className="zoom-access" onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();openPinned(asset,e.currentTarget.closest('article')!);}}><MagnifyingGlassPlusIcon size={16} weight="bold"/>Ampliar y anclar</button>}
+            {index===0&&filter.geek&&<button className="geek-access" aria-label="Ver datos del archivo" onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();openPinned(asset,e.currentTarget.closest('article')!);}}><InfoIcon size={18} weight="bold"/></button>}
             {state.marks[asset.id]&&<Seal level={state.marks[asset.id].level}/>}{asset.kind==='live'&&<button className="media-play" onPointerDown={e=>e.stopPropagation()} onClick={()=>play(asset)} aria-label="Reproducir Live Photo"><PlayIcon weight="fill" size={14}/>LIVE</button>}
           </motion.article>;
         })}</AnimatePresence>{currentColor&&<span className={`drag-label ${currentColor}`} aria-hidden="true" style={{opacity:Math.min(1,.4+Math.max(Math.abs(drag.x),Math.abs(drag.y))/120)}}>{currentColor==='keep'?'Conservar':currentColor==='discard'?'Descartar':'Favorita'}</span>}
