@@ -225,7 +225,9 @@ fi
 simulator_booted=1
 # ARM CI failure screenshot showed the installed icon while this command still
 # awaited completion at 60s. Allow one bounded cold install; do not retry blindly.
-bounded 180 xcrun simctl install "$simulator_id" "$app"
+# Run 41170519804 exceeded 180s while assetsd was still migrating the fresh
+# device's CoreData stores after bootstatus; 300s keeps the step within budget.
+bounded 300 xcrun simctl install "$simulator_id" "$app"
 # Only generated public fixtures are imported; never real photos or videos.
 # The first import creates the fresh device's Photos library: ~60s even ~4 min
 # after boot (run 40966694363); right after boot it exceeded 60s (run 41132758705).
