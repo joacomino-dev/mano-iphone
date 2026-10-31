@@ -30,7 +30,11 @@ final class PhotosSmokeTests: XCTestCase {
         // last one, after the explanation. Every card must be passed (no skip).
         for step in 1...3 {
             let next = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Continuar")).firstMatch
-            guard next.waitForExistence(timeout: step == 1 ? 120 : 15) else {
+            // The first card waits for a cold simulator to start WebKit and load the
+            // bundle: run 41168418401 (CoreSimulator needed >180 s to answer simctl
+            // list) missed 120 s with unchanged app code. Same bound as Photos (240 s).
+            guard next.waitForExistence(timeout: step == 1 ? 240 : 30) else {
+                attachScreenshot(app, "Onboarding card \(step) missing")
                 XCTFail("Onboarding card \(step) did not offer Continuar.")
                 return
             }
