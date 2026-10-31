@@ -16,7 +16,8 @@ export const POSES = {
 export type Pose = keyof typeof POSES;
 export const poseSrc = (pose: Pose) => `/assets/characters/${pose}.webp`;
 
-/** How a character moves while on screen. All stop with Reduce Motion. */
+/** How a character moves while on screen: a few cycles, then rest (calmer, and
+ * the screen settles). All stop at once with Reduce Motion. */
 type Motion = 'idle' | 'hop' | 'sway' | 'still';
 const loops: Record<Exclude<Motion, 'still'>, object> = {
   idle: { y: [0, -4, 0] },                       // breathing bob
@@ -24,6 +25,7 @@ const loops: Record<Exclude<Motion, 'still'>, object> = {
   sway: { rotate: [-2, 2, -2] },                 // thinking / calm sway
 };
 
+const CYCLES = 3;
 export function Character({ pose, height, className = '', motion: kind = 'idle', delay = 0 }: { pose: Pose; height: number; className?: string; motion?: Motion; delay?: number }) {
   const reduced = useReducedMotion();
   const [w, h] = POSES[pose];
@@ -34,9 +36,9 @@ export function Character({ pose, height, className = '', motion: kind = 'idle',
     animate={still ? { opacity: 1, y: 0, scale: 1 } : { opacity: 1, scale: 1, ...loops[kind as Exclude<Motion, 'still'>] }}
     transition={still ? { duration: reduced ? 0 : .3, delay } : {
       opacity: { duration: .3, delay }, scale: { type: 'spring', stiffness: 320, damping: 24, delay },
-      y: { duration: kind === 'hop' ? 1.4 : 3.2, repeat: Infinity, ease: 'easeInOut', delay: delay + .3 },
-      scaleY: { duration: 1.4, repeat: Infinity, ease: 'easeInOut', delay: delay + .3 },
-      rotate: { duration: 4, repeat: Infinity, ease: 'easeInOut', delay: delay + .3 },
+      y: { duration: kind === 'hop' ? 1.4 : 3.2, repeat: CYCLES, ease: 'easeInOut', delay: delay + .3 },
+      scaleY: { duration: 1.4, repeat: CYCLES, ease: 'easeInOut', delay: delay + .3 },
+      rotate: { duration: 4, repeat: CYCLES, ease: 'easeInOut', delay: delay + .3 },
     }}
     style={{ transformOrigin: '50% 100%' }}/>;
 }

@@ -120,19 +120,23 @@ final class PhotosSmokeTests: XCTestCase {
         let reviewedBefore = progressLabel.waitForExistence(timeout: 15) ? progressLabel.label : ""
         let album = app.buttons["Álbum"].firstMatch
         XCTAssertTrue(album.waitForExistence(timeout: 15))
-        album.tap()
         let create = app.buttons["Crear álbum nuevo"].firstMatch
-        XCTAssertTrue(create.waitForExistence(timeout: 15))
-        create.tap()
+        XCTAssertTrue(tap(album, until: { create.exists }, "album"), "«Álbum» must open the album sheet.")
         let name = app.textFields["Por ejemplo, Verano"].firstMatch
-        XCTAssertTrue(name.waitForExistence(timeout: 15))
+        XCTAssertTrue(tap(create, until: { name.exists }, "create"), "«Crear álbum nuevo» must show the name field.")
         name.tap()
         let fixtureAlbum = "CocoWash CI Generated"
         name.typeText(fixtureAlbum)
         let save = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Crear y añadir ")).firstMatch
         XCTAssertTrue(save.waitForExistence(timeout: 10))
         // The form button dismisses its own keyboard; do not inject JS or native calls.
-        save.tap()
+        // A lost tap leaves the sheet open over «Álbum» (run 41235518150): repeat it.
+        // While PhotoKit works the button is disabled, so a repeat cannot save twice.
+        guard tap(save, until: { !save.exists }, "save") else {
+            attachScreenshot(app, "Album sheet did not save")
+            XCTFail("«Crear y añadir» must save the album and close the sheet.")
+            return
+        }
         XCTAssertTrue(album.waitForExistence(timeout: 30))
         if reviewedBefore.isEmpty {
             print("COCOWASH_UI_ALBUM_ADVANCE_UNCONFIRMED progress label not exposed")
@@ -277,6 +281,24 @@ final class PhotosSmokeTests: XCTestCase {
             print("COCOWASH_UI_CLOSE_RETRY \(attempt)")
         }
         return false
+    }
+
+    /// Taps `element` until `done` holds: at most 3 taps, 10 s apart. Synthesized
+    /// taps on the WebView are occasionally lost on a busy simulator (runs
+    /// 41222676883, 41231549707, 41235518150); a control that did nothing is
+    /// tapped again instead of failing the whole smoke test.
+    @MainActor private func tap(_ element: XCUIElement, until done: () -> Bool, _ name: String) -> Bool {
+        for attempt in 1...3 {
+            if done() { return true }
+            if element.exists { element.tap() }
+            let deadline = Date().addingTimeInterval(10)
+            while Date() < deadline {
+                if done() { return true }
+                Thread.sleep(forTimeInterval: 0.4)
+            }
+            print("COCOWASH_UI_TAP_RETRY \(name) \(attempt)")
+        }
+        return done()
     }
 
     @MainActor private func attachScreenshot(_ app: XCUIApplication, _ name: String) {

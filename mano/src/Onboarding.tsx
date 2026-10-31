@@ -48,7 +48,8 @@ const MOVE = {
 const FADE = [1, 1, 1, 1, .4, 1, 1, 1, .4, 1, 1, 1, .4, 1];
 const FINGER = [0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0];
 const SHOW = { keep: [0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], discard: [0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0], favorite: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0] };
-const loop = { duration: GESTURE_CYCLE, times: T, repeat: Infinity, repeatDelay: .4, ease: 'easeInOut' as const };
+// Enough cycles to read it (~30 s), then the card settles.
+const loop = { duration: GESTURE_CYCLE, times: T, repeat: 7, repeatDelay: .4, ease: 'easeInOut' as const };
 type Phase = 'tap' | 'anchor' | 'zoom';
 const PHASES: Phase[] = ['tap', 'anchor', 'zoom'];
 const STEPS: (keyof typeof SHOW)[] = ['keep', 'discard', 'favorite'];
