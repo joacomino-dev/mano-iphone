@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { CaretRightIcon, LockSimpleIcon, PushPinIcon, ImagesIcon, SlidersHorizontalIcon, HandTapIcon, ArrowsOutSimpleIcon } from '@phosphor-icons/react';
+import { CaretRightIcon, LockSimpleIcon, PushPinIcon, SlidersHorizontalIcon, HandTapIcon, ArrowsOutSimpleIcon } from '@phosphor-icons/react';
 import type { PhotoPermission } from './library';
 import { CocoLoader } from './Loader';
 import { haptic } from './haptics';
 import { Stamp } from './Stamp';
+import { Character } from './Characters';
 
 /* CocoWash's own generated postcards: no stock photos, no people, and no
    character presented as final (character scenes come later). */
@@ -25,12 +26,12 @@ function Ghost() {
   </div>;
 }
 
-/** Card 1 — what it is: a fan of keepsakes; one receives the keep seal. */
+/** Card 1 — who: Coqui washing Memo, beside the keepsakes they look after. */
 function MeetDemo({ still }: { still: boolean }) {
   return <div className="ob-demo ob-meet" aria-hidden="true">
     {FAN.map((src, i) => <motion.span key={src} className={`ob-polaroid paper is-${i}`} initial={still ? false : { y: 24, opacity: 0, rotate: 0 }}
-      animate={{ y: 0, opacity: 1, rotate: (i - 1) * 12 }} transition={{ type: 'spring', stiffness: 260, damping: 24, delay: still ? 0 : .08 * i }}><img src={src} alt="" draggable={false}/></motion.span>)}
-    <motion.span className="ob-meet-seal" initial={still ? false : { opacity: 0, scale: 1.4 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: still ? 0 : .7, duration: .22, ease: 'easeOut' }}><Stamp kind="keep"/></motion.span>
+      animate={{ y: 0, opacity: 1, rotate: (i - 1) * 10 }} transition={{ type: 'spring', stiffness: 260, damping: 24, delay: still ? 0 : .08 * i }}><img src={src} alt="" draggable={false}/></motion.span>)}
+    <Character pose="coqui-memo" height={190} className="ob-hero" delay={.2}/>
   </div>;
 }
 
@@ -82,10 +83,11 @@ function PhotoDemo({ step, still, phase }: { step: 1 | 2; still: boolean; phase:
   </div>;
 }
 
-/** Card 4 — privacy before the system prompt. */
+/** Card 4 — privacy before the system prompt: Memo, calm; everything stays here. */
 function PrivacyDemo({ still }: { still: boolean }) {
   return <div className="ob-demo ob-privacy" aria-hidden="true">
-    <span className="ob-phone"><ImagesIcon size={34}/><motion.span className="ob-lock" initial={still ? false : { scale: .4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 420, damping: 22, delay: .15 }}><LockSimpleIcon size={18} weight="fill"/></motion.span></span>
+    <Character pose="memo-calm" height={150} motion="sway"/>
+    <motion.span className="ob-lock" initial={still ? false : { scale: .4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 420, damping: 22, delay: .35 }}><LockSimpleIcon size={18} weight="fill"/></motion.span>
   </div>;
 }
 
@@ -94,7 +96,7 @@ function Row({ art, title, children, on }: { art: ReactNode; title: ReactNode; c
 }
 
 const cards = [
-  { key: 'meet', title: 'Lo que importa, se queda.', text: 'CocoWash te ayuda a ordenar tu carrete con decisiones rápidas. Tú eliges qué se queda.' },
+  { key: 'meet', title: 'Lo que importa, se queda.', text: 'Coqui y Memo te ayudan a ordenar tu carrete con decisiones rápidas. Tú eliges qué se queda.' },
   { key: 'how', title: 'Desliza y sella.', text: 'Al soltar, el sello confirma tu decisión.' },
   { key: 'group', title: 'Toca, ancla y amplía.', text: '' },
   { key: 'privacy', title: 'Tus fotos no salen de tu iPhone.', text: 'CocoWash necesita acceso a Fotos para mostrarte tu carrete. No sube ni comparte nada, y solo se borra lo que confirmes en Fotos.' },

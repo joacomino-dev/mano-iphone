@@ -144,3 +144,17 @@ same bundle/keys/permissions).
 - Preview quality profiles in Ajustes (Rápida / Equilibrada default / Alta
   calidad): card size from real width × screen scale, larger version on anchor
   swapped in place, bounded native preview cache. Previews only, never originals.
+- Characters (user, 31 October 2026): Coqui (coconut, white sunglasses) and Memo
+  (brain) must stay faithful to the model art in `brand/characters/`; use cut-outs
+  from it (`public/assets/characters/*.webp`, `Characters.tsx`), never redrawn or
+  recoloured versions. Placement: tour hero and privacy, access/preparing/error/
+  end-of-round screens, empty pile, Coqui's face in every loader, app icon (hero
+  on teal). Motion is gentle (bob, hop, sway) and stops with Reduce Motion. The
+  old vector mascot is superseded.
+- Colour comfort (user, 31 October 2026): every text pair passes WCAG AA; body
+  and secondary text aim for AAA (7:1) and APCA Lc ≥ 75 (≥ 60 from 18 px bold).
+  Text tiers on teal: white / #D6E3DD / #B3C9C2; on paper: #122D2E / #3B4E4B;
+  pink text uses #F9C6C4 (brand pink #EF9A98 stays for icons and art). Surface
+  balance per screen aims at the golden split ≈ 62 / 24 / 14 (dominant surface /
+  secondary / accents): tour, sheets, review and end of round are paper-dominant
+  cards on a teal frame; the session is a deliberate exception (the photo leads).

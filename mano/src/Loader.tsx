@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 
-/** Branded throbber: a coconut whose rim fills with real progress when it is
- * known, or rinses round when it is not. One component for every wait. */
+/** Branded throbber: Coqui's face (cut from the model sheet) inside a rinse
+ * ring that fills with real progress when it is known, or rinses round when it
+ * is not; Coqui rocks gently while he waits. One component for every wait. */
 export function CocoLoader({ progress, size = 40, label }: { progress?: number; size?: number; label?: string }) {
   const known = typeof progress === 'number' && progress > 0;
   const r = 17, c = 2 * Math.PI * r;
@@ -11,8 +12,7 @@ export function CocoLoader({ progress, size = 40, label }: { progress?: number; 
     <svg viewBox="0 0 40 40" aria-hidden="true">
       <circle className="coco-track" cx="20" cy="20" r={r}/>
       <circle className="coco-rinse" cx="20" cy="20" r={r} strokeDasharray={known ? `${c * Math.min(1, progress!)} ${c}` : `${c * .28} ${c}`}/>
-      <circle className="coco-shell" cx="20" cy="20" r="11"/>
-      <circle className="coco-eye" cx="16.4" cy="17.6" r="1.6"/><circle className="coco-eye" cx="23.6" cy="17.6" r="1.6"/><circle className="coco-eye" cx="20" cy="23.6" r="1.6"/>
+      <image className="coco-face" href="/assets/characters/coqui-face.webp" x="7.5" y="7.5" width="25" height="25"/>
     </svg>
   </span>;
 }

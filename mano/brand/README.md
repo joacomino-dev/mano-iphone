@@ -38,3 +38,20 @@ still needed to judge actual home-screen perception.
 The illustration is a logo, not a functional control. Controls still need
 separate accessible names and contrast checks. Do not apply the brand palette
 or any logo rendering filter to the user's photographs.
+
+## Characters: Coqui and Memo (31 October 2026)
+
+The app's characters are **Coqui**, the coconut with white sunglasses, and
+**Memo**, the brain. Their source of truth is the user's model art in
+`brand/characters/` (`coqui-memo-model.png`, `coqui-model-sheet.png`,
+`memo-model-sheet.png`). App art is cut from those files without redrawing:
+background removed (edge-connected background plus enclosed gaps between legs
+and arms, with edge colour decontamination), one transparent WebP per pose in
+`public/assets/characters/`, plus `coqui-face.webp` (round crop for loaders).
+`app-icon.png` / `AppIcon-512@2x.png` are the Coqui-washing-Memo model on brand
+teal, 1024² RGB. Keep the models' own colours (including the yellow sponge):
+the no-yellow rule applies to UI chrome, not to the characters.
+
+The earlier vector mascot (`cocowash*.svg`, built by `generate-assets.mjs`) is
+superseded and no longer used by the app; do not regenerate the app icon from
+it. New poses should be added to the model sheets first and cut the same way.

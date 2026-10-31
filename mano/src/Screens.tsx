@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from 'motion/react';
 import { GearSixIcon, ArrowClockwiseIcon, CaretRightIcon, ImagesIcon, EyeIcon } from '@phosphor-icons/react';
 import { AnimatedNumber, CocoLoader } from './Loader';
 import type { PhotoPermission } from './library';
+import { Character } from './Characters';
 
 const rise = (reduced: boolean | null, delay = 0) => reduced ? { initial: false as const } : { initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 }, transition: { type: 'spring' as const, stiffness: 320, damping: 32, delay } };
 
@@ -11,7 +12,7 @@ export function AccessScreen({ status, request, openSettings }: { status: PhotoP
   const reduced = useReducedMotion();
   const denied = status === 'denied';
   return <main className="status-screen">
-    <motion.img {...rise(reduced)} className="status-mascot" src="/assets/cocowash.svg" alt="" draggable={false}/>
+    <Character pose={denied ? 'coqui-think' : 'coqui-point'} height={150} className="status-character" motion={denied ? 'sway' : 'idle'}/>
     <motion.h1 {...rise(reduced, .05)}>CocoWash necesita tus fotos</motion.h1>
     <motion.p {...rise(reduced, .1)}>{denied ? 'Sin acceso a Fotos no podemos mostrarte tu carrete. Actívalo en Ajustes › CocoWash › Fotos y vuelve aquí.' : 'Para empezar, permite el acceso a Fotos. Todo se queda en tu iPhone.'}</motion.p>
     <motion.div {...rise(reduced, .15)} className="status-actions">
@@ -27,8 +28,9 @@ export function PreparingScreen({ progress, cancel }: { progress?: number; cance
   const [slow, setSlow] = useState(false);
   useEffect(() => { const t = setTimeout(() => setSlow(true), 7000); return () => clearTimeout(t); }, []);
   return <main className="status-screen is-quiet" aria-busy="true">
-    <CocoLoader size={64} progress={progress} label="Preparando tus fotos"/>
-    <p role="status" className="status-line">Preparando tus fotos…</p>
+    <div className="character-pair"><Character pose="coqui-photos" height={140}/><Character pose="memo-cards" height={112} delay={.15}/></div>
+    <CocoLoader size={44} progress={progress} label="Preparando tus fotos"/>
+    <p role="status" className="status-line">Coqui está preparando tus fotos…</p>
     {slow && <motion.p className="status-hint" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>Si están en iCloud puede tardar un poco más.</motion.p>}
     {slow && cancel && <button className="text-button" onClick={cancel}>Cancelar</button>}
   </main>;
@@ -37,7 +39,7 @@ export function PreparingScreen({ progress, cancel }: { progress?: number; cance
 /** A real failure that needs the person: plain words and a way out. */
 export function LoadErrorScreen({ message, retry }: { message: string; retry: () => void }) {
   return <main className="status-screen" role="alert">
-    <img className="status-mascot is-small" src="/assets/cocowash.svg" alt="" draggable={false}/>
+    <Character pose="coqui-shrug" height={130} className="status-character" motion="still"/>
     <h1>No pudimos abrir tu carrete</h1>
     <p>{message}</p>
     <div className="status-actions"><button className="primary-empty" onClick={retry}><ArrowClockwiseIcon size={20} weight="bold"/>Reintentar</button></div>
@@ -51,12 +53,14 @@ export function SessionDone({ stats, pending, again, review }: { stats: { keep: 
   const reduced = useReducedMotion();
   const total = stats.keep + stats.discard + stats.favorite;
   return <main className="status-screen session-done">
+    {total ? <div className="character-pair"><Character pose="coqui-cheer" height={140} motion="hop"/><Character pose="memo-dance" height={110} motion="hop" delay={.2}/></div>
+      : <Character pose="memo-calm" height={120} className="status-character" motion="sway"/>}
     <motion.div className="done-stamp" initial={reduced ? false : { scale: 1.6, opacity: 0, rotate: -14 }} animate={{ scale: 1, opacity: 1, rotate: -6 }} transition={{ type: 'spring', stiffness: 380, damping: 18, delay: .05 }} aria-hidden="true">Guardado</motion.div>
     <motion.h1 {...rise(reduced, .12)}>{total ? 'Buena ronda.' : 'Revisión guardada.'}</motion.h1>
     {total > 0 ? <motion.dl {...rise(reduced, .18)} className="done-stats">
-      <div><dt>Conservadas</dt><dd><AnimatedNumber value={stats.keep}/></dd></div>
-      <div><dt>Descartes</dt><dd><AnimatedNumber value={stats.discard}/></dd></div>
-      <div><dt>Favoritas</dt><dd><AnimatedNumber value={stats.favorite}/></dd></div>
+      <div className="is-keep"><dt>Conservadas</dt><dd><AnimatedNumber value={stats.keep}/></dd></div>
+      <div className="is-discard"><dt>Descartes</dt><dd><AnimatedNumber value={stats.discard}/></dd></div>
+      <div className="is-favorite"><dt>Favoritas</dt><dd><AnimatedNumber value={stats.favorite}/></dd></div>
     </motion.dl> : <motion.p {...rise(reduced, .18)}>Tu progreso está a salvo. Sigue cuando quieras.</motion.p>}
     <motion.div {...rise(reduced, .24)} className="status-actions">
       {pending > 0 && <button className="primary-empty" onClick={review}><EyeIcon size={20} weight="bold"/>Una última mirada ({pending})</button>}
