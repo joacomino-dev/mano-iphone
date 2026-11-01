@@ -285,3 +285,18 @@ Supersedes the 0.8 rule «every main-screen control is a sticker».
   graphite trash chip = items to delete). The wordmark is for brand moments
   (summary, tour), not the sorting screen. Selection mark only in groups.
 - Version 0.9.0 (build 9).
+
+## CocoWash 0.9.1 — header and Warm Paper, 1 November 2026 (user request, CW-CL-025)
+
+Version line: 0.9.x until 1.0 (user). Supersedes the 0.9 single-row header.
+- Style rule: characters and brand = most expressive; decision bar = refined
+  cartoon (thick contour, band, base); header capsules = intermediate (one
+  1.75 pt contour, slim 2 pt base, Fredoka); secondary tools = modern and flat;
+  frame = warm, discreetly textured paper. Never all three treatments on one
+  component; textures never on text, icons, photos, videos or quick-read controls.
+- Header: Filtros · CocoWash wordmark (centred) · Terminar; second row: progress
+  track + count capsule. Terminar's count is a badge over its top-right corner
+  (does not change the button's width).
+- Background Warm Paper #F4EFE6 + procedural grain/tone SVGs (~1–3 %).
+  «Revisión guardada» / celebration may show the paper more.
+- Version 0.9.1 (build 10).

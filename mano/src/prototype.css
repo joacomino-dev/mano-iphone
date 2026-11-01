@@ -16,7 +16,7 @@
      graphite 6.4, rose 5.6, coffee 6.1; ivory label on turquoise 5.5, on
      graphite 6.9. The pink heart (1.96:1) is drawn with the text-ink contour
      (5.6:1 against it, 10.9:1 against the background), which carries 1.4.11. */
-  --pal-bg:#F6F4EC;          /* warm cream: the frame */
+  --pal-bg:#F4EFE6;          /* Warm Paper (0.9.1): a touch warmer than #F6F4EC; text 10.5:1 */
   --pal-surface:#FFFDF7;     /* ivory: surfaces that must stand apart, Polaroid */
   --pal-text:#253A3A;        /* green graphite: text and the contour ink */
   --pal-text-soft:#3B4E4B;   /* 8.0:1 on the background (AAA) */
@@ -46,6 +46,11 @@
   /* Semantic colour (contrast measured, WCAG AA) */
   --cw-bg:var(--pal-bg);
   --cw-surface:var(--pal-surface);
+  /* Warm Paper material (0.9.1): two procedural SVG layers (feTurbulence,
+     stitched tiles, < 1 KB each, rasterised once): a fine grain (~1–3 %) and a
+     slow warm tonal drift (~2 %). On the frame only — never on text, icons,
+     photos, videos or quick-read controls, which sit on flat surfaces. */
+  --cw-paper-texture:url('/assets/paper-grain.svg') 0 0/240px 240px,url('/assets/paper-tone.svg') 0 0/560px 560px;
   --cw-on-bg:var(--pal-text);
   --cw-on-bg-soft:var(--pal-text-soft);--cw-on-bg-faint:var(--pal-text-faint);
   /* Hairlines and quiet fills are the text colour at low strength, so they
@@ -141,7 +146,7 @@
 
 /* ---------- App shell ---------- */
 .mano-app{position:relative;isolation:isolate;display:flex;flex-direction:column;height:100%;min-height:0;overflow:hidden;
-  background:var(--cw-bg);color:var(--cw-on-bg);padding:calc(var(--cw-space-12) + var(--cw-space-4)) var(--cw-gutter) var(--cw-space-8);
+  background:var(--cw-paper-texture),var(--cw-bg);color:var(--cw-on-bg);padding:calc(var(--cw-space-12) + var(--cw-space-4)) var(--cw-gutter) var(--cw-space-8);
   font:400 var(--cw-text-md)/1.4 var(--cw-font);-webkit-font-smoothing:antialiased}
 /* No loupe, text selection or callout menu on cards, images, labels or empty
    space: long press belongs to the card gestures. Text fields keep editing.
@@ -167,9 +172,14 @@
 /* ---------- Shared buttons ---------- */
 /* Header actions (Filtros, Terminar): one size, one weight, white on teal.
    Equal minimum widths keep the outer columns balanced around the name. */
+/* Header capsules (0.9.1): between cartoon and modern. Ivory, one green-graphite
+   contour (1.75 pt), a slim ink base, Fredoka labels without outline. Lighter
+   than the decision bar, which keeps the thick contour, band and full base. */
 .header-action{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:var(--cw-touch);padding:0 14px;
-  border:1px solid var(--cw-line-on-bg);border-radius:var(--cw-radius-pill);background:var(--cw-surface);color:var(--cw-on-bg)!important;
-  font:600 .9375rem/1 var(--cw-font)!important;white-space:nowrap;transition:background-color var(--cw-fast) var(--cw-ease)}
+  border:1.75px solid var(--cw-outline);border-radius:var(--cw-radius-pill);background:var(--cw-surface);color:var(--cw-on-bg)!important;
+  box-shadow:0 2px 0 var(--cw-outline);font:600 1rem/1 var(--cw-font-brand)!important;letter-spacing:.005em;white-space:nowrap;
+  transition:transform var(--cw-slow) var(--cw-ease-settle),box-shadow var(--cw-slow) var(--cw-ease-settle),background-color var(--cw-fast) var(--cw-ease)}
+.header-action svg{color:var(--cw-on-bg)}
 .header-filters{justify-self:start}
 /* Every pressable gets the same tactile response */
 :where(.mano-app,.mano-sheet-body) button{transition:transform var(--cw-fast) var(--cw-ease),background-color var(--cw-base) var(--cw-ease),opacity var(--cw-base) var(--cw-ease)}
@@ -177,30 +187,29 @@
 
 /* Tools answer a press with a quiet tint, not travel: they stay subordinate
    to the decision bar, the only pieces that sink onto a base. */
-.mano-app .header-action:not(:disabled):active{transform:none;background:color-mix(in srgb,var(--pal-text) 7%,var(--cw-surface))}
+.mano-app .header-action:not(:disabled):active{transform:translateY(2px);box-shadow:0 0 0 var(--cw-outline);transition-duration:.05s}
 .mano-app .archive-tools>button:not(:disabled):active{transform:none;background:var(--cw-press)}
-.mano-app :is(.header-action,.archive-tools>button):disabled{opacity:.38}
+.mano-app .archive-tools>button:disabled{opacity:.38}
+.mano-app .header-action:disabled{opacity:1;box-shadow:0 0 0 var(--cw-outline);transform:translateY(2px)}.mano-app .header-action:disabled>*{opacity:.45}
 
 /* ---------- Brand + notices ---------- */
 /* minmax(0,1fr) keeps both side columns equal even when «Terminar» carries its
    count, so «CocoWash» is centred on the screen, not in the leftover gap. */
 .archive-header{position:relative;z-index:50;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:var(--cw-space-2);min-height:var(--cw-header);flex-shrink:0}
-/* Sorting screen: one quiet toolbar — Filtros · progress · Terminar. The name
-   stays as the (visually hidden) heading that also anchors the notices; the
-   full wordmark is kept for brand moments (end of round, tour). */
-.archive-header.is-session{grid-template-columns:auto minmax(0,1fr) auto;gap:var(--cw-space-3)}
+/* Sorting screen (0.9.1): Filtros · CocoWash · Terminar on the first row, the
+   progress on its own row below. Equal side columns keep the name centred on
+   the screen; the header is a size container so it can scale down calmly. */
 .archive-header.is-session{container-type:inline-size}
-/* Very narrow headers (large text, small widths): Filtros keeps its icon and its
-   spoken name, the visible word steps aside so the count never collides. */
-@container (max-width:330px){
-  .is-session .header-filters{padding:0 12px}
-  .is-session .header-filters>span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-  .is-session .pile-meter{min-width:24px}
+.wordmark{height:var(--cw-wordmark-h,38px);width:auto}
+/* Narrower phones: the name shrinks a step first; only on very narrow headers
+   does Filtros fold to its icon (its spoken name stays). */
+@container (max-width:350px){
+  .is-session .wordmark{height:33px}
+  .is-session .header-action{padding:0 11px}
 }
-.header-center{position:relative;min-width:0;height:var(--cw-header);display:flex;align-items:center}
-.header-center .header-brand{position:absolute;inset:0;pointer-events:none}
-.header-center .brand-status{height:100%;min-width:0}
-.header-center .brand-status>div{pointer-events:auto}
+@container (max-width:318px){
+  .is-session .header-filters>span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+}
 .header-brand{margin:0;display:grid;place-items:center;height:var(--cw-header)}.header-brand:focus{outline:none}
 .brand-status{position:relative;display:grid;place-items:center;min-width:96px;height:var(--cw-header)}
 /* Name, not isotype: same weight as the side controls' labels' cap height, a
@@ -225,21 +234,24 @@
 
 /* ---------- Session header + progress ---------- */
 .finish{justify-self:end}
-/* What «Terminar» will ask to delete: an inline graphite chip with the trash
-   (Eliminar's colour and icon), so the number reads as «N para eliminar». */
-.finish-count{display:inline-flex;align-items:center;gap:3px;height:22px;padding:0 7px 0 6px;border-radius:var(--cw-radius-pill);background:var(--cw-graphite);color:var(--cw-surface);
-  font:600 .75rem/1 var(--cw-font);font-variant-numeric:tabular-nums}
-.finish:has(.finish-count){padding-right:7px}
+/* What «Terminar» will ask to delete (items queued with Eliminar): a small
+   graphite badge over the top-right corner, Eliminar's colour, cream ring.
+   Positioned absolutely, so the button never changes width; the spoken text
+   («, N para eliminar») stays inside the button. Grows into a pill for 2–3+
+   digits and rises 9 pt above the capsule, inside the header row. */
+.finish-count{position:absolute;top:-9px;right:-7px;min-width:22px;height:22px;padding:0 5px;display:grid;place-items:center;box-sizing:border-box;
+  border:2px solid var(--cw-surface);border-radius:var(--cw-radius-pill);background:var(--cw-graphite);color:var(--cw-surface);
+  box-shadow:0 0 0 1.25px var(--cw-outline);font:600 .75rem/1 var(--cw-font);font-variant-numeric:tabular-nums;pointer-events:none}
 .header-spacer{justify-self:end;min-width:var(--cw-touch)}
-/* Pile progress (Chrome.tsx): sits in the session header between Filtros and
-   Terminar. A thin track and the count as plain figures: readable at a glance,
-   never a protagonist. */
-.archive-progress{display:flex;align-items:center;gap:var(--cw-space-2);flex-shrink:0;margin-top:var(--cw-space-2);min-height:24px}
-.header-progress{flex:1;display:flex;align-items:center;gap:var(--cw-space-2);min-width:0;padding-inline:2px}
-.pile-meter{position:relative;flex:1;min-width:48px;height:6px;border-radius:var(--cw-radius-pill);background:var(--cw-track);overflow:hidden}
+/* Pile progress (Chrome.tsx), its own row under the header: a simple track
+   that fills in turquoise and the count on a light capsule. The count never
+   shrinks (313/1686 stays whole); the track takes what is left. */
+.archive-progress{display:flex;align-items:center;gap:10px;flex-shrink:0;margin-top:var(--cw-space-2);min-height:28px;padding-inline:2px}
+.pile-meter{position:relative;flex:1;min-width:40px;height:8px;border-radius:var(--cw-radius-pill);background:var(--cw-track);overflow:hidden}
 .pile-meter-fill{position:absolute;inset:0 auto 0 0;background:var(--cw-turquoise);border-radius:var(--cw-radius-pill);transition:width var(--cw-slow) var(--cw-ease)}
-.pile-count{display:inline-flex;align-items:baseline;flex-shrink:0;font:500 .8125rem/1 var(--cw-font);color:var(--cw-on-bg);font-variant-numeric:tabular-nums}
-.pile-count .pile-slash,.pile-count .is-total{color:var(--cw-on-bg-faint)}
+.pile-count{display:inline-flex;align-items:baseline;flex-shrink:0;padding:5px 10px;border:1px solid var(--cw-line-on-bg);border-radius:var(--cw-radius-pill);background:var(--cw-surface);
+  font:500 .8125rem/1 var(--cw-font);color:var(--cw-on-bg);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pile-count .pile-slash,.pile-count .is-total{color:var(--cw-on-bg-soft)}
 .animated-number{position:relative;display:inline-flex;overflow:hidden;line-height:1.15;vertical-align:bottom;font-variant-numeric:tabular-nums}.animated-number>span{display:inline-block}
 .access-indicator{position:relative;display:inline-flex;align-items:center;gap:var(--cw-space-1);min-height:26px;padding:0 var(--cw-space-2);border:1px solid var(--cw-line-on-bg);border-radius:var(--cw-radius-pill);background:var(--cw-surface);color:var(--cw-on-bg);font:500 .75rem/1 var(--cw-font)!important;white-space:nowrap}
 .access-indicator:after{content:'';position:absolute;inset:calc(-1*var(--cw-space-2))}
@@ -662,7 +674,9 @@
 .session-done{padding-bottom:var(--cw-space-8)}
 /* End of round on a paper card (like the tour): paper dominant, teal frame,
    decision inks as accents — the 62 / 24 / 14 balance the chrome aims for. */
-.session-done{flex:1 1 auto;margin:var(--cw-space-2) 0 0;padding:var(--cw-space-6) var(--cw-space-5);border-radius:var(--cw-radius-xl);background:var(--cw-paper) url('/assets/paper.png') center/480px;box-shadow:var(--cw-shadow-2);color:var(--cw-ink)}
+/* Celebration / «Revisión guardada»: the one place where the paper may be felt —
+   the warm textured sheet plus the frame's fine grain. */
+.session-done{flex:1 1 auto;margin:var(--cw-space-2) 0 0;padding:var(--cw-space-6) var(--cw-space-5);border-radius:var(--cw-radius-xl);background:url('/assets/paper-grain.svg') 0 0/240px 240px,var(--cw-paper) url('/assets/paper.png') center/480px;box-shadow:var(--cw-shadow-2);color:var(--cw-ink)}
 .session-done h1{color:var(--cw-ink)}.session-done p,.session-done .status-hint{color:var(--cw-ink-soft)}
 .session-done .primary-empty{background:var(--cw-action-primary);color:var(--cw-on-action-primary)!important;box-shadow:var(--cw-shadow-press)}
 .session-done .secondary-empty{border-color:var(--cw-line-strong);color:var(--cw-ink)!important}

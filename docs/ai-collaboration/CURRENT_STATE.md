@@ -6,7 +6,8 @@
 - Checkout: `C:/Users/Joaco/OneDrive/Documentos/ChatGPT/iPhone`; main local sincronizada
   con origin/main + **1 commit local sin push** (mano/CLAUDE.md y mano/tools/). Ver CW-HO-004.
   Sin publicar a propósito: `CURRENT.md` (notas operativas privadas de Codex, sin seguimiento).
-- **CW-CL-024 (commit local sin push, 2026-11-01):** 0.9.0 (9) refinamiento visual + paleta Coco Cream (Coco Mint preparada por tokens). Falta push autorizado, CI macOS y QA en iPhone. Ver CLAUDE_LOG.
+- **CW-CL-025 (commit local sin push, 2026-11-01):** 0.9.1 (10) cabecera de dos filas con wordmark, cápsulas Filtros/Terminar, insignia superpuesta, fondo Warm Paper con textura procedural. Pendiente push autorizado, CI e iPhone.
+- **CW-CL-024 (publicado en PR #1, 2026-11-01):** 0.9.0 (9) refinamiento visual + paleta Coco Cream (Coco Mint preparada por tokens). Falta push autorizado, CI macOS y QA en iPhone. Ver CLAUDE_LOG.
 - **CW-CL-022 / CW-CL-023 (PR #1, rama claude/decision-bar-favoritas, 2026-11-01):** barra de decisiones cartoon + set «Favoritas»; 0.8.0 (8): pantalla principal en el mismo lenguaje, wordmark Fredoka, icono recoloreado, Terminar→última mirada→cerrar vuelve a las cartas, VHS y sellos. IPA por workflow_dispatch en la rama. Ver CLAUDE_LOG.
 - **CW-CL-013 (sin commit):** mejoras UI/UX del usuario (vídeo, onboarding, anclaje, metadatos Polaroid/VHS, ajustes, contador). Checks Windows verdes; falta CI macOS (Swift + XCTest actualizado) y QA en iPhone de vídeo local/iCloud. Ver CLAUDE_LOG.
 - Último Claude anterior: CW-CL-005, publicación y preparación de la compilación. Antes: CW-CL-002/003
