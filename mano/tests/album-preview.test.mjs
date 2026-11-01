@@ -31,12 +31,13 @@ test('album: a failed or empty assignment neither keeps nor advances', async () 
   assert.equal(empty.ok, false);
 });
 
-test('album: favourites and pending discards are not re-decided by the keep', async () => {
+test('album: pending discards are not re-decided by the keep; a favourite is sealed and stays a favourite', async () => {
   const state = decide(decide(initialState(), ['f'], 'favorite', now), ['d'], 'discard', now);
   const ok = await assignToAlbum(async () => ({ title: 'Mix' }), ['f', 'd', 'k']);
   const next = afterAlbum(state, ['f', 'd', 'k'], ok, now);
-  assert.deepEqual(next.history.at(-1).ids, ['k']);
-  assert.ok(next.pending.includes('d') && next.favorites.includes('f'));
+  // Favourites are only ever on the table in the «Favoritas» set, where keeping one rests it like any kept photo.
+  assert.deepEqual(next.history.at(-1).ids, ['f', 'k']);
+  assert.ok(next.pending.includes('d') && next.favorites.includes('f') && next.marks.f.level === 1 && !next.marks.d);
 });
 
 test('preview: profiles grow from fast to high and respect the native cap', () => {

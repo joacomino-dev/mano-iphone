@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { initialState, initialFilter, decide, undo, restore, eligible, nextHand, nextSessionHand, reviewedCount, reconcileLibrary, libraryFingerprint, matchesDate, validateRecordState } from '../src/domain.ts';
+import { initialState, initialFilter, decide, undo, restore, eligible, nextHand, nextSessionHand, reviewedCount, reconcileLibrary, libraryFingerprint, matchesDate, validateRecordState, filterScope, pileCount } from '../src/domain.ts';
 const photo=(id,date=0)=>({id,kind:'photo',date,width:100,height:150,duration:0});
 test('discard is only a reversible queue, not removal',()=>{const s=decide(initialState(),['a','b','a'],'discard',0);assert.deepEqual(s.pending,['a','b']);assert.deepEqual(s.removed,[]);assert.deepEqual(undo(s),initialState());});
 test('keep waits a week, then returns; second keep advances seal and undo restores it',()=>{const s=decide(initialState(),['a'],'keep',100);assert.equal(eligible([photo('a')],s,initialFilter,101).length,0);assert.equal(eligible([photo('a')],s,initialFilter,100+7*86400000).length,1);const twice=decide(s,['a'],'keep',200);assert.equal(twice.marks.a.level,2);assert.deepEqual(undo(twice),s);});
@@ -115,3 +115,11 @@ test('legacy record validation trims history without mutating original or losing
   assert.equal(validateRecordState({...state,favorites:{}}),null);
   assert.equal(validateRecordState({...state,marks:{bad:{level:99,due:1,keptAt:0}}}),null);
 });
+// «Favoritas» set and the heart that takes items out of Favorites (decision bar, 0.8).
+const favs={...initialFilter,smart:'favorites'};
+test('favourites stay out of the general pile and are the only thing in «Favoritas»',()=>{const a=[photo('a',1),photo('f',2)];const s=decide(initialState(),['f'],'favorite',0);assert.deepEqual(eligible(a,s,initialFilter).map(x=>x.id),['a']);assert.deepEqual(eligible(a,s,favs).map(x=>x.id),['f']);assert.equal(filterScope(a,s,favs).total,1);assert.equal(filterScope(a,s,initialFilter).total,1);assert.equal(pileCount(a,s,favs),1);});
+test('unfavorite returns the item to the general pile and undo puts it back',()=>{const a=[photo('f')];const fav=decide(initialState(),['f'],'favorite',0);const out=decide(fav,['f'],'unfavorite',1);assert.deepEqual(out.favorites,[]);assert.deepEqual(eligible(a,out,initialFilter).map(x=>x.id),['f']);assert.equal(out.history.at(-1).action,'unfavorite');const back=undo(out);assert.deepEqual(back.favorites,['f']);assert.equal(eligible(a,back,initialFilter).length,0);});
+test('favourites are never queued for deletion nor un-favourited when they are not favourites',()=>{const s=decide(initialState(),['f'],'favorite',0);assert.equal(decide(s,['f'],'discard',1),s);assert.equal(decide(s,['f'],'favorite',1),s);const plain=initialState();assert.equal(decide(plain,['x'],'unfavorite',1),plain);});
+test('keeping a favourite in «Favoritas» seals it: it rests there and stays a favourite',()=>{const a=[photo('f')];let s=decide(initialState(),['f'],'favorite',0);s=decide(s,['f'],'keep',1);assert.equal(s.marks.f.level,1);assert.deepEqual(s.favorites,['f']);assert.equal(eligible(a,s,favs,2).length,0);assert.equal(eligible(a,s,favs,1+7*86400000).length,1);});
+test('native refresh: Photos favourites join the record, a returned item without the flag leaves it',()=>{const s=reconcileLibrary({...initialState(),favorites:['was','gone']},[{...photo('was')},{...photo('p'),favorite:true}]);assert.deepEqual([...s.favorites].sort(),['gone','p']);});
+test('a saved history with unfavorite survives validation',()=>{const s=decide(decide(initialState(),['f'],'favorite',0),['f'],'unfavorite',1);assert.equal(validateRecordState(JSON.parse(JSON.stringify(s))).history.at(-1).action,'unfavorite');});

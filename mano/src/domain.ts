@@ -4,22 +4,28 @@ export type MediaKind = 'photo' | 'video' | 'live';
  * `low` / `text`: on-device Vision signals (insights.ts); text 1 = document or
  * screenshot of text, .5 = text with a face (kept last in that filter);
  * `quality` −1…1 picks the best shot of a similar group.
- * `cloud`: demonstration only — behaves as if the original were in iCloud. */
+ * `cloud`: demonstration only — behaves as if the original were in iCloud.
+ * `favorite`: Photos says it is a favourite (native enumeration, read by
+ * reconcileLibrary; the record's `favorites` is what the pile uses). */
 export type Asset = { id: string; kind: MediaKind; date: number; width: number; height: number; duration: number; modified?: number; group?: string; hasLocation?: boolean; demo?: boolean;
-  bytes?: number; screenshot?: boolean; low?: boolean; text?: number; quality?: number; cloud?: boolean };
+  bytes?: number; screenshot?: boolean; low?: boolean; text?: number; quality?: number; cloud?: boolean; favorite?: boolean };
 export type Mark = { level: number; due: number; keptAt: number };
 export type DecisionContext = { handIds: string[]; rotated: string[]; selected: string[]; group?: string; filter?: Filter };
 /** `later` («Más tarde») leaves the marks untouched and moves the item to the
- * end of the pile; `wasLater` lets undo put a postponed item back where it was. */
-export type Action = 'keep' | 'discard' | 'favorite' | 'later';
+ * end of the pile; `wasLater` lets undo put a postponed item back where it was.
+ * `unfavorite` only exists inside the «Favoritas» set: it takes the item out of
+ * Favorites and back to the general pile (undo puts it back). */
+export type Action = 'keep' | 'discard' | 'favorite' | 'later' | 'unfavorite';
+export const ACTIONS: Action[] = ['keep', 'discard', 'favorite', 'later', 'unfavorite'];
 export type Decision = { ids: string[]; action: Action; previous: Record<string, Mark | null>; at: number; context?: DecisionContext; wasLater?: string[] };
 export type RecordState = { marks: Record<string, Mark>; pending: string[]; favorites: string[]; removed: string[]; history: Decision[]; later: string[] };
 export type Order = 'oldest' | 'newest' | 'largest' | 'smallest' | 'random';
-/** Quick clean-up sets, combinable with every other filter. */
-export type Smart = 'all' | 'later' | 'screenshots' | 'lowQuality' | 'text';
+/** Quick sets, combinable with every other filter. «favorites» is the only
+ * one that shows favourites: everywhere else they stay out of the pile. */
+export type Smart = 'all' | 'later' | 'screenshots' | 'lowQuality' | 'text' | 'favorites';
 export type Filter = { seal: number | 'all' | 'none'; order: Order; media: 'all' | MediaKind; includeWaiting: boolean; dateRange?: 'all' | '24h' | '7d' | '30d' | 'custom'; from?: string; to?: string; geek?: boolean; smart?: Smart; v?: 2 };
 export const ORDERS: Order[] = ['oldest', 'newest', 'largest', 'smallest', 'random'];
-export const SMARTS: Smart[] = ['all', 'later', 'screenshots', 'lowQuality', 'text'];
+export const SMARTS: Smart[] = ['all', 'later', 'screenshots', 'lowQuality', 'text', 'favorites'];
 export const LEVELS = ['Blanco', 'Rojo', 'Verde', 'Negro', 'Azul', 'Morado', 'Naranja', 'Dorado'];
 export const DAYS = [7, 14, 30, 60, 120, 240, 365, Infinity];
 export const initialState = (): RecordState => ({ marks: {}, pending: [], favorites: [], removed: [], history: [], later: [] });
@@ -71,8 +77,15 @@ export function matchesDate(date: number, filter: Filter, now = Date.now()): boo
   if (to) { to.setDate(to.getDate() + 1); to.setHours(0, 0, 0, 0); }
   return (!from || date >= from.getTime()) && (!to || date < to.getTime());
 }
+/** Which items a decision may touch. Favourites can be kept (a seal: they rest
+ * in the «Favoritas» set like anywhere else), postponed or taken out of
+ * Favorites, never queued for deletion nor favourited twice. */
+function decidable(state: RecordState, action: Action) {
+  return (id: string) => !state.removed.includes(id) && !state.pending.includes(id)
+    && (action === 'unfavorite' ? state.favorites.includes(id) : action === 'keep' || action === 'later' || !state.favorites.includes(id));
+}
 export function decide(state: RecordState, ids: string[], action: Action, now = Date.now(), context?: DecisionContext): RecordState {
-  const unique = [...new Set(ids)].filter(id => !state.removed.includes(id) && !state.pending.includes(id) && !state.favorites.includes(id));
+  const unique = [...new Set(ids)].filter(decidable(state, action));
   if (!unique.length) return state;
   const marks = { ...state.marks }; const previous: Decision['previous'] = {};
   for (const id of unique) {
@@ -84,7 +97,7 @@ export function decide(state: RecordState, ids: string[], action: Action, now = 
   const wasLater = unique.filter(id => later.includes(id));
   const rest = later.filter(id => !unique.includes(id));
   return { ...state, marks, pending: action === 'discard' ? [...state.pending, ...unique] : state.pending,
-    favorites: action === 'favorite' ? [...state.favorites, ...unique] : state.favorites,
+    favorites: action === 'favorite' ? [...state.favorites, ...unique] : action === 'unfavorite' ? state.favorites.filter(id => !unique.includes(id)) : state.favorites,
     // Postponing again moves it to the very end; any other decision settles it.
     later: action === 'later' ? [...rest, ...unique] : rest,
     history: [...state.history, { ids: unique, action, previous, at: now, ...(wasLater.length ? { wasLater } : {}), ...(context ? { context: normalizeDecisionContext(context) } : {}) }].slice(-10) };
@@ -94,7 +107,7 @@ export function undo(state: RecordState): RecordState {
   for (const id of last.ids) { const previous = last.previous[id]; if (previous) marks[id] = previous; else delete marks[id]; }
   const later = (state.later ?? []).filter(id => !last.ids.includes(id));
   return { ...state, marks, history: state.history.slice(0, -1), pending: last.action === 'discard' ? state.pending.filter(id => !last.ids.includes(id)) : state.pending,
-    favorites: last.action === 'favorite' ? state.favorites.filter(id => !last.ids.includes(id)) : state.favorites,
+    favorites: last.action === 'favorite' ? state.favorites.filter(id => !last.ids.includes(id)) : last.action === 'unfavorite' ? [...new Set([...state.favorites, ...last.ids])] : state.favorites,
     later: [...later, ...(last.wasLater ?? [])] };
 }
 export function restore(state: RecordState, id: string): RecordState {
@@ -103,23 +116,27 @@ export function restore(state: RecordState, id: string): RecordState {
 function hash(id: string, seed: number) { let n = seed | 0; for (const c of id) n = Math.imul(n ^ c.charCodeAt(0), 16777619); return n >>> 0; }
 /** Quick clean-up set membership (screenshots/recordings, low quality, text,
  * postponed). Vision signals arrive progressively; unanalysed items stay out. */
-export function smartMatch(asset: Asset, filter: Filter, later: ReadonlySet<string>) {
+export function smartMatch(asset: Asset, filter: Filter, later: ReadonlySet<string>, favorites: ReadonlySet<string> = new Set()) {
   switch (filter.smart ?? 'all') {
     case 'later': return later.has(asset.id);
     case 'screenshots': return !!asset.screenshot;
     case 'lowQuality': return !!asset.low;
     case 'text': return (asset.text ?? 0) > 0;
+    case 'favorites': return favorites.has(asset.id);
     default: return true;
   }
 }
-/** The pile's membership test, shared by eligible() and the filter counts. */
+/** The pile's membership test, shared by eligible() and the filter counts.
+ * Favourites only ever appear in the «Favoritas» set, which shows nothing else. */
 function pileTest(state: RecordState, filter: Filter, now: number) {
-  const excluded = new Set([...state.pending, ...state.favorites, ...state.removed]);
+  const favorites = new Set(state.favorites);
+  const onlyFavorites = filter.smart === 'favorites';
+  const excluded = new Set([...state.pending, ...state.removed]);
   const later = new Set(state.later ?? []);
-  return (a: Asset) => { const mark = state.marks[a.id]; return !excluded.has(a.id)
+  return (a: Asset) => { const mark = state.marks[a.id]; return !excluded.has(a.id) && favorites.has(a.id) === onlyFavorites
     && (filter.media === 'all' || filter.media === a.kind)
     && matchesDate(a.date, filter, now)
-    && smartMatch(a, filter, later)
+    && smartMatch(a, filter, later, favorites)
     && (filter.seal === 'all' || (filter.seal === 'none' ? !mark : mark?.level === filter.seal))
     && (filter.includeWaiting || filter.seal !== 'all' || !mark || mark.due <= now); };
 }
@@ -176,9 +193,11 @@ export function reviewedCount(assets: Asset[], state: RecordState) {
 }
 export function reconcileLibrary(state: RecordState, fresh: Asset[]): RecordState {
   const present = new Set(fresh.map(a=>a.id));
-  // Native enumeration excludes current favorites. A returned ID is no longer favorited,
-  // and a formerly deleted ID returned by Photos has been restored by the user.
-  return {...state, favorites:state.favorites.filter(id=>!present.has(id)), removed:state.removed.filter(id=>!present.has(id))};
+  // Photos is the truth for what it returns: its favourites (made here or in
+  // Photos) join the record, and a returned ID without the flag is no longer one.
+  // A formerly deleted ID returned by Photos has been restored by the user.
+  const favorites = [...new Set([...state.favorites.filter(id=>!present.has(id)), ...fresh.filter(a=>a.favorite).map(a=>a.id)])];
+  return {...state, favorites, removed:state.removed.filter(id=>!present.has(id))};
 }
 export function libraryFingerprint(assets: Asset[]) {
   let n=2166136261;
@@ -196,7 +215,7 @@ export function validateRecordState(value: unknown): RecordState | null {
   if (input.later !== undefined && !strings(input.later)) return null;
   const history: Decision[] = [];
   for (const raw of Array.isArray(input.history) ? input.history.slice(-10) : []) {
-    if (!object(raw) || !strings(raw.ids) || !['keep','discard','favorite','later'].includes(String(raw.action)) || typeof raw.at !== 'number' || !Number.isFinite(raw.at) || !object(raw.previous)) continue;
+    if (!object(raw) || !strings(raw.ids) || !ACTIONS.includes(raw.action as Action) || typeof raw.at !== 'number' || !Number.isFinite(raw.at) || !object(raw.previous)) continue;
     if (!Object.values(raw.previous).every(v => v === null || mark(v))) continue;
     const previous: Decision['previous'] = {};
     for (const id of raw.ids) { const old = raw.previous[id]; previous[id] = mark(old) ? { ...old } : null; }
@@ -216,11 +235,12 @@ export function readState(key: string): RecordState {
  * in the pile. `decidedHere` keeps items decided under a seal filter in scope
  * after their seal changes, so the count never shrinks under the person. */
 export function filterScope(assets: Asset[], state: RecordState, filter: Filter, now = Date.now(), decidedHere: ReadonlySet<string> = new Set()) {
-  const removed = new Set(state.removed); const later = new Set(state.later ?? []);
-  const inScope = assets.filter(a => !removed.has(a.id)
+  const removed = new Set(state.removed); const later = new Set(state.later ?? []); const favorites = new Set(state.favorites);
+  // Favourites count only in their own set (and stay counted once decided here).
+  const inScope = assets.filter(a => !removed.has(a.id) && (decidedHere.has(a.id) || favorites.has(a.id) === (filter.smart === 'favorites'))
     && (filter.media === 'all' || filter.media === a.kind)
     && matchesDate(a.date, filter, now)
-    && (decidedHere.has(a.id) || smartMatch(a, filter, later))
+    && (decidedHere.has(a.id) || smartMatch(a, filter, later, favorites))
     && (filter.seal === 'all' || decidedHere.has(a.id) || (filter.seal === 'none' ? !state.marks[a.id] : state.marks[a.id]?.level === filter.seal)));
   const remaining = eligible(assets, state, filter, now).length;
   return { total: inScope.length, remaining, reviewed: Math.max(0, inScope.length - remaining) };

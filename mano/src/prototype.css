@@ -3,6 +3,10 @@
    with a --cw- prefix because sheets render through portals outside .mano-app.
    Runtime chrome (styles.css, src/mobile) is protected and is not restyled here. */
 
+/* Retro slab for the decision bar labels (Patua One, SIL OFL 1.1, latin subset;
+   licence in public/assets/fonts). Local file: no network, CSP font-src 'self'. */
+@font-face{font-family:'Patua One';font-style:normal;font-weight:400;font-display:swap;src:url('/assets/fonts/patua-one-latin-400.woff2') format('woff2')}
+
 :root{
   /* Brand palette (mano/brand/palette.json). One meaning per colour:
      teal/turquoise = identity and Conservar; ivory = surfaces; coffee (the
@@ -14,6 +18,9 @@
   --cw-coconut:#AF6742;--cw-coconut-deep:#8A4B2D;--cw-coconut-ink:#6E3B22;
   --cw-pink:#EF9A98;--cw-pink-deep:#A3405A;--cw-pink-text:#F9C6C4; /* same hue, light enough for text on teal */
   --cw-graphite:#4E5A68;
+  /* Decision bar (cartoon set, sampled from the approved reference): heart pink,
+     cream band and the ink contour Coqui and Memo are drawn with. */
+  --cw-heart:#EB4E69;--cw-cream:#FCEFD9;--cw-outline:#2A1C14;
   --cw-destructive:#B3261E;
   --cw-white:#FFFFFF;
 
@@ -34,6 +41,8 @@
   --cw-action-primary:var(--cw-teal-800);--cw-on-action-primary:var(--cw-paper);
   --cw-action-danger:var(--cw-destructive);--cw-on-action-danger:var(--cw-white); /* 6.5:1 */
   --cw-keep:var(--cw-paper);--cw-discard:var(--cw-graphite);
+  --cw-bar-discard:var(--cw-graphite);     /* cream label 6.3:1 */
+  --cw-bar-keep:var(--cw-turquoise);       /* cream label 4.8:1, plus the ink contour */
   --cw-stamp-keep:var(--cw-turquoise);        /* 4.5:1 on ivory */
   --cw-stamp-discard:var(--cw-graphite);      /* 5.8:1 on ivory */
   --cw-stamp-favorite:var(--cw-pink-deep);    /* 5.0:1 on ivory */
@@ -46,6 +55,7 @@
   /* Type: IBM Plex Sans 400/500/600, Mono 500 */
   --cw-font:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,sans-serif;
   --cw-font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  --cw-font-display:'Patua One',Georgia,serif; /* decision bar only: retro slab, OFL */
   --cw-text-xs:.75rem;   /* 12 */
   --cw-text-sm:.8125rem; /* 13 */
   --cw-text-md:.9375rem; /* 15 */
@@ -68,6 +78,10 @@
   --cw-shadow-2:0 12px 28px rgba(6,29,32,.34);
   --cw-shadow-press:0 3px 0 rgba(8,32,33,.55);
   --cw-touch:44px;--cw-control:48px;--cw-decision:56px;
+  /* Decision bar geometry (DecisionBar.tsx keeps the line weights in sync:
+     cream 3.5 + ink 2.5 = band 6; base 3; press 2.5). */
+  --cw-bar-button:var(--cw-decision);--cw-bar-heart:70px;
+  --cw-bar-band-x2:12px;--cw-bar-cream-x2:7px;--cw-bar-base:3px;--cw-bar-press:2.5px;
 
   /* Motion: short, eased, never decorative */
   --cw-ease:cubic-bezier(.2,.8,.2,1);
@@ -231,41 +245,53 @@
 .segmented button+button{border-left:1px solid var(--cw-line-on-bg)}
 .selection-caption{flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:var(--cw-space-1);min-height:var(--cw-space-6);font:600 var(--cw-text-sm) var(--cw-font);color:var(--cw-on-bg)}
 /* With no card on the table, decisions have nothing to act on; keep the space, drop the noise. */
-.mano-app:has(.empty-state) :is(.decision-buttons,.archive-tools button:disabled){visibility:hidden}
+.mano-app:has(.empty-state) :is(.decision-bar,.archive-tools button:disabled){visibility:hidden}
 
 /* ---------- Decisions ---------- */
-/* Eliminar (graphite, trash) · pink heart · Conservar (ivory, turquoise seal).
-   Same icon and colour as each swipe stamp; the arrow cue sits at the outer
-   edge. The neighbours are cut in a curve around the heart, leaving it air. */
-.decision-buttons{--cut:42px;display:grid;grid-template-columns:1fr 54px 1fr;align-items:center;flex-shrink:0;margin-top:var(--cw-stack)}
-.decision-buttons button{position:relative;display:flex;align-items:center;justify-content:center;gap:var(--cw-icon-gap);min-height:var(--cw-decision);padding:0 var(--cw-space-4);
-  border:0;border-radius:var(--cw-radius-lg);font-size:var(--cw-text-md)!important;font-weight:600!important}
-.decision-buttons .edge{position:absolute;opacity:.6}
-.decision-buttons .discard{background:var(--cw-discard);color:var(--cw-white);padding-right:26px;
-  -webkit-mask:radial-gradient(circle var(--cut) at calc(100% + 27px) 50%,transparent 97%,#000 100%);mask:radial-gradient(circle var(--cut) at calc(100% + 27px) 50%,transparent 97%,#000 100%)}
-.decision-buttons .discard .edge{left:var(--cw-space-3)}
-.decision-buttons .keep{background:var(--cw-keep) url('/assets/paper.png') center/480px;color:var(--cw-turquoise-deep);padding-left:26px;
-  -webkit-mask:radial-gradient(circle var(--cut) at -27px 50%,transparent 97%,#000 100%);mask:radial-gradient(circle var(--cut) at -27px 50%,transparent 97%,#000 100%)}
-.decision-buttons .keep .edge{right:var(--cw-space-3)}
-.decision-buttons .keep .decision-icon{color:var(--cw-turquoise)}
-.decision-buttons .heart{justify-self:center;z-index:1;width:74px;height:68px;min-height:0;margin:0 -10px;padding:0;background:none;border-radius:0;
-  filter:drop-shadow(0 6px 10px rgba(6,29,32,.35));transition:transform var(--cw-fast) var(--cw-ease)}
-.decision-buttons .heart svg{width:100%;height:100%;overflow:visible}
-.decision-buttons .heart path:first-child{fill:var(--cw-pink)}
-.decision-buttons .heart .heart-line{fill:none;stroke:var(--cw-paper-light);stroke-width:3;opacity:.85}
-.decision-buttons button{transition:transform var(--cw-fast) var(--cw-ease),filter var(--cw-fast) var(--cw-ease)}
-/* Arrow, word and icon share one line: the extra room sits on the cut side. */
-.decision-buttons :is(.discard,.keep){gap:6px;font-size:15px!important}
-.decision-buttons :is(.discard,.keep) .edge{position:static;flex-shrink:0}
-.decision-buttons .discard{padding:0 19px 0 10px}.decision-buttons .keep{padding:0 10px 0 19px}
-/* The cut mask would hide an outside ring: focus is drawn inside the button. */
-.decision-buttons :is(.discard,.keep):focus-visible{outline:3px solid var(--cw-focus);outline-offset:-6px}
-.decision-buttons button:active:not(:disabled){transform:scale(.95)}
-.decision-buttons .heart:active:not(:disabled){transform:scale(.88)}
-.decision-buttons button:disabled{opacity:.45}
-/* The button on the side the card travels toward answers the gesture. */
-.decision-buttons.armed-discard .discard,.decision-buttons.armed-keep .keep{transform:scale(1.05);filter:brightness(1.08)}
-.decision-buttons.armed-favorite .heart{transform:scale(1.16)}
+/* DecisionBar.tsx draws the shapes (vector, computed for the real width); this
+   is their paint. Three pieces, one set: ink contour, cream band, solid colour,
+   an ink base the face sinks onto when pressed. No gradients, no blur. */
+.decision-bar{--bar-button:var(--cw-bar-button);--bar-heart:var(--cw-bar-heart);position:relative;flex-shrink:0;height:var(--bar-height,calc(var(--cw-bar-heart) + 15px));margin:var(--cw-space-2) calc(var(--cw-space-1) * -1) 0;
+  /* The rounded outer ends read inset: the bar takes 4 px of each gutter so it lines up optically. */-webkit-tap-highlight-color:transparent}
+.bar-piece{position:absolute;margin:0;padding:0;border:0;background:none;color:var(--cw-cream);touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.bar-piece>svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.bar-heart{z-index:1}
+.piece-base{fill:var(--cw-outline);stroke:var(--cw-outline);stroke-width:var(--cw-bar-band-x2);stroke-linejoin:round}
+.piece-ink{fill:none;stroke:var(--cw-outline);stroke-width:var(--cw-bar-band-x2);stroke-linejoin:round}
+.piece-cream{fill:none;stroke:var(--cw-cream);stroke-width:var(--cw-bar-cream-x2);stroke-linejoin:round}
+.piece-fill{stroke:none}
+.bar-discard .piece-fill{fill:var(--cw-bar-discard)}
+.bar-keep .piece-fill{fill:var(--cw-bar-keep)}
+.bar-heart .piece-fill{fill:var(--cw-heart)}
+.heart-gloss{fill:none;stroke:var(--cw-cream);stroke-width:4.5px;stroke-linecap:round}
+/* «Favoritas»: the heart is on — latched onto its base, with a cream keyline. */
+.heart-inner{fill:none;stroke:var(--cw-cream);stroke-width:2.5px;opacity:0}
+.is-favorites .heart-inner{opacity:1}.is-favorites .heart-gloss{opacity:0}
+/* Focus follows the silhouette (a box would cross the neighbours). */
+.piece-focus{fill:none;stroke:var(--cw-focus);stroke-width:calc(var(--cw-bar-band-x2) + 7px);stroke-linejoin:round;opacity:0}
+.bar-piece:focus-visible{outline:none}.bar-piece:focus-visible .piece-focus{opacity:1}
+.bar-content{position:absolute;display:flex;align-items:center;justify-content:center;gap:.3125rem;pointer-events:none}
+.bar-word{font-family:var(--cw-font-display);font-weight:400;font-size:1em;line-height:1;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;
+  color:var(--cw-cream);-webkit-text-stroke:3px var(--cw-outline);paint-order:stroke fill;padding-top:.06em}
+.bar-icon{flex-shrink:0;width:var(--bar-icon);height:var(--bar-icon);overflow:visible}
+.bar-icon :is(path,rect){fill:var(--cw-cream);stroke:var(--cw-outline);stroke-width:3px;stroke-linejoin:round;paint-order:stroke fill}
+.bar-icon .ink{fill:none;stroke-width:1.9px;stroke-linecap:round}
+.bar-arrow{width:.8125rem;height:.8125rem}
+/* Press: the face sinks onto its base at once and settles back with a small,
+   damped follow-through. Reduce Motion drops the travel (rule below). */
+.piece-face,.bar-content{transition:transform var(--cw-slow) var(--cw-ease-settle),opacity var(--cw-base) var(--cw-ease)}
+.bar-piece:active:not(:disabled) :is(.piece-face,.bar-content){transform:translateY(var(--cw-bar-press));transition-duration:.05s;transition-timing-function:ease-out}
+.bar-heart .piece-face{transform-box:fill-box;transform-origin:50% 60%}
+.bar-heart:active:not(:disabled) .piece-face{transform:translateY(var(--cw-bar-press)) scale(.96)}
+.is-favorites .bar-heart .piece-face{transform:translateY(var(--cw-bar-base))}
+.is-favorites .bar-heart:active:not(:disabled) .piece-face{transform:translateY(var(--cw-bar-base)) scale(.94)}
+/* The piece on the side the card travels toward rises off its base. */
+:is(.armed-discard .bar-discard,.armed-keep .bar-keep) :is(.piece-face,.bar-content){transform:translateY(-2px)}
+.decision-bar:not(.is-favorites).armed-favorite .bar-heart .piece-face{transform:translateY(-3px)}
+/* Unavailable: flat (no base) and faded, still readable. */
+.bar-piece:disabled{cursor:default}
+.bar-piece:disabled :is(.piece-face,.bar-content){opacity:.42}
+.bar-piece:disabled .piece-base{opacity:0}
 .session-content:has(.armed-later) .archive-tools .later .tool-icon{transform:scale(1.12);background:var(--cw-paper)}
 .archive-tools{display:grid;grid-template-columns:repeat(3,1fr);align-items:start;flex-shrink:0;padding-top:var(--cw-stack)}
 .archive-tools>button{justify-self:center;display:flex;flex-direction:column;align-items:center;gap:var(--cw-space-1);min-width:72px;padding:0;border:0;background:transparent;color:var(--cw-on-bg-soft);font-size:var(--cw-text-xs)}
@@ -582,7 +608,7 @@
 @media (max-height:730px){
   .archive-header{min-height:50px}.header-brand,.brand-status{height:50px}
   .hand-space{margin-top:var(--cw-space-2)}
-  .decision-buttons{margin-top:var(--cw-space-2)}.decision-buttons button{min-height:var(--cw-control)}
+  .decision-bar{--bar-button:50px;--bar-heart:62px;margin-top:var(--cw-space-1)}
   .archive-tools{padding-top:var(--cw-space-2)}
   .ob-demo-area{height:140px;margin-top:var(--cw-space-2)}.ob-demo{transform:scale(.86)}.ob-stage h1,.status-screen h1{font-size:1.5rem}.ob-stage{margin-top:var(--cw-space-2)}.ob-row{padding:var(--cw-space-1) var(--cw-space-2)}
 }

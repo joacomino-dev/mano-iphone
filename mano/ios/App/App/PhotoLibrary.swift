@@ -279,7 +279,10 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         guard ["authorized", "limited"].contains(status) else { call.resolve(["assets": [], "status": status]); return }
         DispatchQueue.global(qos: .userInitiated).async {
             let options = PHFetchOptions()
-            options.predicate = NSPredicate(format: "(mediaType == %d OR mediaType == %d) AND favorite == NO AND hidden == NO", PHAssetMediaType.image.rawValue, PHAssetMediaType.video.rawValue)
+            // Favourites are listed too, flagged: the web layer keeps them out of the
+            // general pile and shows them only in the «Favoritas» set. Deletion still
+            // rechecks the flag at the last moment (deleteAssets).
+            options.predicate = NSPredicate(format: "(mediaType == %d OR mediaType == %d) AND hidden == NO", PHAssetMediaType.image.rawValue, PHAssetMediaType.video.rawValue)
             options.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: true)]
             let result = PHAsset.fetchAssets(with: options)
             var items: [[String: Any]] = []
@@ -289,6 +292,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                               "width": item.pixelWidth, "height": item.pixelHeight, "duration": item.duration,
                               "modified": (item.modificationDate?.timeIntervalSince1970 ?? 0) * 1000,
                               "hasLocation": item.location != nil,
+                              "favorite": item.isFavorite,
                               "screenshot": item.mediaSubtypes.contains(.photoScreenshot) || item.mediaSubtypes.contains(.videoScreenRecording)])
             }
             // Runtime smoke-test signal: no asset IDs, names, paths or image data.

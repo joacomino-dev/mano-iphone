@@ -234,3 +234,17 @@ bundle, keys and permissions; `cocowash-media://` and `native.html` CSP untouche
 - «Terminar» with items to delete opens «Una última mirada» directly; the
   celebration appears after «Eliminar» (or after closing the review).
 - Version 0.7.0 (build 7).
+
+## Decision bar and «Favoritas» — 1 November 2026 (user request, CW-CL-022)
+
+- Decision bar = `DecisionBar.tsx`: Eliminar (graphite #4E5A68, trash) · heart
+  (pink #EB4E69, protagonist, rises above and below) · Conservar (turquoise
+  #1E7470, bookmark). Cartoon set like Coqui and Memo: solid colours, cream band
+  #FCEFD9, ink contour #2A1C14, ink base the face sinks onto. No gradients,
+  textures or blur. Side buttons are hollowed by the heart's exact offset
+  silhouette (constant gap, never touching). Labels in Patua One (OFL, local
+  woff2), only in this bar. Arrows only when the word keeps ≥ 16 px.
+- Favourites still leave the general pile. Filtros › «Favoritas» shows only
+  them: the heart is on (pressed) and takes the item out of Favorites (back to
+  the pile, undoable); Eliminar is unavailable there; Conservar seals it.
+  Native enumeration now lists favourites flagged; deletion still rechecks.

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type PointerEvent, type MouseEvent } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { FolderOpenIcon, FolderSimplePlusIcon, CaretRightIcon, CaretLeftIcon, ArrowCounterClockwiseIcon, ArrowUUpLeftIcon, HeartStraightIcon, StackIcon, TrashIcon, CheckIcon, XIcon, PlayIcon, SlidersHorizontalIcon, ArrowClockwiseIcon, ImageBrokenIcon, PlusIcon, PushPinIcon, InfoIcon, CloudIcon, CloudArrowDownIcon, SparkleIcon } from '@phosphor-icons/react';
+import { FolderOpenIcon, FolderSimplePlusIcon, CaretRightIcon, ArrowCounterClockwiseIcon, ArrowUUpLeftIcon, StackIcon, TrashIcon, CheckIcon, XIcon, PlayIcon, SlidersHorizontalIcon, ArrowClockwiseIcon, ImageBrokenIcon, PlusIcon, PushPinIcon, InfoIcon, CloudIcon, CloudArrowDownIcon, SparkleIcon } from '@phosphor-icons/react';
 import { BottomSheet, Carousel, KeyboardInput, useKeyboard } from './mobile';
 import { decide, undo, restore, eligible, nextSessionHand, readState, reconcileLibrary, libraryFingerprint, filterScope, LEVELS, initialFilter, initialState, type Action, type Asset, type Decision, type Filter, type RecordState } from './domain';
 import { Library, isNative, demoAssets, thumbnailInfo, inCloudError, type Album, type PhotoPermission } from './library';
@@ -23,6 +23,7 @@ import { DisplaySettingsPanel } from './DisplaySettings';
 import { InspectorBoundary } from './Boundary';
 import { installErrorReporting } from './diagnostics';
 import { Stamp, DecisionStamp, DecisionIcon, ROMAN, type StampKind } from './Stamp';
+import { DecisionBar } from './DecisionBar';
 import { Character } from './Characters';
 import { assignToAlbum, afterAlbum } from './album';
 import { cardBox, cardPixels, thumbPixels, setPreviewSizing, cloudDownloads } from './preview';
@@ -38,7 +39,7 @@ function cardExit(id: string, decision: Decision | undefined, reduced: boolean |
   if (reduced || !decided) return { opacity: 0, pointerEvents: 'none' as const, transition: { duration: reduced ? 0 : .16 } };
   // Keep flies right; discard slides left and greys out toward the review tray;
   // favourite rises; «Más tarde» drops to the bottom of the pile. The stamp overlay (DecisionStamp) rides along.
-  const flight = decision!.action === 'keep' ? { x: 440, rotate: 12 } : decision!.action === 'discard' ? { x: -440, rotate: -12, filter: 'saturate(.3)' } : decision!.action === 'later' ? { y: 520, rotate: 4, scale: .96 } : { y: -560, scale: .92 };
+  const flight = decision!.action === 'keep' ? { x: 440, rotate: 12 } : decision!.action === 'discard' ? { x: -440, rotate: -12, filter: 'saturate(.3)' } : decision!.action === 'later' || decision!.action === 'unfavorite' ? { y: 520, rotate: 4, scale: .96 } : { y: -560, scale: .92 };
   return { ...flight, opacity: 0, pointerEvents: 'none' as const, transition: { duration: .34, ease: leaveEase } };
 }
 function savedGroups(items: Asset[]) {
@@ -204,13 +205,15 @@ export function ManoApp() {
   const fingerprint=useMemo(()=>libraryFingerprint(rawAssets),[rawAssets]);
   const index=useLibraryIndex(rawAssets,fingerprint,!demo&&connected,analyzing||warming||loading);
   const assets=useMemo(()=>enrich(rawAssets,index),[rawAssets,index.version]);
+  /** «Favoritas» set: the heart takes items out of Favorites; they cannot be queued for deletion. */
+  const favView=filter.smart==='favorites';
   const queue = useMemo(()=>eligible(assets,state,filter,Date.now(),seed.current),[assets,state,filter,session]);
   // Geek is a display preference: toggling it must not reset bundles or anchors.
   const filterKey=JSON.stringify({...filter,geek:undefined});
   const sessionHand=useMemo(()=>nextSessionHand(assets,state,filter,Date.now(),seed.current),[assets,state,filter,session]);
   // A member sent to «Más tarde» leaves the pinned group (it waits at the end).
   const pinned=bundleAnchor?.filterKey===filterKey?queue.filter(a=>bundleAnchor.members.includes(a.id)&&!state.later.includes(a.id)).slice(0,5):[];
-  const revisited=revisit.map(id=>assets.find(a=>a.id===id)).filter((a):a is Asset=>!!a&&!state.pending.includes(a.id)&&!state.removed.includes(a.id)&&!state.favorites.includes(a.id));
+  const revisited=revisit.map(id=>assets.find(a=>a.id===id)).filter((a):a is Asset=>!!a&&!state.pending.includes(a.id)&&!state.removed.includes(a.id)&&state.favorites.includes(a.id)===favView);
   // «Descargar siempre»: cards already on the iPhone come first while iCloud
   // ones download behind (preload window); a card shown this way stays until
   // decided, so nothing is swapped under the finger. Invisible to the person.
@@ -278,7 +281,7 @@ export function ManoApp() {
     if(!demo&&analyzing)void Library.cancelAnalysis().catch(()=>{});
     do {
       const groups=deferredGroups.current;if(groups){deferredGroups.current=null;available=available.map(a=>({...a,group:groups.get(a.id)}));setAssets(available);}
-      const source:Asset[]=available;const first=revisit.map(id=>source.find(a=>a.id===id)).filter((a):a is Asset=>!!a&&!record.pending.includes(a.id)&&!record.removed.includes(a.id)&&!record.favorites.includes(a.id));
+      const source:Asset[]=available;const first=revisit.map(id=>source.find(a=>a.id===id)).filter((a):a is Asset=>!!a&&!record.pending.includes(a.id)&&!record.removed.includes(a.id)&&record.favorites.includes(a.id)===favView);
       prepareWindow([...first,...upcomingSessionAssets(available,record,filter,Date.now(),seed.current)].filter((a,i,all)=>all.findIndex(b=>b.id===a.id)===i).slice(0,10),String(number));
       const firstHand=(first.length?first:nextSessionHand(available,record,filter,Date.now(),seed.current)).map(a=>a.id);
       await waitPrepared(getPreloader(),firstHand);if(number!==sessionNumber.current)return;
@@ -290,22 +293,27 @@ export function ManoApp() {
   const closeSession=()=>{const review=state.pending.length>0;resumeContext.current=undefined;cancelWarmup();cancel();setSheet(review?'review':null);setSession(false);setSessionOpen(false);setSelected([]);setRotated([]);setRevisit([]);setBundleAnchor(null);setState(s=>({...s,history:[]}));setShowDone(true);haptic(review?'light':'success');};
   /** The decision itself (shared by swipes, buttons and album saves): one
    * undoable history entry, stats, and the move to the next card. */
-  const SPOKEN={keep:'Conservada',discard:'Para eliminar; se borra solo al confirmar',favorite:'Favorita',later:'Para más tarde: vuelve al final'} as const;
+  const SPOKEN={keep:'Conservada',discard:'Para eliminar; se borra solo al confirmar',favorite:'Favorita',later:'Para más tarde: vuelve al final',unfavorite:'Quitada de Favoritas: vuelve a la pila'} as const;
   const [videoSound,setVideoSound]=useState(false);
   const hideSeals=()=>{setDisplay(d=>({...d,photo:{...d.photo,seal:false}}));haptic('selection');setNotice('Sellos ocultos. Vuelven en Ajustes › Sellos.');};
   const record=(action:Action,ids:string[],apply=(s:RecordState)=>decide(s,ids,action,Date.now(),context))=>{
     setState(apply);setRevisit(previous=>previous.filter(id=>!ids.includes(id)));setPinnedInspect(false);setInspect(null);setSelected([]);setRotated([]);
-    setStats(previous=>({...previous,[action]:previous[action]+ids.length}));setDecidedHere(previous=>new Set([...previous,...ids]));
-    setFlash({kind:action,key:Date.now()});setSpoken(`${SPOKEN[action]}${ids.length>1?`: ${ids.length}`:''}`);
+    if(action!=='unfavorite'){setStats(previous=>({...previous,[action]:previous[action]+ids.length}));setFlash({kind:action,key:Date.now()});}setDecidedHere(previous=>new Set([...previous,...ids]));
+    setSpoken(`${SPOKEN[action]}${ids.length>1?`: ${ids.length}`:''}`);
   };
-  const act=async(action:Action,ids=targets)=>{if(busy||!ids.length)return;setBusy(true);setError('');haptic(action==='favorite'?'medium':action==='later'?'soft':'light');try{
-    if(action==='favorite'&&!demo)await Library.favorite({ids,value:true});
+  const act=async(requested:Action,ids=targets)=>{if(busy||!ids.length)return;
+    // In «Favoritas» the heart (and the swipe up) takes items out of Favorites,
+    // and nothing there can be queued for deletion.
+    const action:Action=favView&&requested==='favorite'?'unfavorite':requested;
+    if(favView&&action==='discard'){haptic('warning');setNotice('Las favoritas no se eliminan. Quítala de Favoritas con el corazón.');return;}
+    setBusy(true);setError('');haptic(action==='favorite'||action==='unfavorite'?'medium':action==='later'?'soft':'light');try{
+    if((action==='favorite'||action==='unfavorite')&&!demo)await Library.favorite({ids,value:action==='favorite'});
     record(action,ids);
   }catch(e){haptic('error');messageError(e);}finally{setBusy(false);}};
   const undoLast=async()=>{if(busy)return;const last=state.history.at(-1);if(!last)return;setBusy(true);try{
     let missing=0;
-    if(last.action==='favorite'&&!demo){const result=await Library.favorite({ids:last.ids,value:false,ignoreMissing:true});missing=result.missing.length;}
-    haptic('soft');setStats(previous=>({...previous,[last.action]:Math.max(0,previous[last.action]-last.ids.length)}));
+    if((last.action==='favorite'||last.action==='unfavorite')&&!demo){const result=await Library.favorite({ids:last.ids,value:last.action==='unfavorite',ignoreMissing:true});missing=result.missing.length;}
+    const undone=last.action;haptic('soft');if(undone!=='unfavorite')setStats(previous=>({...previous,[undone]:Math.max(0,previous[undone]-last.ids.length)}));
     setState(undo);const previous=last.context;setRevisit(previous?.handIds??last.ids);setSelected(previous?.selected??[]);setRotated(previous?.rotated??[]);if(previous?.filter)setFilter(previous.filter);setBundleAnchor(previous?.group?{group:previous.group,filterKey:JSON.stringify(previous.filter??filter),members:previous.handIds}:null);if(missing)setNotice('Decisión deshecha; algunos elementos ya no están disponibles.');setSpoken('Última decisión deshecha');
     if(last.action==='favorite'&&!demo){const fresh=(await Library.assets()).assets;setAssets(savedGroups(fresh));setState(s=>reconcileLibrary(s,fresh));}
   }catch(e){messageError(e);}finally{setBusy(false);}};
@@ -320,7 +328,8 @@ export function ManoApp() {
   const anchorAt=(clientX:number,clientY:number,dragY:number)=>{const box=document.querySelector('[data-inspection-hook]')?.getBoundingClientRect();if(!box)return false;
     const distance=Math.hypot(Math.max(box.left-clientX,0,clientX-box.right),Math.max(box.top-clientY,0,clientY-box.bottom));
     setAnchor(dragY>16?Math.max(0,Math.min(1,1-Math.max(0,distance-64)/200)):0);return dragY>64&&distance<=64;};
-  const zoneOf=(x:number,y:number)=>x>45?'keep':x< -45?'discard':y< -45?'favorite':y>45?'later':'';
+  // In «Favoritas» a drag left arms nothing: favourites are never queued for deletion.
+  const zoneOf=(x:number,y:number)=>x>45?'keep':x< -45?(favView?'':'discard'):y< -45?'favorite':y>45?'later':'';
   // Gesture timing uses each event's own timeStamp (when the finger acted), not
   // when a busy main thread got round to the handler or a timer: under load
   // queued moves can run before a 380 ms timer, and a re-render between two taps
@@ -426,7 +435,7 @@ export function ManoApp() {
     <header className="archive-header">{filtersButton}{brand}<button id="review-trigger" className="header-action finish" disabled={busy} onClick={()=>{cancel();setError('');closeSession();}}><span>Terminar</span>{pending>0&&<><span className="finish-count" aria-hidden="true"><AnimatedNumber value={pending}/></span><span className="sr-only">, {pending} para eliminar</span></>}</button></header>
     <div className="archive-progress">{limited&&<button className="access-indicator" onClick={()=>void manageLimited()}><InfoIcon size={14} weight="bold"/>Acceso limitado</button>}<progress value={scope.reviewed} max={Math.max(1,scope.total)} aria-label={`Revisados ${scope.reviewed} de ${scope.total} con estos filtros`}/><span className="progress-count" aria-hidden="true"><AnimatedNumber value={scope.reviewed}/><span>/</span><AnimatedNumber value={scope.total} className="is-total"/></span></div>
     <section ref={stage} className={`hand-space ${currentColor}`} aria-label="Pila de recuerdos">
-      {!connected?<div className="empty-state"><Character pose="coqui-wave" height={140} className="empty-character"/><h2>Tu carrete, en tus manos.</h2><p>Revisa, conserva y ordena tus recuerdos. Nada se borra sin tu confirmación.</p><button className="primary-empty" onClick={connect} disabled={loading}>{loading?'Abriendo Fotos…':'Abrir mi biblioteca'}</button><small>Todo se analiza en tu iPhone.</small></div>:!active?<div className="empty-state"><Character pose={scope.total?'memo-calm':'memo-wonder'} height={120} className="empty-character" motion="sway"/><h2>{scope.total?'Todo en su sitio.':'Nada con estos filtros.'}</h2><p>{pending?'Lo marcado para eliminar te espera al pulsar Terminar.':scope.total?'No quedan fotos pendientes con estos filtros.':'Prueba con otras fechas o con todo el contenido.'}</p><button className="primary-empty" onClick={()=>{setSheetTab('filters');setSheet('filters');}}>Cambiar filtros</button>{!demo&&<button className="text-button" onClick={connect}>Actualizar biblioteca</button>}</div>:<div className="polaroid-stack" data-testid="photo-hand">
+      {!connected?<div className="empty-state"><Character pose="coqui-wave" height={140} className="empty-character"/><h2>Tu carrete, en tus manos.</h2><p>Revisa, conserva y ordena tus recuerdos. Nada se borra sin tu confirmación.</p><button className="primary-empty" onClick={connect} disabled={loading}>{loading?'Abriendo Fotos…':'Abrir mi biblioteca'}</button><small>Todo se analiza en tu iPhone.</small></div>:!active?<div className="empty-state"><Character pose={scope.total?'memo-calm':'memo-wonder'} height={120} className="empty-character" motion="sway"/><h2>{favView&&!scope.total?'Aún no hay favoritas.':scope.total?'Todo en su sitio.':'Nada con estos filtros.'}</h2><p>{favView&&!scope.total?'Toca el corazón o desliza hacia arriba para guardar una.':pending?'Lo marcado para eliminar te espera al pulsar Terminar.':scope.total?'No quedan fotos pendientes con estos filtros.':'Prueba con otras fechas o con todo el contenido.'}</p><button className="primary-empty" onClick={()=>{setSheetTab('filters');setSheet('filters');}}>Cambiar filtros</button>{!demo&&<button className="text-button" onClick={connect}>Actualizar biblioteca</button>}</div>:<div className="polaroid-stack" data-testid="photo-hand">
         <AnimatePresence>{bundleKey&&<motion.div className="bundle-arrival" key={bundleKey} initial={reduced?false:{opacity:0,scale:.94,y:-6}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{duration:.24,ease:[.2,.8,.2,1]}} role="status"><StackIcon size={15} weight="bold"/><span>{hand.length} parecidas{best?' · la mejor delante':''}</span></motion.div>}</AnimatePresence>
         {bundleKey&&!reduced&&<motion.div key={`flash-${bundleKey}`} className="bundle-flash" initial={{opacity:0}} animate={{opacity:[0,.14,0]}} transition={{duration:.5}}/>}
         <AnimatePresence custom={lastDecision}>{[...hand].reverse().map(asset=>{const tape=asset.kind==='video';const {cardWidth,cardHeight}=cardBox(stageSize,asset);const index=hand.indexOf(asset),picked=targetIds.includes(asset.id),angle=index===0?0:index%2?3+index:-3-index;
@@ -446,20 +455,17 @@ export function ManoApp() {
             {display.photo.seal&&state.marks[asset.id]&&<Seal level={state.marks[asset.id].level} hide={hideSeals}/>}{asset.kind==='live'&&<button className="media-play" onPointerDown={e=>e.stopPropagation()} onClick={()=>play(asset)} aria-label="Reproducir Live Photo"><PlayIcon weight="fill" size={14}/>LIVE</button>}
           </motion.article>;
         })}</AnimatePresence>
-        {currentColor&&<span className={`drag-stamp ${currentColor}`} style={{opacity:Math.min(1,.4+Math.max(Math.abs(drag.x),Math.abs(drag.y))/120)}}><Stamp kind={currentColor}/></span>}
+        {currentColor&&!(favView&&currentColor==='favorite')&&<span className={`drag-stamp ${currentColor}`} style={{opacity:Math.min(1,.4+Math.max(Math.abs(drag.x),Math.abs(drag.y))/120)}}><Stamp kind={currentColor}/></span>}
         {flash&&<DecisionStamp key={flash.key} kind={flash.kind} reduced={!!reduced} done={()=>setFlash(f=>f?.key===flash.key?null:f)}/>}
       </div>}
     </section>
     <div className="bundle-controls">{hand.length>1?<div className="segmented"><button onClick={()=>{haptic('selection');setSelected(allPicked?[]:others);}}>{allPicked?'Quitar selección':best?'Elegir las demás':'Elegir todas'}</button><button onClick={cycle} aria-label="Ver la siguiente foto del grupo"><ArrowClockwiseIcon size={16}/>Siguiente</button></div>:null}</div>
     <AnimatePresence>{targetIds.length>0&&<motion.div className="selection-caption" initial={reduced?false:{opacity:0,y:-4}} animate={{opacity:1,y:0}} exit={{opacity:0}} transition={{duration:.16}}><CheckIcon size={14} weight="bold"/>{targetIds.length} seleccionada{targetIds.length===1?'':'s'}</motion.div>}</AnimatePresence>
-    {/* One row, the same icon and colour as each swipe's stamp: Eliminar (←) ·
-        the pink heart, the invitation to keep favourites · Conservar (→). The
-        button on the side the card is dragged toward lights up. */}
-    <div className={`decision-buttons ${currentColor?`armed-${currentColor}`:''}`}>
-      <button className="discard" aria-label={targets.length>1?`Eliminar ${targets.length}`:'Eliminar'} disabled={!active||busy} onClick={()=>act('discard')}><CaretLeftIcon className="edge" size={16} weight="bold"/><span>Eliminar</span><DecisionIcon kind="discard"/></button>
-      <button className="heart" aria-label={targets.length>1?`Añadir ${targets.length} a Favoritos`:'Añadir a Favoritos'} disabled={!active||busy} onClick={()=>act('favorite')}><svg viewBox="0 0 100 92" aria-hidden="true" focusable="false"><path d="M50 86C20 64 5 48 5 30 5 16 16 5 30 5c9 0 16 5 20 12 4-7 11-12 20-12 14 0 25 11 25 25 0 18-15 34-45 56z"/><path className="heart-line" d="M50 74C27 57 16 45 16 31c0-8 6-15 14-15 7 0 13 5 20 13 7-8 13-13 20-13 8 0 14 7 14 15 0 14-11 26-34 43z"/></svg></button>
-      <button className="keep" aria-label={targets.length>1?`Conservar ${targets.length}`:'Conservar'} disabled={!active||busy} onClick={()=>act('keep')}><DecisionIcon kind="keep"/><span>Conservar</span><CaretRightIcon className="edge" size={16} weight="bold"/></button>
-    </div>
+    {/* Eliminar (←) · the heart, protagonist · Conservar (→): three buttons drawn
+        as one set (DecisionBar). The piece on the side the card is dragged
+        toward rises. In «Favoritas» the heart is on and takes items out. */}
+    <DecisionBar count={targets.length} disabled={!active||busy} favoriteOn={favView} armed={currentColor}
+      onDiscard={()=>void act('discard')} onFavorite={()=>void act('favorite')} onKeep={()=>void act('keep')}/>
     <footer className="archive-tools"><button onClick={undoLast} disabled={busy||!state.history.length} aria-label={state.history.length?'Deshacer la última decisión':'Nada que deshacer'}><span className="tool-icon"><ArrowUUpLeftIcon size={22}/></span><span>Deshacer</span></button><button className="later" aria-label={targets.length>1?`Dejar ${targets.length} para más tarde`:'Dejar para más tarde'} disabled={!active||busy} onClick={()=>act('later')}><span className="tool-icon"><DecisionIcon kind="later" size={24}/></span><span>Más tarde</span></button><button id="album-trigger" onClick={openAlbums} disabled={!active||busy}><span className="tool-icon"><FolderSimplePlusIcon size={22}/></span><span>Álbum</span></button></footer>
     </div>;
   const libraryActions=<>

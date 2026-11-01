@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CalendarBlankIcon, ImagesIcon, StampIcon, ArrowCounterClockwiseIcon, BroomIcon, SortAscendingIcon, ClockCountdownIcon, DeviceMobileIcon, ImageBrokenIcon, ReceiptIcon, SparkleIcon } from '@phosphor-icons/react';
+import { HeartIcon, CalendarBlankIcon, ImagesIcon, StampIcon, ArrowCounterClockwiseIcon, BroomIcon, SortAscendingIcon, ClockCountdownIcon, DeviceMobileIcon, ImageBrokenIcon, ReceiptIcon, SparkleIcon } from '@phosphor-icons/react';
 import { initialFilter, pileCount, LEVELS, type Asset, type Filter, type Order, type RecordState, type Smart } from './domain';
 import { AnimatedNumber } from './Loader';
 import { haptic } from './haptics';
@@ -22,6 +22,7 @@ const SMART: { value: Smart; label: string; icon: typeof BroomIcon; hint: string
  { value: 'screenshots', label: 'Capturas', icon: DeviceMobileIcon, hint: 'Capturas y grabaciones de pantalla, marcadas así por tu iPhone.' },
  { value: 'lowQuality', label: 'Baja calidad', icon: ImageBrokenIcon, hint: 'Borrosas, muy oscuras o quemadas, según Vision en tu iPhone.' },
  { value: 'text', label: 'Texto y documentos', icon: ReceiptIcon, hint: 'Facturas, recibos, transferencias y chats. Las que tienen caras van al final.' },
+ { value: 'favorites', label: 'Favoritas', icon: HeartIcon, hint: 'Solo tus favoritas, que nunca entran en la pila general. Aquí el corazón las quita de Favoritas y vuelven a la pila; no se pueden eliminar.' },
 ];
 const ORDER: [Order, string][] = [['oldest', 'Más antiguas'], ['newest', 'Más recientes'], ['largest', 'Más pesadas'], ['smallest', 'Más ligeras'], ['random', 'Al azar']];
 const ORDER_HINT: Record<Order, string> = {
