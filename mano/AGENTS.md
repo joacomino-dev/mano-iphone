@@ -269,3 +269,19 @@ bundle, keys and permissions; `cocowash-media://` and `native.html` CSP untouche
 - App icon: the user's art on the official turquoise #1E7470, model ink lines
   (brand/recolor-app-icon.py). The tour shows once after updating to 0.8.
 - Version 0.8.0 (build 8).
+
+## CocoWash 0.9 — Coco Cream refinement, 1 November 2026 (user request, CW-CL-024)
+
+Supersedes the 0.8 rule «every main-screen control is a sticker».
+- Palette Coco Cream (default): `--pal-*` primitives in prototype.css (bg
+  #F6F4EC, surface #FFFDF7, text/contour #253A3A, turquoise #1E7470, graphite
+  #4E5A68, heart #EF9A98, heart details #A3405A, coffee #8A4B2D as a small
+  accent only). Coco Mint is prepared as `:root[data-palette="mint"]`; no
+  public switch. Status bar text is dark (`.darkContent`).
+- Hierarchy: level 1 decision bar keeps the sticker (contour, ivory band, base);
+  level 2 Polaroid/VHS on one ivory paper with soft tinted shadows; level 3
+  tools are quiet (ivory + one hairline, IBM Plex, no base, no text contour).
+- Sorting header: Filtros · thin progress + count · Terminar (count shown as a
+  graphite trash chip = items to delete). The wordmark is for brand moments
+  (summary, tour), not the sorting screen. Selection mark only in groups.
+- Version 0.9.0 (build 9).

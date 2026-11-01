@@ -30,7 +30,8 @@ class ManoBridgeController: CAPBridgeViewController {
         bridge?.registerPluginInstance(PhotoLibraryPlugin())
         NSLog("MEMSWIPE_BRIDGE_READY")
     }
-    override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
+    // Coco Cream (0.9): dark status bar text on the light cream frame.
+    override var preferredStatusBarStyle: UIStatusBarStyle { .darkContent }
 }
 
 /// Serves only finished files from `preparedVideoFolder`, in bounded chunks with

@@ -9,30 +9,53 @@
 @font-face{font-family:'Patua One';font-style:normal;font-weight:400;font-display:swap;src:url('/assets/fonts/patua-one-latin-400.woff2') format('woff2')}
 
 :root{
+  /* ---- Palette: Coco Cream (default since 0.9) ----
+     Eight primitives; everything below maps onto them by meaning, so another
+     palette only overrides this block (Coco Mint: :root[data-palette="mint"]).
+     Contrast (WCAG 2.2) on the background: text 10.9:1, turquoise 5.0,
+     graphite 6.4, rose 5.6, coffee 6.1; ivory label on turquoise 5.5, on
+     graphite 6.9. The pink heart (1.96:1) is drawn with the text-ink contour
+     (5.6:1 against it, 10.9:1 against the background), which carries 1.4.11. */
+  --pal-bg:#F6F4EC;          /* warm cream: the frame */
+  --pal-surface:#FFFDF7;     /* ivory: surfaces that must stand apart, Polaroid */
+  --pal-text:#253A3A;        /* green graphite: text and the contour ink */
+  --pal-text-soft:#3B4E4B;   /* 8.0:1 on the background (AAA) */
+  --pal-text-faint:#5C6E6B;  /* 4.9:1: counters and fine print only */
+  --pal-turquoise:#1E7470;   /* identity, Conservar, positive actions */
+  --pal-discard:#4E5A68;     /* Eliminar */
+  --pal-heart:#EF9A98;       /* heart (soft pink) */
+  --pal-heart-deep:#A3405A;  /* heart details */
+  --pal-coffee:#8A4B2D;      /* small retro accents only, never a universal contour */
+
   /* Brand palette (mano/brand/palette.json). One meaning per colour:
      teal/turquoise = identity and Conservar; ivory = surfaces; coffee (the
      coconut shell) = structure and contrast; pink (the brain) = accent and
      Favorita; graphite = Descartar («a revisión»); red = only «Eliminar N». */
   --cw-teal-950:#0F2627;--cw-teal-900:#122D2E;--cw-teal-800:#1D4042;--cw-teal-700:#26504F;--cw-teal-600:#336361;
-  --cw-turquoise:#1E7470;--cw-turquoise-deep:#17605C;--cw-turquoise-light:#7CCBC2;
+  --cw-turquoise:var(--pal-turquoise);--cw-turquoise-deep:#17605C;--cw-turquoise-light:#7CCBC2;
   --cw-paper:#F2E7D5;--cw-paper-light:#FAF6EE;--cw-paper-dim:#E6D9C3;--cw-paper-edge:#D9C8AC;
-  --cw-coconut:#AF6742;--cw-coconut-deep:#8A4B2D;--cw-coconut-ink:#6E3B22;
-  --cw-pink:#EF9A98;--cw-pink-deep:#A3405A;--cw-pink-text:#F9C6C4; /* same hue, light enough for text on teal */
-  --cw-graphite:#4E5A68;
-  /* Decision bar (cartoon set, sampled from the approved reference): heart pink,
-     cream band and the ink contour Coqui and Memo are drawn with. */
-  --cw-heart:#EB4E69;--cw-cream:#FCEFD9;--cw-outline:#2A1C14;
+  --cw-coconut:#AF6742;--cw-coconut-deep:var(--pal-coffee);--cw-coconut-ink:#6E3B22;
+  --cw-pink:var(--pal-heart);--cw-pink-deep:var(--pal-heart-deep);--cw-pink-text:#F9C6C4; /* light pink: text on dark overlays only */
+  --cw-graphite:var(--pal-discard);
+  /* Decision bar: heart, the band inside each piece and the contour ink. The
+     contour is the text colour (0.9): coffee stays an accent, not a line. */
+  --cw-heart:var(--pal-heart);--cw-heart-deep:var(--pal-heart-deep);--cw-cream:var(--pal-surface);--cw-outline:var(--pal-text);
   --cw-destructive:#B3261E;
   --cw-white:#FFFFFF;
 
   /* Semantic colour (contrast measured, WCAG AA) */
-  --cw-bg:var(--cw-teal-800);
-  /* Text tiers on teal (WCAG / APCA Lc): primary 11.3 / 100, secondary 8.5 / 80,
-     tertiary 6.5 / 63 (counters and fine print only). */
-  --cw-on-bg:var(--cw-white);
-  --cw-on-bg-soft:#D6E3DD;--cw-on-bg-faint:#B3C9C2;
-  --cw-line-on-bg:rgba(255,255,255,.42);--cw-line-on-bg-strong:rgba(255,255,255,.66);
-  --cw-surface-raised:var(--cw-teal-700);
+  --cw-bg:var(--pal-bg);
+  --cw-surface:var(--pal-surface);
+  --cw-on-bg:var(--pal-text);
+  --cw-on-bg-soft:var(--pal-text-soft);--cw-on-bg-faint:var(--pal-text-faint);
+  /* Hairlines and quiet fills are the text colour at low strength, so they
+     follow any palette. */
+  --cw-line-on-bg:color-mix(in srgb,var(--pal-text) 16%,transparent);--cw-line-on-bg-strong:color-mix(in srgb,var(--pal-text) 34%,transparent);
+  --cw-press:color-mix(in srgb,var(--pal-text) 8%,transparent);
+  --cw-track:color-mix(in srgb,var(--pal-text) 12%,var(--pal-bg));
+  --cw-surface-raised:var(--pal-surface);
+  /* Text on dark overlays (anchored view, Geek panel, video chrome). */
+  --cw-on-dark-soft:#D6E3DD;
   /* Text tiers on paper: primary 11.9 / 88, secondary 7.2 / 77 (AAA), tertiary
      5.2 on white (labels, chevrons). Secondary never sits on paper-dim. */
   --cw-ink:var(--cw-teal-900);--cw-ink-soft:#3B4E4B;--cw-ink-faint:#5F716D;
@@ -49,9 +72,9 @@
   --cw-stamp-favorite:var(--cw-pink-deep);    /* 5.0:1 on ivory */
   --cw-stamp-later:var(--cw-coconut-deep);    /* 6.6:1 on ivory: a postmark, «Más tarde» */
   --cw-favorite:var(--cw-pink);               /* 5.2:1 on teal */
-  --cw-select:var(--cw-white);
+  --cw-select:var(--pal-turquoise);
   --cw-error-bg:#F6E8DC;--cw-error-ink:var(--cw-coconut-ink);
-  --cw-focus:var(--cw-white);--cw-focus-on-light:var(--cw-coconut-deep);
+  --cw-focus:var(--pal-text);--cw-focus-on-light:var(--cw-coconut-deep);
 
   /* Type: IBM Plex Sans 400/500/600, Mono 500 */
   --cw-font:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,sans-serif;
@@ -76,17 +99,19 @@
   --cw-caption:var(--cw-space-8);     /* Polaroid caption band (preview.ts) */
   --cw-header:56px;
   --cw-radius-xs:3px;--cw-radius-sm:8px;--cw-radius-md:12px;--cw-radius-lg:16px;--cw-radius-xl:24px;--cw-radius-pill:999px;
-  --cw-shadow-1:0 2px 6px rgba(6,29,32,.22);
-  --cw-shadow-2:0 12px 28px rgba(6,29,32,.34);
+  /* Light-table shadows, tinted with the text colour (0.9). */
+  --cw-shadow-1:0 1px 2px color-mix(in srgb,var(--pal-text) 8%,transparent),0 4px 10px color-mix(in srgb,var(--pal-text) 10%,transparent);
+  --cw-shadow-2:0 2px 4px color-mix(in srgb,var(--pal-text) 8%,transparent),0 12px 28px color-mix(in srgb,var(--pal-text) 16%,transparent);
   --cw-shadow-press:0 3px 0 rgba(8,32,33,.55);
   --cw-touch:44px;--cw-control:48px;--cw-decision:56px;
   /* Decision bar geometry (DecisionBar.tsx keeps the line weights in sync:
      cream 3.5 + ink 2.5 = band 6; base 3; press 2.5). */
   --cw-bar-button:var(--cw-decision);--cw-bar-heart:70px;
   --cw-bar-band-x2:12px;--cw-bar-cream-x2:7px;--cw-bar-base:3px;--cw-bar-press:2.5px;
-  /* The same sticker for every other main-screen control (CSS boxes): cream
-     band as the border, ink ring and ink base as solid, unblurred shadows. */
-  --cw-chrome:var(--cw-teal-700);           /* neutral controls; cream label 7.9:1 */
+  /* The sticker (ivory band + ink ring + ink base) is reserved for primary
+     actions (decision bar, the tour's main button). Tools are quiet: ivory
+     surface, one hairline, no base, no text contour. */
+  --cw-chrome:var(--pal-surface);
   --cw-sticker-cream:3.5px;--cw-sticker-ink:2.5px;
   --cw-sticker-ring:0 0 0 var(--cw-sticker-ink) var(--cw-outline);
   --cw-sticker:0 0 0 var(--cw-sticker-ink) var(--cw-outline),0 var(--cw-bar-base) 0 var(--cw-sticker-ink) var(--cw-outline);
@@ -97,8 +122,21 @@
   /* Small controls settle with a hint of follow-through, never a bounce. */
   --cw-ease-settle:cubic-bezier(.3,1.25,.55,1);
   --cw-shade:rgba(10,30,31,1);
+  /* Depth only where it means something: the Polaroid on the table (soft) and
+     the decision bar's ink base (physical). Tools have none. */
+  --cw-shadow-card:0 0 0 1px color-mix(in srgb,var(--pal-text) 7%,transparent),0 2px 4px color-mix(in srgb,var(--pal-text) 8%,transparent),0 10px 24px color-mix(in srgb,var(--pal-text) 12%,transparent);
+  --cw-shadow-card-back:0 0 0 1px color-mix(in srgb,var(--pal-text) 6%,transparent),0 2px 6px color-mix(in srgb,var(--pal-text) 7%,transparent);
   --cw-tape:#151B1B;--cw-tape-top:#1B2222;--cw-tape-edge:#0B1010;--cw-osd:#F8F5EC;--cw-osd-red:#FF3B4A;--cw-osd-blue:#3B8BFF;
   --cw-fast:.12s;--cw-base:.2s;--cw-slow:.32s;
+}
+
+/* ---- Palette: Coco Mint (prepared, not exposed) ----
+   Same eight primitives; try it with document.documentElement.dataset.palette='mint'.
+   Measured: text 9.1:1, turquoise 5.5, ivory on turquoise 6.0, on graphite 7.3.
+   Rose #B54F65 is 4.4:1 on this background: detail colour only, not small text. */
+:root[data-palette="mint"]{
+  --pal-bg:#EEF5F0;--pal-surface:#FFFDF7;--pal-text:#284748;--pal-text-soft:#3A5859;--pal-text-faint:#56706F;
+  --pal-turquoise:#276C68;--pal-discard:#49575F;--pal-heart:#D77E82;--pal-heart-deep:#B54F65;--pal-coffee:#8A4B2D;
 }
 
 /* ---------- App shell ---------- */
@@ -111,7 +149,6 @@
 :is(.mano-app,.mano-sheet-body,.native-sheet),:is(.mano-app,.mano-sheet-body,.native-sheet) *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 :is(.mano-app,.mano-sheet-body,.native-sheet) img{-webkit-user-drag:none}
 :is(.mano-app,.mano-sheet-body,.native-sheet) :is(input:not([type=checkbox]):not([type=range]),textarea,[contenteditable=true]){-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
-.mano-app:before{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;background:url('/assets/paper.png') center/480px;opacity:.025;mix-blend-mode:screen}
 .on-device{padding-top:calc(env(safe-area-inset-top) + var(--cw-space-2));padding-bottom:calc(env(safe-area-inset-bottom) + var(--cw-space-2))}
 :where(.mano-app,.mano-sheet-body,.native-sheet) button{font:inherit;color:inherit;-webkit-tap-highlight-color:transparent;touch-action:manipulation;cursor:pointer}
 .mano-app button:focus-visible,.mano-app select:focus-visible,.mano-app [tabindex]:not([tabindex="-1"]):focus-visible{outline:3px solid var(--cw-focus);outline-offset:3px}
@@ -119,7 +156,9 @@
 .mano-app [tabindex="-1"]:focus{outline:none}
 .mano-app button:disabled{opacity:.42;cursor:default}
 .mano-app svg{flex-shrink:0}
-.paper{background:var(--cw-paper) url('/assets/paper.png') center/480px;color:var(--cw-ink)}
+/* One paper for Polaroids, the tour and the round's summary: ivory with the
+   grain kept as a whisper (an 82 % ivory veil over the texture). */
+.paper{background:linear-gradient(color-mix(in srgb,var(--pal-surface) 82%,transparent),color-mix(in srgb,var(--pal-surface) 82%,transparent)),url('/assets/paper.png') center/480px;background-color:var(--pal-surface);color:var(--cw-ink)}
 .sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .spinner{animation:cw-spin .9s linear infinite}@keyframes cw-spin{to{transform:rotate(360deg)}}
 .session-content{display:flex;flex-direction:column;flex:1;min-height:0;animation:cw-rise var(--cw-slow) var(--cw-ease) both}
@@ -128,27 +167,40 @@
 /* ---------- Shared buttons ---------- */
 /* Header actions (Filtros, Terminar): one size, one weight, white on teal.
    Equal minimum widths keep the outer columns balanced around the name. */
-.header-action{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:var(--cw-touch);padding:0 12px;
-  border:var(--cw-sticker-cream) solid var(--cw-cream);border-radius:var(--cw-radius-pill);background:var(--cw-chrome);color:var(--cw-cream)!important;box-shadow:var(--cw-sticker);
-  font:600 1rem/1 var(--cw-font-brand)!important;letter-spacing:.01em;white-space:nowrap;-webkit-text-stroke:3px var(--cw-outline);paint-order:stroke fill}
+.header-action{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:var(--cw-touch);padding:0 14px;
+  border:1px solid var(--cw-line-on-bg);border-radius:var(--cw-radius-pill);background:var(--cw-surface);color:var(--cw-on-bg)!important;
+  font:600 .9375rem/1 var(--cw-font)!important;white-space:nowrap;transition:background-color var(--cw-fast) var(--cw-ease)}
 .header-filters{justify-self:start}
 /* Every pressable gets the same tactile response */
 :where(.mano-app,.mano-sheet-body) button{transition:transform var(--cw-fast) var(--cw-ease),background-color var(--cw-base) var(--cw-ease),opacity var(--cw-base) var(--cw-ease)}
 :where(.mano-app,.mano-sheet-body) button:not(:disabled):active{transform:scale(.97)}
 
-/* Sticker controls sink onto their ink base when pressed and settle back. */
-.mano-app :is(.header-action,.segmented,.tool-icon){transition:transform var(--cw-slow) var(--cw-ease-settle),box-shadow var(--cw-slow) var(--cw-ease-settle)}
-.mano-app .header-action:not(:disabled):active,.mano-app .archive-tools>button:not(:disabled):active .tool-icon{transform:translateY(var(--cw-bar-base));box-shadow:var(--cw-sticker-ring);transition-duration:.05s}
-.mano-app .archive-tools>button:not(:disabled):active{transform:none}
-.mano-app :is(.header-action,.archive-tools>button):disabled{opacity:1}
-.mano-app .header-action:disabled,.mano-app .archive-tools>button:disabled .tool-icon{box-shadow:var(--cw-sticker-ring);transform:translateY(var(--cw-bar-base))}
-.mano-app .archive-tools>button:disabled :is(.tool-icon>*,.tool-label){opacity:.42}
-.mano-app .header-action:disabled>*{opacity:.42}
+/* Tools answer a press with a quiet tint, not travel: they stay subordinate
+   to the decision bar, the only pieces that sink onto a base. */
+.mano-app .header-action:not(:disabled):active{transform:none;background:color-mix(in srgb,var(--pal-text) 7%,var(--cw-surface))}
+.mano-app .archive-tools>button:not(:disabled):active{transform:none;background:var(--cw-press)}
+.mano-app :is(.header-action,.archive-tools>button):disabled{opacity:.38}
 
 /* ---------- Brand + notices ---------- */
 /* minmax(0,1fr) keeps both side columns equal even when «Terminar» carries its
    count, so «CocoWash» is centred on the screen, not in the leftover gap. */
 .archive-header{position:relative;z-index:50;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:var(--cw-space-2);min-height:var(--cw-header);flex-shrink:0}
+/* Sorting screen: one quiet toolbar — Filtros · progress · Terminar. The name
+   stays as the (visually hidden) heading that also anchors the notices; the
+   full wordmark is kept for brand moments (end of round, tour). */
+.archive-header.is-session{grid-template-columns:auto minmax(0,1fr) auto;gap:var(--cw-space-3)}
+.archive-header.is-session{container-type:inline-size}
+/* Very narrow headers (large text, small widths): Filtros keeps its icon and its
+   spoken name, the visible word steps aside so the count never collides. */
+@container (max-width:330px){
+  .is-session .header-filters{padding:0 12px}
+  .is-session .header-filters>span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .is-session .pile-meter{min-width:24px}
+}
+.header-center{position:relative;min-width:0;height:var(--cw-header);display:flex;align-items:center}
+.header-center .header-brand{position:absolute;inset:0;pointer-events:none}
+.header-center .brand-status{height:100%;min-width:0}
+.header-center .brand-status>div{pointer-events:auto}
 .header-brand{margin:0;display:grid;place-items:center;height:var(--cw-header)}.header-brand:focus{outline:none}
 .brand-status{position:relative;display:grid;place-items:center;min-width:96px;height:var(--cw-header)}
 /* Name, not isotype: same weight as the side controls' labels' cap height, a
@@ -157,13 +209,15 @@
 /* Wordmark (Chrome.tsx): white «Coco», pink «Wash», ink line, cream margin, ink contour, ink base. */
 .wordmark{display:block;overflow:visible}
 .wordmark text{font-family:var(--cw-font-brand);font-weight:600;letter-spacing:-.01em;stroke-linejoin:round;paint-order:stroke fill}
-.wm-base,.wm-outer{fill:var(--cw-outline);stroke:var(--cw-outline);stroke-width:14.5px}
-.wm-cream{fill:var(--cw-cream);stroke:var(--cw-cream);stroke-width:9.5px}
-.wm-face{fill:var(--cw-white);stroke:var(--cw-outline);stroke-width:3.5px}
+/* Lighter on the cream frame (0.9): no base, thinner contour and margin. */
+.wm-base{display:none}
+.wm-outer{fill:var(--cw-outline);stroke:var(--cw-outline);stroke-width:10px}
+.wm-cream{fill:var(--cw-cream);stroke:var(--cw-cream);stroke-width:6.5px}
+.wm-face{fill:var(--cw-white);stroke:var(--cw-outline);stroke-width:3px}
 .wm-face .wm-wash{fill:var(--cw-pink)}
 .brand-status>div{position:absolute;z-index:60;top:calc(var(--cw-header) + var(--cw-stack));left:-200px;right:-200px;margin-inline:auto;display:flex;align-items:center;gap:var(--cw-icon-gap);
   width:max-content;max-width:min(280px,calc(100vw - var(--cw-space-12)));min-height:var(--cw-space-10);padding:var(--cw-space-2) var(--cw-space-4);
-  background:var(--cw-paper);color:var(--cw-ink);border-radius:var(--cw-radius-pill);box-shadow:var(--cw-shadow-2);
+  background:var(--cw-surface);color:var(--cw-ink);border-radius:var(--cw-radius-pill);box-shadow:var(--cw-shadow-card);
   font:500 var(--cw-text-sm)/1.3 var(--cw-font);text-align:center}
 .brand-status.has-error>div{background:var(--cw-error-bg);color:var(--cw-error-ink);padding-right:var(--cw-space-1);border-radius:var(--cw-radius-md)}
 .notice-dot{width:8px;height:8px;border-radius:50%;background:var(--cw-coconut-deep);flex-shrink:0}
@@ -171,20 +225,23 @@
 
 /* ---------- Session header + progress ---------- */
 .finish{justify-self:end}
-/* What «Terminar» will ask to delete: a graphite badge, Eliminar's colour, pinned to the corner. */
-.finish-count{position:absolute;top:-12px;right:-10px;min-width:26px;height:26px;padding:0 6px;display:grid;place-items:center;border:2px solid var(--cw-cream);border-radius:var(--cw-radius-pill);
-  background:var(--cw-graphite);color:var(--cw-cream);box-shadow:var(--cw-tag-ring);font:600 .8125rem/1 var(--cw-font-brand);-webkit-text-stroke:0;font-variant-numeric:tabular-nums}
+/* What «Terminar» will ask to delete: an inline graphite chip with the trash
+   (Eliminar's colour and icon), so the number reads as «N para eliminar». */
+.finish-count{display:inline-flex;align-items:center;gap:3px;height:22px;padding:0 7px 0 6px;border-radius:var(--cw-radius-pill);background:var(--cw-graphite);color:var(--cw-surface);
+  font:600 .75rem/1 var(--cw-font);font-variant-numeric:tabular-nums}
+.finish:has(.finish-count){padding-right:7px}
 .header-spacer{justify-self:end;min-width:var(--cw-touch)}
-/* Pile progress (Chrome.tsx): a sticker trough that fills with the sponge
-   turquoise, and the count on its own tag. Not pressable: no base. */
-.archive-progress{display:flex;align-items:center;gap:10px;flex-shrink:0;margin-top:var(--cw-space-3);min-height:28px;padding-inline:3px}
-.pile-meter{position:relative;flex:1;height:14px;border:3px solid var(--cw-cream);border-radius:var(--cw-radius-pill);background:var(--cw-teal-950);box-shadow:var(--cw-tag-ring);overflow:hidden}
-.pile-meter-fill{position:absolute;inset:0 auto 0 0;background:var(--cw-turquoise-light);border-radius:var(--cw-radius-pill);box-shadow:1.5px 0 0 var(--cw-outline);transition:width var(--cw-slow) var(--cw-ease)}
-.pile-count{display:inline-flex;align-items:baseline;flex-shrink:0;padding:5px 9px 4px;border:2px solid var(--cw-cream);border-radius:var(--cw-radius-pill);background:var(--cw-chrome);box-shadow:var(--cw-tag-ring);
-  font:600 .8125rem/1 var(--cw-font-brand);color:var(--cw-cream);font-variant-numeric:tabular-nums}
-.pile-count .pile-slash,.pile-count .is-total{color:var(--cw-on-bg-soft)}
+/* Pile progress (Chrome.tsx): sits in the session header between Filtros and
+   Terminar. A thin track and the count as plain figures: readable at a glance,
+   never a protagonist. */
+.archive-progress{display:flex;align-items:center;gap:var(--cw-space-2);flex-shrink:0;margin-top:var(--cw-space-2);min-height:24px}
+.header-progress{flex:1;display:flex;align-items:center;gap:var(--cw-space-2);min-width:0;padding-inline:2px}
+.pile-meter{position:relative;flex:1;min-width:48px;height:6px;border-radius:var(--cw-radius-pill);background:var(--cw-track);overflow:hidden}
+.pile-meter-fill{position:absolute;inset:0 auto 0 0;background:var(--cw-turquoise);border-radius:var(--cw-radius-pill);transition:width var(--cw-slow) var(--cw-ease)}
+.pile-count{display:inline-flex;align-items:baseline;flex-shrink:0;font:500 .8125rem/1 var(--cw-font);color:var(--cw-on-bg);font-variant-numeric:tabular-nums}
+.pile-count .pile-slash,.pile-count .is-total{color:var(--cw-on-bg-faint)}
 .animated-number{position:relative;display:inline-flex;overflow:hidden;line-height:1.15;vertical-align:bottom;font-variant-numeric:tabular-nums}.animated-number>span{display:inline-block}
-.access-indicator{position:relative;display:inline-flex;align-items:center;gap:var(--cw-space-1);min-height:26px;padding:0 var(--cw-space-2);margin:calc(-1*var(--cw-space-1)) 0;border:2px solid var(--cw-cream);border-radius:var(--cw-radius-pill);background:var(--cw-chrome);box-shadow:var(--cw-tag-ring);color:var(--cw-cream);font:600 .75rem/1 var(--cw-font-brand)!important;white-space:nowrap}
+.access-indicator{position:relative;display:inline-flex;align-items:center;gap:var(--cw-space-1);min-height:26px;padding:0 var(--cw-space-2);border:1px solid var(--cw-line-on-bg);border-radius:var(--cw-radius-pill);background:var(--cw-surface);color:var(--cw-on-bg);font:500 .75rem/1 var(--cw-font)!important;white-space:nowrap}
 .access-indicator:after{content:'';position:absolute;inset:calc(-1*var(--cw-space-2))}
 
 /* ---------- Card stack ---------- */
@@ -197,12 +254,13 @@
    offset by a percentage `translate` (XCTest saw a 44 pt button as 202x159 pt),
    which also misplaces VoiceOver focus and activation. */
 .photo-card{position:absolute;box-sizing:border-box;max-width:100%;padding:var(--cw-card-side) var(--cw-card-side) var(--cw-caption);border-radius:var(--cw-radius-xs);
-  transform-origin:50% 60%;box-shadow:var(--cw-shadow-1);touch-action:none;cursor:grab;transition:width var(--cw-base) var(--cw-ease),height var(--cw-base) var(--cw-ease),box-shadow var(--cw-base) var(--cw-ease)}
-.photo-card.front{box-shadow:var(--cw-shadow-2)}
+  transform-origin:50% 60%;box-shadow:var(--cw-shadow-card-back);touch-action:none;cursor:grab;transition:width var(--cw-base) var(--cw-ease),height var(--cw-base) var(--cw-ease),box-shadow var(--cw-base) var(--cw-ease)}
+.photo-card.front{box-shadow:var(--cw-shadow-card)}
+
 /* Videos: a tape-black frame with a slimmer foot (no caption; the OSD carries
    the data). Same 8 px sides, so both identities share one proportion system. */
-.photo-card.tape{padding-bottom:var(--cw-space-4);background:linear-gradient(180deg,var(--cw-tape-top),var(--cw-tape));color:var(--cw-osd);box-shadow:var(--cw-shadow-1),inset 0 0 0 1px rgba(255,255,255,.05)}
-.photo-card.tape.front{box-shadow:var(--cw-shadow-2),inset 0 0 0 1px rgba(255,255,255,.06)}
+.photo-card.tape{padding-bottom:var(--cw-space-4);background:linear-gradient(180deg,var(--cw-tape-top),var(--cw-tape));color:var(--cw-osd);box-shadow:var(--cw-shadow-card-back),inset 0 0 0 1px rgba(255,255,255,.05)}
+.photo-card.tape.front{box-shadow:var(--cw-shadow-card),inset 0 0 0 1px rgba(255,255,255,.06)}
 .photo-card.tape .photo-window{background:var(--cw-tape-edge)}
 .photo-card.is-lifted{transition:none}
 /* Polaroid margin: two fixed slots. Place always reads left, date always right;
@@ -217,14 +275,14 @@
 .zoom-access:focus-visible{opacity:1;pointer-events:auto;transform:none}
 /* Modo Geek only: an explicit data control, mirroring the select mark. */
 .geek-access{position:absolute;right:var(--cw-space-1);top:var(--cw-space-1);z-index:2;width:var(--cw-touch);height:var(--cw-touch);display:grid;place-items:center;border:0;background:transparent;color:var(--cw-white)}
-.geek-access:before{content:'';position:absolute;inset:var(--cw-space-2);border-radius:50%;background:var(--cw-chrome);border:2px solid var(--cw-cream);box-shadow:var(--cw-tag-ring)}
+.geek-access:before{content:'';position:absolute;inset:10px;border-radius:50%;background:color-mix(in srgb,var(--pal-text) 35%,transparent);border:1.5px solid var(--cw-surface)}
 .geek-access>svg{position:relative}
 .photo-card:not(.front){pointer-events:none}
 /* Selected: a white frame (selection is neither a decision nor a favourite). */
 .photo-card.picked:before{content:"";position:absolute;inset:-6px;border:3px solid var(--cw-select);border-radius:7px;pointer-events:none}
 .photo-window{width:100%;height:100%;min-height:0;overflow:hidden;display:flex;align-items:center;justify-content:center;background:transparent;border-radius:1px}
 .photo-window img{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none}
-.photo-loading{height:100%;width:100%;display:flex;gap:var(--cw-space-2);flex-direction:column;align-items:center;justify-content:center;background:var(--cw-teal-700);color:var(--cw-on-bg-soft);font-size:var(--cw-text-sm)}
+.photo-loading{height:100%;width:100%;display:flex;gap:var(--cw-space-2);flex-direction:column;align-items:center;justify-content:center;background:var(--cw-track);color:var(--cw-on-bg-soft);font-size:var(--cw-text-sm)}
 .photo-loading button{display:flex;align-items:center;gap:var(--cw-icon-gap);min-height:var(--cw-touch);padding:0 var(--cw-space-4);border:0;border-radius:var(--cw-radius-pill);background:var(--cw-paper);color:var(--cw-ink);font-weight:600}
 .tape .photo-loading{background:var(--cw-tape-edge)}
 /* Swipe feedback: the card edge takes the colour of the stamp it is about to receive */
@@ -234,10 +292,11 @@
 .hand-space.favorite .photo-card.front:after{border-color:var(--cw-stamp-favorite)}
 .hand-space.later .photo-card.front:after{border-color:var(--cw-stamp-later)}
 /* On-card controls: small visible marks inside full 44px hit areas */
-.pick-toggle{position:absolute;left:var(--cw-space-1);top:var(--cw-space-1);width:var(--cw-touch);height:var(--cw-touch);display:grid;place-items:center;border:0;background:transparent;color:var(--cw-white)}
-.pick-toggle:before{content:'';position:absolute;inset:var(--cw-space-2);border-radius:50%;background:var(--cw-chrome);border:2px solid var(--cw-cream);box-shadow:var(--cw-tag-ring);transition:background var(--cw-base) var(--cw-ease)}
+.pick-toggle{position:absolute;left:var(--cw-space-1);top:var(--cw-space-1);width:var(--cw-touch);height:var(--cw-touch);display:grid;place-items:center;border:0;background:transparent;color:var(--cw-surface)}
+/* Only in groups (one card: the decision already targets it). A light ring over the photo. */
+.pick-toggle:before{content:'';position:absolute;inset:10px;border-radius:50%;background:color-mix(in srgb,var(--pal-text) 35%,transparent);border:1.5px solid var(--cw-surface);transition:background var(--cw-base) var(--cw-ease)}
 .pick-toggle>svg{position:relative;opacity:.8}
-.pick-toggle.selected:before{background:var(--cw-cream)}.pick-toggle.selected>svg{opacity:1;color:var(--cw-outline)}
+.pick-toggle.selected:before{background:var(--cw-turquoise)}.pick-toggle.selected>svg{opacity:1;color:var(--cw-surface)}
 .photo-card:not(.front) .pick-toggle{display:none}
 .media-play{position:absolute;left:var(--cw-space-3);bottom:calc(var(--cw-caption) + var(--cw-space-1));display:flex;align-items:center;gap:var(--cw-space-1);min-height:32px;padding:0 var(--cw-space-3);border:0;border-radius:var(--cw-radius-pill);background:rgba(18,45,46,.78);color:var(--cw-white);font:500 var(--cw-text-xs) var(--cw-font-mono);letter-spacing:.06em}
 .media-play:after{content:'';position:absolute;inset:-6px}
@@ -265,17 +324,15 @@
 .decision-stamp.is-discard{width:160px}.decision-stamp.is-favorite{width:108px}.decision-stamp.is-later{width:168px}
 /* Group of similar photos */
 .bundle-arrival{position:absolute;top:0;left:0;right:0;margin-inline:auto;width:fit-content;z-index:40;display:flex;align-items:center;gap:var(--cw-icon-gap);height:28px;padding:0 var(--cw-space-3);white-space:nowrap;
-  color:var(--cw-ink);background:var(--cw-cream);border:2px solid var(--cw-cream);border-radius:var(--cw-radius-pill);font:600 .8125rem/1 var(--cw-font-brand);box-shadow:var(--cw-tag-ring);pointer-events:none;transition:opacity var(--cw-base) var(--cw-ease)}
+  color:var(--cw-ink);background:var(--cw-surface);border:1px solid var(--cw-line-on-bg);border-radius:var(--cw-radius-pill);font:600 .8125rem/1 var(--cw-font);pointer-events:none;transition:opacity var(--cw-base) var(--cw-ease)}
 .mano-app:has(.brand-status.has-message) .bundle-arrival{opacity:0}
-.bundle-flash{position:absolute;z-index:-1;inset:10px 8px 0;background:radial-gradient(ellipse,var(--cw-paper-dim),transparent 70%);border-radius:50%;pointer-events:none}
 .bundle-controls{display:flex;flex-shrink:0;justify-content:center;min-height:0}
 .bundle-controls:has(button){min-height:var(--cw-touch);margin-top:var(--cw-space-2)}
-.segmented{display:flex;align-items:center;border:var(--cw-sticker-cream) solid var(--cw-cream);border-radius:var(--cw-radius-pill);background:var(--cw-chrome);box-shadow:var(--cw-sticker);overflow:hidden}
-.segmented button{display:flex;align-items:center;gap:6px;min-height:38px;padding:0 var(--cw-space-4);border:0;background:transparent;color:var(--cw-cream);font:600 .9375rem/1 var(--cw-font-brand);-webkit-text-stroke:2.5px var(--cw-outline);paint-order:stroke fill}
-.segmented button+button{border-left:var(--cw-sticker-ink) solid var(--cw-outline)}
-.mano-app .segmented button:not(:disabled):active{transform:none;background:var(--cw-teal-800)}
-.segmented svg{color:var(--cw-cream)}
-.selection-caption{flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:var(--cw-space-1);min-height:var(--cw-space-6);font:600 .875rem/1 var(--cw-font-brand);color:var(--cw-cream)}
+.segmented{display:flex;align-items:center;border:1px solid var(--cw-line-on-bg);border-radius:var(--cw-radius-pill);background:var(--cw-surface);overflow:hidden}
+.segmented button{display:flex;align-items:center;gap:6px;min-height:var(--cw-touch);padding:0 var(--cw-space-4);border:0;background:transparent;color:var(--cw-on-bg);font:600 .875rem/1 var(--cw-font)}
+.segmented button+button{border-left:1px solid var(--cw-line-on-bg)}
+.mano-app .segmented button:not(:disabled):active{transform:none;background:var(--cw-press)}
+.selection-caption{flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:var(--cw-space-1);min-height:var(--cw-space-6);font:600 var(--cw-text-sm)/1 var(--cw-font);color:var(--cw-on-bg)}
 /* With no card on the table, decisions have nothing to act on; keep the space, drop the noise. */
 .mano-app:has(.empty-state) :is(.decision-bar,.archive-tools button:disabled){visibility:hidden}
 
@@ -295,9 +352,11 @@
 .bar-discard .piece-fill{fill:var(--cw-bar-discard)}
 .bar-keep .piece-fill{fill:var(--cw-bar-keep)}
 .bar-heart .piece-fill{fill:var(--cw-heart)}
+/* Heart details in rose: its base (depth) and the «on» keyline. */
+.bar-heart .piece-base{fill:var(--cw-heart-deep);stroke:var(--cw-heart-deep)}
 .heart-gloss{fill:none;stroke:var(--cw-cream);stroke-width:4.5px;stroke-linecap:round}
 /* «Favoritas»: the heart is on — latched onto its base, with a cream keyline. */
-.heart-inner{fill:none;stroke:var(--cw-cream);stroke-width:2.5px;opacity:0}
+.heart-inner{fill:none;stroke:var(--cw-heart-deep);stroke-width:2.5px;opacity:0}
 .is-favorites .heart-inner{opacity:1}.is-favorites .heart-gloss{opacity:0}
 /* Focus follows the silhouette (a box would cross the neighbours). */
 .piece-focus{fill:none;stroke:var(--cw-focus);stroke-width:calc(var(--cw-bar-band-x2) + 7px);stroke-linejoin:round;opacity:0}
@@ -324,15 +383,17 @@
 .bar-piece:disabled{cursor:default}
 .bar-piece:disabled :is(.piece-face,.bar-content){opacity:.42}
 .bar-piece:disabled .piece-base{opacity:0}
-.session-content:has(.armed-later) .archive-tools .later .tool-icon{transform:translateY(-2px);box-shadow:0 0 0 var(--cw-sticker-ink) var(--cw-outline),0 calc(var(--cw-bar-base) + 2px) 0 var(--cw-sticker-ink) var(--cw-outline)}
-.archive-tools{display:grid;grid-template-columns:repeat(3,1fr);align-items:start;flex-shrink:0;padding-top:var(--cw-stack)}
-/* Tools: round stickers. Deshacer and Álbum neutral; «Más tarde», the fourth
-   decision, wears its postmark coffee (same colour as its stamp). */
-.archive-tools>button{justify-self:center;display:flex;flex-direction:column;align-items:center;gap:7px;min-width:76px;padding:0;border:0;background:transparent;color:var(--cw-cream);font:600 .8125rem/1 var(--cw-font-brand)}
-.tool-icon{width:50px;height:50px;display:grid;place-items:center;border-radius:50%;border:var(--cw-sticker-cream) solid var(--cw-cream);background:var(--cw-chrome);color:var(--cw-cream);box-shadow:var(--cw-sticker)}
+/* Dragging the card down arms «Más tarde»: its target tints, nothing jumps. */
+.session-content:has(.armed-later) .archive-tools .later{background:color-mix(in srgb,var(--pal-coffee) 12%,transparent);color:var(--cw-coconut-deep)}
+.archive-tools{display:grid;grid-template-columns:repeat(3,1fr);align-items:center;flex-shrink:0;padding-top:var(--cw-space-3)}
+/* Tools (level 3): icon over label, no discs, no base. A 64 × 52 target each;
+   «Más tarde» keeps its postmark clock in coffee, the one retro accent here. */
+.archive-tools>button{justify-self:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:72px;min-height:52px;padding:4px var(--cw-space-2);border:0;border-radius:var(--cw-radius-md);background:transparent;color:var(--cw-on-bg-soft);font:500 var(--cw-text-xs)/1.1 var(--cw-font)}
+.tool-icon{width:28px;height:28px;display:grid;place-items:center;color:var(--cw-on-bg)}
 /* «Más tarde» wears its postmark: coffee clock on ivory, the centre of the bar. */
-.archive-tools .later .tool-icon{width:58px;height:58px;background:var(--cw-coconut-deep);color:var(--cw-cream)}
-.archive-tools .later .decision-icon path{stroke-width:2.6}
+.archive-tools .later .tool-icon{color:var(--cw-coconut-deep)}
+/* Same line weight as the neighbouring Phosphor icons (~1.5 px at 24). */
+.archive-tools .decision-icon path{stroke-width:1.6}
 
 /* ---------- Empty states ---------- */
 .empty-state{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 var(--cw-space-5)}
@@ -369,7 +430,7 @@
 .inspection-photo img{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;transform-origin:50% 50%}
 .inspection-media{width:100%;height:100%;transform-origin:50% 50%}
 .inspection-media>img{position:absolute;inset:0}
-.inspection-photo>span:not(.cloud-download){display:grid;place-items:center;gap:var(--cw-space-2);min-height:100%;color:var(--cw-on-bg-soft);font-size:var(--cw-text-sm)}
+.inspection-photo>span:not(.cloud-download){display:grid;place-items:center;gap:var(--cw-space-2);min-height:100%;color:var(--cw-on-dark-soft);font-size:var(--cw-text-sm)}
 .inspection-photo>span button{min-height:var(--cw-touch);padding:0 var(--cw-space-4);border:0;border-radius:var(--cw-radius-pill);background:var(--cw-paper);color:var(--cw-ink)}
 .inspection.is-pinned .inspection-photo:focus-visible{outline:3px solid var(--cw-focus);outline-offset:3px}
 /* One dock, bottom centre, within thumb reach. --anchor (0–1) is finger proximity. */
@@ -389,7 +450,7 @@
 /* No text-transform: WebKit exposes transformed text to VoiceOver and XCTest. */
 .geek-panel strong{font:500 var(--cw-text-xs) var(--cw-font-mono);letter-spacing:.08em;color:var(--cw-pink-text)}
 .geek-panel dl{margin:var(--cw-space-2) 0}.geek-panel dl>div{display:grid;grid-template-columns:96px 1fr;gap:var(--cw-space-3);padding:var(--cw-space-1) 0;border-bottom:1px solid rgba(242,231,213,.1)}
-.geek-panel dt{color:var(--cw-on-bg-soft)}.geek-panel dd{margin:0;overflow-wrap:anywhere;font-family:var(--cw-font-mono)}.geek-panel small{color:var(--cw-on-bg-soft);font-size:var(--cw-text-xs)}
+.geek-panel dt{color:var(--cw-on-dark-soft)}.geek-panel dd{margin:0;overflow-wrap:anywhere;font-family:var(--cw-font-mono)}.geek-panel small{color:var(--cw-on-dark-soft);font-size:var(--cw-text-xs)}
 .inspection-fallback{position:absolute;inset:0;margin:auto;height:fit-content;display:flex;flex-direction:column;align-items:center;gap:var(--cw-space-3);width:min(300px,80%);text-align:center;color:var(--cw-paper)}
 .inspection-fallback p{margin:0}
 .inspection-fallback button{display:flex;align-items:center;gap:6px;min-height:var(--cw-touch);padding:0 var(--cw-space-4);border:0;border-radius:var(--cw-radius-pill);background:var(--cw-paper);color:var(--cw-ink);font-weight:600}
@@ -535,9 +596,9 @@
    shows where things will be, without a library loaded yet. */
 .onboarding{position:relative;display:flex;flex-direction:column;flex:1;min-height:0}
 .ob-ghost{position:absolute;inset:0;display:flex;flex-direction:column;opacity:.5;pointer-events:none}
-.ob-ghost-pile{flex:1;margin:var(--cw-space-6) var(--cw-space-8) var(--cw-stack);border:2px dashed rgba(255,255,255,.22);border-radius:var(--cw-radius-md)}
+.ob-ghost-pile{flex:1;margin:var(--cw-space-6) var(--cw-space-8) var(--cw-stack);border:2px dashed var(--cw-line-on-bg);border-radius:var(--cw-radius-md)}
 .ob-ghost-buttons{display:grid;grid-template-columns:1fr 1fr;gap:var(--cw-stack)}
-.ob-ghost-buttons span{height:var(--cw-decision);border-radius:var(--cw-radius-lg);background:rgba(255,255,255,.08)}
+.ob-ghost-buttons span{height:var(--cw-decision);border-radius:var(--cw-radius-lg);background:var(--cw-press)}
 .ob-sheet{position:absolute;left:0;right:0;top:calc(var(--cw-header) + var(--cw-space-2));bottom:0;display:flex;flex-direction:column;padding:var(--cw-space-5) var(--cw-space-5) var(--cw-space-3);border-radius:var(--cw-radius-xl);box-shadow:var(--cw-shadow-2);overflow:hidden}
 .ob-progress{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--cw-space-2);flex-shrink:0}
 .ob-progress>span{height:4px;border-radius:2px;background:rgba(18,45,46,.14);overflow:hidden}
@@ -701,7 +762,7 @@
 .video-toggles button{width:var(--cw-touch);height:var(--cw-touch);display:grid;place-items:center;padding:0;border:0;border-radius:50%;background:rgba(15,38,39,.66);color:var(--cw-white);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 .video-toggles button[aria-pressed=true]{background:rgba(15,38,39,.82)}
 .photo-card.tape:has(.video-toggles) .geek-access{top:calc(var(--cw-touch) + var(--cw-space-3))}
-.best-chip{position:absolute;z-index:3;left:50%;top:var(--cw-space-2);transform:translateX(-50%);display:flex;align-items:center;gap:4px;padding:4px var(--cw-space-3);border:2px solid var(--cw-cream);border-radius:var(--cw-radius-pill);background:var(--cw-cream);color:var(--cw-pink-deep);font:600 .8125rem/1 var(--cw-font-brand);box-shadow:var(--cw-tag-ring);pointer-events:none;white-space:nowrap}
+.best-chip{position:absolute;z-index:3;left:50%;top:var(--cw-space-2);transform:translateX(-50%);display:flex;align-items:center;gap:4px;padding:4px var(--cw-space-3);border:1px solid var(--cw-line-on-bg);border-radius:var(--cw-radius-pill);background:var(--cw-surface);color:var(--cw-pink-deep);font:600 .75rem/1 var(--cw-font);pointer-events:none;white-space:nowrap}
 .seal-explainer{display:grid;grid-template-columns:64px 1fr;gap:var(--cw-space-3);align-items:center}
 .seal-explainer p{margin:0;font-size:var(--cw-text-sm);line-height:1.5;color:var(--cw-ink)}
 .seal-sample{width:64px;height:64px;transform:rotate(-8deg);--stamp-fill:var(--cw-paper-light)}
