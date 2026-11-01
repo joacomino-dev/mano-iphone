@@ -2,10 +2,11 @@ export type MediaKind = 'photo' | 'video' | 'live';
 /** `bytes`: what deleting it frees (all its resources), when measured.
  * `screenshot`: screenshots and screen recordings (PhotoKit subtype).
  * `low` / `text`: on-device Vision signals (insights.ts); text 1 = document or
- * screenshot of text, .5 = text with a face (kept last in that filter).
+ * screenshot of text, .5 = text with a face (kept last in that filter);
+ * `quality` −1…1 picks the best shot of a similar group.
  * `cloud`: demonstration only — behaves as if the original were in iCloud. */
 export type Asset = { id: string; kind: MediaKind; date: number; width: number; height: number; duration: number; modified?: number; group?: string; hasLocation?: boolean; demo?: boolean;
-  bytes?: number; screenshot?: boolean; low?: boolean; text?: number; cloud?: boolean };
+  bytes?: number; screenshot?: boolean; low?: boolean; text?: number; quality?: number; cloud?: boolean };
 export type Mark = { level: number; due: number; keptAt: number };
 export type DecisionContext = { handIds: string[]; rotated: string[]; selected: string[]; group?: string; filter?: Filter };
 /** `later` («Más tarde») leaves the marks untouched and moves the item to the

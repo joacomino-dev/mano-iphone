@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type SyntheticEvent } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { PlayIcon, PauseIcon, CornersOutIcon, ArrowClockwiseIcon, GearSixIcon, SpeakerHighIcon, SpeakerSlashIcon, CloudArrowDownIcon } from '@phosphor-icons/react';
+import { PlayIcon, PauseIcon, CornersOutIcon, ArrowClockwiseIcon, GearSixIcon, SpeakerHighIcon, SpeakerSlashIcon, CloudArrowDownIcon, EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
 import type { Asset } from './domain';
 import type { Place } from './library';
 import { videoFailureCopy, type VideoState } from './media';
@@ -26,10 +26,12 @@ const useDocumentVisible = () => {
  * - full: the anchored view opened on purpose — sound, timeline and fullscreen.
  * The element is released when the card leaves; the poster stays underneath.
  * A video only in iCloud (with «Ahorrar iCloud») is not downloaded by itself:
- * its poster, weight and VHS letters stay, and «Descargar y ver» asks for it. */
-export function InlineVideo({ asset, state, active = true, mode = 'card', retry, download, fullscreen, openSettings, meta, place, children }: {
+ * its poster, weight and VHS letters stay, and «Descargar y ver» asks for it.
+ * The card carries two quiet toggles: sound (kept for the session) and the VHS
+ * letters (saved with Ajustes). */
+export function InlineVideo({ asset, state, active = true, mode = 'card', retry, download, fullscreen, openSettings, meta, place, sound = false, onSound, onOsd, children }: {
   asset: Asset; state: VideoState; active?: boolean; mode?: 'card' | 'full'; retry: () => void; download: () => void; fullscreen: () => void; openSettings: () => void;
-  meta?: VideoMeta; place?: Place; children: ReactNode;
+  meta?: VideoMeta; place?: Place; sound?: boolean; onSound?: () => void; onOsd?: () => void; children: ReactNode;
 }) {
   const player = useRef<HTMLVideoElement>(null);
   const reduced = useReducedMotion();
@@ -73,8 +75,8 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
   const wantsPlay = !!url && visible && active && (full || !reduced || chosen);
   useEffect(() => {
     const video = player.current; if (!video || !url) return;
-    if (wantsPlay) start(full); else if (!video.paused) video.pause();
-  }, [wantsPlay, url]);
+    if (wantsPlay) start(full || sound); else if (!video.paused) video.pause();
+  }, [wantsPlay, url, sound]);
 
   const choose = () => { haptic('light'); setChosen(true); start(full); };
   const pause = () => { player.current?.pause(); haptic('soft'); };
@@ -108,6 +110,12 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
       onTimeUpdate={full ? e => setTime(e.currentTarget.currentTime) : e => { if (!time) setTime(e.currentTarget.currentTime); }}
       onError={() => { setPlaying(false); setPlayError(true); }}/>}
     {!full && meta && (meta.date || meta.time || meta.location || meta.duration || meta.size) && <VhsOverlay asset={asset} place={place} settings={meta}/>}
+    {!full && (onSound || onOsd) && <div className="video-toggles">
+      {/* The icon follows what really plays: iOS may refuse sound and fall back
+          to silent. A tap asks for the opposite inside the gesture itself. */}
+      {onSound && <button onPointerDown={stop} onClick={e => { e.stopPropagation(); haptic('selection'); if (url) start(muted); if (muted !== sound) onSound(); }} aria-pressed={!muted} aria-label={muted ? 'Activar sonido' : 'Silenciar'}>{muted ? <SpeakerSlashIcon size={18} weight="bold"/> : <SpeakerHighIcon size={18} weight="bold"/>}</button>}
+      {onOsd && <button onPointerDown={stop} onClick={e => { e.stopPropagation(); haptic('selection'); onOsd(); }} aria-pressed={meta?.osd !== false} aria-label={meta?.osd !== false ? 'Ocultar letras VHS' : 'Mostrar letras VHS'}>{meta?.osd !== false ? <EyeIcon size={18} weight="bold"/> : <EyeSlashIcon size={18} weight="bold"/>}</button>}
+    </div>}
 
     <AnimatePresence initial={false}>
       {(loading || chip) && <motion.div key="center" className="video-center"

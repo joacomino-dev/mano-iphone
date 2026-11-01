@@ -21,6 +21,21 @@ export function categorize(i: Insight): { low: boolean; text: number } {
   return { low, text };
 }
 
+/** One comparable number per photo (−1…1, higher is better) to pick the best
+ * shot of a similar group: Apple's aesthetics score when present, otherwise
+ * sharpness, and any badly exposed frame at the bottom. */
+export function qualityOf(i: Insight): number {
+  if (i.luma < DARK || i.luma > BRIGHT) return -1;
+  return i.score ?? Math.min(1, i.sharp / 300) * 2 - 1;
+}
+/** The clearly best member of a hand of similar photos, or nothing when the
+ * hand is not rated yet or the shots are too close to call. */
+export function bestShot(hand: { id: string; quality?: number }[], margin = .08): string | undefined {
+  const rated = hand.filter(a => typeof a.quality === 'number').sort((a, b) => b.quality! - a.quality!);
+  if (hand.length < 2 || rated.length < hand.length) return undefined;
+  return rated[0].quality! - rated[1].quality! >= margin ? rated[0].id : undefined;
+}
+
 export function validInsight(value: unknown): value is Insight {
   const v = value as Record<string, unknown> | null;
   return !!v && typeof v === 'object' && ['text', 'lines', 'faces', 'sharp', 'luma'].every(k => typeof v[k] === 'number' && Number.isFinite(v[k]));

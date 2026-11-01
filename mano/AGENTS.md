@@ -208,3 +208,29 @@ bundle, keys and permissions; `cocowash-media://` and `native.html` CSP untouche
   note that space returns fully when that album is emptied (30 days). Before
   deleting it says how much the pending discards would free.
 - Version 0.6.0 (build 6).
+
+## CocoWash 0.7 decisions — 31 October 2026 (user feedback after device test, CW-CL-021)
+
+- One icon per decision, shared by button, stamp and tutorial (`DecisionIcon`):
+  Conservar = round seal with check (turquoise); Eliminar = trash can on a dashed
+  graphite ticket (was «Descartar / A DESCARTES»; it still only queues the item —
+  deletion happens in the final review with Photos' confirmation, recoverable
+  until then); Favorita = heart (pink); Más tarde = clock postmark with wavy lines
+  and a white wavy band behind the word.
+- Decision row, one line: Eliminar (←, word, trash) · pink heart-shaped Favorita
+  button (the bold element; neighbours are cut in a curve around it) · Conservar
+  (seal, word, →). The button on the side the card is dragged toward lights up.
+  Bottom bar: Deshacer · Más tarde (centre, ivory with coffee clock) · Álbum, 52 pt.
+- Video cards: sound and VHS-letters toggles (top right). VHS letters are smaller by
+  default and sized in Ajustes (Pequeño / Mediano / Grande).
+- Anchoring an iCloud «vista ligera» keeps the downloaded version on the card.
+- «Descargar siempre»: cards already on the iPhone show first while iCloud ones
+  download behind; a card shown that way stays until decided. While choosing
+  filters, the first cards of the draft warm up.
+- Similar groups: the clearly best shot (Vision rating) goes in front with «Mejor
+  toma» (decided once per group); «Elegir las demás» selects the rest.
+- Seals: explained in Ajustes › Sellos, can be hidden (switch, or tap a seal);
+  smaller (62 pt) and stamped across the card's lower-right edge, off the caption.
+- «Terminar» with items to delete opens «Una última mirada» directly; the
+  celebration appears after «Eliminar» (or after closing the review).
+- Version 0.7.0 (build 7).

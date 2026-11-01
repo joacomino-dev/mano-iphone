@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Asset } from './domain';
 import { Library } from './library';
-import { categorize, validInsight } from './insights';
+import { categorize, qualityOf, validInsight } from './insights';
 
-export type Flags = { low: boolean; text: number };
+export type Flags = { low: boolean; text: number; quality: number };
 export type LibraryIndex = {
   /** Bumps whenever sizes or flags grow; use it as a memo dependency. */
   version: number;
@@ -63,7 +63,7 @@ export function useLibraryIndex(assets: Asset[], fingerprint: string, enabled: b
       try {
         for (let i = 0; i < ids.length && alive; i += VISION_CHUNK) {
           const result = await Library.classify({ ids: ids.slice(i, i + VISION_CHUNK), flush: i + VISION_CHUNK >= ids.length });
-          for (const [id, insight] of Object.entries(result.results)) if (validInsight(insight)) { flags.current.set(id, categorize(insight)); pending = true; }
+          for (const [id, insight] of Object.entries(result.results)) if (validInsight(insight)) { flags.current.set(id, { ...categorize(insight), quality: qualityOf(insight) }); pending = true; }
           if (!alive || result.cancelled) return;
           if (pending && performance.now() - shown > VISION_REFRESH_MS) { shown = performance.now(); pending = false; setVersion(v => v + 1); }
         }
@@ -82,6 +82,6 @@ export function enrich(assets: Asset[], index: Pick<LibraryIndex, 'sizes' | 'fla
   if (!index.sizes.size && !index.flags.size) return assets;
   return assets.map(a => {
     const bytes = index.sizes.get(a.id), flag = index.flags.get(a.id);
-    return bytes === undefined && !flag ? a : { ...a, ...(bytes !== undefined ? { bytes } : {}), ...(flag ? { low: flag.low, text: flag.text } : {}) };
+    return bytes === undefined && !flag ? a : { ...a, ...(bytes !== undefined ? { bytes } : {}), ...(flag ? { low: flag.low, text: flag.text, quality: flag.quality } : {}) };
   });
 }

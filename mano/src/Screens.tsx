@@ -94,14 +94,14 @@ export function SessionDone({ stats, pending, pendingBytes, pendingPartial, life
     </motion.section>}
     {total > 0 ? <motion.dl {...rise(reduced, .18)} className="done-stats">
       <div className="is-keep"><dt>Conservadas</dt><dd><AnimatedNumber value={stats.keep}/></dd></div>
-      <div className="is-discard"><dt>Descartes</dt><dd><AnimatedNumber value={stats.discard}/></dd></div>
+      <div className="is-discard"><dt>{freed ? 'Eliminadas' : 'Para eliminar'}</dt><dd><AnimatedNumber value={stats.discard}/></dd></div>
       <div className="is-favorite"><dt>Favoritas</dt><dd><AnimatedNumber value={stats.favorite}/></dd></div>
     </motion.dl> : !freed && <motion.p {...rise(reduced, .18)}>Tu progreso está a salvo. Sigue cuando quieras.</motion.p>}
     {stats.later > 0 && <motion.p {...rise(reduced, .2)} className="done-later"><ClockCountdownIcon size={18} weight="bold"/>{stats.later.toLocaleString('es')} para más tarde: {stats.later === 1 ? 'te espera' : 'te esperan'} al final de la pila.</motion.p>}
     <motion.div {...rise(reduced, .24)} className="status-actions">
       {pending > 0 && <button className="primary-empty" onClick={review}><EyeIcon size={20} weight="bold"/>Una última mirada ({pending})</button>}
       <button className={pending > 0 ? 'secondary-empty' : 'primary-empty'} onClick={again}>Seguir revisando<CaretRightIcon size={18} weight="bold"/></button>
-      {pending > 0 && <p className="status-hint">{pendingLabel ? <>Si eliminas {pending === 1 ? 'tu descarte' : `tus ${pending} descartes`} liberas {pendingPartial ? 'al menos ' : ''}<strong>{pendingLabel}</strong>. Si no, se guardan para la próxima ronda.</> : <>{pending === 1 ? 'Tu descarte se guarda' : `Tus ${pending} descartes se guardan`} para la próxima ronda si no eliminas ahora.</>}</p>}
+      {pending > 0 && <p className="status-hint">{pendingLabel ? <>Si eliminas {pending === 1 ? 'lo marcado' : `las ${pending} marcadas`} liberas {pendingPartial ? 'al menos ' : ''}<strong>{pendingLabel}</strong>. Si no, se guardan para la próxima ronda.</> : <>Lo marcado para eliminar se guarda para la próxima ronda si no eliminas ahora.</>}</p>}
     </motion.div>
   </main>;
 }

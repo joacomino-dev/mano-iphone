@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
-import { CameraIcon, FilmStripIcon, HandTapIcon, BooksIcon, ImageSquareIcon, CloudArrowDownIcon } from '@phosphor-icons/react';
+import { CameraIcon, FilmStripIcon, HandTapIcon, BooksIcon, ImageSquareIcon, CloudArrowDownIcon, StampIcon } from '@phosphor-icons/react';
 import type { Asset } from './domain';
-import { DATE_FORMATS, formatDate, formatTime, polaroidCaption, type CloudMode, type DateFormat, type DisplaySettings } from './meta';
+import { DATE_FORMATS, formatDate, formatTime, polaroidCaption, type CloudMode, type DateFormat, type DisplaySettings, type OsdSize } from './meta';
+import { Stamp, ROMAN, sealRest } from './Stamp';
 import { VhsOverlay } from './Vhs';
 import { haptic } from './haptics';
 import { PREVIEW_PROFILES, PREVIEW_QUALITIES, type PreviewQuality } from './preview';
@@ -21,6 +22,7 @@ const CLOUD: [CloudMode, string, string][] = [
   ['save', 'Ahorrar iCloud', 'Decides con la vista que ya está en tu iPhone. Solo se descarga al anclar, ampliar o pulsar «Descargar y ver»: no gastas datos ni espacio en lo que vas a borrar.'],
   ['always', 'Descargar siempre', 'Cada carta se descarga con nitidez completa. Más cómodo con buena conexión y espacio libre.'],
 ];
+const OSD_SIZE: [OsdSize, string][] = [['s', 'Pequeño'], ['m', 'Mediano'], ['l', 'Grande']];
 const facts = (q: PreviewQuality) => { const p = PREVIEW_PROFILES[q]; return `Carta hasta ${p.cardMax} px · al ampliar ${p.zoom} px · caché ${p.cacheMB} MB`; };
 const locale = typeof navigator !== 'undefined' ? navigator.language || 'es' : 'es';
 
@@ -61,6 +63,8 @@ export function DisplaySettingsPanel({ display, change, geek, setGeek, library }
       <legend><FilmStripIcon size={18}/>Vídeos · VHS</legend>
       <div className="setting-preview" aria-hidden="true"><div className="mini-vhs"><img src={SAMPLE_PHOTO} alt="" draggable={false}/><VhsOverlay asset={SAMPLE} place={SAMPLE_PLACE} settings={video} label={false}/></div>
         <small>Vista previa</small></div>
+      <Switch label="Letras VHS" hint="También con el ojo sobre cada vídeo." checked={video.osd} change={osd => setVideo({ osd })}/>
+      {video.osd && <Choice label="Tamaño de las letras" value={video.osdSize} options={OSD_SIZE} change={osdSize => setVideo({ osdSize })}/>}
       <Switch label="Fecha" checked={video.date} change={date => setVideo({ date })}/>
       {video.date && <Choice label="Formato de fecha" value={video.dateFormat} options={dateOptions(true)} change={dateFormat => setVideo({ dateFormat })}/>}
       <Switch label="Hora" checked={video.time} change={time => setVideo({ time })}/>
@@ -68,6 +72,15 @@ export function DisplaySettingsPanel({ display, change, geek, setGeek, library }
       <Switch label="Ubicación" checked={video.location} change={location => setVideo({ location })}/>
       <Switch label="Duración" checked={video.duration} change={duration => setVideo({ duration })}/>
       <Switch label="Peso" hint="Lo que liberas si lo eliminas." checked={video.size} change={size => setVideo({ size })}/>
+    </fieldset>
+    <fieldset>
+      <legend><StampIcon size={18}/>Sellos</legend>
+      <div className="seal-explainer">
+        <span className="seal-sample" aria-hidden="true"><Stamp kind="keep" level={2}/></span>
+        <p>Cuando conservas una foto, recibe un <strong>sello</strong> y descansa: no vuelve a aparecer en un tiempo. Si la conservas otra vez, el sello sube de nivel y descansa más, hasta quedarse para siempre. Así cada ronda trae lo que aún no has decidido.</p>
+      </div>
+      <ul className="seal-levels" aria-label="Niveles de sello">{[1, 2, 3, 8].map(level => <li key={level}><strong>{ROMAN[level - 1]}</strong>{sealRest(level)}</li>)}</ul>
+      <Switch label="Mostrar el sello en las fotos" hint="Tócalo sobre una foto para ocultarlos al momento." checked={photo.seal} change={seal => setPhoto({ seal })}/>
     </fieldset>
     <fieldset>
       <legend><ImageSquareIcon size={18}/>Calidad de vista previa</legend>

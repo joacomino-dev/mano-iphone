@@ -51,10 +51,10 @@ export function pixelPath(text: string) {
  * included. If even 1 px is too wide, the optional line (the place) is dropped
  * first. Height may use at most 45 % of the frame so the type never covers the
  * picture. */
-export function fitOsd(lines: string[], right: string | string[] | undefined, box: { width: number; height: number }, optional?: string) {
+export function fitOsd(lines: string[], right: string | string[] | undefined, box: { width: number; height: number }, optional?: string, scale = 1) {
   const column = (Array.isArray(right) ? right : [right]).filter((line): line is string => !!line);
   const pad = Math.max(8, Math.round(Math.min(box.width, box.height) * .045));
-  const target = Math.max(1, Math.min(3, Math.round(Math.min(box.width, box.height * 1.4) / 140 * 2) / 2));
+  const target = Math.max(1, Math.min(3, Math.round(Math.min(box.width, box.height * 1.4) / 140 * 2 * scale) / 2));
   const widthOf = (text: string) => pixelPath(text).width;
   const fits = (set: string[], px: number) => {
     const stack = set.length ? Math.max(...set.map(widthOf)) : 0;

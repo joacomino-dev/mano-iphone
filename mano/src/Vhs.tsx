@@ -1,7 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { Asset } from './domain';
 import type { Place } from './library';
-import { placeLabel, vhsLayout, type VideoMeta } from './meta';
+import { OSD_SCALE, placeLabel, vhsLayout, type VideoMeta } from './meta';
 import { fitOsd, pixelPath } from './pixelfont';
 
 export function PixelText({ text, pixel, className }: { text: string; pixel: number; className?: string }) {
@@ -31,8 +31,9 @@ export function VhsOverlay({ asset, place, settings, label = true }: { asset: As
   const placeLine = settings.location ? placeLabel(place, true, 22) : undefined;
   // Parents re-render on every drag frame; measure the type only when it changes.
   const linesKey = layout.lines.join('|'), rightKey = layout.right.join('|');
-  const fit = useMemo(() => fitOsd(layout.lines, layout.right, box, placeLine), [linesKey, rightKey, box, placeLine]);
-  if (layout.empty) return null;
+  const scale = OSD_SCALE[settings.osdSize] ?? OSD_SCALE.m;
+  const fit = useMemo(() => fitOsd(layout.lines, layout.right, box, placeLine, scale), [linesKey, rightKey, box, placeLine, scale]);
+  if (layout.empty || settings.osd === false) return null;
   const spoken = [...layout.lines, layout.duration ? `duración ${layout.duration}` : '', layout.size ? `pesa ${layout.size.replace('KB', 'kilobytes').replace('MB', 'megabytes').replace('GB', 'gigabytes')}` : ''].filter(Boolean).join(', ');
   return <div ref={host} className="vhs-osd" style={{ '--px': `${fit.pixel}px`, '--vhs-pad': `${fit.pad}px` } as CSSProperties} role={label ? 'img' : undefined} aria-label={label ? spoken : undefined} aria-hidden={label ? undefined : true}>
     <div className="vhs-band">

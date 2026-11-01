@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { initialState, initialFilter, decide, undo, eligible, pileCount, normalizeFilter, validateRecordState, filterScope, nextSessionHand } from '../src/domain.ts';
 import { upcomingSessionAssets } from '../src/preload.ts';
-import { categorize } from '../src/insights.ts';
+import { categorize, qualityOf, bestShot } from '../src/insights.ts';
 import { formatBytes, vhsLayout, defaultDisplay, normalizeDisplay } from '../src/meta.ts';
 import { fitOsd } from '../src/pixelfont.ts';
 
@@ -104,4 +104,14 @@ test('a group member sent to «Más tarde» leaves its hand and comes back alone
   assert.equal(nextSessionHand(assets, all)[0].id, 'x');
   const onlyLater = decide(all, ['x'], 'keep', 4);
   assert.deepEqual(nextSessionHand(assets, onlyLater, initialFilter, 5).map(a => a.id), ['g1', 'g2', 'g3'], 'postponed members regroup once only they remain');
+});
+
+test('best shot: only a clear winner among rated similar photos, exposure first', () => {
+  assert.equal(bestShot([{ id: 'a', quality: .6 }, { id: 'b', quality: .2 }]), 'a');
+  assert.equal(bestShot([{ id: 'a', quality: .25 }, { id: 'b', quality: .2 }]), undefined, 'too close to call');
+  assert.equal(bestShot([{ id: 'a', quality: .6 }, { id: 'b' }]), undefined, 'not rated yet');
+  assert.equal(bestShot([{ id: 'a', quality: .6 }]), undefined);
+  assert.equal(qualityOf({ text: 0, lines: 0, faces: 1, sharp: 900, luma: .02, score: .9 }), -1);
+  assert.equal(qualityOf({ text: 0, lines: 0, faces: 1, sharp: 150, luma: .5 }), 0);
+  assert.equal(qualityOf({ text: 0, lines: 0, faces: 1, sharp: 150, luma: .5, score: .4 }), .4);
 });

@@ -149,7 +149,7 @@ export function Onboarding({ requestAccess, finish }: { requestAccess: () => Pro
             {card.text && <p>{card.text}</p>}
             {card.key === 'how' && <ul className="ob-rows">
               <Row art={<Stamp kind="keep"/>} title={<>Conservar <small>→ derecha</small></>}>Se queda; vuelve luego con más sello.</Row>
-              <Row art={<Stamp kind="discard"/>} title={<>Descartar <small>← izquierda</small></>}>A Descartes. Siempre se recupera.</Row>
+              <Row art={<Stamp kind="discard"/>} title={<>Eliminar <small>← izquierda</small></>}>Se borra al final, solo si confirmas.</Row>
               <Row art={<Stamp kind="favorite"/>} title={<>Favorita <small>↑ arriba</small></>}>Se queda y es favorita en Fotos.</Row>
               <Row art={<Stamp kind="later"/>} title={<>Más tarde <small>↓ abajo</small></>}>¿Dudas? Vuelve al final de la pila.</Row>
             </ul>}

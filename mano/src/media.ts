@@ -26,6 +26,8 @@ function decodePoster(src: string, signal: AbortSignal) {
  * another component's thumbnail. */
 export async function prepareReviewAsset(asset: Asset, signal: AbortSignal): Promise<PreparedMedia> {
   if (signal.aborted) throw aborted();
+  // Demonstration: an «iCloud» item takes a moment to arrive with «Descargar siempre».
+  if (asset.demo && asset.cloud && cloudDownloads()) await simulateDownload(signal, undefined, 2500);
   const { src, cloud } = asset.demo ? await thumbnailInfo(asset, cardPixels(asset)) : await nativeThumbnail(asset, cardPixels(asset), 'review', signal, cloudDownloads());
   await decodePoster(src, signal);
   return { poster: src, cloud };
@@ -64,6 +66,31 @@ function simulateDownload(signal: AbortSignal, onProgress?: (value: number) => v
  * caller can swap it into the same <img> without a blank frame or reframing.
  * Anchoring is asking to look closer, so this one may download from iCloud;
  * `onProgress` lets the view say so while it happens. */
+/** Sharper versions fetched on purpose (anchor/zoom) replace a card's «vista
+ * ligera» for the rest of the session; natively, the card size is also fetched
+ * once with network so the next launch finds it cached on the iPhone. */
+const sharp = new Map<string, string>();
+const sharpListeners = new Set<() => void>();
+const sharpKey = (asset: Pick<Asset, 'id' | 'modified'>) => `${asset.id}:${asset.modified ?? 0}`;
+export const sharpPreview = (asset: Pick<Asset, 'id' | 'modified'>) => sharp.get(sharpKey(asset));
+export function subscribeSharp(listener: () => void) { sharpListeners.add(listener); return () => { sharpListeners.delete(listener); }; }
+function keepSharp(asset: Asset, src: string) {
+  sharp.set(sharpKey(asset), src);
+  for (const listener of sharpListeners) listener();
+  if (!asset.demo && isNative) void thumbnailInfo(asset, cardPixels(asset), false, true).catch(() => {});
+}
+/** Warm the previews the person is about to see (e.g. while choosing filters):
+ * the native disk cache then answers the stack at once. Same network rule as
+ * the cards; never more than a handful. */
+let warming = 0;
+export function prewarm(assets: Asset[]) {
+  // One batch at a time, and only two when that may mean iCloud downloads.
+  if (warming) return;
+  const batch = assets.slice(0, cloudDownloads() ? 2 : 6);
+  warming = batch.length;
+  for (const asset of batch) void thumbnailInfo(asset, cardPixels(asset)).catch(() => {}).finally(() => { warming--; });
+}
+
 let cancelZoom: (() => void) | null = null;
 export async function loadZoomPreview(asset: Asset, signal: AbortSignal, onProgress?: (value: number) => void): Promise<string> {
   cancelZoom?.(); cancelZoom = null;
@@ -72,6 +99,7 @@ export async function loadZoomPreview(asset: Asset, signal: AbortSignal, onProgr
   const src = asset.demo || !isNative ? (await thumbnailInfo(asset, size, false, true)).src : (await nativeThumbnail(asset, size, 'zoom', signal, true, cancel => { cancelZoom = cancel; }, onProgress)).src;
   if (signal.aborted) throw aborted();
   await decodePoster(src, signal);
+  keepSharp(asset, src);
   return src;
 }
 

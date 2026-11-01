@@ -4,8 +4,13 @@ import { normalizeQuality, type PreviewQuality } from './preview.ts';
 
 /** Display preferences only. They never change which files enter a session. */
 export type DateFormat = 'dmy' | 'd-mon-y' | 'mon-d-y' | 'iso';
-export type PhotoMeta = { date: boolean; time: boolean; location: boolean; dateFormat: DateFormat; hour12: boolean };
-export type VideoMeta = { date: boolean; time: boolean; location: boolean; duration: boolean; size: boolean; dateFormat: DateFormat; hour12: boolean };
+/** `seal`: show the keep seal on cards. `osd`: show the VHS letters at all;
+ * `osdSize`: their size (s / m / l), applied on top of the frame fit. */
+export type OsdSize = 's' | 'm' | 'l';
+export const OSD_SIZES: OsdSize[] = ['s', 'm', 'l'];
+export const OSD_SCALE: Record<OsdSize, number> = { s: .6, m: .8, l: 1 };
+export type PhotoMeta = { date: boolean; time: boolean; location: boolean; seal: boolean; dateFormat: DateFormat; hour12: boolean };
+export type VideoMeta = { date: boolean; time: boolean; location: boolean; duration: boolean; size: boolean; osd: boolean; osdSize: OsdSize; dateFormat: DateFormat; hour12: boolean };
 /** iCloud originals: `save` shows what is already on the iPhone and downloads
  * only on request (anchor, zoom, «Descargar y ver»); `always` downloads as needed. */
 export type CloudMode = 'save' | 'always';
@@ -14,8 +19,8 @@ export const DISPLAY_KEY = 'cocowash-display-v1';
 export const ONBOARDING_KEY = 'cocowash-onboarding-v1';
 export const DATE_FORMATS: DateFormat[] = ['dmy', 'd-mon-y', 'mon-d-y', 'iso'];
 export const defaultDisplay: DisplaySettings = {
-  photo: { date: true, time: false, location: true, dateFormat: 'd-mon-y', hour12: false },
-  video: { date: true, time: true, location: true, duration: true, size: true, dateFormat: 'mon-d-y', hour12: true },
+  photo: { date: true, time: false, location: true, seal: true, dateFormat: 'd-mon-y', hour12: false },
+  video: { date: true, time: true, location: true, duration: true, size: true, osd: true, osdSize: 'm', dateFormat: 'mon-d-y', hour12: true },
   haptics: true,
   quality: 'balanced',
   cloud: 'save',
@@ -29,6 +34,7 @@ export function normalizeDisplay(value: unknown): DisplaySettings {
     for (const [key, fallback] of Object.entries(base)) {
       const candidate = source[key];
       if (key === 'dateFormat') out[key] = DATE_FORMATS.includes(candidate as DateFormat) ? candidate : fallback;
+      else if (key === 'osdSize') out[key] = OSD_SIZES.includes(candidate as OsdSize) ? candidate : fallback;
       else if (typeof fallback === 'boolean' && typeof candidate === 'boolean') out[key] = candidate;
     }
     return out as T;

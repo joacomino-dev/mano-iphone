@@ -1,13 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type PointerEvent, type MouseEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type PointerEvent, type MouseEvent } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { FolderOpenIcon, FolderSimplePlusIcon, CaretRightIcon, CaretLeftIcon, ArrowCounterClockwiseIcon, ArrowUUpLeftIcon, HeartStraightIcon, StackIcon, TrashIcon, CheckIcon, XIcon, PlayIcon, SlidersHorizontalIcon, ArrowClockwiseIcon, ImageBrokenIcon, PlusIcon, PushPinIcon, InfoIcon, TrayArrowDownIcon, SealCheckIcon, ClockCountdownIcon, CloudIcon, CloudArrowDownIcon } from '@phosphor-icons/react';
+import { FolderOpenIcon, FolderSimplePlusIcon, CaretRightIcon, CaretLeftIcon, ArrowCounterClockwiseIcon, ArrowUUpLeftIcon, HeartStraightIcon, StackIcon, TrashIcon, CheckIcon, XIcon, PlayIcon, SlidersHorizontalIcon, ArrowClockwiseIcon, ImageBrokenIcon, PlusIcon, PushPinIcon, InfoIcon, CloudIcon, CloudArrowDownIcon, SparkleIcon } from '@phosphor-icons/react';
 import { BottomSheet, Carousel, KeyboardInput, useKeyboard } from './mobile';
 import { decide, undo, restore, eligible, nextSessionHand, readState, reconcileLibrary, libraryFingerprint, filterScope, LEVELS, initialFilter, initialState, type Action, type Asset, type Decision, type Filter, type RecordState } from './domain';
 import { Library, isNative, demoAssets, thumbnailInfo, inCloudError, type Album, type PhotoPermission } from './library';
 import { useLibraryIndex, enrich } from './indexer';
 import { AssetPreloader, upcomingSessionAssets, type PreloadSnapshot } from './preload';
-import { prepareReviewAsset, VideoStore, type PreparedMedia, type VideoState } from './media';
+import { prepareReviewAsset, VideoStore, prewarm, sharpPreview, subscribeSharp, type PreparedMedia, type VideoState } from './media';
+import { bestShot } from './insights';
 import { InlineVideo } from './InlineVideo';
 import { Filters } from './Filters';
 import { Inspector, type InspectOrigin } from './Inspector';
@@ -21,7 +22,7 @@ import { AccessScreen, PreparingScreen, LoadErrorScreen, SessionDone, EMPTY_STAT
 import { DisplaySettingsPanel } from './DisplaySettings';
 import { InspectorBoundary } from './Boundary';
 import { installErrorReporting } from './diagnostics';
-import { Stamp, DecisionStamp, ROMAN, type StampKind } from './Stamp';
+import { Stamp, DecisionStamp, DecisionIcon, ROMAN, type StampKind } from './Stamp';
 import { Character } from './Characters';
 import { assignToAlbum, afterAlbum } from './album';
 import { cardBox, cardPixels, thumbPixels, setPreviewSizing, cloudDownloads } from './preview';
@@ -51,6 +52,8 @@ function savedGroups(items: Asset[]) {
 function Photo({ asset, small=false, prepared, lite=false, quiet=false }: { asset: Asset; small?: boolean; prepared?:string; lite?: boolean; quiet?: boolean }) {
   const [src, setSrc] = useState(''); const [error, setError] = useState(false); const [retry, setRetry] = useState(0);
   const [cloud, setCloud] = useState<'lite'|'missing'|null>(null); const [fetch, setFetch] = useState(false);
+  // Anchored once and downloaded: that sharper version stays on the card.
+  const upgraded = useSyncExternalStore(subscribeSharp, () => sharpPreview(asset));
   // A lite poster prepared under «Ahorrar iCloud» is not reused once the person
   // switched to «Descargar siempre».
   const always = cloudDownloads(); const usePrepared = !!prepared && retry===0 && !fetch && !(lite && always);
@@ -62,6 +65,7 @@ function Photo({ asset, small=false, prepared, lite=false, quiet=false }: { asse
   const stop=(e:{stopPropagation:()=>void})=>e.stopPropagation();
   // A cached file may have been pruned natively (preview cache limit): ask once
   // for a fresh one before showing the error.
+  if (upgraded) return <img src={upgraded} alt={asset.kind === 'video' ? 'Vista previa de vídeo' : 'Foto del carrete'} draggable={false}/>;
   if (src&&!error) return <><img onError={()=>retry===0?setRetry(1):setError(true)} src={src} alt={asset.kind === 'video' ? 'Vista previa de vídeo' : 'Foto del carrete'} draggable={false}/>
     {cloud==='lite'&&!small&&!quiet&&<span className="cloud-chip"><CloudIcon size={13} weight="bold"/>iCloud · vista ligera</span>}</>;
   if (cloud==='missing'&&!fetch) return <div className="photo-loading is-cloud">{quiet ? null : <><CloudIcon size={26}/><span>En iCloud</span>{!small&&<button onPointerDown={stop} onClick={e=>{stop(e);setFetch(true);}}><CloudArrowDownIcon size={16} weight="bold"/>Descargar vista previa</button>}</>}</div>;
@@ -77,9 +81,11 @@ function PolaroidCaption({ asset, settings, place, pending }: { asset: Asset; se
     {caption.when&&<span className="caption-when">{caption.when}</span>}
   </span>;
 }
-/** Kept before: the turquoise seal carries its level (times kept) as a numeral. */
-function Seal({ level }: { level: number }) {
-  return <span className="seal" role="img" aria-label={`Conservada, sello ${ROMAN[level-1]} de ${LEVELS.length}`}><Stamp kind="keep" level={level}/></span>;
+/** Kept before: the turquoise seal carries its level (times kept) as a numeral.
+ * Stamped across the card's lower-right edge, off the subject; a tap hides all
+ * seals (Ajustes › Sellos brings them back). */
+function Seal({ level, hide }: { level: number; hide: () => void }) {
+  return <button className="seal" aria-label={`Conservada, sello ${ROMAN[level-1]} de ${LEVELS.length}. Ocultar los sellos`} onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();hide();}}><Stamp kind="keep" level={level}/></button>;
 }
 function Sheet({ open, close, title, description, children, error, returnTo }: { open: boolean; close: () => void; title: string; description: string; children: ReactNode; error?: string; returnTo: string }) {
   const bodyRef=useRef<HTMLDivElement>(null); const previousDialog=useRef<Element|null>(null);
@@ -178,7 +184,7 @@ export function ManoApp() {
   const waitPrepared=(pool:AssetPreloader<PreparedMedia>,first:string[])=>new Promise<void>(resolve=>{
     let unsubscribe=()=>{};let done=false;
     const finish=()=>{if(done)return;done=true;unsubscribe();warmWait.current=null;resolve();};
-    unsubscribe=pool.subscribe(snapshot=>{const wanted=snapshot.items.filter(i=>first.includes(i.id));if(snapshot.completed===snapshot.total||(wanted.length&&wanted.every(i=>i.status==='ready'||i.status==='error')))queueMicrotask(finish);});warmWait.current=finish;
+    unsubscribe=pool.subscribe(snapshot=>{const wanted=snapshot.items.filter(i=>first.includes(i.id));if(snapshot.completed===snapshot.total||(wanted.length&&wanted.every(i=>i.status==='ready'||i.status==='error'))||(cloudDownloads()&&snapshot.items.some(i=>i.status==='ready')))queueMicrotask(finish);});warmWait.current=finish;
   });
   const cancelWarmup=()=>{sessionNumber.current++;warmingNow.current=false;prepareWindow([],String(sessionNumber.current));warmWait.current?.();setWarming(false);setLoading(false);const groups=deferredGroups.current;if(groups){deferredGroups.current=null;setAssets(prev=>prev.map(a=>({...a,group:groups.get(a.id)})));}};
   useEffect(()=>{document.title='CocoWash · Lo que importa, se queda';installErrorReporting();},[]);
@@ -205,7 +211,30 @@ export function ManoApp() {
   // A member sent to «Más tarde» leaves the pinned group (it waits at the end).
   const pinned=bundleAnchor?.filterKey===filterKey?queue.filter(a=>bundleAnchor.members.includes(a.id)&&!state.later.includes(a.id)).slice(0,5):[];
   const revisited=revisit.map(id=>assets.find(a=>a.id===id)).filter((a):a is Asset=>!!a&&!state.pending.includes(a.id)&&!state.removed.includes(a.id)&&!state.favorites.includes(a.id));
-  const baseHand=revisited.length?revisited:pinned.length?pinned:sessionHand;
+  // «Descargar siempre»: cards already on the iPhone come first while iCloud
+  // ones download behind (preload window); a card shown this way stays until
+  // decided, so nothing is swapped under the finger. Invisible to the person.
+  const readyIds=useMemo(()=>new Set(prepared.items.filter(i=>i.status==='ready'||i.status==='error').map(i=>i.id)),[prepared]);
+  const [promoted,setPromoted]=useState<string|null>(null);
+  const promotedAsset=promoted?queue.find(a=>a.id===promoted):undefined;
+  const always=display.cloud==='always';
+  useEffect(()=>{
+    if(!always||!session){if(promoted)setPromoted(null);return;}
+    if(promotedAsset)return;
+    const first=sessionHand[0];
+    if(!first||sessionHand.length>1||readyIds.has(first.id)){if(promoted)setPromoted(null);return;}
+    const ready=preloadWindow.current.find(a=>a.id!==first.id&&!a.group&&readyIds.has(a.id)&&queue.some(q=>q.id===a.id));
+    setPromoted(ready?.id??null);
+  },[always,session,sessionHand[0]?.id,sessionHand.length,readyIds,!!promotedAsset]);
+  const natural=revisited.length?revisited:pinned.length?pinned:promotedAsset?[promotedAsset]:sessionHand;
+  // Similar group: the clearly best shot (Vision) goes in front.
+  // Decided once, when the group arrives: ratings that land later never swap
+  // the front card under the person.
+  const bestFor=useRef<{key:string;best?:string}>({key:''});
+  const groupKey=natural.length>1?`${natural[0].group??''}|${filterKey}`:'';
+  if(bestFor.current.key!==groupKey)bestFor.current={key:groupKey,best:groupKey?bestShot(natural):undefined};
+  const best=natural.some(a=>a.id===bestFor.current.best)?bestFor.current.best:undefined;
+  const baseHand=best?[natural.find(a=>a.id===best)!,...natural.filter(a=>a.id!==best)]:natural;
   const bundleKey=baseHand.length>1?baseHand[0].group??null:null;
   const anchorKey=pinned.length?bundleAnchor!.group:baseHand.length>1?baseHand[0]?.group??null:null;
   useEffect(()=>{if(anchorKey&&(bundleAnchor?.group!==anchorKey||bundleAnchor?.filterKey!==filterKey))setBundleAnchor({group:anchorKey,filterKey,members:queue.filter(a=>a.group===anchorKey).map(a=>a.id)});else if(!anchorKey&&bundleAnchor)setBundleAnchor(null);},[anchorKey,filterKey,bundleAnchor?.group,bundleAnchor?.filterKey]);
@@ -227,6 +256,8 @@ export function ManoApp() {
   useEffect(()=>{const persist=()=>saveSession(sessionKey,latest.current);document.addEventListener('visibilitychange',persist);window.addEventListener('pagehide',persist);return()=>{persist();document.removeEventListener('visibilitychange',persist);window.removeEventListener('pagehide',persist);};},[sessionKey]);
   const openFilters=()=>{setError('');setSheet('filters');};
   const active=hand[0]; const targetIds=selected.filter(id=>hand.some(a=>a.id===id)); const targets=targetIds.length?targetIds:active?[active.id]:[];
+  // «Elegir las demás»: everything but the best shot, ready for «Eliminar».
+  const others=(best?hand.filter(a=>a.id!==best):hand).map(a=>a.id);const allPicked=others.length>0&&targetIds.length===others.length&&others.every(id=>targetIds.includes(id));
   const reviewAssets=assets.filter(a=>state.pending.includes(a.id));
   // What «Eliminar N» would free; partial while weights are still being measured.
   const reviewBytes=useMemo(()=>({bytes:reviewAssets.reduce((n,a)=>n+(a.bytes??0),0),partial:reviewAssets.some(a=>!a.bytes)}),[reviewAssets.map(a=>`${a.id}:${a.bytes??0}`).join('|')]);
@@ -254,10 +285,14 @@ export function ManoApp() {
     } while(deferredGroups.current);
     warmingNow.current=false;setWarming(false);setSession(true);resumeContext.current=undefined;setSessionOpen(true);analysisStarted.current='';
   };
-  const closeSession=()=>{resumeContext.current=undefined;cancelWarmup();cancel();setSheet(null);setSession(false);setSessionOpen(false);setSelected([]);setRotated([]);setRevisit([]);setBundleAnchor(null);setState(s=>({...s,history:[]}));setShowDone(true);haptic('success');};
+  // «Terminar»: with items marked to delete, the last look comes first; the
+  // celebration waits until «Eliminar» (or until the review is closed).
+  const closeSession=()=>{const review=state.pending.length>0;resumeContext.current=undefined;cancelWarmup();cancel();setSheet(review?'review':null);setSession(false);setSessionOpen(false);setSelected([]);setRotated([]);setRevisit([]);setBundleAnchor(null);setState(s=>({...s,history:[]}));setShowDone(true);haptic(review?'light':'success');};
   /** The decision itself (shared by swipes, buttons and album saves): one
    * undoable history entry, stats, and the move to the next card. */
-  const SPOKEN={keep:'Conservada',discard:'En Descartes, recuperable',favorite:'Favorita',later:'Para más tarde: vuelve al final'} as const;
+  const SPOKEN={keep:'Conservada',discard:'Para eliminar; se borra solo al confirmar',favorite:'Favorita',later:'Para más tarde: vuelve al final'} as const;
+  const [videoSound,setVideoSound]=useState(false);
+  const hideSeals=()=>{setDisplay(d=>({...d,photo:{...d.photo,seal:false}}));haptic('selection');setNotice('Sellos ocultos. Vuelven en Ajustes › Sellos.');};
   const record=(action:Action,ids:string[],apply=(s:RecordState)=>decide(s,ids,action,Date.now(),context))=>{
     setState(apply);setRevisit(previous=>previous.filter(id=>!ids.includes(id)));setPinnedInspect(false);setInspect(null);setSelected([]);setRotated([]);
     setStats(previous=>({...previous,[action]:previous[action]+ids.length}));setDecidedHere(previous=>new Set([...previous,...ids]));
@@ -365,7 +400,7 @@ export function ManoApp() {
   const allowed=permission==='authorized'||permission==='limited';
   // No landing page: once onboarded and allowed, the session (or its resume) starts by itself.
   useEffect(()=>{if(onboarded&&allowed&&connected&&!session&&!showDone&&!warming&&!loading&&!loadError)void beginSession();},[onboarded,allowed,connected,session,showDone,warming,loading,loadError]);
-  useEffect(()=>{setDecidedHere(new Set());},[filterKey]);
+  useEffect(()=>{setDecidedHere(new Set());setPromoted(null);},[filterKey]);
   const frontVideo=useVideoStore(getVideos,active);
   const placeWanted=(a:Asset)=>a.kind==='video'?display.video.location:display.photo.location;
   const frontPlace=usePlace(active,!!active&&placeWanted(active));
@@ -385,14 +420,14 @@ export function ManoApp() {
   else if(permission==='unknown')screen=loadError?<LoadErrorScreen message={loadError} retry={()=>{initialLibrary.current=null;loadLibrary();}}/>:<PreparingScreen/>;
   else if(!allowed)screen=<AccessScreen status={permission} request={()=>void requestAccess()} openSettings={openSettings}/>;
   else if(loadError)screen=<LoadErrorScreen message={loadError} retry={()=>{initialLibrary.current=null;loadLibrary();}}/>;
-  else if(!session)screen=showDone?<div className="session-content">{doneHeader}<SessionDone stats={stats} pending={pending} pendingBytes={reviewBytes.bytes} pendingPartial={reviewBytes.partial} lifetime={lifetime.bytes} again={()=>{setShowDone(false);setNotice('');}} review={()=>{setError('');setSheet('review');}}/></div>:<PreparingScreen cancel={()=>{cancelWarmup();setShowDone(true);}}/>;
+  else if(!session)screen=showDone&&sheet==='review'?<div className="session-content">{doneHeader}<main className="status-screen is-quiet"><Character pose="memo-cards" height={120} motion="still"/><p className="status-line">Una última mirada antes de terminar.</p></main></div>:showDone?<div className="session-content">{doneHeader}<SessionDone stats={stats} pending={pending} pendingBytes={reviewBytes.bytes} pendingPartial={reviewBytes.partial} lifetime={lifetime.bytes} again={()=>{setShowDone(false);setNotice('');}} review={()=>{setError('');setSheet('review');}}/></div>:<PreparingScreen cancel={()=>{cancelWarmup();setShowDone(true);}}/>;
   else screen=<div className="session-content" inert={pinnedInspect}>
     {/* «Terminar» ends the round: the summary keeps pending discards and offers the review. */}
-    <header className="archive-header">{filtersButton}{brand}<button id="review-trigger" className="header-action finish" disabled={busy} onClick={()=>{cancel();setError('');closeSession();}}><span>Terminar</span>{pending>0&&<><span className="finish-count" aria-hidden="true"><AnimatedNumber value={pending}/></span><span className="sr-only">, {pending} descarte{pending===1?'':'s'}</span></>}</button></header>
+    <header className="archive-header">{filtersButton}{brand}<button id="review-trigger" className="header-action finish" disabled={busy} onClick={()=>{cancel();setError('');closeSession();}}><span>Terminar</span>{pending>0&&<><span className="finish-count" aria-hidden="true"><AnimatedNumber value={pending}/></span><span className="sr-only">, {pending} para eliminar</span></>}</button></header>
     <div className="archive-progress">{limited&&<button className="access-indicator" onClick={()=>void manageLimited()}><InfoIcon size={14} weight="bold"/>Acceso limitado</button>}<progress value={scope.reviewed} max={Math.max(1,scope.total)} aria-label={`Revisados ${scope.reviewed} de ${scope.total} con estos filtros`}/><span className="progress-count" aria-hidden="true"><AnimatedNumber value={scope.reviewed}/><span>/</span><AnimatedNumber value={scope.total} className="is-total"/></span></div>
     <section ref={stage} className={`hand-space ${currentColor}`} aria-label="Pila de recuerdos">
-      {!connected?<div className="empty-state"><Character pose="coqui-wave" height={140} className="empty-character"/><h2>Tu carrete, en tus manos.</h2><p>Revisa, conserva y ordena tus recuerdos. Nada se borra sin tu confirmación.</p><button className="primary-empty" onClick={connect} disabled={loading}>{loading?'Abriendo Fotos…':'Abrir mi biblioteca'}</button><small>Todo se analiza en tu iPhone.</small></div>:!active?<div className="empty-state"><Character pose={scope.total?'memo-calm':'memo-wonder'} height={120} className="empty-character" motion="sway"/><h2>{scope.total?'Todo en su sitio.':'Nada con estos filtros.'}</h2><p>{pending?'Tus descartes te esperan al pulsar Terminar.':scope.total?'No quedan fotos pendientes con estos filtros.':'Prueba con otras fechas o con todo el contenido.'}</p><button className="primary-empty" onClick={()=>{setSheetTab('filters');setSheet('filters');}}>Cambiar filtros</button>{!demo&&<button className="text-button" onClick={connect}>Actualizar biblioteca</button>}</div>:<div className="polaroid-stack" data-testid="photo-hand">
-        <AnimatePresence>{bundleKey&&<motion.div className="bundle-arrival" key={bundleKey} initial={reduced?false:{opacity:0,scale:.94,y:-6}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{duration:.24,ease:[.2,.8,.2,1]}} role="status"><StackIcon size={15} weight="bold"/><span>{hand.length} parecidas</span></motion.div>}</AnimatePresence>
+      {!connected?<div className="empty-state"><Character pose="coqui-wave" height={140} className="empty-character"/><h2>Tu carrete, en tus manos.</h2><p>Revisa, conserva y ordena tus recuerdos. Nada se borra sin tu confirmación.</p><button className="primary-empty" onClick={connect} disabled={loading}>{loading?'Abriendo Fotos…':'Abrir mi biblioteca'}</button><small>Todo se analiza en tu iPhone.</small></div>:!active?<div className="empty-state"><Character pose={scope.total?'memo-calm':'memo-wonder'} height={120} className="empty-character" motion="sway"/><h2>{scope.total?'Todo en su sitio.':'Nada con estos filtros.'}</h2><p>{pending?'Lo marcado para eliminar te espera al pulsar Terminar.':scope.total?'No quedan fotos pendientes con estos filtros.':'Prueba con otras fechas o con todo el contenido.'}</p><button className="primary-empty" onClick={()=>{setSheetTab('filters');setSheet('filters');}}>Cambiar filtros</button>{!demo&&<button className="text-button" onClick={connect}>Actualizar biblioteca</button>}</div>:<div className="polaroid-stack" data-testid="photo-hand">
+        <AnimatePresence>{bundleKey&&<motion.div className="bundle-arrival" key={bundleKey} initial={reduced?false:{opacity:0,scale:.94,y:-6}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{duration:.24,ease:[.2,.8,.2,1]}} role="status"><StackIcon size={15} weight="bold"/><span>{hand.length} parecidas{best?' · la mejor delante':''}</span></motion.div>}</AnimatePresence>
         {bundleKey&&!reduced&&<motion.div key={`flash-${bundleKey}`} className="bundle-flash" initial={{opacity:0}} animate={{opacity:[0,.14,0]}} transition={{duration:.5}}/>}
         <AnimatePresence custom={lastDecision}>{[...hand].reverse().map(asset=>{const tape=asset.kind==='video';const {cardWidth,cardHeight}=cardBox(stageSize,asset);const index=hand.indexOf(asset),picked=targetIds.includes(asset.id),angle=index===0?0:index%2?3+index:-3-index;
           const kindLabel=asset.kind==='video'?'Vídeo':asset.kind==='live'?'Live Photo':'Foto';const lifting=index===0&&!!inspect&&inspect.id===asset.id;
@@ -402,22 +437,30 @@ export function ManoApp() {
             transition={reduced?{duration:0}:{type:'spring',stiffness:380,damping:34}}
             onPointerDown={e=>start(e,asset)} onPointerMove={move} onPointerUp={end} onPointerCancel={cancel}
             tabIndex={index===0?0:-1} aria-hidden={index!==0} aria-label={`${kindLabel} ${index+1} de ${hand.length}${picked?', seleccionada':''}. Intro para ver la siguiente; espacio para seleccionar.`} onKeyDown={e=>{if(e.target!==e.currentTarget)return;if(e.key===' '){e.preventDefault();select(asset.id);}if(e.key==='Enter'){e.preventDefault();index===0?cycle():select(asset.id);}}}>
-            <div className="photo-window">{tape&&index===0?<InlineVideo key={asset.id} asset={asset} state={frontVideo} active={!inspect&&!sheet} retry={()=>getVideos().retry(asset)} download={()=>getVideos().download(asset)} fullscreen={()=>void play(asset)} openSettings={openSettings} meta={display.video} place={frontPlace}><Photo asset={asset} quiet prepared={preloader.current?.get(asset)?.poster}/></InlineVideo>:<Photo asset={asset} quiet={tape} prepared={preloader.current?.get(asset)?.poster} lite={preloader.current?.get(asset)?.cloud}/>}</div>
+            <div className="photo-window">{tape&&index===0?<InlineVideo key={asset.id} asset={asset} state={frontVideo} active={!inspect&&!sheet} retry={()=>getVideos().retry(asset)} download={()=>getVideos().download(asset)} fullscreen={()=>void play(asset)} openSettings={openSettings} meta={display.video} place={frontPlace} sound={videoSound} onSound={()=>setVideoSound(v=>!v)} onOsd={()=>setDisplay(d=>({...d,video:{...d.video,osd:!d.video.osd}}))}><Photo asset={asset} quiet prepared={preloader.current?.get(asset)?.poster}/></InlineVideo>:<Photo asset={asset} quiet={tape} prepared={preloader.current?.get(asset)?.poster} lite={preloader.current?.get(asset)?.cloud}/>}</div>
             {index===0&&!tape&&<PolaroidCaption asset={asset} settings={display.photo} place={frontPlace} pending={display.photo.location&&!!asset.hasLocation&&frontPlace===undefined}/>}
             <button tabIndex={index===0?0:-1} className={`pick-toggle ${picked?'selected':''}`} aria-label={`${picked?'Deseleccionar':'Seleccionar'} ${kindLabel.toLowerCase()} ${index+1}`} aria-pressed={picked} onPointerDown={e=>e.stopPropagation()} onClick={()=>{haptic('selection');select(asset.id);}}><CheckIcon size={16} weight="bold"/></button>
             {index===0&&<button className="zoom-access" onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();openPinned(asset,e.currentTarget.closest('article')!);}}><PushPinIcon size={16} weight="bold"/>Anclar</button>}
             {index===0&&filter.geek&&<button className="geek-access" aria-label="Ver datos del archivo" onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();openPinned(asset,e.currentTarget.closest('article')!);}}><InfoIcon size={18} weight="bold"/></button>}
-            {state.marks[asset.id]&&<Seal level={state.marks[asset.id].level}/>}{asset.kind==='live'&&<button className="media-play" onPointerDown={e=>e.stopPropagation()} onClick={()=>play(asset)} aria-label="Reproducir Live Photo"><PlayIcon weight="fill" size={14}/>LIVE</button>}
+            {index===0&&asset.id===best&&<span className="best-chip"><SparkleIcon size={13} weight="fill"/>Mejor toma</span>}
+            {display.photo.seal&&state.marks[asset.id]&&<Seal level={state.marks[asset.id].level} hide={hideSeals}/>}{asset.kind==='live'&&<button className="media-play" onPointerDown={e=>e.stopPropagation()} onClick={()=>play(asset)} aria-label="Reproducir Live Photo"><PlayIcon weight="fill" size={14}/>LIVE</button>}
           </motion.article>;
         })}</AnimatePresence>
         {currentColor&&<span className={`drag-stamp ${currentColor}`} style={{opacity:Math.min(1,.4+Math.max(Math.abs(drag.x),Math.abs(drag.y))/120)}}><Stamp kind={currentColor}/></span>}
         {flash&&<DecisionStamp key={flash.key} kind={flash.kind} reduced={!!reduced} done={()=>setFlash(f=>f?.key===flash.key?null:f)}/>}
       </div>}
     </section>
-    <div className="bundle-controls">{hand.length>1?<div className="segmented"><button onClick={()=>{haptic('selection');setSelected(targetIds.length===hand.length?[]:hand.map(a=>a.id));}}>{targetIds.length===hand.length?'Quitar selección':'Elegir todas'}</button><button onClick={cycle} aria-label="Ver la siguiente foto del grupo"><ArrowClockwiseIcon size={16}/>Siguiente</button></div>:null}</div>
+    <div className="bundle-controls">{hand.length>1?<div className="segmented"><button onClick={()=>{haptic('selection');setSelected(allPicked?[]:others);}}>{allPicked?'Quitar selección':best?'Elegir las demás':'Elegir todas'}</button><button onClick={cycle} aria-label="Ver la siguiente foto del grupo"><ArrowClockwiseIcon size={16}/>Siguiente</button></div>:null}</div>
     <AnimatePresence>{targetIds.length>0&&<motion.div className="selection-caption" initial={reduced?false:{opacity:0,y:-4}} animate={{opacity:1,y:0}} exit={{opacity:0}} transition={{duration:.16}}><CheckIcon size={14} weight="bold"/>{targetIds.length} seleccionada{targetIds.length===1?'':'s'}</motion.div>}</AnimatePresence>
-    <div className="decision-buttons"><button className="discard" disabled={!active||busy} onClick={()=>act('discard')}><CaretLeftIcon className="edge" size={16} weight="bold"/><TrayArrowDownIcon size={20} weight="bold"/><span>Descartar</span></button><button className="keep" disabled={!active||busy} onClick={()=>act('keep')}><SealCheckIcon className="mark" size={20} weight="bold"/><span>Conservar</span><CaretRightIcon className="edge" size={16} weight="bold"/></button></div>
-    <footer className="archive-tools"><button onClick={undoLast} disabled={busy||!state.history.length} aria-label={state.history.length?'Deshacer la última decisión':'Nada que deshacer'}><span className="tool-icon"><ArrowUUpLeftIcon size={22}/></span><span>Deshacer</span></button><button className="later" aria-label={targets.length>1?`Dejar ${targets.length} para más tarde`:'Dejar para más tarde'} disabled={!active||busy} onClick={()=>act('later')}><span className="tool-icon"><ClockCountdownIcon size={22} weight="bold"/></span><span>Más tarde</span></button><button className="favorite" aria-label={targets.length>1?`Añadir ${targets.length} a Favoritos`:'Añadir a Favoritos'} disabled={!active||busy} onClick={()=>act('favorite')}><span className="tool-icon"><HeartStraightIcon size={22} weight="bold"/></span><span>Favorita</span></button><button id="album-trigger" onClick={openAlbums} disabled={!active||busy}><span className="tool-icon"><FolderSimplePlusIcon size={22}/></span><span>Álbum</span></button></footer>
+    {/* One row, the same icon and colour as each swipe's stamp: Eliminar (←) ·
+        the pink heart, the invitation to keep favourites · Conservar (→). The
+        button on the side the card is dragged toward lights up. */}
+    <div className={`decision-buttons ${currentColor?`armed-${currentColor}`:''}`}>
+      <button className="discard" aria-label={targets.length>1?`Eliminar ${targets.length}`:'Eliminar'} disabled={!active||busy} onClick={()=>act('discard')}><CaretLeftIcon className="edge" size={16} weight="bold"/><span>Eliminar</span><DecisionIcon kind="discard"/></button>
+      <button className="heart" aria-label={targets.length>1?`Añadir ${targets.length} a Favoritos`:'Añadir a Favoritos'} disabled={!active||busy} onClick={()=>act('favorite')}><svg viewBox="0 0 100 92" aria-hidden="true" focusable="false"><path d="M50 86C20 64 5 48 5 30 5 16 16 5 30 5c9 0 16 5 20 12 4-7 11-12 20-12 14 0 25 11 25 25 0 18-15 34-45 56z"/><path className="heart-line" d="M50 74C27 57 16 45 16 31c0-8 6-15 14-15 7 0 13 5 20 13 7-8 13-13 20-13 8 0 14 7 14 15 0 14-11 26-34 43z"/></svg></button>
+      <button className="keep" aria-label={targets.length>1?`Conservar ${targets.length}`:'Conservar'} disabled={!active||busy} onClick={()=>act('keep')}><DecisionIcon kind="keep"/><span>Conservar</span><CaretRightIcon className="edge" size={16} weight="bold"/></button>
+    </div>
+    <footer className="archive-tools"><button onClick={undoLast} disabled={busy||!state.history.length} aria-label={state.history.length?'Deshacer la última decisión':'Nada que deshacer'}><span className="tool-icon"><ArrowUUpLeftIcon size={22}/></span><span>Deshacer</span></button><button className="later" aria-label={targets.length>1?`Dejar ${targets.length} para más tarde`:'Dejar para más tarde'} disabled={!active||busy} onClick={()=>act('later')}><span className="tool-icon"><DecisionIcon kind="later" size={24}/></span><span>Más tarde</span></button><button id="album-trigger" onClick={openAlbums} disabled={!active||busy}><span className="tool-icon"><FolderSimplePlusIcon size={22}/></span><span>Álbum</span></button></footer>
     </div>;
   const libraryActions=<>
     <button className="sheet-action secondary" onClick={()=>void analyze(true)} disabled={analyzing}>{analyzing?<><CocoLoader size={22} progress={progress.total?progress.done/progress.total:undefined}/>Buscando parecidas…</>:'Buscar fotos parecidas'}</button>
@@ -427,27 +470,27 @@ export function ManoApp() {
     <button className="sheet-action quiet" onClick={()=>{setSheet(null);setOnboarded(false);}}>Ver la introducción otra vez</button>
     <p className="sheet-fine">Todo se analiza en tu iPhone. Las fotos de iCloud pueden necesitar conexión.</p>
   </>;
-  const recoverAll=()=>{setState(s=>({...s,pending:[],history:s.history.filter(d=>d.action!=='discard')}));setSpoken('Todos los descartes recuperados');haptic('soft');};
+  const recoverAll=()=>{setState(s=>({...s,pending:[],history:s.history.filter(d=>d.action!=='discard')}));setSpoken('Todo recuperado');haptic('soft');};
   // Long press never opens the system menu or loupe; text fields keep theirs.
   const blockMenu=(e:MouseEvent)=>{if(!(e.target as HTMLElement).closest('input,textarea'))e.preventDefault();};
   return <div ref={root} className={`mano-app ${isNative?'on-device':''} ${session?'in-session':'on-screen'}`} onContextMenu={blockMenu}>
     {screen}
     <p className="sr-only" role="status" aria-live="polite">{spoken}</p>
-    <AnimatePresence>{inspect&&<InspectorBoundary key={inspect.id} close={closeInspect}><Inspector asset={inspect} src={preloader.current?.get(inspect)?.poster} pinned={pinnedInspect} origin={inspectOrigin.current} drag={peek} anchor={anchor} armed={overHook} geek={!!filter.geek} close={closeInspect} pin={()=>{setPinnedInspect(true);haptic('rigid');}}
+    <AnimatePresence>{inspect&&<InspectorBoundary key={inspect.id} close={closeInspect}><Inspector asset={inspect} src={sharpPreview(inspect)??preloader.current?.get(inspect)?.poster} pinned={pinnedInspect} origin={inspectOrigin.current} drag={peek} anchor={anchor} armed={overHook} geek={!!filter.geek} close={closeInspect} pin={()=>{setPinnedInspect(true);haptic('rigid');}}
       video={inspect.kind==='video'&&inspect.id===active?.id?{state:frontVideo,retry:()=>getVideos().retry(inspect),download:()=>getVideos().download(inspect),fullscreen:()=>void play(inspect),openSettings}:undefined}/></InspectorBoundary>}</AnimatePresence>
     <Sheet open={sheet==='filters'} close={()=>setSheet(null)} title="Filtros y ajustes" description={sheetTab==='filters'?'Elige qué fotos entran en la pila.':'Elige cómo se ven tus recuerdos.'} error={error} returnTo="filter-trigger">
       <div className="sheet-tabs" role="group" aria-label="Sección"><button aria-pressed={sheetTab==='filters'} onClick={()=>{haptic('selection');setSheetTab('filters');}}>Filtros</button><button aria-pressed={sheetTab==='settings'} onClick={()=>{haptic('selection');setSheetTab('settings');}}>Ajustes</button></div>
       <div hidden={sheetTab!=='filters'}>
-        <Filters filter={filter} assets={assets} state={state} index={{sized:index.sized,total:rawAssets.length,analyzed:index.analyzed,photos:index.photos,measuring:index.measuring,analyzing:index.analyzing}} apply={value=>{resumeContext.current=undefined;setFilter(f=>({...value,geek:f.geek}));setSelected([]);setRotated([]);setRevisit([]);setBundleAnchor(null);setSheet(null);haptic('light');setNotice('Filtros actualizados');}}/>
+        <Filters filter={filter} assets={assets} state={state} preview={draft=>prewarm(eligible(assets,state,draft,Date.now(),seed.current))} index={{sized:index.sized,total:rawAssets.length,analyzed:index.analyzed,photos:index.photos,measuring:index.measuring,analyzing:index.analyzing}} apply={value=>{resumeContext.current=undefined;setFilter(f=>({...value,geek:f.geek}));setSelected([]);setRotated([]);setRevisit([]);setBundleAnchor(null);setSheet(null);haptic('light');setNotice('Filtros actualizados');}}/>
         {demo&&<button className="sheet-action secondary" onClick={()=>{setState(initialState());setStats(EMPTY_STATS);setSessionOpen(false);setSession(false);setShowDone(false);setRevisit([]);setFilter(initialFilter);setSelected([]);setRotated([]);setSheet(null);setNotice('Demostración reiniciada');}}>Reiniciar demostración</button>}
       </div>
       <div hidden={sheetTab!=='settings'}><DisplaySettingsPanel display={display} change={setDisplay} geek={!!filter.geek} setGeek={value=>setFilter(f=>({...f,geek:value}))} library={libraryActions}/></div>
     </Sheet>
     <Sheet open={sheet==='albums'} close={()=>setSheet(null)} title="Guardar en un álbum" description="Se conserva y pasa a la siguiente. También sigue en tu carrete." error={error} returnTo="album-trigger"><p className="sheet-intro"><strong>{targets.length}</strong> seleccionada{targets.length>1?'s':''}</p><button className="album-row album-new" onClick={()=>setCreatingAlbum(v=>!v)} disabled={busy}><span className="row-icon"><PlusIcon size={20} weight="bold"/></span>Crear álbum nuevo</button>{creatingAlbum&&<div className="new-album"><label className="field">Nombre del álbum<AlbumInput value={newAlbum} change={setNewAlbum}/></label><button className="sheet-action" onClick={createAlbum} disabled={busy||!newAlbum.trim()}>Crear y añadir {targets.length} elemento{targets.length===1?'':'s'}</button></div>}{albums.map(a=><button className="album-row" key={a.id} onClick={()=>addAlbum(a)} disabled={busy}><span className="row-icon"><FolderOpenIcon size={20}/></span>{a.title}<CaretRightIcon size={16} weight="bold"/></button>)}</Sheet>
-    <Sheet open={sheet==='review'} close={()=>setSheet(null)} title="Una última mirada" description="Recupera lo que quieras conservar antes de eliminar." error={error} returnTo="filter-trigger"><p className="sheet-intro">{reviewAssets.length?<><strong>{reviewAssets.length} descarte{reviewAssets.length===1?'':'s'}</strong>{freeLabel&&<> · liberarías {reviewBytes.partial?'al menos ':''}<strong>{freeLabel}</strong></>}. Aún no se ha borrado nada.</>:'No tienes descartes pendientes.'}</p>
-      {reviewAssets.length>0&&<><p className="review-hint">Mantén pulsada una foto y deslízala a la derecha para recuperarla.</p><Carousel ariaLabel="Revisar descartes" draggingEnabled={false} className="review-carousel"><div className="review-grid">{reviewAssets.map(a=><article key={a.id} className="review-card paper" onPointerDown={e=>start(e,a,true)} onPointerMove={move} onPointerUp={end} onPointerCancel={cancel} style={gesture.current?.id===a.id?{transform:`translateX(${Math.max(0,drag.x)}px)`}:undefined}><div className="review-photo"><Photo asset={a} small/></div><button className="recover-button" onPointerDown={e=>e.stopPropagation()} onClick={()=>{setState(s=>restore(s,a.id));setSpoken('Elemento recuperado');}}><ArrowCounterClockwiseIcon size={16}/>Recuperar</button></article>)}</div></Carousel>
+    <Sheet open={sheet==='review'} close={()=>setSheet(null)} title="Una última mirada" description="Recupera lo que quieras conservar antes de eliminar." error={error} returnTo="filter-trigger"><p className="sheet-intro">{reviewAssets.length?<><strong>{reviewAssets.length} para eliminar</strong>{freeLabel&&<> · liberarías {reviewBytes.partial?'al menos ':''}<strong>{freeLabel}</strong></>}. Aún no se ha borrado nada.</>:'No hay nada marcado para eliminar.'}</p>
+      {reviewAssets.length>0&&<><p className="review-hint">Mantén pulsada una foto y deslízala a la derecha para recuperarla.</p><Carousel ariaLabel="Revisar lo marcado para eliminar" draggingEnabled={false} className="review-carousel"><div className="review-grid">{reviewAssets.map(a=><article key={a.id} className="review-card paper" onPointerDown={e=>start(e,a,true)} onPointerMove={move} onPointerUp={end} onPointerCancel={cancel} style={gesture.current?.id===a.id?{transform:`translateX(${Math.max(0,drag.x)}px)`}:undefined}><div className="review-photo"><Photo asset={a} small/></div><button className="recover-button" onPointerDown={e=>e.stopPropagation()} onClick={()=>{setState(s=>restore(s,a.id));setSpoken('Elemento recuperado');}}><ArrowCounterClockwiseIcon size={16}/>Recuperar</button></article>)}</div></Carousel>
         <div className="review-primary"><button className="sheet-action danger" onClick={commitDelete} disabled={busy} aria-busy={busy}><TrashIcon size={20}/>{busy?'Esperando a Fotos…':`Eliminar ${reviewAssets.length}${freeLabel&&!reviewBytes.partial?` · ${freeLabel}`:''}`}</button><p className="sheet-fine">Fotos te pedirá confirmación; lo eliminado queda 30 días en «Eliminado recientemente», también en iCloud.</p>
-          <button className="sheet-action secondary recover-all" disabled={busy} onClick={recoverAll}><ArrowCounterClockwiseIcon size={20}/>{reviewAssets.length===1?'Recuperar el descarte':`Recuperar los ${reviewAssets.length} descartes`}</button></div></>}
+          <button className="sheet-action secondary recover-all" disabled={busy} onClick={recoverAll}><ArrowCounterClockwiseIcon size={20}/>{reviewAssets.length===1?'Recuperar':`Recuperar todo (${reviewAssets.length})`}</button></div></>}
     </Sheet>
   </div>;
 }

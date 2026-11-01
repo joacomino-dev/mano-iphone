@@ -79,6 +79,8 @@ const demoBytes = (i: number, kind: Asset['kind']) => kind === 'video' ? (i === 
 export const demoAssets: Asset[] = Array.from({ length: 20 }, (_, i) => { const video = i === 9 || i === 4; const [width, height] = video ? [1500, 1000] : POSTCARDS[postcardOf(i)];
   const kind: Asset['kind'] = video ? 'video' : i === 14 ? 'live' : 'photo';
   return { id: `demo-${i}`, kind, date: Date.now() - (i < 6 ? (i + 1) * 3 * 3600000 : i < 13 ? (i - 4) * 86400000 : (i * 3) * 86400000), width, height, duration: video ? 2 : 0, group: i<4?'trip-a':i>=10&&i<14?'trip-b':undefined, hasLocation: i % 3 !== 1 && !SCREENSHOTS.includes(i), demo: true,
-    bytes: demoBytes(i, kind), screenshot: SCREENSHOTS.includes(i), low: LOW.includes(i), text: RECEIPTS.includes(i) || SCREENSHOTS.includes(i) ? 1 : 0, cloud: i === 4 || i === 5 }; });
+    bytes: demoBytes(i, kind), screenshot: SCREENSHOTS.includes(i), low: LOW.includes(i), text: RECEIPTS.includes(i) || SCREENSHOTS.includes(i) ? 1 : 0, cloud: i === 4 || i === 5,
+    // Similar groups get a clear best shot (demo-2, demo-11) to show «Mejor toma».
+    quality: i === 2 || i === 11 ? .62 : LOW.includes(i) ? -.6 : .2 - (i % 4) * .05 }; });
 const demoPlaces: Place[] = [{ locality: 'Quito', country: 'Ecuador' }, { locality: 'Cartagena', country: 'Colombia' }, { locality: 'Lisboa', country: 'Portugal' }];
 export function demoPlace(asset: Asset): Place { return asset.hasLocation ? demoPlaces[demoIndex(asset) % demoPlaces.length] : {}; }

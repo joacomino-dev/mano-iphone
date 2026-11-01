@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CalendarBlankIcon, ImagesIcon, StampIcon, ArrowCounterClockwiseIcon, BroomIcon, SortAscendingIcon, ClockCountdownIcon, DeviceMobileIcon, ImageBrokenIcon, ReceiptIcon, SparkleIcon } from '@phosphor-icons/react';
 import { initialFilter, pileCount, LEVELS, type Asset, type Filter, type Order, type RecordState, type Smart } from './domain';
 import { AnimatedNumber } from './Loader';
@@ -36,8 +36,11 @@ const number = (n: number) => n.toLocaleString('es');
 /** What enters the pile. Grouped from the quickest decision to the finest:
  * clean-up shortcut → content → dates → order → seals. Changes are a draft
  * until «Aplicar filtros»; every shortcut shows how many files it holds now. */
-export function Filters({filter,assets,state,apply,index}: {filter:Filter;assets:Asset[];state:RecordState;apply:(f:Filter)=>void;index:IndexProgress}) {
+export function Filters({filter,assets,state,apply,index,preview}: {filter:Filter;assets:Asset[];state:RecordState;apply:(f:Filter)=>void;index:IndexProgress;preview?:(draft:Filter)=>void}) {
  const [draft,setDraft]=useState<Filter>({...initialFilter,...filter});
+ // While choosing, the first cards of the draft warm up in the background, so
+ // «Aplicar» opens on ready previews.
+ useEffect(()=>{if(!preview)return;const t=setTimeout(()=>preview(draft),350);return()=>clearTimeout(t);},[JSON.stringify(draft)]);
  const update=(change:Partial<Filter>)=>{haptic('selection');setDraft(d=>({...d,...change}));};
  const invalid=draft.dateRange==='custom'&&(!draft.from||!draft.to||draft.from>draft.to);
  const count=pileCount(assets,state,draft);

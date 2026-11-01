@@ -207,7 +207,8 @@
 .stamp-word.on-fill{fill:var(--cw-paper-light);font-size:10px;letter-spacing:.1em}
 .stamp-numeral{fill:currentColor;font:600 22px/1 var(--cw-font-mono)}
 /* Level seal on photos kept before (turquoise, numeral I–VIII = how many times kept). */
-.seal{position:absolute;top:-6px;right:-6px;width:84px;height:84px;transform:rotate(-8deg);pointer-events:none;--stamp-fill:rgba(250,246,238,.82);filter:drop-shadow(0 1px 1px rgba(18,45,46,.25))}
+.seal{position:absolute;z-index:3;right:-14px;bottom:calc(var(--cw-caption) - 4px);width:62px;height:62px;padding:0;border:0;background:none;transform:rotate(-10deg);--stamp-fill:rgba(250,246,238,.92);filter:drop-shadow(0 1px 1px rgba(18,45,46,.25))}
+.photo-card.tape .seal{bottom:-10px}
 .seal .stamp{width:100%;height:100%}
 .photo-card:has(.inline-media.is-playing) .seal{opacity:0}
 /* While dragging: the stamp the card is about to receive, same as on release. */
@@ -233,20 +234,46 @@
 .mano-app:has(.empty-state) :is(.decision-buttons,.archive-tools button:disabled){visibility:hidden}
 
 /* ---------- Decisions ---------- */
-/* Descartar (graphite, tray: «a revisión») and Conservar (ivory, turquoise seal-check).
-   Icon + word + colour; the arrow cue sits at the outer edge of each. */
-.decision-buttons{display:grid;grid-template-columns:1fr 1fr;gap:var(--cw-stack);flex-shrink:0;margin-top:var(--cw-stack)}
+/* Eliminar (graphite, trash) · pink heart · Conservar (ivory, turquoise seal).
+   Same icon and colour as each swipe stamp; the arrow cue sits at the outer
+   edge. The neighbours are cut in a curve around the heart, leaving it air. */
+.decision-buttons{--cut:42px;display:grid;grid-template-columns:1fr 54px 1fr;align-items:center;flex-shrink:0;margin-top:var(--cw-stack)}
 .decision-buttons button{position:relative;display:flex;align-items:center;justify-content:center;gap:var(--cw-icon-gap);min-height:var(--cw-decision);padding:0 var(--cw-space-4);
   border:0;border-radius:var(--cw-radius-lg);font-size:var(--cw-text-md)!important;font-weight:600!important}
 .decision-buttons .edge{position:absolute;opacity:.6}
-.decision-buttons .discard{background:var(--cw-discard);color:var(--cw-white);box-shadow:var(--cw-shadow-press)}.decision-buttons .discard .edge{left:var(--cw-space-3)}
-.decision-buttons .keep{background:var(--cw-keep) url('/assets/paper.png') center/480px;color:var(--cw-ink);box-shadow:var(--cw-shadow-press)}.decision-buttons .keep .edge{right:var(--cw-space-3)}
-.decision-buttons .keep .mark{color:var(--cw-turquoise)}
-.archive-tools{display:grid;grid-template-columns:repeat(4,1fr);align-items:start;flex-shrink:0;padding-top:var(--cw-stack)}
+.decision-buttons .discard{background:var(--cw-discard);color:var(--cw-white);padding-right:26px;
+  -webkit-mask:radial-gradient(circle var(--cut) at calc(100% + 27px) 50%,transparent 97%,#000 100%);mask:radial-gradient(circle var(--cut) at calc(100% + 27px) 50%,transparent 97%,#000 100%)}
+.decision-buttons .discard .edge{left:var(--cw-space-3)}
+.decision-buttons .keep{background:var(--cw-keep) url('/assets/paper.png') center/480px;color:var(--cw-turquoise-deep);padding-left:26px;
+  -webkit-mask:radial-gradient(circle var(--cut) at -27px 50%,transparent 97%,#000 100%);mask:radial-gradient(circle var(--cut) at -27px 50%,transparent 97%,#000 100%)}
+.decision-buttons .keep .edge{right:var(--cw-space-3)}
+.decision-buttons .keep .decision-icon{color:var(--cw-turquoise)}
+.decision-buttons .heart{justify-self:center;z-index:1;width:74px;height:68px;min-height:0;margin:0 -10px;padding:0;background:none;border-radius:0;
+  filter:drop-shadow(0 6px 10px rgba(6,29,32,.35));transition:transform var(--cw-fast) var(--cw-ease)}
+.decision-buttons .heart svg{width:100%;height:100%;overflow:visible}
+.decision-buttons .heart path:first-child{fill:var(--cw-pink)}
+.decision-buttons .heart .heart-line{fill:none;stroke:var(--cw-paper-light);stroke-width:3;opacity:.85}
+.decision-buttons button{transition:transform var(--cw-fast) var(--cw-ease),filter var(--cw-fast) var(--cw-ease)}
+/* Arrow, word and icon share one line: the extra room sits on the cut side. */
+.decision-buttons :is(.discard,.keep){gap:6px;font-size:15px!important}
+.decision-buttons :is(.discard,.keep) .edge{position:static;flex-shrink:0}
+.decision-buttons .discard{padding:0 19px 0 10px}.decision-buttons .keep{padding:0 10px 0 19px}
+/* The cut mask would hide an outside ring: focus is drawn inside the button. */
+.decision-buttons :is(.discard,.keep):focus-visible{outline:3px solid var(--cw-focus);outline-offset:-6px}
+.decision-buttons button:active:not(:disabled){transform:scale(.95)}
+.decision-buttons .heart:active:not(:disabled){transform:scale(.88)}
+.decision-buttons button:disabled{opacity:.45}
+/* The button on the side the card travels toward answers the gesture. */
+.decision-buttons.armed-discard .discard,.decision-buttons.armed-keep .keep{transform:scale(1.05);filter:brightness(1.08)}
+.decision-buttons.armed-favorite .heart{transform:scale(1.16)}
+.session-content:has(.armed-later) .archive-tools .later .tool-icon{transform:scale(1.12);background:var(--cw-paper)}
+.archive-tools{display:grid;grid-template-columns:repeat(3,1fr);align-items:start;flex-shrink:0;padding-top:var(--cw-stack)}
 .archive-tools>button{justify-self:center;display:flex;flex-direction:column;align-items:center;gap:var(--cw-space-1);min-width:72px;padding:0;border:0;background:transparent;color:var(--cw-on-bg-soft);font-size:var(--cw-text-xs)}
-.tool-icon{width:var(--cw-touch);height:var(--cw-touch);display:grid;place-items:center;border-radius:50%;border:1px solid var(--cw-line-on-bg);color:var(--cw-on-bg)}
-.archive-tools .favorite .tool-icon{color:var(--cw-favorite);border-color:rgba(239,154,152,.6)}
-.archive-tools>button{min-width:64px}
+.tool-icon{width:52px;height:52px;display:grid;place-items:center;border-radius:50%;border:1px solid var(--cw-line-on-bg);color:var(--cw-on-bg);transition:transform var(--cw-fast) var(--cw-ease),background var(--cw-fast) var(--cw-ease)}
+.archive-tools>button{min-width:76px;font-size:var(--cw-text-sm)}
+.archive-tools>button:active:not(:disabled) .tool-icon{transform:scale(.92)}
+/* «Más tarde» wears its postmark: coffee clock on ivory, the centre of the bar. */
+.archive-tools .later .tool-icon{width:58px;height:58px;border:0;background:var(--cw-paper-light);color:var(--cw-coconut-deep);box-shadow:var(--cw-shadow-press)}
 
 /* ---------- Empty states ---------- */
 .empty-state{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 var(--cw-space-5)}
@@ -603,3 +630,17 @@
 .done-freed small{margin-top:var(--cw-space-2);font-size:var(--cw-text-xs);line-height:1.45;color:var(--cw-ink-soft)}
 .done-later{display:flex;align-items:center;justify-content:center;gap:var(--cw-icon-gap);font-size:var(--cw-text-sm)}
 .done-later svg{color:var(--cw-coconut-deep);flex-shrink:0}
+
+/* ---------- 0.7: video toggles, best shot, seals explained ---------- */
+.video-toggles{position:absolute;top:var(--cw-space-2);right:var(--cw-space-2);z-index:4;display:flex;gap:var(--cw-space-1)}
+.video-toggles button{width:var(--cw-touch);height:var(--cw-touch);display:grid;place-items:center;padding:0;border:0;border-radius:50%;background:rgba(15,38,39,.66);color:var(--cw-white);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.video-toggles button[aria-pressed=true]{background:rgba(15,38,39,.82)}
+.photo-card.tape:has(.video-toggles) .geek-access{top:calc(var(--cw-touch) + var(--cw-space-3))}
+.best-chip{position:absolute;z-index:3;left:50%;top:var(--cw-space-2);transform:translateX(-50%);display:flex;align-items:center;gap:4px;padding:4px var(--cw-space-3);border-radius:var(--cw-radius-pill);background:var(--cw-paper-light);color:var(--cw-pink-deep);font-size:var(--cw-text-xs);font-weight:600;box-shadow:var(--cw-shadow-1);pointer-events:none;white-space:nowrap}
+.seal-explainer{display:grid;grid-template-columns:64px 1fr;gap:var(--cw-space-3);align-items:center}
+.seal-explainer p{margin:0;font-size:var(--cw-text-sm);line-height:1.5;color:var(--cw-ink)}
+.seal-sample{width:64px;height:64px;transform:rotate(-8deg);--stamp-fill:var(--cw-paper-light)}
+.seal-sample .stamp{width:100%;height:100%}
+.seal-levels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--cw-space-2);margin:var(--cw-stack) 0 0;padding:0;list-style:none}
+.seal-levels li{display:flex;align-items:baseline;gap:var(--cw-space-2);padding:var(--cw-space-2) var(--cw-space-3);border-radius:var(--cw-radius-md);background:var(--cw-paper-light);box-shadow:inset 0 0 0 1px var(--cw-line);font-size:var(--cw-text-xs);color:var(--cw-ink-soft)}
+.seal-levels strong{font:600 var(--cw-text-sm)/1 var(--cw-font-mono);color:var(--cw-turquoise-deep)}
