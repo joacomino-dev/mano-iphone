@@ -32,21 +32,25 @@ export function Wordmark({ size = 24 }: { size?: number }) {
   const ready = useBrandFont();
   const [width, setWidth] = useState(0);
   useEffect(() => { setWidth(measure('CocoWash', size)); }, [ready, size]);
-  const w = (width || size * 4.6) + PAD * 2, h = size * 1.04 + PAD * 2 + BASE, base = PAD + size * .8;
+  // No room reserved for the base since 0.9 hides it: the name stays optically centred.
+  const w = (width || size * 4.6) + PAD * 2, h = size * 1.04 + PAD * 2, base = PAD + size * .8;
   const text = (className: string, dy = 0) => <text className={className} x={PAD} y={base + dy} fontSize={size}>Coco<tspan className="wm-wash">Wash</tspan></text>;
   return <svg className="wordmark" width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true" focusable="false">
     {text('wm-base', BASE)}{text('wm-outer')}{text('wm-cream')}{text('wm-face')}
   </svg>;
 }
 
-/** Progress through the filtered pile: a sticker trough that fills with cream,
- * and the count on its own tag. Same accessible name as before («Revisados …»). */
+/** Progress through the filtered pile: a turquoise track and the count on a
+ * light capsule. Same accessible name as before («Revisados …»). */
 export function PileProgress({ reviewed, total, count }: { reviewed: number; total: number; count: ReactNode }) {
   const share = total ? Math.min(1, reviewed / total) : 0;
+  // The count capsule reserves room for the total's digits, so the track keeps
+  // its length while the reviewed number grows (1/20 → 10/20).
+  const digits = String(Math.max(0, total)).length;
   return <>
     <div className="pile-meter" role="progressbar" aria-valuemin={0} aria-valuemax={Math.max(1, total)} aria-valuenow={reviewed} aria-label={`Revisados ${reviewed} de ${total} con estos filtros`}>
       <span className="pile-meter-fill" style={{ width: `${share * 100}%` }}/>
     </div>
-    <span className="pile-count" aria-hidden="true">{count}</span>
+    <span className="pile-count" aria-hidden="true" style={{ minWidth: `calc(${digits * 2 + 1}ch + 22px)` }}>{count}</span>
   </>;
 }

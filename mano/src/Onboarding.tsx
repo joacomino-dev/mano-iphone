@@ -18,7 +18,7 @@ const FAN = ['/assets/demo/postcard-2.svg', PHOTO, '/assets/demo/postcard-5.svg'
 function Ghost() {
   return <div className="ob-ghost" aria-hidden="true" inert>
     <div className="archive-header">
-      <span className="header-action header-filters"><SlidersHorizontalIcon size={20}/>Filtros</span>
+      <span className="header-action header-filters"><SlidersHorizontalIcon size={18}/>Filtros</span>
       <span className="header-brand"><span className="brand-wordmark"><Wordmark/></span></span>
       <span className="header-action finish">Terminar</span>
     </div>
