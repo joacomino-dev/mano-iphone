@@ -300,3 +300,5 @@ Version line: 0.9.x until 1.0 (user). Supersedes the 0.9 single-row header.
 - Background Warm Paper #F4EFE6 + procedural grain/tone SVGs (~1–3 %).
   «Revisión guardada» / celebration may show the paper more.
 - Version 0.9.1 (build 10).
+- 0.9.2 (CW-CL-026, user): frame #F3ECE1 with a third, fine paper-fibre layer
+  (paper-fibre.svg); more paper, still clean. Faint text #51625E. Version 0.9.2 (11).
