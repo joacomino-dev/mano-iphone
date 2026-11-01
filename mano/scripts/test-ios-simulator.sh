@@ -14,19 +14,22 @@ command_display = shlex.join(sys.argv[2:])
 # stderr keeps UUID/SDK command-substitution stdout machine-readable.
 print(f'RUN (timeout={seconds}s): {command_display}', file=sys.stderr, flush=True)
 process = subprocess.Popen(sys.argv[2:], start_new_session=True)
-def stop(signum, frame):
+# After SIGKILL, wait only briefly: a simctl call stuck on an unresponsive
+# CoreSimulator kept the job alive until its 45-minute limit (run 41258081163).
+def reap():
     try: os.killpg(process.pid, signal.SIGKILL)
     except ProcessLookupError: pass
-    process.wait()
+    try: process.wait(timeout=15)
+    except subprocess.TimeoutExpired: print(f'WARNING: {command_display} ignored SIGKILL; continuing.', file=sys.stderr, flush=True)
+def stop(signum, frame):
+    reap()
     sys.exit(128 + signum)
 signal.signal(signal.SIGTERM, stop)
 signal.signal(signal.SIGINT, stop)
 try:
     sys.exit(process.wait(timeout=seconds))
 except subprocess.TimeoutExpired:
-    try: os.killpg(process.pid, signal.SIGKILL)
-    except ProcessLookupError: pass
-    process.wait()
+    reap()
     print(f'ERROR: command exceeded {seconds}s: {command_display}', file=sys.stderr, flush=True)
     sys.exit(124)
 PY
@@ -231,7 +234,13 @@ bounded 300 xcrun simctl install "$simulator_id" "$app"
 # Only generated public fixtures are imported; never real photos or videos.
 # The first import creates the fresh device's Photos library: ~60s even ~4 min
 # after boot (run 40966694363); right after boot it exceeded 60s (run 41132758705).
-bounded 180 xcrun simctl addmedia "$simulator_id" "$PWD/scripts/fixtures/postcard-fixture.png" "$smoke_dir/postcard-fixture.mp4"
+# Run 41258081163 (attempt 2): the first import failed while the fresh library was
+# still being created. Retry once after a pause; a second failure stops the test.
+if ! bounded 180 xcrun simctl addmedia "$simulator_id" "$PWD/scripts/fixtures/postcard-fixture.png" "$smoke_dir/postcard-fixture.mp4"; then
+  echo 'Generated media import failed once; retrying after 30s.' >&2
+  sleep 30
+  bounded 180 xcrun simctl addmedia "$simulator_id" "$PWD/scripts/fixtures/postcard-fixture.png" "$smoke_dir/postcard-fixture.mp4"
+fi
 # Do not pregrant Photos: on this iOS runtime that can leave .readWrite
 # notDetermined. XCTest requests permission through the real app and OS dialog.
 
