@@ -3,8 +3,9 @@
    with a --cw- prefix because sheets render through portals outside .mano-app.
    Runtime chrome (styles.css, src/mobile) is protected and is not restyled here. */
 
-/* Retro slab for the decision bar labels (Patua One, SIL OFL 1.1, latin subset;
-   licence in public/assets/fonts). Local file: no network, CSP font-src 'self'. */
+/* Fredoka 600 (brand and main-screen chrome) and Patua One (decision verbs only),
+   both SIL OFL 1.1, latin subset; licences in public/assets/fonts. Local file: no network, CSP font-src 'self'. */
+@font-face{font-family:'Fredoka';font-style:normal;font-weight:600;font-display:swap;src:url('/assets/fonts/fredoka-latin-600.woff2') format('woff2')}
 @font-face{font-family:'Patua One';font-style:normal;font-weight:400;font-display:swap;src:url('/assets/fonts/patua-one-latin-400.woff2') format('woff2')}
 
 :root{
@@ -56,6 +57,7 @@
   --cw-font:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,sans-serif;
   --cw-font-mono:'IBM Plex Mono',ui-monospace,monospace;
   --cw-font-display:'Patua One',Georgia,serif; /* decision bar only: retro slab, OFL */
+  --cw-font-brand:'Fredoka','IBM Plex Sans',sans-serif; /* wordmark and main-screen chrome: rounded, straight stems */
   --cw-text-xs:.75rem;   /* 12 */
   --cw-text-sm:.8125rem; /* 13 */
   --cw-text-md:.9375rem; /* 15 */
@@ -82,6 +84,13 @@
      cream 3.5 + ink 2.5 = band 6; base 3; press 2.5). */
   --cw-bar-button:var(--cw-decision);--cw-bar-heart:70px;
   --cw-bar-band-x2:12px;--cw-bar-cream-x2:7px;--cw-bar-base:3px;--cw-bar-press:2.5px;
+  /* The same sticker for every other main-screen control (CSS boxes): cream
+     band as the border, ink ring and ink base as solid, unblurred shadows. */
+  --cw-chrome:var(--cw-teal-700);           /* neutral controls; cream label 7.9:1 */
+  --cw-sticker-cream:3.5px;--cw-sticker-ink:2.5px;
+  --cw-sticker-ring:0 0 0 var(--cw-sticker-ink) var(--cw-outline);
+  --cw-sticker:0 0 0 var(--cw-sticker-ink) var(--cw-outline),0 var(--cw-bar-base) 0 var(--cw-sticker-ink) var(--cw-outline);
+  --cw-tag-ring:0 0 0 2px var(--cw-outline);
 
   /* Motion: short, eased, never decorative */
   --cw-ease:cubic-bezier(.2,.8,.2,1);
@@ -105,7 +114,9 @@
 .mano-app:before{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;background:url('/assets/paper.png') center/480px;opacity:.025;mix-blend-mode:screen}
 .on-device{padding-top:calc(env(safe-area-inset-top) + var(--cw-space-2));padding-bottom:calc(env(safe-area-inset-bottom) + var(--cw-space-2))}
 :where(.mano-app,.mano-sheet-body,.native-sheet) button{font:inherit;color:inherit;-webkit-tap-highlight-color:transparent;touch-action:manipulation;cursor:pointer}
-.mano-app button:focus-visible,.mano-app select:focus-visible,.mano-app [tabindex]:focus-visible{outline:3px solid var(--cw-focus);outline-offset:3px}
+.mano-app button:focus-visible,.mano-app select:focus-visible,.mano-app [tabindex]:not([tabindex="-1"]):focus-visible{outline:3px solid var(--cw-focus);outline-offset:3px}
+/* Headings focused by script (VoiceOver lands there) never draw a ring. */
+.mano-app [tabindex="-1"]:focus{outline:none}
 .mano-app button:disabled{opacity:.42;cursor:default}
 .mano-app svg{flex-shrink:0}
 .paper{background:var(--cw-paper) url('/assets/paper.png') center/480px;color:var(--cw-ink)}
@@ -117,14 +128,22 @@
 /* ---------- Shared buttons ---------- */
 /* Header actions (Filtros, Terminar): one size, one weight, white on teal.
    Equal minimum widths keep the outer columns balanced around the name. */
-.header-action{display:inline-flex;align-items:center;justify-content:center;gap:var(--cw-icon-gap);min-width:112px;min-height:var(--cw-touch);padding:0 var(--cw-space-4);
-  border:1.5px solid var(--cw-line-on-bg-strong);border-radius:var(--cw-radius-pill);background:transparent;color:var(--cw-on-bg)!important;
-  font-size:var(--cw-text-md)!important;font-weight:600!important;white-space:nowrap;transition:background var(--cw-fast) var(--cw-ease)}
-.header-action:active{background:rgba(255,255,255,.12)}
+.header-action{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:var(--cw-touch);padding:0 12px;
+  border:var(--cw-sticker-cream) solid var(--cw-cream);border-radius:var(--cw-radius-pill);background:var(--cw-chrome);color:var(--cw-cream)!important;box-shadow:var(--cw-sticker);
+  font:600 1rem/1 var(--cw-font-brand)!important;letter-spacing:.01em;white-space:nowrap;-webkit-text-stroke:3px var(--cw-outline);paint-order:stroke fill}
 .header-filters{justify-self:start}
 /* Every pressable gets the same tactile response */
 :where(.mano-app,.mano-sheet-body) button{transition:transform var(--cw-fast) var(--cw-ease),background-color var(--cw-base) var(--cw-ease),opacity var(--cw-base) var(--cw-ease)}
 :where(.mano-app,.mano-sheet-body) button:not(:disabled):active{transform:scale(.97)}
+
+/* Sticker controls sink onto their ink base when pressed and settle back. */
+.mano-app :is(.header-action,.segmented,.tool-icon){transition:transform var(--cw-slow) var(--cw-ease-settle),box-shadow var(--cw-slow) var(--cw-ease-settle)}
+.mano-app .header-action:not(:disabled):active,.mano-app .archive-tools>button:not(:disabled):active .tool-icon{transform:translateY(var(--cw-bar-base));box-shadow:var(--cw-sticker-ring);transition-duration:.05s}
+.mano-app .archive-tools>button:not(:disabled):active{transform:none}
+.mano-app :is(.header-action,.archive-tools>button):disabled{opacity:1}
+.mano-app .header-action:disabled,.mano-app .archive-tools>button:disabled .tool-icon{box-shadow:var(--cw-sticker-ring);transform:translateY(var(--cw-bar-base))}
+.mano-app .archive-tools>button:disabled :is(.tool-icon>*,.tool-label){opacity:.42}
+.mano-app .header-action:disabled>*{opacity:.42}
 
 /* ---------- Brand + notices ---------- */
 /* minmax(0,1fr) keeps both side columns equal even when «Terminar» carries its
@@ -134,8 +153,14 @@
 .brand-status{position:relative;display:grid;place-items:center;min-width:96px;height:var(--cw-header)}
 /* Name, not isotype: same weight as the side controls' labels' cap height, a
    touch larger so it anchors the bar without out-shouting Filtros/Terminar. */
-.brand-wordmark{font:600 1.1875rem/1 var(--cw-font);letter-spacing:-.035em;color:var(--cw-on-bg);white-space:nowrap;pointer-events:none}
-.brand-wordmark>span{color:var(--cw-pink-text)}
+.brand-wordmark{display:block;line-height:0;white-space:nowrap;pointer-events:none}
+/* Wordmark (Chrome.tsx): white «Coco», pink «Wash», ink line, cream margin, ink contour, ink base. */
+.wordmark{display:block;overflow:visible}
+.wordmark text{font-family:var(--cw-font-brand);font-weight:600;letter-spacing:-.01em;stroke-linejoin:round;paint-order:stroke fill}
+.wm-base,.wm-outer{fill:var(--cw-outline);stroke:var(--cw-outline);stroke-width:14.5px}
+.wm-cream{fill:var(--cw-cream);stroke:var(--cw-cream);stroke-width:9.5px}
+.wm-face{fill:var(--cw-white);stroke:var(--cw-outline);stroke-width:3.5px}
+.wm-face .wm-wash{fill:var(--cw-pink)}
 .brand-status>div{position:absolute;z-index:60;top:calc(var(--cw-header) + var(--cw-stack));left:-200px;right:-200px;margin-inline:auto;display:flex;align-items:center;gap:var(--cw-icon-gap);
   width:max-content;max-width:min(280px,calc(100vw - var(--cw-space-12)));min-height:var(--cw-space-10);padding:var(--cw-space-2) var(--cw-space-4);
   background:var(--cw-paper);color:var(--cw-ink);border-radius:var(--cw-radius-pill);box-shadow:var(--cw-shadow-2);
@@ -146,22 +171,27 @@
 
 /* ---------- Session header + progress ---------- */
 .finish{justify-self:end}
-.finish:has(.finish-count){padding-right:var(--cw-space-2)}
-.finish-count{min-width:24px;height:24px;padding:0 var(--cw-space-1);display:grid;place-items:center;border-radius:var(--cw-radius-pill);background:var(--cw-white);color:var(--cw-teal-900);font:600 var(--cw-text-xs)/1 var(--cw-font-mono)}
-.header-spacer{justify-self:end;min-width:112px}
-.archive-progress{display:flex;align-items:center;gap:var(--cw-stack);flex-shrink:0;margin-top:var(--cw-space-1);min-height:var(--cw-space-5)}
-.archive-progress progress{flex:1;display:block;height:4px;border:0;border-radius:var(--cw-radius-pill);overflow:hidden;background:rgba(255,255,255,.16);accent-color:var(--cw-white)}
-.archive-progress progress::-webkit-progress-bar{background:rgba(255,255,255,.16)}
-.archive-progress progress::-webkit-progress-value{background:var(--cw-white);border-radius:var(--cw-radius-pill);transition:width var(--cw-slow) var(--cw-ease)}
-.archive-progress progress::-moz-progress-bar{background:var(--cw-white)}
-.progress-count{display:inline-flex;align-items:baseline;font:500 var(--cw-text-xs)/1 var(--cw-font-mono);color:var(--cw-on-bg);font-variant-numeric:tabular-nums}.progress-count>span:not(.animated-number),.progress-count .is-total{color:var(--cw-on-bg-faint)}
+/* What «Terminar» will ask to delete: a graphite badge, Eliminar's colour, pinned to the corner. */
+.finish-count{position:absolute;top:-12px;right:-10px;min-width:26px;height:26px;padding:0 6px;display:grid;place-items:center;border:2px solid var(--cw-cream);border-radius:var(--cw-radius-pill);
+  background:var(--cw-graphite);color:var(--cw-cream);box-shadow:var(--cw-tag-ring);font:600 .8125rem/1 var(--cw-font-brand);-webkit-text-stroke:0;font-variant-numeric:tabular-nums}
+.header-spacer{justify-self:end;min-width:var(--cw-touch)}
+/* Pile progress (Chrome.tsx): a sticker trough that fills with the sponge
+   turquoise, and the count on its own tag. Not pressable: no base. */
+.archive-progress{display:flex;align-items:center;gap:10px;flex-shrink:0;margin-top:var(--cw-space-3);min-height:28px;padding-inline:3px}
+.pile-meter{position:relative;flex:1;height:14px;border:3px solid var(--cw-cream);border-radius:var(--cw-radius-pill);background:var(--cw-teal-950);box-shadow:var(--cw-tag-ring);overflow:hidden}
+.pile-meter-fill{position:absolute;inset:0 auto 0 0;background:var(--cw-turquoise-light);border-radius:var(--cw-radius-pill);box-shadow:1.5px 0 0 var(--cw-outline);transition:width var(--cw-slow) var(--cw-ease)}
+.pile-count{display:inline-flex;align-items:baseline;flex-shrink:0;padding:5px 9px 4px;border:2px solid var(--cw-cream);border-radius:var(--cw-radius-pill);background:var(--cw-chrome);box-shadow:var(--cw-tag-ring);
+  font:600 .8125rem/1 var(--cw-font-brand);color:var(--cw-cream);font-variant-numeric:tabular-nums}
+.pile-count .pile-slash,.pile-count .is-total{color:var(--cw-on-bg-soft)}
 .animated-number{position:relative;display:inline-flex;overflow:hidden;line-height:1.15;vertical-align:bottom;font-variant-numeric:tabular-nums}.animated-number>span{display:inline-block}
-.access-indicator{position:relative;display:inline-flex;align-items:center;gap:var(--cw-space-1);min-height:28px;padding:0 var(--cw-space-2);margin:calc(-1*var(--cw-space-1)) 0;border:1px solid var(--cw-line-on-bg-strong);border-radius:var(--cw-radius-pill);background:transparent;color:var(--cw-on-bg);font-size:var(--cw-text-xs)!important;white-space:nowrap}
+.access-indicator{position:relative;display:inline-flex;align-items:center;gap:var(--cw-space-1);min-height:26px;padding:0 var(--cw-space-2);margin:calc(-1*var(--cw-space-1)) 0;border:2px solid var(--cw-cream);border-radius:var(--cw-radius-pill);background:var(--cw-chrome);box-shadow:var(--cw-tag-ring);color:var(--cw-cream);font:600 .75rem/1 var(--cw-font-brand)!important;white-space:nowrap}
 .access-indicator:after{content:'';position:absolute;inset:calc(-1*var(--cw-space-2))}
 
 /* ---------- Card stack ---------- */
 .hand-space{position:relative;flex:1;min-height:100px;margin-top:var(--cw-space-3);container-type:size}
 .polaroid-stack{position:absolute;inset:0;isolation:isolate}
+/* The stage keeps the same air above (progress) and below (the heart's top):
+   cards are centred in it at 50 %, so they sit midway between both. */
 /* Centred with explicit left/top (set inline), never the `translate` property:
    iOS WebKit reports wrong accessibility frames for controls inside an element
    offset by a percentage `translate` (XCTest saw a 44 pt button as 202x159 pt),
@@ -187,7 +217,7 @@
 .zoom-access:focus-visible{opacity:1;pointer-events:auto;transform:none}
 /* Modo Geek only: an explicit data control, mirroring the select mark. */
 .geek-access{position:absolute;right:var(--cw-space-1);top:var(--cw-space-1);z-index:2;width:var(--cw-touch);height:var(--cw-touch);display:grid;place-items:center;border:0;background:transparent;color:var(--cw-white)}
-.geek-access:before{content:'';position:absolute;inset:var(--cw-space-2);border-radius:50%;background:rgba(18,45,46,.58);border:1.5px solid rgba(255,255,255,.85)}
+.geek-access:before{content:'';position:absolute;inset:var(--cw-space-2);border-radius:50%;background:var(--cw-chrome);border:2px solid var(--cw-cream);box-shadow:var(--cw-tag-ring)}
 .geek-access>svg{position:relative}
 .photo-card:not(.front){pointer-events:none}
 /* Selected: a white frame (selection is neither a decision nor a favourite). */
@@ -205,9 +235,9 @@
 .hand-space.later .photo-card.front:after{border-color:var(--cw-stamp-later)}
 /* On-card controls: small visible marks inside full 44px hit areas */
 .pick-toggle{position:absolute;left:var(--cw-space-1);top:var(--cw-space-1);width:var(--cw-touch);height:var(--cw-touch);display:grid;place-items:center;border:0;background:transparent;color:var(--cw-white)}
-.pick-toggle:before{content:'';position:absolute;inset:var(--cw-space-2);border-radius:50%;background:rgba(18,45,46,.58);border:1.5px solid rgba(255,255,255,.85);transition:background var(--cw-base) var(--cw-ease)}
+.pick-toggle:before{content:'';position:absolute;inset:var(--cw-space-2);border-radius:50%;background:var(--cw-chrome);border:2px solid var(--cw-cream);box-shadow:var(--cw-tag-ring);transition:background var(--cw-base) var(--cw-ease)}
 .pick-toggle>svg{position:relative;opacity:.8}
-.pick-toggle.selected:before{background:var(--cw-select);border-color:var(--cw-select)}.pick-toggle.selected>svg{opacity:1;color:var(--cw-teal-900)}
+.pick-toggle.selected:before{background:var(--cw-cream)}.pick-toggle.selected>svg{opacity:1;color:var(--cw-outline)}
 .photo-card:not(.front) .pick-toggle{display:none}
 .media-play{position:absolute;left:var(--cw-space-3);bottom:calc(var(--cw-caption) + var(--cw-space-1));display:flex;align-items:center;gap:var(--cw-space-1);min-height:32px;padding:0 var(--cw-space-3);border:0;border-radius:var(--cw-radius-pill);background:rgba(18,45,46,.78);color:var(--cw-white);font:500 var(--cw-text-xs) var(--cw-font-mono);letter-spacing:.06em}
 .media-play:after{content:'';position:absolute;inset:-6px}
@@ -235,15 +265,17 @@
 .decision-stamp.is-discard{width:160px}.decision-stamp.is-favorite{width:108px}.decision-stamp.is-later{width:168px}
 /* Group of similar photos */
 .bundle-arrival{position:absolute;top:0;left:0;right:0;margin-inline:auto;width:fit-content;z-index:40;display:flex;align-items:center;gap:var(--cw-icon-gap);height:28px;padding:0 var(--cw-space-3);white-space:nowrap;
-  color:var(--cw-ink);background:var(--cw-paper-dim);border-radius:var(--cw-radius-pill);font:600 var(--cw-text-xs)/1 var(--cw-font);box-shadow:var(--cw-shadow-1);pointer-events:none;transition:opacity var(--cw-base) var(--cw-ease)}
+  color:var(--cw-ink);background:var(--cw-cream);border:2px solid var(--cw-cream);border-radius:var(--cw-radius-pill);font:600 .8125rem/1 var(--cw-font-brand);box-shadow:var(--cw-tag-ring);pointer-events:none;transition:opacity var(--cw-base) var(--cw-ease)}
 .mano-app:has(.brand-status.has-message) .bundle-arrival{opacity:0}
 .bundle-flash{position:absolute;z-index:-1;inset:10px 8px 0;background:radial-gradient(ellipse,var(--cw-paper-dim),transparent 70%);border-radius:50%;pointer-events:none}
 .bundle-controls{display:flex;flex-shrink:0;justify-content:center;min-height:0}
 .bundle-controls:has(button){min-height:var(--cw-touch);margin-top:var(--cw-space-2)}
-.segmented{display:flex;align-items:center;border:1px solid var(--cw-line-on-bg);border-radius:var(--cw-radius-pill);overflow:hidden}
-.segmented button{display:flex;align-items:center;gap:var(--cw-icon-gap);min-height:var(--cw-touch);padding:0 var(--cw-space-4);border:0;background:transparent;color:var(--cw-on-bg);font-size:var(--cw-text-sm)}
-.segmented button+button{border-left:1px solid var(--cw-line-on-bg)}
-.selection-caption{flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:var(--cw-space-1);min-height:var(--cw-space-6);font:600 var(--cw-text-sm) var(--cw-font);color:var(--cw-on-bg)}
+.segmented{display:flex;align-items:center;border:var(--cw-sticker-cream) solid var(--cw-cream);border-radius:var(--cw-radius-pill);background:var(--cw-chrome);box-shadow:var(--cw-sticker);overflow:hidden}
+.segmented button{display:flex;align-items:center;gap:6px;min-height:38px;padding:0 var(--cw-space-4);border:0;background:transparent;color:var(--cw-cream);font:600 .9375rem/1 var(--cw-font-brand);-webkit-text-stroke:2.5px var(--cw-outline);paint-order:stroke fill}
+.segmented button+button{border-left:var(--cw-sticker-ink) solid var(--cw-outline)}
+.mano-app .segmented button:not(:disabled):active{transform:none;background:var(--cw-teal-800)}
+.segmented svg{color:var(--cw-cream)}
+.selection-caption{flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:var(--cw-space-1);min-height:var(--cw-space-6);font:600 .875rem/1 var(--cw-font-brand);color:var(--cw-cream)}
 /* With no card on the table, decisions have nothing to act on; keep the space, drop the noise. */
 .mano-app:has(.empty-state) :is(.decision-bar,.archive-tools button:disabled){visibility:hidden}
 
@@ -251,7 +283,7 @@
 /* DecisionBar.tsx draws the shapes (vector, computed for the real width); this
    is their paint. Three pieces, one set: ink contour, cream band, solid colour,
    an ink base the face sinks onto when pressed. No gradients, no blur. */
-.decision-bar{--bar-button:var(--cw-bar-button);--bar-heart:var(--cw-bar-heart);position:relative;flex-shrink:0;height:var(--bar-height,calc(var(--cw-bar-heart) + 15px));margin:var(--cw-space-2) calc(var(--cw-space-1) * -1) 0;
+.decision-bar{--bar-button:var(--cw-bar-button);--bar-heart:var(--cw-bar-heart);position:relative;flex-shrink:0;height:var(--bar-height,calc(var(--cw-bar-heart) + 15px));margin:var(--cw-space-3) calc(var(--cw-space-1) * -1) 0;
   /* The rounded outer ends read inset: the bar takes 4 px of each gutter so it lines up optically. */-webkit-tap-highlight-color:transparent}
 .bar-piece{position:absolute;margin:0;padding:0;border:0;background:none;color:var(--cw-cream);touch-action:manipulation;-webkit-user-select:none;user-select:none}
 .bar-piece>svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
@@ -292,14 +324,15 @@
 .bar-piece:disabled{cursor:default}
 .bar-piece:disabled :is(.piece-face,.bar-content){opacity:.42}
 .bar-piece:disabled .piece-base{opacity:0}
-.session-content:has(.armed-later) .archive-tools .later .tool-icon{transform:scale(1.12);background:var(--cw-paper)}
+.session-content:has(.armed-later) .archive-tools .later .tool-icon{transform:translateY(-2px);box-shadow:0 0 0 var(--cw-sticker-ink) var(--cw-outline),0 calc(var(--cw-bar-base) + 2px) 0 var(--cw-sticker-ink) var(--cw-outline)}
 .archive-tools{display:grid;grid-template-columns:repeat(3,1fr);align-items:start;flex-shrink:0;padding-top:var(--cw-stack)}
-.archive-tools>button{justify-self:center;display:flex;flex-direction:column;align-items:center;gap:var(--cw-space-1);min-width:72px;padding:0;border:0;background:transparent;color:var(--cw-on-bg-soft);font-size:var(--cw-text-xs)}
-.tool-icon{width:52px;height:52px;display:grid;place-items:center;border-radius:50%;border:1px solid var(--cw-line-on-bg);color:var(--cw-on-bg);transition:transform var(--cw-fast) var(--cw-ease),background var(--cw-fast) var(--cw-ease)}
-.archive-tools>button{min-width:76px;font-size:var(--cw-text-sm)}
-.archive-tools>button:active:not(:disabled) .tool-icon{transform:scale(.92)}
+/* Tools: round stickers. Deshacer and Álbum neutral; «Más tarde», the fourth
+   decision, wears its postmark coffee (same colour as its stamp). */
+.archive-tools>button{justify-self:center;display:flex;flex-direction:column;align-items:center;gap:7px;min-width:76px;padding:0;border:0;background:transparent;color:var(--cw-cream);font:600 .8125rem/1 var(--cw-font-brand)}
+.tool-icon{width:50px;height:50px;display:grid;place-items:center;border-radius:50%;border:var(--cw-sticker-cream) solid var(--cw-cream);background:var(--cw-chrome);color:var(--cw-cream);box-shadow:var(--cw-sticker)}
 /* «Más tarde» wears its postmark: coffee clock on ivory, the centre of the bar. */
-.archive-tools .later .tool-icon{width:58px;height:58px;border:0;background:var(--cw-paper-light);color:var(--cw-coconut-deep);box-shadow:var(--cw-shadow-press)}
+.archive-tools .later .tool-icon{width:58px;height:58px;background:var(--cw-coconut-deep);color:var(--cw-cream)}
+.archive-tools .later .decision-icon path{stroke-width:2.6}
 
 /* ---------- Empty states ---------- */
 .empty-state{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 var(--cw-space-5)}
@@ -525,10 +558,15 @@
 .ob-row strong small{margin-left:var(--cw-space-1);font:500 var(--cw-text-xs) var(--cw-font-mono);color:var(--cw-ink-soft)}
 .ob-row>span:last-child>span{display:block;margin-top:2px;font-size:var(--cw-text-sm);line-height:1.4;color:var(--cw-ink-soft)}
 .ob-actions{display:flex;align-items:center;gap:var(--cw-stack);flex-shrink:0;padding-top:var(--cw-stack)}
-.ob-back{min-height:var(--cw-decision);padding:0 var(--cw-space-4);border:0;border-radius:var(--cw-radius-lg);background:transparent;color:var(--cw-ink)!important;font-size:var(--cw-text-md)!important;font-weight:500!important}
+.ob-back{min-height:var(--cw-decision);padding:0 var(--cw-space-4);border:0;border-radius:var(--cw-radius-lg);background:transparent;color:var(--cw-ink)!important;font:600 1rem/1 var(--cw-font-brand)!important}
 .ob-back:disabled{display:none}
-.ob-next{flex:1;display:flex;align-items:center;justify-content:center;gap:var(--cw-icon-gap);min-height:var(--cw-decision);border:0;border-radius:var(--cw-radius-lg);background:var(--cw-action-primary);color:var(--cw-on-action-primary)!important;font-size:var(--cw-text-lg)!important;font-weight:600!important;box-shadow:var(--cw-shadow-press)}
-.mano-app .ob-next:disabled{opacity:.45;box-shadow:none}
+/* The tour's main action is a main-screen sticker: turquoise (it moves forward), cream band, ink. */
+.ob-next{flex:1;display:flex;align-items:center;justify-content:center;gap:var(--cw-icon-gap);min-height:var(--cw-decision);border:var(--cw-sticker-cream) solid var(--cw-cream);border-radius:var(--cw-radius-pill);background:var(--cw-turquoise);
+  color:var(--cw-cream)!important;font:600 1.125rem/1 var(--cw-font-brand)!important;-webkit-text-stroke:3px var(--cw-outline);paint-order:stroke fill;box-shadow:var(--cw-sticker);transition:transform var(--cw-slow) var(--cw-ease-settle),box-shadow var(--cw-slow) var(--cw-ease-settle)}
+.ob-next svg{color:var(--cw-cream)}
+.mano-app .ob-next:not(:disabled):active{transform:translateY(var(--cw-bar-base));box-shadow:var(--cw-sticker-ring);transition-duration:.05s}
+.mano-app .ob-next:disabled{opacity:1;box-shadow:var(--cw-sticker-ring);transform:translateY(var(--cw-bar-base))}
+.mano-app .ob-next:disabled>*{opacity:.5}
 .ob-next .coco-loader{color:var(--cw-paper)}
 .ob-wait{min-height:18px;margin:var(--cw-space-1) 0 0;text-align:center;font-size:var(--cw-text-xs);color:var(--cw-ink-soft);opacity:0;transition:opacity var(--cw-base) var(--cw-ease)}.ob-wait.is-on{opacity:1}
 /* Demo pieces (own postcards; no stock photos, no final character art) */
@@ -591,7 +629,8 @@
 .setting-preview small{font-size:var(--cw-text-xs);color:var(--cw-ink-faint)}
 .mini-polaroid{position:relative;width:232px;padding:var(--cw-card-side) var(--cw-card-side) var(--cw-caption);border-radius:var(--cw-radius-xs);box-shadow:var(--cw-shadow-1)}
 .mini-polaroid img{display:block;width:100%;aspect-ratio:3/2;object-fit:cover}
-.mini-vhs{position:relative;width:232px;aspect-ratio:3/2;overflow:hidden;border-radius:var(--cw-radius-sm);background:var(--cw-tape);box-shadow:var(--cw-shadow-1);container-type:inline-size}
+.mini-vhs-frame{width:232px;height:155px;overflow:hidden;border-radius:var(--cw-radius-sm);box-shadow:var(--cw-shadow-1)}
+.mini-vhs{position:relative;width:360px;aspect-ratio:3/2;overflow:hidden;background:var(--cw-tape);container-type:inline-size;transform:scale(calc(232 / 360));transform-origin:0 0}
 .mini-vhs img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(.9) brightness(.85)}
 .setting-choice .field-label{margin-top:var(--cw-space-2)}
 .quality-chips{margin-top:var(--cw-stack)}
@@ -608,7 +647,7 @@
 @media (max-height:730px){
   .archive-header{min-height:50px}.header-brand,.brand-status{height:50px}
   .hand-space{margin-top:var(--cw-space-2)}
-  .decision-bar{--bar-button:50px;--bar-heart:62px;margin-top:var(--cw-space-1)}
+  .decision-bar{--bar-button:50px;--bar-heart:62px;margin-top:var(--cw-space-2)}
   .archive-tools{padding-top:var(--cw-space-2)}
   .ob-demo-area{height:140px;margin-top:var(--cw-space-2)}.ob-demo{transform:scale(.86)}.ob-stage h1,.status-screen h1{font-size:1.5rem}.ob-stage{margin-top:var(--cw-space-2)}.ob-row{padding:var(--cw-space-1) var(--cw-space-2)}
 }
@@ -662,7 +701,7 @@
 .video-toggles button{width:var(--cw-touch);height:var(--cw-touch);display:grid;place-items:center;padding:0;border:0;border-radius:50%;background:rgba(15,38,39,.66);color:var(--cw-white);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 .video-toggles button[aria-pressed=true]{background:rgba(15,38,39,.82)}
 .photo-card.tape:has(.video-toggles) .geek-access{top:calc(var(--cw-touch) + var(--cw-space-3))}
-.best-chip{position:absolute;z-index:3;left:50%;top:var(--cw-space-2);transform:translateX(-50%);display:flex;align-items:center;gap:4px;padding:4px var(--cw-space-3);border-radius:var(--cw-radius-pill);background:var(--cw-paper-light);color:var(--cw-pink-deep);font-size:var(--cw-text-xs);font-weight:600;box-shadow:var(--cw-shadow-1);pointer-events:none;white-space:nowrap}
+.best-chip{position:absolute;z-index:3;left:50%;top:var(--cw-space-2);transform:translateX(-50%);display:flex;align-items:center;gap:4px;padding:4px var(--cw-space-3);border:2px solid var(--cw-cream);border-radius:var(--cw-radius-pill);background:var(--cw-cream);color:var(--cw-pink-deep);font:600 .8125rem/1 var(--cw-font-brand);box-shadow:var(--cw-tag-ring);pointer-events:none;white-space:nowrap}
 .seal-explainer{display:grid;grid-template-columns:64px 1fr;gap:var(--cw-space-3);align-items:center}
 .seal-explainer p{margin:0;font-size:var(--cw-text-sm);line-height:1.5;color:var(--cw-ink)}
 .seal-sample{width:64px;height:64px;transform:rotate(-8deg);--stamp-fill:var(--cw-paper-light)}

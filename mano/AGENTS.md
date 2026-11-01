@@ -248,3 +248,24 @@ bundle, keys and permissions; `cocowash-media://` and `native.html` CSP untouche
   them: the heart is on (pressed) and takes the item out of Favorites (back to
   the pile, undoable); Eliminar is unavailable there; Conservar seals it.
   Native enumeration now lists favourites flagged; deletion still rechecks.
+
+## CocoWash 0.8 — 1 November 2026 (user feedback after device test, CW-CL-023)
+
+- Main screen speaks the decision bar's language (bar itself unchanged): every
+  control is a sticker — cream border, ink ring and solid ink base (no blur),
+  sinking onto the base when pressed. Neutral tools teal #26504F (Filtros,
+  Terminar, Deshacer, Álbum, group segmented); «Más tarde» coffee (its
+  postmark colour); Terminar's count is a graphite badge (Eliminar's colour).
+- Wordmark «CocoWash»: Fredoka 600 (rounded, straight stems), white Coco /
+  pink Wash, ink line, cream margin, ink contour and base (SVG, `Chrome.tsx`).
+  Fredoka for main-screen chrome, Patua One only for decision verbs.
+- Progress: sticker trough filling with sponge turquoise #7CCBC2, count on a tag.
+- Cards centred at 50 % of a stage with equal air above (progress) and below
+  (the heart).
+- «Terminar» with items to delete opens «Una última mirada» over the session:
+  closing it returns to the cards; the round ends with «Eliminar N»
+  (supersedes the 0.7 rule «celebration after closing the review»).
+- How seals work is explained in Filtros › Sellos; Ajustes keeps the switch.
+- App icon: the user's art on the official turquoise #1E7470, model ink lines
+  (brand/recolor-app-icon.py). The tour shows once after updating to 0.8.
+- Version 0.8.0 (build 8).

@@ -16,7 +16,9 @@ export type VideoMeta = { date: boolean; time: boolean; location: boolean; durat
 export type CloudMode = 'save' | 'always';
 export type DisplaySettings = { photo: PhotoMeta; video: VideoMeta; haptics: boolean; quality: PreviewQuality; cloud: CloudMode };
 export const DISPLAY_KEY = 'cocowash-display-v1';
-export const ONBOARDING_KEY = 'cocowash-onboarding-v1';
+/** v2 (0.8): the tour shows once more after updating, so it can be seen with
+ * the new main screen; later launches skip it («Ver la introducción» in Ajustes). */
+export const ONBOARDING_KEY = 'cocowash-onboarding-v2';
 export const DATE_FORMATS: DateFormat[] = ['dmy', 'd-mon-y', 'mon-d-y', 'iso'];
 export const defaultDisplay: DisplaySettings = {
   photo: { date: true, time: false, location: true, seal: true, dateFormat: 'd-mon-y', hour12: false },

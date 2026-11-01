@@ -48,8 +48,12 @@ The app's characters are **Coqui**, the coconut with white sunglasses, and
 background removed (edge-connected background plus enclosed gaps between legs
 and arms, with edge colour decontamination), one transparent WebP per pose in
 `public/assets/characters/`, plus `coqui-face.webp` (round crop for loaders).
-`app-icon.png` / `AppIcon-512@2x.png` are the Coqui-washing-Memo model on brand
-teal, 1024² RGB. Keep the models' own colours (including the yellow sponge):
+`app-icon.png` / `AppIcon-512@2x.png` (0.8, 1 November 2026): the user's new
+icon art (`app-icon-source.png`) recoloured to the brand by `recolor-app-icon.py`
+— background from off-palette cyan #01B4B5 to the official turquoise #1E7470
+(flat, full bleed, no baked rounded corners: iOS applies its own mask), blue-black
+lines to the model ink, coconut/brain/sponge nudged to the model art's tones.
+1024² opaque RGB. Run `python3 -I brand/recolor-app-icon.py brand/app-icon-source.png out.png`. Keep the models' own colours (including the yellow sponge):
 the no-yellow rule applies to UI chrome, not to the characters.
 
 The earlier vector mascot (`cocowash*.svg`, built by `generate-assets.mjs`) is

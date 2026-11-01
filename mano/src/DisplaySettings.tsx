@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import { CameraIcon, FilmStripIcon, HandTapIcon, BooksIcon, ImageSquareIcon, CloudArrowDownIcon, StampIcon } from '@phosphor-icons/react';
 import type { Asset } from './domain';
 import { DATE_FORMATS, formatDate, formatTime, polaroidCaption, type CloudMode, type DateFormat, type DisplaySettings, type OsdSize } from './meta';
-import { Stamp, ROMAN, sealRest } from './Stamp';
 import { VhsOverlay } from './Vhs';
 import { haptic } from './haptics';
 import { PREVIEW_PROFILES, PREVIEW_QUALITIES, type PreviewQuality } from './preview';
@@ -61,7 +60,10 @@ export function DisplaySettingsPanel({ display, change, geek, setGeek, library }
     </fieldset>
     <fieldset>
       <legend><FilmStripIcon size={18}/>Vídeos · VHS</legend>
-      <div className="setting-preview" aria-hidden="true"><div className="mini-vhs"><img src={SAMPLE_PHOTO} alt="" draggable={false}/><VhsOverlay asset={SAMPLE} place={SAMPLE_PLACE} settings={video} label={false}/></div>
+      {/* A true miniature: the tape is laid out at a real card's width (the OSD
+          fit depends on it) and only drawn smaller, so Pequeño / Mediano / Grande
+          compare exactly as they will on the card. */}
+      <div className="setting-preview" aria-hidden="true"><div className="mini-vhs-frame"><div className="mini-vhs"><img src={SAMPLE_PHOTO} alt="" draggable={false}/><VhsOverlay asset={SAMPLE} place={SAMPLE_PLACE} settings={video} label={false}/></div></div>
         <small>Vista previa</small></div>
       <Switch label="Letras VHS" hint="También con el ojo sobre cada vídeo." checked={video.osd} change={osd => setVideo({ osd })}/>
       {video.osd && <Choice label="Tamaño de las letras" value={video.osdSize} options={OSD_SIZE} change={osdSize => setVideo({ osdSize })}/>}
@@ -75,11 +77,7 @@ export function DisplaySettingsPanel({ display, change, geek, setGeek, library }
     </fieldset>
     <fieldset>
       <legend><StampIcon size={18}/>Sellos</legend>
-      <div className="seal-explainer">
-        <span className="seal-sample" aria-hidden="true"><Stamp kind="keep" level={2}/></span>
-        <p>Cuando conservas una foto, recibe un <strong>sello</strong> y descansa: no vuelve a aparecer en un tiempo. Si la conservas otra vez, el sello sube de nivel y descansa más, hasta quedarse para siempre. Así cada ronda trae lo que aún no has decidido.</p>
-      </div>
-      <ul className="seal-levels" aria-label="Niveles de sello">{[1, 2, 3, 8].map(level => <li key={level}><strong>{ROMAN[level - 1]}</strong>{sealRest(level)}</li>)}</ul>
+      <p className="settings-intro">Qué es cada sello y cuánto descansa, en Filtros › Sellos.</p>
       <Switch label="Mostrar el sello en las fotos" hint="Tócalo sobre una foto para ocultarlos al momento." checked={photo.seal} change={seal => setPhoto({ seal })}/>
     </fieldset>
     <fieldset>

@@ -6,6 +6,7 @@ import { CocoLoader } from './Loader';
 import { haptic } from './haptics';
 import { Stamp } from './Stamp';
 import { Character } from './Characters';
+import { Wordmark } from './Chrome';
 
 /* CocoWash's own generated postcards: no stock photos, no people, and no
    character presented as final (character scenes come later). */
@@ -18,7 +19,7 @@ function Ghost() {
   return <div className="ob-ghost" aria-hidden="true" inert>
     <div className="archive-header">
       <span className="header-action header-filters"><SlidersHorizontalIcon size={20}/>Filtros</span>
-      <span className="header-brand"><span className="brand-wordmark">Coco<span>Wash</span></span></span>
+      <span className="header-brand"><span className="brand-wordmark"><Wordmark/></span></span>
       <span className="header-action finish">Terminar</span>
     </div>
     <div className="ob-ghost-pile"/>
@@ -107,7 +108,9 @@ const cards = [
  * (Atrás/Continuar, arrow keys), no skip. «Continuar» on the gestures card
  * waits for one demo cycle the first time only (not with Reduce Motion, never
  * again after returning). Photos is requested on the last card. */
-export function Onboarding({ requestAccess, finish }: { requestAccess: () => Promise<PhotoPermission>; finish: (status: PhotoPermission) => void }) {
+/** `granted`: Photos access is already given (tour seen again): the last card
+ * starts instead of asking. */
+export function Onboarding({ requestAccess, finish, granted = false }: { requestAccess: () => Promise<PhotoPermission>; finish: (status: PhotoPermission) => void; granted?: boolean }) {
   const reduced = useReducedMotion();
   const still = !!reduced;
   const [index, setIndex] = useState(0);
@@ -164,7 +167,7 @@ export function Onboarding({ requestAccess, finish }: { requestAccess: () => Pro
       </div>
       <footer className="ob-actions">
         <button className="ob-back" onClick={() => go(index - 1)} disabled={index === 0 || asking} aria-hidden={index === 0} tabIndex={index === 0 ? -1 : 0}>Atrás</button>
-        {last ? <button className="ob-next" onClick={allow} disabled={asking} aria-busy={asking}>{asking ? <><CocoLoader size={24}/>Esperando permiso…</> : <>Permitir acceso a Fotos</>}</button>
+        {last ? <button className="ob-next" onClick={allow} disabled={asking} aria-busy={asking}>{asking ? <><CocoLoader size={24}/>Esperando permiso…</> : <>{granted ? 'Empezar' : 'Permitir acceso a Fotos'}</>}</button>
           : <button className="ob-next" onClick={() => go(index + 1)} disabled={locked} aria-describedby={locked ? 'ob-wait' : undefined}>Continuar<CaretRightIcon size={18} weight="bold"/></button>}
       </footer>
       <p id="ob-wait" className={`ob-wait ${locked ? 'is-on' : ''}`} aria-live="polite">{locked ? 'Mira el ejemplo una vez.' : ''}</p>
