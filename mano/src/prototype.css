@@ -35,10 +35,10 @@
   --cw-turquoise:var(--pal-turquoise);--cw-turquoise-deep:#17605C;--cw-turquoise-light:#7CCBC2;
   --cw-paper:#F2E7D5;--cw-paper-light:#FAF6EE;--cw-paper-dim:#E6D9C3;--cw-paper-edge:#D9C8AC;
   --cw-coconut:#AF6742;--cw-coconut-deep:var(--pal-coffee);--cw-coconut-ink:#6E3B22;
-  /* 0.9.5 colour pass: the app reads coffee, pink and beige, so the selected state
-     of settings and filters (switches, chips, dates) is coffee. Turquoise stays
-     for identity and Conservar. Paper text on it: 7.4:1. */
-  --cw-accent:var(--cw-coconut-ink);
+  /* Selected state of settings and filters (switches, chips, dates). Back to the
+     dark teal after the user tried coffee (#6E3B22) in 0.9.5 (14); the token
+     stays so a later colour pass changes one line. */
+  --cw-accent:var(--cw-teal-800);
   --cw-pink:var(--pal-heart);--cw-pink-deep:var(--pal-heart-deep);--cw-pink-text:#F9C6C4; /* light pink: text on dark overlays only */
   --cw-graphite:var(--pal-discard);
   /* Decision bar: heart, the band inside each piece and the contour ink. The

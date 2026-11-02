@@ -395,7 +395,8 @@ Plan and the user's notes: `docs/ai-handoff/NEXT_0.9.5_PROMPT.md`.
   too. Active row: no box, the others step back. No limited-access line.
 - Coqui washing Memo asset: white foam (was a transparent hole), transparent
   triangle between the legs (was white).
-- Colour: `--cw-accent` (coffee #6E3B22) for selected states in Filtros y
-  ajustes; turquoise stays for identity, Conservar and primary actions.
+- Colour: `--cw-accent` holds the selected state in Filtros y ajustes. Coffee
+  (#6E3B22) was tried in build 14 and reverted to dark teal in build 15 at the
+  user's request («luego lo arreglamos»): a future colour pass is still open.
 - Pending: Zángano Studio signature on the launch mark — its SVG uses Candara
   (not on iOS); needs the text as curves (`mano/brand/zangano-studio-logo-source.svg`).
