@@ -246,3 +246,8 @@ Logo: trazado con potrace por color (IoU 0,989/0,983; 0,998 el isotipo; fuera de
 Vídeo: playhead compartido (carta ↔ mantener ↔ anclada); el mismo elemento al anclar; fotograma congelado bajo la vista mantenida; toque = pausa/reproducir. Medido en Chromium con un vídeo de prueba de 12 s: carta 3,91 s → mantenida 4,67 s (sigue) → anclada mismo elemento 5,77 → 7,28 s → cerrar 8,53 s; pausa respetada al anclar.
 Validaciones: tsc; npm test 83/83 (1 nueva: vídeos nunca en pila); runtime 28; build + build:native; capturas de inicio, cabecera, loader, Ajustes y vista mantenida; sin errores de consola.
 No verificado: iPhone real (sonido al anclar en WKWebView, icono en pantalla de inicio). CI: ver CURRENT_STATE.
+
+### CW-CL-031 — CI de 0.9.4: animación infinita compuesta y job cancelado
+Fecha: 2026-11-02, America/Bogota
+Agente: Claude (vigilancia del CI pedida por el usuario)
+Run 41482349450 (2a0b29d): el smoke test falló a los 32 min y el job se canceló en su tope de 45 min mientras restauraba la textura (`npx cap copy` sin límite propio); sin IPA y sin log (GitHub devuelve 404 para el log del job cancelado; el artefacto de diagnóstico existe pero no se puede descargar desde la sesión). Hipótesis principal, por evidencia de código: el loader nuevo giraba el `<svg>` entero en bucle infinito → animación de Core Animation permanente → XCTest espera a que la app esté inactiva antes de cada paso (el test ya rondaba 527 s de 600 en 0.9.3). Corrección: el giro va en un `<g>` interior (loader y anillo de iCloud), mismo aspecto. Workflow: tope del job 55 min, restaurar textura con límite de 4 min, y el IPA exige la textura restaurada (nunca un IPA con papel plano). Nuevo run: ver CURRENT_STATE.

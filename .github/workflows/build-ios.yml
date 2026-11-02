@@ -37,7 +37,10 @@ jobs:
     # Standard free Intel runner: avoids current hosted ARM capacity failures. Never use -large/-xlarge.
     runs-on: macos-26-intel
     # Includes bounded cold-start readiness; this remains the standard free runner.
-    timeout-minutes: 45
+    # 55: a smoke test that fails slowly (up to its own 38 min) still leaves time
+    # to keep diagnostics and, on manual request, build the IPA; a job cancelled
+    # at its cap loses its log (run 41482349450).
+    timeout-minutes: 55
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
     defaults:
@@ -91,24 +94,26 @@ jobs:
       # A failed smoke test still fails the run; the IPA is only published anyway
       # when a manual run asks for it (ipa_even_if_smoke_fails).
       - name: Restore the paper texture for the iPhone build
+        id: restore
         if: ${{ !cancelled() && steps.sync.outcome == 'success' && (steps.smoke.outcome == 'success' || inputs.ipa_even_if_smoke_fails) }}
+        timeout-minutes: 4
         run: |
           npx cap copy ios
           grep -q -e '--cw-paper-texture:url(' ios/App/App/public/assets/*.css
       - name: Build unsigned iPhone app
-        if: ${{ !cancelled() && steps.sync.outcome == 'success' && (steps.smoke.outcome == 'success' || inputs.ipa_even_if_smoke_fails) }}
+        if: ${{ !cancelled() && steps.sync.outcome == 'success' && steps.restore.outcome == 'success' && (steps.smoke.outcome == 'success' || inputs.ipa_even_if_smoke_fails) }}
         run: |
           xcodebuild -version
           xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/ios CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' build
       - name: Package for personal signing in AltStore
-        if: ${{ !cancelled() && steps.sync.outcome == 'success' && (steps.smoke.outcome == 'success' || inputs.ipa_even_if_smoke_fails) }}
+        if: ${{ !cancelled() && steps.sync.outcome == 'success' && steps.restore.outcome == 'success' && (steps.smoke.outcome == 'success' || inputs.ipa_even_if_smoke_fails) }}
         run: |
           mkdir -p build/package/Payload
           cp -R build/ios/Build/Products/Release-iphoneos/App.app build/package/Payload/Mano.app
           cd build/package
           ditto -c -k --keepParent Payload Mano-unsigned.ipa
       - uses: actions/upload-artifact@v4
-        if: ${{ !cancelled() && steps.sync.outcome == 'success' && (steps.smoke.outcome == 'success' || inputs.ipa_even_if_smoke_fails) }}
+        if: ${{ !cancelled() && steps.sync.outcome == 'success' && steps.restore.outcome == 'success' && (steps.smoke.outcome == 'success' || inputs.ipa_even_if_smoke_fails) }}
         with:
           name: Mano-AltStore
           path: mano/build/package/Mano-unsigned.ipa

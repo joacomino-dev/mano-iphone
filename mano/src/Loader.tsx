@@ -12,7 +12,10 @@ export function CocoLoader({ progress, size = 40, label }: { progress?: number; 
     aria-label={label} aria-valuemin={known ? 0 : undefined} aria-valuemax={known ? 100 : undefined} aria-valuenow={known ? Math.round(progress! * 100) : undefined}>
     <svg viewBox="0 0 40 40" aria-hidden="true">
       <circle className="coco-track" cx="20" cy="20" r="16"/>
-      <circle className="coco-arc" cx="20" cy="20" r="16" pathLength={100} strokeDasharray={known ? `${Math.max(2, Math.min(100, progress! * 100))} 100` : undefined}/>
+      {/* Turning happens on inner groups, never on the <svg> box: an animated
+          box becomes an endless compositor animation, which keeps the app from
+          ever being idle (UI tests wait for idle before each step). */}
+      <g className="coco-spin"><circle className="coco-arc" cx="20" cy="20" r="16" pathLength={100} strokeDasharray={known ? `${Math.max(2, Math.min(100, progress! * 100))} 100` : undefined}/></g>
       {!known && <circle className="coco-swirl" cx="20" cy="20" r="9" pathLength={100}/>}
     </svg>
   </span>;

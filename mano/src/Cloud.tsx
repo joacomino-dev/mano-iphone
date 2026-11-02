@@ -22,7 +22,7 @@ function CloudRing({ state, size = 20 }: { state?: CloudState; size?: number }) 
   const failed = state?.status === 'error';
   const Icon = failed ? CloudSlashIcon : CloudIcon;
   return <span className={`cloud-ring ${busy ? 'is-busy' : ''} ${known ? 'is-known' : ''}`} style={{ width: size, height: size }} aria-hidden="true">
-    {busy && <svg viewBox="0 0 18 18"><circle className="cloud-ring-track" cx="9" cy="9" r={R}/><circle className="cloud-ring-arc" cx="9" cy="9" r={R} strokeDasharray={known ? `${C * Math.max(.04, state!.progress!)} ${C}` : `${C * .28} ${C}`}/></svg>}
+    {busy && <svg viewBox="0 0 18 18"><circle className="cloud-ring-track" cx="9" cy="9" r={R}/><g className="cloud-ring-spin"><circle className="cloud-ring-arc" cx="9" cy="9" r={R} strokeDasharray={known ? `${C * Math.max(.04, state!.progress!)} ${C}` : `${C * .28} ${C}`}/></g></svg>}
     <Icon size={busy ? size * .6 : size * .8} weight="bold"/>
   </span>;
 }

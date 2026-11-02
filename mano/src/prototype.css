@@ -445,7 +445,8 @@
 .coco-track{fill:none;stroke:currentColor;stroke-opacity:.16;stroke-width:3.5}
 .coco-arc{fill:none;stroke:currentColor;stroke-width:3.5;stroke-linecap:round;transform-origin:50% 50%;transform:rotate(-90deg);transition:stroke-dasharray var(--cw-base) var(--cw-ease)}
 .coco-swirl{fill:none;stroke:var(--cw-pink,#EF9A98);stroke-width:3;stroke-linecap:round;stroke-dasharray:18 100;transform-origin:50% 50%}
-.coco-loader:not(.is-known) svg{animation:cw-turn 1.6s linear infinite}
+.coco-spin{transform-origin:50% 50%}
+.coco-loader:not(.is-known) .coco-spin{animation:cw-turn 1.6s linear infinite}
 .coco-loader:not(.is-known) .coco-arc{animation:cw-stretch 1.6s cubic-bezier(.45,.05,.55,.95) infinite}
 .coco-loader:not(.is-known) .coco-swirl{animation:cw-counter 1.1s cubic-bezier(.4,0,.6,1) infinite}
 @keyframes cw-turn{to{transform:rotate(360deg)}}
@@ -783,7 +784,7 @@
   /* The rinse holds still as a partial ring; the OSD appears without flicker,
      grain freezes, jitter stops. Progress fill still updates (no motion). */
   .coco-loader:not(.is-known) .coco-arc{stroke-dasharray:30 100}
-  .coco-loader svg,.coco-loader .coco-arc,.coco-loader .coco-swirl{animation:none!important}
+  .coco-loader .coco-spin,.coco-loader .coco-arc,.coco-loader .coco-swirl{animation:none!important}
   .vhs-osd,.pixel-text{animation:none!important}
 }
 
@@ -811,10 +812,11 @@
 .cloud-ring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
 .cloud-ring-track{fill:none;stroke:currentColor;stroke-opacity:.28;stroke-width:2}
 .cloud-ring-arc{fill:none;stroke:var(--cw-turquoise-light);stroke-width:2;stroke-linecap:round;transition:stroke-dasharray var(--cw-base) linear}
-.cloud-ring.is-busy:not(.is-known) svg{animation:cw-spin 1.1s linear infinite}
+.cloud-ring-spin{transform-origin:50% 50%}
+.cloud-ring.is-busy:not(.is-known) .cloud-ring-spin{animation:cw-spin 1.1s linear infinite}
 .photo-loading.is-cloud .cloud-ring-arc{stroke:var(--cw-turquoise)}
 .photo-loading.is-cloud>span[role=status]{font-variant-numeric:tabular-nums}
-@media (prefers-reduced-motion:reduce){.cloud-ring.is-busy:not(.is-known) svg{animation:none}.cloud-ring.is-busy:not(.is-known) .cloud-ring-arc{stroke-dasharray:3 3}}
+@media (prefers-reduced-motion:reduce){.cloud-ring.is-busy:not(.is-known) .cloud-ring-spin{animation:none}.cloud-ring.is-busy:not(.is-known) .cloud-ring-arc{stroke-dasharray:3 3}}
 .photo-loading.is-cloud{color:var(--cw-on-bg)}
 /* Anchored view: the same indicator, centred above the photo. */
 .cloud-chip.cloud-download{left:0;right:0;bottom:auto;top:var(--cw-space-3);width:fit-content;margin-inline:auto;z-index:3}
