@@ -46,13 +46,13 @@
   /* Semantic colour (contrast measured, WCAG AA) */
   --cw-bg:var(--pal-bg);
   --cw-surface:var(--pal-surface);
-  /* Warm Paper material (0.9.2): three procedural SVG layers (feTurbulence,
-     stitched tiles of different sizes so no repeat lines up, < 1.2 KB each,
-     rasterised once): fine fibre — light and dark flecks at paper scale —,
-     fine grain and a slow warm tonal drift. Measured on the frame: mean −5/255
-     from the flat colour, σ ≈ 3 levels. On the frame only — never on text,
-     icons, photos, videos or quick-read controls, which sit on flat surfaces. */
-  --cw-paper-texture:url('/assets/paper-fibre.svg') 0 0/300px 300px,url('/assets/paper-grain.svg') 0 0/240px 240px,url('/assets/paper-tone.svg') 0 0/560px 560px;
+  /* Warm Paper material (0.9.2): one baked, seamless tile (paper-cream.webp,
+     512 pt at 2x, 39 KB) — fine fibre flecks, grain and a slow warm drift,
+     generated from brand/paper-cream-tile.svg. A bitmap, not live SVG filters:
+     WebKit re-renders filtered SVG backgrounds on paint (the likely cause of the
+     stalled simulator smoke test on 0.9.2). The tile carries the Coco Cream colour, so other palettes turn it off.
+     On the frame only — never on text, icons, photos, videos or controls. */
+  --cw-paper-texture:url('/assets/paper-cream.webp') 0 0/512px 512px;
   --cw-on-bg:var(--pal-text);
   --cw-on-bg-soft:var(--pal-text-soft);--cw-on-bg-faint:var(--pal-text-faint);
   /* Hairlines and quiet fills are the text colour at low strength, so they
@@ -144,6 +144,7 @@
 :root[data-palette="mint"]{
   --pal-bg:#EEF5F0;--pal-surface:#FFFDF7;--pal-text:#284748;--pal-text-soft:#3A5859;--pal-text-faint:#56706F;
   --pal-turquoise:#276C68;--pal-discard:#49575F;--pal-heart:#D77E82;--pal-heart-deep:#B54F65;--pal-coffee:#8A4B2D;
+  --cw-paper-texture:none; /* the baked paper tile is Coco Cream's */
 }
 
 /* ---------- App shell ---------- */
@@ -676,8 +677,8 @@
 /* End of round on a paper card (like the tour): paper dominant, teal frame,
    decision inks as accents — the 62 / 24 / 14 balance the chrome aims for. */
 /* Celebration / «Revisión guardada»: the one place where the paper may be felt —
-   the warm textured sheet plus the frame's fine grain. */
-.session-done{flex:1 1 auto;margin:var(--cw-space-2) 0 0;padding:var(--cw-space-6) var(--cw-space-5);border-radius:var(--cw-radius-xl);background:url('/assets/paper-grain.svg') 0 0/240px 240px,linear-gradient(color-mix(in srgb,var(--cw-paper) 30%,transparent),color-mix(in srgb,var(--cw-paper) 30%,transparent)),url('/assets/paper.png') center/480px;background-color:var(--cw-paper);box-shadow:var(--cw-shadow-2);color:var(--cw-ink)}
+   the warm textured sheet (paper.png). */
+.session-done{flex:1 1 auto;margin:var(--cw-space-2) 0 0;padding:var(--cw-space-6) var(--cw-space-5);border-radius:var(--cw-radius-xl);background:linear-gradient(color-mix(in srgb,var(--cw-paper) 30%,transparent),color-mix(in srgb,var(--cw-paper) 30%,transparent)),url('/assets/paper.png') center/480px;background-color:var(--cw-paper);box-shadow:var(--cw-shadow-2);color:var(--cw-ink)}
 .session-done h1{color:var(--cw-ink)}.session-done p,.session-done .status-hint{color:var(--cw-ink-soft)}
 .session-done .primary-empty{background:var(--cw-action-primary);color:var(--cw-on-action-primary)!important;box-shadow:var(--cw-shadow-press)}
 .session-done .secondary-empty{border-color:var(--cw-line-strong);color:var(--cw-ink)!important}
