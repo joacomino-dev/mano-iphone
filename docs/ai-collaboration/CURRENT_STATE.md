@@ -15,7 +15,7 @@ Objetivo: que Codex retome sin releer la sesión. Leer primero
 [CLAUDE_PERF_CW-CL-027](../ai-handoff/CLAUDE_PERF_CW-CL-027.md) (diagnóstico, arquitectura,
 mediciones, límites) y las entradas CW-CL-027/028 de [CLAUDE_LOG](CLAUDE_LOG.md).
 
-1. **CI**: run [41395519365](https://github.com/joacomino-dev/mano-iphone/actions/runs/41395519365) (sobre 3ce3e19, en cola al cerrar Claude; resultado sin consultar), workflow «Build Mano for AltStore» lanzado por workflow_dispatch en la rama
+1. **CI**: run [41395519365](https://github.com/joacomino-dev/mano-iphone/actions/runs/41395519365) (3ce3e19): Swift compiló e IPA generado; XCTest pasó; falló la comprobación del vídeo preparado (corregido en ee86516, ver CW-CL-029). Run nuevo [41399471365](https://github.com/joacomino-dev/mano-iphone/actions/runs/41399471365) (ee86516) en curso; workflow «Build Mano for AltStore» lanzado por workflow_dispatch en la rama
    (`ipa_even_if_smoke_fails: true`, así el IPA se publica aunque el smoke test falle; el run
    quedaría en rojo). Comprobar primero que **Swift compila** (PhotoLibrary.swift cambió:
    timeout por inactividad, `encodeQueue` concurrente, caché `ManoPrints` de huellas de Vision,
