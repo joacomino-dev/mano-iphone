@@ -318,7 +318,8 @@ permissions, `cocowash-media://` and CSP).
   postponed item puts it back in its exact place in `later`. No card is ever
   promoted ahead because its image is ready (0.7 «Descargar siempre» promotion
   removed: order never depends on download completion).
-- Read-ahead: the hand + about six next cards. Cards read their own preload
+- Read-ahead: the hand + about six next cards for posters; videos look up to ten
+  ahead (preparing a video takes far longer; the smoke test relies on it). Cards read their own preload
   entry; the app does not re-render per preparation step. Local first: a card
   never waits on the network; downloads go through `cloudPreviews` (media.ts):
   one tracked job per item, at most two at a time, visible card / anchored view

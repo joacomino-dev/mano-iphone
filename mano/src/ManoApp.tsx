@@ -38,6 +38,10 @@ import '@fontsource/ibm-plex-sans/latin-600.css';
 const leaveEase = [.32, .72, .36, 1] as const;
 /** Cards prepared ahead of the one on screen (front + next), about six. */
 const PRELOAD_AHEAD=6;
+/** Videos look further ahead than posters: copying or exporting a video takes
+ * far longer than a poster, so it starts earlier (the earlier 10-item window;
+ * one slot stays reserved for the card on screen, two preparations at most). */
+const VIDEO_AHEAD=10;
 function cardExit(id: string, decision: Decision | undefined, reduced: boolean | null) {
   const decided = !!decision?.ids.includes(id);
   if (reduced || !decided) return { opacity: 0, pointerEvents: 'none' as const, transition: { duration: reduced ? 0 : .16 } };
@@ -255,8 +259,8 @@ export function ManoApp() {
   const sessionNumber=useRef(0);
   const warmWait=useRef<(()=>void)|null>(null);
   const getPreloader=()=>preloader.current??(preloader.current=new AssetPreloader(prepareReviewAsset));
-  const prepareWindow=(items:Asset[],sessionKey:string)=>{
-    getPreloader().update(items,sessionKey);getVideos().want(items);
+  const prepareWindow=(items:Asset[],sessionKey:string,videoItems?:Asset[])=>{
+    getPreloader().update(items,sessionKey);getVideos().want(videoItems??items);
     preloadWindow.current=items;
     // iCloud downloads live only while their card is in this window (warm-up
     // included) or anchored; leaving the session ([]) cancels them all natively.
@@ -328,7 +332,9 @@ export function ManoApp() {
   // Read-ahead: the hand on the table plus the next cards as they will be dealt.
   const upcoming=useMemo(()=>upcomingFrom(queue,hand,state.later,Math.max(PRELOAD_AHEAD,hand.length+2)),[queue,windowHandKey,state.later]);
   const upcomingKey=upcoming.map(a=>`${a.id}:${a.modified??0}`).join('|');
-  useEffect(()=>{if(session&&!warming)prepareWindow(upcoming,String(sessionNumber.current));},[session,warming,upcomingKey]);
+  const videoAhead=useMemo(()=>upcomingFrom(queue,hand,state.later,Math.max(VIDEO_AHEAD,hand.length+2)).filter(a=>a.kind==='video'),[queue,windowHandKey,state.later]);
+  const videoKey=videoAhead.map(a=>`${a.id}:${a.modified??0}`).join('|');
+  useEffect(()=>{if(session&&!warming)prepareWindow(upcoming,String(sessionNumber.current),videoAhead);},[session,warming,upcomingKey,videoKey]);
   useEffect(()=>{inspected.current=inspect;cloudPreviews.retain(inspect?[...preloadWindow.current,inspect]:preloadWindow.current);},[inspect?.id]);
   // What a decision records to be undone exactly: the hand as shown, front first.
   const context={handIds:hand.map(a=>a.id),rotated:[] as string[],selected:[...selected],group:bundleKey??undefined,filter,...(best?{best}:{})};
@@ -372,7 +378,7 @@ export function ManoApp() {
       const source=new Map(available.map(a=>[a.id,a] as const));const pile=eligible(available,record,filter,Date.now(),seed.current);
       const resumed=sessionOpen?lockedHand(lock,source,playable(record,favView)):[];
       const first=resumed.length?resumed:lockedHand(dealHand(pile,record.later),source,playable(record,favView));
-      prepareWindow(upcomingFrom(pile,first,record.later,Math.max(PRELOAD_AHEAD,first.length+2)),String(number));
+      prepareWindow(upcomingFrom(pile,first,record.later,Math.max(PRELOAD_AHEAD,first.length+2)),String(number),upcomingFrom(pile,first,record.later,Math.max(VIDEO_AHEAD,first.length+2)).filter(a=>a.kind==='video'));
       await waitPrepared(getPreloader(),first[0]?.id);if(number!==sessionNumber.current)return;
     } while(deferredGroups.current);
     warmingNow.current=false;setWarming(false);setSession(true);resumeContext.current=undefined;setSessionOpen(true);

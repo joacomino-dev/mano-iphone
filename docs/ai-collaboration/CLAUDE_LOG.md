@@ -231,3 +231,8 @@ Archivos: mano/ios/App/App/PhotoLibrary.swift; docs (CURRENT_STATE, este log, CL
 Cambios: huellas de Vision persistentes por foto (Caches/ManoPrints: firma de 8 bytes + observación archivada con NSSecureCoding; sin datos de imagen; poda tras pasada completa); JPEG de miniaturas en cola concurrente (`encodeQueue`), la cola serie solo decide y escribe; evaluado y descartado servir pósters por cocowash-media:// (CSP protegida, beneficio no medible aquí).
 Validaciones: JS sin cambios en este paso (82/82 siguen); Swift sin compilar aquí: lo decide el run de CI.
 Impacto para Codex: CW-HO-005 en CURRENT_STATE (revisar el run, QA en iPhone, revisar PhotoLibrary.swift).
+
+### CW-CL-029 — CI: el vídeo de prueba quedaba fuera de la ventana de 6
+Fecha: 2026-11-02, America/Bogota
+Agente: Claude (el usuario pidió vigilar el CI y corregir hasta que pase)
+Run 41395519365 (3ce3e19): Swift compila (IPA sin firmar generado); XCTest pasó (416 s); falló la comprobación posterior del script: sin `MEMSWIPE_VIDEO_PREPARED_OK`. Causa: la biblioteca del simulador tiene 8 elementos (run verde 41373241834: count=8, vídeo preparado 2 s después de leer Fotos) y el vídeo generado es el más reciente; con la ventana de 0.9.3 (~6) nunca entraba en la precarga y la prueba solo avanza una carta. Corrección en la app, no en la prueba: los vídeos miran hasta 10 por delante (`VIDEO_AHEAD`, como antes de 0.9.3); los pósters siguen en ~6. Validaciones: 82/82, runtime 28, build:native, recorrido 11/11. Nuevo run: ver CURRENT_STATE.
