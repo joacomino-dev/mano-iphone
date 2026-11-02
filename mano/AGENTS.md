@@ -398,5 +398,7 @@ Plan and the user's notes: `docs/ai-handoff/NEXT_0.9.5_PROMPT.md`.
 - Colour: `--cw-accent` holds the selected state in Filtros y ajustes. Coffee
   (#6E3B22) was tried in build 14 and reverted to dark teal in build 15 at the
   user's request («luego lo arreglamos»): a future colour pass is still open.
-- Pending: Zángano Studio signature on the launch mark — its SVG uses Candara
-  (not on iOS); needs the text as curves (`mano/brand/zangano-studio-logo-source.svg`).
+- Launch mark (build 16): Zángano Studio signature — isotype plus «ZANGANO»
+  with a lighter «studio» under its right end, small and soft ink. The name is
+  set in the system font because the logo's Candara is not on iOS; swap in the
+  lettering as curves when available (`mano/brand/zangano-studio-logo-source.svg`).

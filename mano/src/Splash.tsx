@@ -30,6 +30,10 @@ export function Splash({ done }: { done: () => void }) {
     </motion.div>
     <motion.div className="splash-maker" initial={{ opacity: 0 }} animate={{ opacity: leaving ? 0 : 1 }} transition={{ delay: leaving || reduced ? 0 : .3, duration: leaving ? .24 : .4, ease }}>
       <img src="/assets/brand/zangano-isotipo.svg" alt="" draggable={false}/>
+      {/* Zángano Studio's name, as in its logo: «ZANGANO» with a lighter «studio»
+          under its right end. System font until the logo's lettering (Candara,
+          not on iOS) is available as curves: mano/brand/zangano-studio-logo-source.svg. */}
+      <span className="splash-maker-name"><b>ZANGANO</b><small>studio</small></span>
     </motion.div>
   </div>;
 }

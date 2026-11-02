@@ -263,3 +263,4 @@ Validaciones: tsc; npm test 84/84 (+1 favoritas); runtime 28; build + build:nati
 No verificado: iPhone real (autoplay en WKWebView es la hipótesis más probable, no confirmada en dispositivo; conteo de favoritas con biblioteca real). Pendiente: firma de Zángano Studio (necesita texto en curvas; Candara no existe en iOS).
 CI: run 41520108186 (6a33e0d, 0.9.5) **verde de punta a punta** (smoke del simulador pasó, IPA `Mano-AltStore` publicado).
 Seguimiento (build 15): el usuario aprobó todo salvo los acentos café; `--cw-accent` vuelve al teal oscuro de antes (un token, una línea). Corrección cromática pendiente para más adelante.
+Build 16: firma de Zángano Studio en la pantalla de inicio (isotipo + «ZANGANO» / «studio» en fuente del sistema, discreta). Pendiente: sustituir por las letras del logo en curvas cuando estén (Candara no existe en iOS).
