@@ -137,10 +137,6 @@
   --cw-fast:.12s;--cw-base:.2s;--cw-slow:.32s;
 }
 
-/* iOS Simulator builds (no GPU) set data-paper="flat" (PhotoLibrary.swift):
-   same colour, no paper texture. Device builds always paint the paper. */
-:root[data-paper="flat"]{--cw-paper-texture:none}
-
 /* ---- Palette: Coco Mint (prepared, not exposed) ----
    Same eight primitives; try it with document.documentElement.dataset.palette='mint'.
    Measured: text 9.1:1, turquoise 5.5, ivory on turquoise 6.0, on graphite 7.3.
