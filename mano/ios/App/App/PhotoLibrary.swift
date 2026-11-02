@@ -23,6 +23,15 @@ class ManoBridgeController: CAPBridgeViewController {
         // Capacitor's file handler answers a <video> "bytes=0-" request by reading the
         // whole file into memory on the main thread. Prepared videos stream instead.
         configuration.setURLSchemeHandler(mediaStream, forURLScheme: PreparedVideoStreamHandler.scheme)
+        #if targetEnvironment(simulator)
+        // The Simulator composites without a GPU: the full-screen paper texture,
+        // recomposited every animation frame, stalled the CI smoke test (a flat
+        // frame passed in the same conditions). Devices composite it on the GPU,
+        // so only Simulator builds paint the same colour without the paper.
+        configuration.userContentController.addUserScript(WKUserScript(
+            source: "document.documentElement.dataset.paper = 'flat';",
+            injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        #endif
         return configuration
     }
     override func capacitorDidLoad() {
