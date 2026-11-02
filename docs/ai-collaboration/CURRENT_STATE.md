@@ -9,6 +9,9 @@
 - Pendiente del usuario: decidir si PR #1 y esta rama se fusionan a `main` (no se ha abierto PR
   de esta rama: puede abrirse contra `claude/decision-bar-favoritas` o contra `main` tras PR #1).
 
+- **Siguiente versión (0.9.5, solo planificada):** observaciones del usuario y prompt listo en
+  [NEXT_0.9.5_PROMPT](../ai-handoff/NEXT_0.9.5_PROMPT.md); logo de Zángano Studio en `mano/brand/zangano-studio-logo-source.svg`.
+
 ## CW-HO-005 — 0.9.3 entregada, Claude → Codex (lista, no recibida)
 
 Objetivo: que Codex retome sin releer la sesión. Leer primero
