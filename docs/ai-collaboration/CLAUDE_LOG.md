@@ -264,3 +264,6 @@ No verificado: iPhone real (autoplay en WKWebView es la hipótesis más probable
 CI: run 41520108186 (6a33e0d, 0.9.5) **verde de punta a punta** (smoke del simulador pasó, IPA `Mano-AltStore` publicado).
 Seguimiento (build 15): el usuario aprobó todo salvo los acentos café; `--cw-accent` vuelve al teal oscuro de antes (un token, una línea). Corrección cromática pendiente para más adelante.
 Build 16: firma de Zángano Studio en la pantalla de inicio (isotipo + «ZANGANO» / «studio» en fuente del sistema, discreta). Pendiente: sustituir por las letras del logo en curvas cuando estén (Candara no existe en iOS).
+
+### CW-CL-033 — 0.9.6 (17): estampas ilustradas
+Estampas del usuario recortadas sin fondo (icono y icono+palabra); introducción solo con icono; cartas con icono+palabra sobre placa crema; sello de nivel sin cambios. Validado: tsc, npm test, runtime, build, capturas Chromium.

@@ -336,6 +336,10 @@
 
 /* ---------- Stamps (Stamp.tsx): colour + shape + icon + word ---------- */
 .stamp{display:block;line-height:0}.stamp svg{display:block;width:100%;height:100%;overflow:visible}
+/* 0.9.6 illustrated stamps: the art carries its own colours; on a card the
+   stamp with its word sits on a cream plate so it reads over any photo. */
+.stamp.is-art img{display:block;width:100%;height:auto;-webkit-user-drag:none}
+.stamp.has-word{padding:6px 12px 6px 8px;border-radius:22px;background:rgba(250,246,238,.94);box-shadow:inset 0 0 0 1.5px rgba(46,24,14,.18)}
 .stamp-keep{color:var(--cw-stamp-keep)}.stamp-discard{color:var(--cw-stamp-discard)}.stamp-favorite{color:var(--cw-stamp-favorite)}.stamp-later{color:var(--cw-stamp-later)}
 .stamp-later .stamp-word{font-size:15px;letter-spacing:.08em}
 .stamp-word{fill:currentColor;font:600 11px/1 var(--cw-font-mono);letter-spacing:.14em}
@@ -348,13 +352,13 @@
 .seal .stamp{width:100%;height:100%}
 .photo-card:has(.inline-media.is-playing) .seal{opacity:0}
 /* While dragging: the stamp the card is about to receive, same as on release. */
-.drag-stamp{position:absolute;z-index:30;top:30%;left:0;right:0;margin-inline:auto;width:112px;pointer-events:none;--stamp-fill:rgba(250,246,238,.94);filter:drop-shadow(0 2px 6px rgba(6,29,32,.25))}
-.drag-stamp.keep{transform:translateX(-36px) rotate(-10deg)}
-.drag-stamp.discard{width:150px;transform:translateX(36px) rotate(8deg)}
-.drag-stamp.favorite{top:16%;width:104px}
-.drag-stamp.later{top:auto;bottom:14%;width:160px;transform:rotate(-4deg)}
-.decision-stamp{position:absolute;z-index:35;inset:0;margin:auto;width:120px;height:fit-content;pointer-events:none;--stamp-fill:rgba(250,246,238,.94);filter:drop-shadow(0 4px 10px rgba(6,29,32,.3))}
-.decision-stamp.is-discard{width:160px}.decision-stamp.is-favorite{width:108px}.decision-stamp.is-later{width:168px}
+.drag-stamp{position:absolute;z-index:30;top:30%;left:0;right:0;margin-inline:auto;width:196px;pointer-events:none;--stamp-fill:rgba(250,246,238,.94);filter:drop-shadow(0 2px 6px rgba(6,29,32,.25))}
+.drag-stamp.keep{transform:translateX(-24px) rotate(-8deg)}
+.drag-stamp.discard{transform:translateX(24px) rotate(6deg)}
+.drag-stamp.favorite{top:16%}
+.drag-stamp.later{top:auto;bottom:14%;transform:rotate(-4deg)}
+.decision-stamp{position:absolute;z-index:35;inset:0;margin:auto;width:204px;height:fit-content;pointer-events:none;--stamp-fill:rgba(250,246,238,.94);filter:drop-shadow(0 4px 10px rgba(6,29,32,.3))}
+
 /* Group of similar photos */
 .bundle-arrival{position:absolute;top:0;left:0;right:0;margin-inline:auto;width:fit-content;z-index:40;display:flex;align-items:center;gap:var(--cw-icon-gap);height:28px;padding:0 var(--cw-space-3);white-space:nowrap;
   color:var(--cw-ink);background:var(--cw-surface);border:1px solid var(--cw-line-on-bg);border-radius:var(--cw-radius-pill);font:600 .8125rem/1 var(--cw-font);pointer-events:none;transition:opacity var(--cw-base) var(--cw-ease)}
@@ -665,7 +669,7 @@
 .ob-row strong{transition:color var(--cw-base) var(--cw-ease)}
 .ob-rows .ob-row:not(.is-on) strong{color:var(--cw-ink-soft)}
 @media (prefers-reduced-motion:reduce){.ob-row-art,.ob-row.is-on .ob-row-art{transform:none}}
-.ob-row-art .stamp{width:44px;--stamp-fill:var(--cw-paper-light)}.ob-row-art .stamp-discard{width:64px}.ob-row-art .stamp-favorite{width:40px}.ob-row-art .stamp-later{width:66px}
+.ob-row-art .stamp{height:44px;width:auto}.ob-row-art .stamp.is-art img{height:100%;width:auto}
 .ob-row strong{display:block;font-size:var(--cw-text-md);font-weight:600;color:var(--cw-ink)}
 .ob-row strong small{margin-left:var(--cw-space-1);font:500 var(--cw-text-xs) var(--cw-font-mono);color:var(--cw-ink-soft)}
 .ob-row>span:last-child>span{display:block;margin-top:2px;font-size:var(--cw-text-sm);line-height:1.4;color:var(--cw-ink-soft)}
@@ -700,7 +704,7 @@
 .ob-card-photo{position:relative;display:block;width:100%;height:100%;overflow:hidden}
 .ob-card-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .ob-stamp{position:absolute;z-index:1;inset:0;margin:auto;width:84px;height:fit-content;opacity:0;--stamp-fill:rgba(250,246,238,.92)}
-.ob-stamp.is-discard{width:110px}.ob-stamp.is-favorite{width:72px}.ob-stamp.is-later{width:112px}
+.ob-stamp{width:92px}
 .ob-finger{position:absolute;z-index:3;inset:0;margin:auto;width:34px;height:34px;translate:22px 40px;border-radius:50%;background:rgba(18,45,46,.16);box-shadow:0 0 0 2px rgba(18,45,46,.5);pointer-events:none;opacity:0}
 .ob-finger.is-tap,.ob-finger.is-pinch{translate:0 0}
 /* The group demo (photos + dock) is one block, centred like every other illustration. */

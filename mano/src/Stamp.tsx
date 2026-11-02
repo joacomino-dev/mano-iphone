@@ -69,11 +69,19 @@ function LaterPostmark() {
   </svg>;
 }
 
-export function Stamp({ kind, level, className = '' }: { kind: StampKind; level?: number; className?: string }) {
-  return <span className={`stamp stamp-${kind} ${className}`} aria-hidden="true">
-    {kind === 'keep' ? <KeepSeal level={level}/> : kind === 'discard' ? <DiscardTicket/> : kind === 'later' ? <LaterPostmark/> : <FavoriteHeart/>}
+/** 0.9.6: the decision stamps are the illustrated ones (public/assets/stamps,
+ * cut from mano/brand/stamps/*-source.webp by cut-stamps.py, transparent
+ * background). `word`: the stamp with its word to the right (on the cards, over
+ * a cream plate so it reads on any photo); without it, the icon alone (tour).
+ * A kept item's seal level (I–VIII) stays the drawn seal. */
+export function Stamp({ kind, level, word = false, className = '' }: { kind: StampKind; level?: number; word?: boolean; className?: string }) {
+  if (level) return <span className={`stamp stamp-${kind} ${className}`} aria-hidden="true"><KeepSeal level={level}/></span>;
+  return <span className={`stamp stamp-${kind} is-art ${word ? 'has-word' : ''} ${className}`} aria-hidden="true">
+    <img src={`/assets/stamps/${kind}${word ? '-word' : ''}.webp`} alt="" draggable={false}/>
   </span>;
 }
+/** The drawn stamps before 0.9.6, kept for reference and a possible fallback. */
+export const DRAWN_STAMPS = { DiscardTicket, LaterPostmark, FavoriteHeart };
 
 /** A decision lands: the stamp hits the table, then follows the card out. It is
  * pure decoration over the stack (no pointer events, no state), so it never
@@ -86,6 +94,6 @@ export function DecisionStamp({ kind, reduced, done }: { kind: StampKind; reduce
     animate={reduced ? { opacity: [0, 1, 1, 0] } : { opacity: [0, 1, 1, 0], scale: [1.35, 1, 1, .9], rotate: tilt, ...travel }}
     transition={reduced ? { duration: .6, times: [0, .1, .75, 1] } : { duration: .5, times: [0, .24, .62, 1], ease: 'easeOut' }}
     onAnimationComplete={done}>
-    <Stamp kind={kind}/>
+    <Stamp kind={kind} word/>
   </motion.div>;
 }

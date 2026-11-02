@@ -402,3 +402,11 @@ Plan and the user's notes: `docs/ai-handoff/NEXT_0.9.5_PROMPT.md`.
   with a lighter «studio» under its right end, small and soft ink. The name is
   set in the system font because the logo's Candara is not on iOS; swap in the
   lettering as curves when available (`mano/brand/zangano-studio-logo-source.svg`).
+
+## CocoWash 0.9.6 — illustrated stamps (2 November 2026, user request)
+
+- The four decision stamps are the user's illustrations: sources in `mano/brand/stamps/*-source.webp`,
+  cut by `cut-stamps.py` (white background removed; the icon is its own opaque piece) into
+  `public/assets/stamps/{kind}.webp` (icon) and `{kind}-word.webp` (icon + word).
+- Tour (rows and demo): icon only, no word. Cards (drag and decision stamps): icon + word on a
+  cream plate so it reads over photos. A kept item's seal level (I–VIII) stays the drawn seal.
