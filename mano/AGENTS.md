@@ -302,3 +302,48 @@ Version line: 0.9.x until 1.0 (user). Supersedes the 0.9 single-row header.
 - Version 0.9.1 (build 10).
 - 0.9.2 (CW-CL-026, user): frame #F3ECE1 with a third, fine paper-fibre layer
   (paper-fibre.svg); more paper, still clean. Faint text #51625E. Version 0.9.2 (11).
+
+## CocoWash 0.9.3 — speed, a stable pile, real iCloud progress, Cotton Fiber (2 November 2026, user request, CW-CL-027)
+
+Requested by the user and implemented directly. Functional protections unchanged
+(deletion only from the review with Photos' confirmation and the favourites
+recheck; demo-only destructive QA; protected preview runtime; same bundle, keys,
+permissions, `cocowash-media://` and CSP).
+- The pile: one canonical sequence (`orderAssets` once per library/order/seed,
+  `eligibleFrom` per decision, linear). The hand on screen is **locked**
+  (`sequence.ts`): background work — similar groups, weights, a preview that
+  finishes first, a library refresh — never swaps it; only a decision,
+  «Siguiente», undo or a filter change replace it. Decisions record the hand in
+  display order (+ its «Mejor toma»); undo restores exactly that. Undo of a
+  postponed item puts it back in its exact place in `later`. No card is ever
+  promoted ahead because its image is ready (0.7 «Descargar siempre» promotion
+  removed: order never depends on download completion).
+- Read-ahead: the hand + about six next cards. Cards read their own preload
+  entry; the app does not re-render per preparation step. Local first: a card
+  never waits on the network; downloads go through `cloudPreviews` (media.ts):
+  one tracked job per item, at most two at a time, visible card / anchored view
+  first, joined by «Anclar» (holding an iCloud photo starts the larger preview),
+  cancelled when the item leaves the window or the session ends. Never originals.
+- iCloud indicator: the existing chip, now with a ring of **real** PhotoKit
+  progress (indeterminate until bytes arrive), retry once, «Reintentar» on error;
+  the same indicator in the anchored view. No simulated percentages on device.
+- Swipes write motion values (no app re-render per pointer move); saving the
+  record/session is grouped (≤ 350 ms, flushed when hidden). Undoing a favourite
+  no longer reloads the whole library. The similar-photo search is no longer
+  cancelled and restarted at every warm-up.
+- Temporary notices take the wordmark's place (same cell, header height and
+  buttons fixed), two lines at most, by-length duration; routine results speak
+  through the interface/VoiceOver only. Errors use their own persistent alert.
+- Tour: one composition for every card (illustration + copy centred between
+  progress and buttons). Card 2 demonstrates the four real swipes in list order
+  (right Conservar, left Eliminar, up Favorita, down Más tarde), ~5 s round;
+  «Continuar» waits for one round on first view only (aria-disabled, fills with
+  the demo; Reduce Motion: same round without travel); not when replayed.
+- Background material **Cotton Fiber** (user chose option B): fine light and
+  dark cotton fibres, uniform, matte, σ ≈ 2.3 levels, mean = #F3ECE1. Parts:
+  `--cw-paper-base`, `--cw-paper-texture` (neutral RGBA tile, no colour of its
+  own, `public/assets/paper-cotton.webp` from `brand/cotton-fiber.py`),
+  `--cw-paper-intensity`; tone comes from the base. Dark mode = new base and
+  intensity, same tile. Frame only; Polaroid/tour/celebration surfaces keep
+  their approved paper. Replaces paper-cream.webp.
+- Version 0.9.3 (build 12).

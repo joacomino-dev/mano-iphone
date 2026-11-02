@@ -10,14 +10,20 @@ export type MediaKind = 'photo' | 'video' | 'live';
 export type Asset = { id: string; kind: MediaKind; date: number; width: number; height: number; duration: number; modified?: number; group?: string; hasLocation?: boolean; demo?: boolean;
   bytes?: number; screenshot?: boolean; low?: boolean; text?: number; quality?: number; cloud?: boolean; favorite?: boolean };
 export type Mark = { level: number; due: number; keptAt: number };
-export type DecisionContext = { handIds: string[]; rotated: string[]; selected: string[]; group?: string; filter?: Filter };
+/** What was on the table when a decision was made, to put it back exactly on
+ * undo: `handIds` in display order (front first, already rotated), the
+ * selection, the filter and the group's «Mejor toma» (`best`). `rotated` is
+ * only read from records written before 0.9.3, whose `handIds` were unrotated. */
+export type DecisionContext = { handIds: string[]; rotated: string[]; selected: string[]; group?: string; filter?: Filter; best?: string };
 /** `later` («Más tarde») leaves the marks untouched and moves the item to the
  * end of the pile; `wasLater` lets undo put a postponed item back where it was.
  * `unfavorite` only exists inside the «Favoritas» set: it takes the item out of
  * Favorites and back to the general pile (undo puts it back). */
 export type Action = 'keep' | 'discard' | 'favorite' | 'later' | 'unfavorite';
 export const ACTIONS: Action[] = ['keep', 'discard', 'favorite', 'later', 'unfavorite'];
-export type Decision = { ids: string[]; action: Action; previous: Record<string, Mark | null>; at: number; context?: DecisionContext; wasLater?: string[] };
+/** `laterAt`: where each postponed item stood in `later` before this decision,
+ * so undo puts it back in exactly that place (not at the end). */
+export type Decision = { ids: string[]; action: Action; previous: Record<string, Mark | null>; at: number; context?: DecisionContext; wasLater?: string[]; laterAt?: Record<string, number> };
 export type RecordState = { marks: Record<string, Mark>; pending: string[]; favorites: string[]; removed: string[]; history: Decision[]; later: string[] };
 export type Order = 'oldest' | 'newest' | 'largest' | 'smallest' | 'random';
 /** Quick sets, combinable with every other filter. «favorites» is the only
@@ -53,7 +59,8 @@ export function normalizeDecisionContext(value: unknown): DecisionContext {
   const ids = (items: unknown) => Array.isArray(items) ? [...new Set(items.filter((id): id is string => typeof id === 'string' && id.length > 0))] : [];
   return { handIds: ids(input.handIds), rotated: ids(input.rotated), selected: ids(input.selected),
     ...(typeof input.group === 'string' ? { group: input.group } : {}),
-    ...(input.filter && typeof input.filter === 'object' ? { filter: normalizeFilter(input.filter) } : {}) };
+    ...(input.filter && typeof input.filter === 'object' ? { filter: normalizeFilter(input.filter) } : {}),
+    ...(typeof input.best === 'string' && input.best ? { best: input.best } : {}) };
 }
 function localDate(value: string): Date | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
@@ -95,20 +102,26 @@ export function decide(state: RecordState, ids: string[], action: Action, now = 
   }
   const later = state.later ?? [];
   const wasLater = unique.filter(id => later.includes(id));
+  const laterAt = Object.fromEntries(wasLater.map(id => [id, later.indexOf(id)]));
   const rest = later.filter(id => !unique.includes(id));
   return { ...state, marks, pending: action === 'discard' ? [...state.pending, ...unique] : state.pending,
     favorites: action === 'favorite' ? [...state.favorites, ...unique] : action === 'unfavorite' ? state.favorites.filter(id => !unique.includes(id)) : state.favorites,
     // Postponing again moves it to the very end; any other decision settles it.
     later: action === 'later' ? [...rest, ...unique] : rest,
-    history: [...state.history, { ids: unique, action, previous, at: now, ...(wasLater.length ? { wasLater } : {}), ...(context ? { context: normalizeDecisionContext(context) } : {}) }].slice(-10) };
+    history: [...state.history, { ids: unique, action, previous, at: now, ...(wasLater.length ? { wasLater, laterAt } : {}), ...(context ? { context: normalizeDecisionContext(context) } : {}) }].slice(-10) };
 }
 export function undo(state: RecordState): RecordState {
   const last = state.history.at(-1); if (!last) return state; const marks = { ...state.marks };
   for (const id of last.ids) { const previous = last.previous[id]; if (previous) marks[id] = previous; else delete marks[id]; }
   const later = (state.later ?? []).filter(id => !last.ids.includes(id));
+  // Postponed items go back to the exact place they held (older records without
+  // `laterAt` append them, as before).
+  for (const id of [...(last.wasLater ?? [])].sort((a, b) => (last.laterAt?.[a] ?? Infinity) - (last.laterAt?.[b] ?? Infinity))) {
+    const at = last.laterAt?.[id]; later.splice(typeof at === 'number' ? Math.min(at, later.length) : later.length, 0, id);
+  }
   return { ...state, marks, history: state.history.slice(0, -1), pending: last.action === 'discard' ? state.pending.filter(id => !last.ids.includes(id)) : state.pending,
     favorites: last.action === 'favorite' ? state.favorites.filter(id => !last.ids.includes(id)) : last.action === 'unfavorite' ? [...new Set([...state.favorites, ...last.ids])] : state.favorites,
-    later: [...later, ...(last.wasLater ?? [])] };
+    later };
 }
 export function restore(state: RecordState, id: string): RecordState {
   return { ...state, pending: state.pending.filter(x => x !== id), history: state.history.map(d => ({ ...d, ids: d.ids.filter(x => x !== id) })).filter(d => d.ids.length > 0) };
@@ -151,24 +164,45 @@ const bySize = (a: Asset, b: Asset, direction: 1 | -1) => {
   if (!x || !y) return (x ? 0 : 1) - (y ? 0 : 1); // not measured yet: last
   return (x - y) * direction;
 };
-export function eligible(assets: Asset[], state: RecordState, filter: Filter, now = Date.now(), seed = 1) {
-  // «Más tarde» items wait at the end of the pile, oldest postponement first,
-  // unless the person opened exactly that set.
-  const rank = new Map((state.later ?? []).map((id, i) => [id, i + 1]));
-  const postponedLast = filter.smart !== 'later';
-  return assets.filter(pileTest(state, filter, now)).sort((a, b) => {
-    if (postponedLast) { const wait = (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0); if (wait) return wait; }
-    if (filter.smart === 'text') { const textual = (b.text ?? 0) - (a.text ?? 0); if (textual) return textual; }
-    const priority = (state.marks[a.id]?.level ?? 0) - (state.marks[b.id]?.level ?? 0);
-    if (priority) return priority;
-    switch (filter.order) {
-      case 'random': return hash(a.id, seed) - hash(b.id, seed);
+/** The canonical sequence: the whole library in the chosen order (stable: ties
+ * keep library order). It depends only on the assets, the order and the seed,
+ * so it is sorted once and reused while decisions change the record. */
+export function orderAssets(assets: Asset[], order: Order, seed = 1): Asset[] {
+  if (order === 'random') {
+    const keys = new Map(assets.map(a => [a.id, hash(a.id, seed)]));
+    return [...assets].sort((a, b) => keys.get(a.id)! - keys.get(b.id)!);
+  }
+  return [...assets].sort((a, b) => {
+    switch (order) {
       case 'newest': return b.date - a.date;
       case 'largest': return bySize(a, b, -1) || a.date - b.date;
       case 'smallest': return bySize(a, b, 1) || a.date - b.date;
       default: return a.date - b.date;
     }
   });
+}
+/** The pile from an ordered sequence, in one linear pass: unsealed first, then
+ * seal by seal, each in sequence order; «Más tarde» items wait at the end,
+ * oldest postponement first, unless the person opened exactly that set. Same
+ * result as sorting by (postponed, text, seal, order) — see domain tests. */
+export function eligibleFrom(ordered: Asset[], state: RecordState, filter: Filter, now = Date.now()): Asset[] {
+  const test = pileTest(state, filter, now);
+  const postponedLast = filter.smart !== 'later';
+  const rank = postponedLast ? new Map((state.later ?? []).map((id, i) => [id, i])) : new Map<string, number>();
+  const levels: Asset[][] = []; const waiting: Asset[] = [];
+  for (const a of ordered) {
+    if (!test(a)) continue;
+    if (rank.has(a.id)) { waiting.push(a); continue; }
+    const level = state.marks[a.id]?.level ?? 0;
+    (levels[level] ??= []).push(a);
+  }
+  let head = levels.flatMap(bucket => bucket ?? []);
+  // Stable: within the same text score, the seal-then-sequence order stands.
+  if (filter.smart === 'text') head = head.sort((a, b) => (b.text ?? 0) - (a.text ?? 0));
+  return waiting.length ? [...head, ...waiting.sort((a, b) => rank.get(a.id)! - rank.get(b.id)!)] : head;
+}
+export function eligible(assets: Asset[], state: RecordState, filter: Filter, now = Date.now(), seed = 1) {
+  return eligibleFrom(orderAssets(assets, filter.order, seed), state, filter, now);
 }
 export function nextHand(queue: Asset[], similar: boolean) {
   if (!queue.length) return []; if (!similar || !queue[0].group) return [queue[0]];
@@ -219,8 +253,9 @@ export function validateRecordState(value: unknown): RecordState | null {
     if (!Object.values(raw.previous).every(v => v === null || mark(v))) continue;
     const previous: Decision['previous'] = {};
     for (const id of raw.ids) { const old = raw.previous[id]; previous[id] = mark(old) ? { ...old } : null; }
+    const laterAt = object(raw.laterAt) ? Object.fromEntries(Object.entries(raw.laterAt).filter(([, v]) => Number.isInteger(v) && Number(v) >= 0)) as Record<string, number> : undefined;
     history.push({ ids: [...new Set(raw.ids)], action: raw.action as Action, at: raw.at, previous,
-      ...(strings(raw.wasLater) && raw.wasLater.length ? { wasLater: [...new Set(raw.wasLater)] } : {}),
+      ...(strings(raw.wasLater) && raw.wasLater.length ? { wasLater: [...new Set(raw.wasLater)], ...(laterAt && Object.keys(laterAt).length ? { laterAt } : {}) } : {}),
       ...(raw.context ? { context: normalizeDecisionContext(raw.context) } : {}) });
   }
   return { marks: Object.fromEntries(Object.entries(input.marks).map(([id, value]) => [id, { ...value as Mark }])), pending: [...new Set(input.pending)], favorites: [...new Set(input.favorites as string[] ?? [])], removed: [...new Set(input.removed as string[] ?? [])], history,
@@ -234,7 +269,7 @@ export function readState(key: string): RecordState {
  * capture date, seal), how many of them are already decided and how many remain
  * in the pile. `decidedHere` keeps items decided under a seal filter in scope
  * after their seal changes, so the count never shrinks under the person. */
-export function filterScope(assets: Asset[], state: RecordState, filter: Filter, now = Date.now(), decidedHere: ReadonlySet<string> = new Set()) {
+export function filterScope(assets: Asset[], state: RecordState, filter: Filter, now = Date.now(), decidedHere: ReadonlySet<string> = new Set(), remaining?: number) {
   const removed = new Set(state.removed); const later = new Set(state.later ?? []); const favorites = new Set(state.favorites);
   // Favourites count only in their own set (and stay counted once decided here).
   const inScope = assets.filter(a => !removed.has(a.id) && (decidedHere.has(a.id) || favorites.has(a.id) === (filter.smart === 'favorites'))
@@ -242,6 +277,6 @@ export function filterScope(assets: Asset[], state: RecordState, filter: Filter,
     && matchesDate(a.date, filter, now)
     && (decidedHere.has(a.id) || smartMatch(a, filter, later, favorites))
     && (filter.seal === 'all' || decidedHere.has(a.id) || (filter.seal === 'none' ? !state.marks[a.id] : state.marks[a.id]?.level === filter.seal)));
-  const remaining = eligible(assets, state, filter, now).length;
-  return { total: inScope.length, remaining, reviewed: Math.max(0, inScope.length - remaining) };
+  const left = remaining ?? eligible(assets, state, filter, now).length;
+  return { total: inScope.length, remaining: left, reviewed: Math.max(0, inScope.length - left) };
 }

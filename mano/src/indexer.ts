@@ -15,6 +15,8 @@ export type LibraryIndex = {
 const SIZE_CHUNK = 200, VISION_CHUNK = 120;
 /** Vision results reach the pile at most this often: each bump re-sorts it. */
 const VISION_REFRESH_MS = 4000;
+/** Weights reach the pile at most this often while they are being measured. */
+const SIZE_REFRESH_MS = 1500;
 
 /** The library's weight and clean-up signals, measured on the iPhone in the
  * background once the library is open: weights first (originals on the iPhone,
@@ -39,15 +41,18 @@ export function useLibraryIndex(assets: Asset[], fingerprint: string, enabled: b
       // Videos first: they weigh the most and the VHS shows their weight.
       const ids = [...latest.current].sort((a, b) => Number(b.kind === 'video') - Number(a.kind === 'video')).map(a => a.id).filter(id => !sizes.current.has(id));
       if (ids.length) setMeasuring(true);
+      // Each bump re-enriches the library and refreshes the pile: the first
+      // chunk shows at once, the rest at most every SIZE_REFRESH_MS.
+      let shown = -Infinity, pending = false;
       try {
         for (let i = 0; i < ids.length && alive; i += SIZE_CHUNK) {
           const { sizes: chunk } = await Library.sizes({ ids: ids.slice(i, i + SIZE_CHUNK), flush: i + SIZE_CHUNK >= ids.length });
           if (!alive) return;
-          for (const [id, bytes] of Object.entries(chunk)) if (Number.isFinite(bytes) && bytes > 0) sizes.current.set(id, bytes);
-          setVersion(v => v + 1);
+          for (const [id, bytes] of Object.entries(chunk)) if (Number.isFinite(bytes) && bytes > 0) { sizes.current.set(id, bytes); pending = true; }
+          if (pending && performance.now() - shown > SIZE_REFRESH_MS) { shown = performance.now(); pending = false; setVersion(v => v + 1); }
         }
-      } catch { /* unavailable: weights stay unknown */ }
-      finally { if (alive) { setMeasuring(false); setSized(true); } }
+      } catch { /* unavailable: the weights measured so far still show */ }
+      finally { if (alive) { if (pending) setVersion(v => v + 1); setMeasuring(false); setSized(true); } }
     })();
     return () => { alive = false; };
   }, [enabled, fingerprint]);

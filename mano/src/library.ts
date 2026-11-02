@@ -51,14 +51,23 @@ export type PhotoPermission = 'authorized' | 'limited' | 'denied' | 'notDetermin
 export const isNative = Capacitor.isNativePlatform();
 export const Library = registerPlugin<LibraryPlugin>('PhotoLibrary');
 export type Thumb = { src: string; cloud: boolean };
+/** In-flight and recent preview answers (file references), shared by every
+ * caller. Bounded, least recently used first: one entry per item seen, so an
+ * unbounded map grew with every card of a long session. The files themselves
+ * live in the native, size-bounded preview cache. */
 const cache = new Map<string, Promise<Thumb>>();
+const CACHE_LIMIT = 240;
 /** `network` defaults to the iCloud preference; true downloads if needed. */
 export function thumbnailInfo(asset: Asset, size = 900, refresh = false, network = cloudDownloads()): Promise<Thumb> {
   if (asset.demo) return Promise.resolve({ src: demoPostcard(asset), cloud: !!asset.cloud && !network });
   const key = `${asset.id}:${asset.modified??0}:${size}:${network ? 'net' : 'local'}`;
   if (refresh) cache.delete(key);
-  if (!cache.has(key)) cache.set(key, Library.thumbnail({ id: asset.id, size, network }).then(r => ({ src: Capacitor.convertFileSrc(r.path), cloud: !!r.cloud })).catch(e => { cache.delete(key); throw e; }));
-  return cache.get(key)!;
+  const hit = cache.get(key);
+  if (hit) { cache.delete(key); cache.set(key, hit); return hit; }
+  const request = Library.thumbnail({ id: asset.id, size, network }).then(r => ({ src: Capacitor.convertFileSrc(r.path), cloud: !!r.cloud })).catch(e => { if (cache.get(key) === request) cache.delete(key); throw e; });
+  cache.set(key, request);
+  while (cache.size > CACHE_LIMIT) cache.delete(cache.keys().next().value!);
+  return request;
 }
 export const thumbnail = (asset: Asset, size = 900, refresh = false, network?: boolean) => thumbnailInfo(asset, size, refresh, network).then(t => t.src);
 export const inCloudError = (error: unknown) => (error as { code?: string })?.code === 'IN_CLOUD';

@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type PointerEvent, type MouseEvent } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { AnimatePresence, motion, useReducedMotion, useMotionValue, useTransform, animate, type MotionValue } from 'motion/react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { FolderOpenIcon, FolderSimplePlusIcon, CaretRightIcon, ArrowCounterClockwiseIcon, ArrowUUpLeftIcon, StackIcon, TrashIcon, CheckIcon, XIcon, PlayIcon, SlidersHorizontalIcon, ArrowClockwiseIcon, ImageBrokenIcon, PlusIcon, PushPinIcon, InfoIcon, CloudIcon, CloudArrowDownIcon, SparkleIcon } from '@phosphor-icons/react';
 import { BottomSheet, Carousel, KeyboardInput, useKeyboard } from './mobile';
-import { decide, undo, restore, eligible, nextSessionHand, readState, reconcileLibrary, libraryFingerprint, filterScope, LEVELS, initialFilter, initialState, type Action, type Asset, type Decision, type Filter, type RecordState } from './domain';
+import { decide, undo, restore, eligible, eligibleFrom, orderAssets, readState, reconcileLibrary, libraryFingerprint, filterScope, LEVELS, initialFilter, initialState, type Action, type Asset, type Decision, type Filter, type RecordState } from './domain';
+import { NO_HAND, playable, lockedHand, dealHand, afterDecision, cycleHand, restoreHand, upcomingFrom, type HandLock } from './sequence';
 import { Library, isNative, demoAssets, thumbnailInfo, inCloudError, type Album, type PhotoPermission } from './library';
 import { useLibraryIndex, enrich } from './indexer';
-import { AssetPreloader, upcomingSessionAssets, type PreloadSnapshot } from './preload';
-import { prepareReviewAsset, VideoStore, prewarm, sharpPreview, subscribeSharp, type PreparedMedia, type VideoState } from './media';
-import { bestShot } from './insights';
+import { AssetPreloader } from './preload';
+import { prepareReviewAsset, VideoStore, prewarm, sharpPreview, subscribeSharp, cloudPreviews, type PreparedMedia, type VideoState } from './media';
+import { CloudBadge, CloudPlaceholder, useCloud } from './Cloud';
 import { InlineVideo } from './InlineVideo';
 import { Filters } from './Filters';
 import { Inspector, type InspectOrigin } from './Inspector';
@@ -35,6 +36,8 @@ import '@fontsource/ibm-plex-sans/latin-600.css';
 // Presentation only: a decided card leaves toward the side of its decision.
 // Any other removal (filters, undo, session end) simply fades.
 const leaveEase = [.32, .72, .36, 1] as const;
+/** Cards prepared ahead of the one on screen (front + next), about six. */
+const PRELOAD_AHEAD=6;
 function cardExit(id: string, decision: Decision | undefined, reduced: boolean | null) {
   const decided = !!decision?.ids.includes(id);
   if (reduced || !decided) return { opacity: 0, pointerEvents: 'none' as const, transition: { duration: reduced ? 0 : .16 } };
@@ -46,32 +49,43 @@ function cardExit(id: string, decision: Decision | undefined, reduced: boolean |
 function savedGroups(items: Asset[]) {
   try { const groups = JSON.parse(localStorage.getItem('mano-similarity-v1') || '{}') as Record<string,string>; return items.map(a=>({...a,group:groups[a.id]})); } catch { return items; }
 }
-/** `quiet`: the owner (a video card) shows the one error state; this only
- * renders the poster or a neutral placeholder, so messages never stack.
- * With «Ahorrar iCloud» a card may show the smaller version already on the
- * iPhone (a quiet «iCloud · vista ligera» chip) or, when there is none, a
- * placeholder whose button downloads just that preview. */
-function Photo({ asset, small=false, prepared, lite=false, quiet=false }: { asset: Asset; small?: boolean; prepared?:string; lite?: boolean; quiet?: boolean }) {
-  const [src, setSrc] = useState(''); const [error, setError] = useState(false); const [retry, setRetry] = useState(0);
-  const [cloud, setCloud] = useState<'lite'|'missing'|null>(null); const [fetch, setFetch] = useState(false);
+/** One card picture, in this order of preference: the sharper version fetched
+ * on purpose (Anclar), a preview that just downloaded from iCloud, the poster
+ * prepared ahead by the read-ahead window, or — for items outside the window
+ * (review grid) — its own local request. It never asks PhotoKit for something
+ * the window is already preparing, and never downloads by itself: downloads go
+ * through `cloudPreviews`, which the iCloud indicator follows.
+ * `quiet`: the owner (a video card) shows the one error state; this only
+ * renders the poster or a neutral placeholder, so messages never stack. */
+function Photo({ asset, small=false, pool, quiet=false }: { asset: Asset; small?: boolean; pool?: AssetPreloader<PreparedMedia>|null; quiet?: boolean }) {
+  const [own, setOwn] = useState<{src:string;cloud:boolean;missing:boolean}|null>(null); const [error, setError] = useState(false); const [retry, setRetry] = useState(0);
+  useSyncExternalStore(useCallback((listener:()=>void)=>pool?pool.subscribeItem(asset,listener):()=>{},[pool,asset.id,asset.modified]), ()=>pool?.version(asset)??'');
+  const entry = retry===0 ? pool?.peek(asset) : undefined;
+  const waiting = entry?.status==='queued'||entry?.status==='loading';
+  const ready = entry?.status==='ready' ? entry.value : undefined;
+  const cloud = useCloud(small ? undefined : asset);
   // Anchored once and downloaded: that sharper version stays on the card.
   const upgraded = useSyncExternalStore(subscribeSharp, () => sharpPreview(asset));
-  // A lite poster prepared under «Ahorrar iCloud» is not reused once the person
-  // switched to «Descargar siempre».
-  const always = cloudDownloads(); const usePrepared = !!prepared && retry===0 && !fetch && !(lite && always);
-  useEffect(() => { let alive = true; setError(false); setSrc(''); setCloud(null);
-    (usePrepared?Promise.resolve({src:prepared!,cloud:lite}):thumbnailInfo(asset,small?thumbPixels():cardPixels(asset),retry>0,fetch||undefined))
-      .then(t => { if (alive) { setSrc(t.src); setCloud(t.cloud?'lite':null); } })
-      .catch(e => { if (alive) { if (inCloudError(e)) setCloud('missing'); else setError(true); } });
-    return () => { alive = false; }; }, [asset.id, asset.modified, retry, small, prepared, lite, fetch, always]);
-  const stop=(e:{stopPropagation:()=>void})=>e.stopPropagation();
+  const needOwn = !ready && !waiting;
+  useEffect(() => { if (!needOwn) return; let alive = true; setError(false); setOwn(null);
+    thumbnailInfo(asset, small?thumbPixels():cardPixels(asset), retry>0, false)
+      .then(t => { if (!alive) return; setOwn({src:t.src,cloud:t.cloud,missing:false}); if (t.cloud&&!small&&cloudDownloads()) void cloudPreviews.fetch(asset,'card').catch(()=>{}); })
+      .catch(e => { if (!alive) return; if (inCloudError(e)) { setOwn({src:'',cloud:true,missing:true}); if (!small&&cloudDownloads()) void cloudPreviews.fetch(asset,'card').catch(()=>{}); } else setError(true); });
+    return () => { alive = false; }; }, [asset.id, asset.modified, retry, small, needOwn]);
+  const local = ready ?? (own ? { poster: own.src, cloud: own.cloud, missing: own.missing } : undefined);
+  // «Descargar siempre»: a lite card whose download job was dropped (e.g. back
+  // through undo) asks again; the full preview is already on the iPhone by then.
+  useEffect(() => { if (!small && local?.cloud && !cloud && cloudDownloads()) void cloudPreviews.fetch(asset,'card').catch(()=>{}); }, [small, !!local?.cloud, !!cloud, asset.id]);
+  const src = upgraded ?? (cloud?.src||undefined) ?? (local?.poster||undefined);
+  const alt = asset.kind === 'video' ? 'Vista previa de vídeo' : 'Foto del carrete';
+  const download = () => { haptic('light'); void cloudPreviews.fetch(asset,'card',true).catch(()=>{}); };
+  const retryCloud = () => { haptic('light'); void cloudPreviews.retry(asset).catch(()=>{}); };
   // A cached file may have been pruned natively (preview cache limit): ask once
   // for a fresh one before showing the error.
-  if (upgraded) return <img src={upgraded} alt={asset.kind === 'video' ? 'Vista previa de vídeo' : 'Foto del carrete'} draggable={false}/>;
-  if (src&&!error) return <><img onError={()=>retry===0?setRetry(1):setError(true)} src={src} alt={asset.kind === 'video' ? 'Vista previa de vídeo' : 'Foto del carrete'} draggable={false}/>
-    {cloud==='lite'&&!small&&!quiet&&<span className="cloud-chip"><CloudIcon size={13} weight="bold"/>iCloud · vista ligera</span>}</>;
-  if (cloud==='missing'&&!fetch) return <div className="photo-loading is-cloud">{quiet ? null : <><CloudIcon size={26}/><span>En iCloud</span>{!small&&<button onPointerDown={stop} onClick={e=>{stop(e);setFetch(true);}}><CloudArrowDownIcon size={16} weight="bold"/>Descargar vista previa</button>}</>}</div>;
-  return <div className={`photo-loading ${error?'has-error':''}`}>{error ? quiet ? null : <><ImageBrokenIcon size={26}/><span>No se pudo cargar</span>{!small&&<button onPointerDown={stop} onClick={e=>{stop(e);setRetry(v=>v+1);}}><ArrowClockwiseIcon size={16} weight="bold"/>Reintentar</button>}</> : quiet ? null : <Deferred><CocoLoader size={small?28:40}/></Deferred>}</div>;
+  if (src&&!error) return <><img onError={()=>retry===0?setRetry(1):setError(true)} src={src} alt={alt} draggable={false}/>
+    {!small&&!quiet&&!upgraded&&<CloudBadge state={cloud} lite={!!local?.cloud&&!cloud?.src} onRetry={retryCloud}/>}</>;
+  if (local?.missing&&!error) return small ? <div className="photo-loading is-cloud"><CloudIcon size={22}/></div> : <CloudPlaceholder state={cloud} download={download} retry={retryCloud} quiet={quiet}/>;
+  return <div className={`photo-loading ${error?'has-error':''}`}>{error ? quiet ? null : <><ImageBrokenIcon size={26}/><span>No se pudo cargar</span>{!small&&<button onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();setRetry(v=>v+1);}}><ArrowClockwiseIcon size={16} weight="bold"/>Reintentar</button>}</> : quiet ? null : <Deferred><CocoLoader size={small?28:40}/></Deferred>}</div>;
 }
 /** Polaroid margin: two fixed slots, place left and date right. A missing value
  * leaves its slot empty; a place still being resolved reserves its width. */
@@ -112,10 +126,65 @@ function AlbumInput({value,change}:{value:string;change:(value:string)=>void}) {
 function PreviewAlbumInput({value,change}:{value:string;change:(value:string)=>void}) {
   const keyboard=useKeyboard();return <KeyboardInput value={value} onChange={e=>change(e.target.value)} onBlur={()=>keyboard.hide()} maxLength={100} placeholder="Por ejemplo, Verano"/>;
 }
-function BrandStatus({message,error=false,clear,logo=true}:{message:string;error?:boolean;clear?:()=>void;logo?:boolean}) {
- // Reduce Motion: the mascot and notices swap with a plain fade, no travel.
- const reduced=useReducedMotion();const travel=reduced?0:1;const timing=reduced?{duration:0}:{duration:.22,ease:[.2,.8,.2,1] as const};
- return <div className={`brand-status ${message?'has-message':''} ${error?'has-error':''}`}>{logo&&<motion.span className="brand-wordmark" animate={{y:message?-8*travel:0,opacity:message?0:1}} transition={timing}><Wordmark/><span className="sr-only">CocoWash</span></motion.span>}{!logo&&<span className="sr-only">CocoWash</span>}<AnimatePresence>{message&&<motion.div key={message} role={error?'alert':'status'} initial={{opacity:0,y:-8*travel}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-6*travel}} transition={timing}>{error&&<span className="notice-dot" aria-hidden="true"/>}<span>{message}</span>{error&&clear&&<button onClick={clear} aria-label="Cerrar aviso"><XIcon size={16}/></button>}</motion.div>}</AnimatePresence></div>;
+/** A short notice that appears exactly where the name is: the wordmark fades
+ * out (it stays in place, so the cell, the header height and the buttons never
+ * move) and the notice fades in over the room between Filtros and Terminar
+ * (`--notice-room`, measured by useNoticeRoom). At most two lines; VoiceOver
+ * hears the full text through the app's status region. Errors never use this
+ * slot (ErrorAlert). Reduce Motion: a plain swap. */
+type Notice={id:number;text:string};
+function BrandStatus({notice}:{notice:Notice|null}) {
+ const reduced=useReducedMotion();const timing=reduced?{duration:0}:{duration:.2,ease:[.2,.8,.2,1] as const};
+ return <div className={`brand-status ${notice?'has-message':''}`}>
+  <motion.span className="brand-wordmark" aria-hidden="true" initial={false} animate={{opacity:notice?0:1,scale:notice&&!reduced?.94:1}} transition={timing}><Wordmark/></motion.span>
+  <span className="sr-only">CocoWash</span>
+  <AnimatePresence initial={false}>{notice&&<motion.span key={notice.id} className="brand-notice" aria-hidden="true" initial={{opacity:0,scale:reduced?1:.96}} animate={{opacity:1,scale:1}} exit={{opacity:0,scale:reduced?1:.98}} transition={timing}><span>{notice.text}</span></motion.span>}</AnimatePresence>
+ </div>;
+}
+/** Measures the room a notice may use in the header: centred on the screen like
+ * the name, as wide as the gap left by the wider of the two side buttons. */
+function useNoticeRoom() {
+  const observer=useRef<ResizeObserver|null>(null);
+  return useCallback((header:HTMLElement|null)=>{observer.current?.disconnect();observer.current=null;if(!header)return;
+    const measure=()=>{const box=header.getBoundingClientRect();const k=box.width/Math.max(1,header.offsetWidth)||1;const [left,,right]=[...header.children] as HTMLElement[];
+      const l=left?(left.getBoundingClientRect().right-box.left)/k:0;const r=right&&!right.classList.contains('header-spacer')?(box.right-right.getBoundingClientRect().left)/k:l;
+      header.style.setProperty('--notice-room',`${Math.floor(Math.max(96,header.offsetWidth-2*(Math.max(l,r)+10)))}px`);};
+    measure();const o=new ResizeObserver(measure);o.observe(header);for(const child of header.children)o.observe(child);observer.current=o;},[]);
+}
+/** Errors and refusals that need the person: full text, persistent until
+ * closed, never squeezed into the name's slot. */
+function ErrorAlert({message,clear}:{message:string;clear:()=>void}) {
+  return <div className="session-alert" role="alert"><span className="notice-dot" aria-hidden="true"/><span>{message}</span><button onClick={clear} aria-label="Cerrar aviso"><XIcon size={16} weight="bold"/></button></div>;
+}
+/** The finger's offset on a card, written straight to motion values on every
+ * pointer move: dragging never re-renders the app (only the zone it arms does). */
+type Offset = { x: MotionValue<number>; y: MotionValue<number> };
+const CARD_SPRING = { type: 'spring', stiffness: 380, damping: 34 } as const;
+/** One card of the hand. Its place in the stack springs when it changes; the
+ * finger moves it 1:1; a decided card leaves from where it was released (its
+ * exit animates these same values), any other card springs back. */
+function HandCard({ id, index, follow, reduced, register, children, style, ...props }: { id: string; index: number; follow: boolean; reduced: boolean; register: (id: string, offset: Offset) => () => void; children: ReactNode; style: CSSProperties } & Omit<Parameters<typeof motion.article>[0], 'style' | 'children'>) {
+  const front = index === 0;
+  const baseX = front ? 0 : index % 2 ? 8 : -8, baseY = -index * 6, angle = front ? 0 : index % 2 ? 3 + index : -3 - index;
+  const ox = useMotionValue(0), oy = useMotionValue(0);
+  const x = useMotionValue(baseX), y = useMotionValue(reduced ? baseY : baseY + 16), rotate = useMotionValue(angle);
+  const pose = useRef({ x: baseX, y: baseY, r: angle, front, follow });
+  pose.current = { x: baseX, y: baseY, r: angle, front, follow };
+  useEffect(() => register(id, { x: ox, y: oy }), [id]);
+  useEffect(() => {
+    const sync = () => { const p = pose.current; if (!p.follow) return; x.stop(); y.stop(); rotate.stop();
+      x.set(p.x + ox.get()); y.set(p.y + oy.get() * .55); rotate.set(p.r + (p.front ? ox.get() * .035 : 0)); };
+    const a = ox.on('change', sync), b = oy.on('change', sync);
+    return () => { a(); b(); };
+  }, []);
+  useEffect(() => {
+    const dx = follow ? ox.get() : 0, dy = follow ? oy.get() : 0;
+    const target = { x: baseX + dx, y: baseY + dy * .55, r: angle + (front ? dx * .035 : 0) };
+    if (reduced) { x.set(target.x); y.set(target.y); rotate.set(target.r); return; }
+    const runs = [animate(x, target.x, CARD_SPRING), animate(y, target.y, CARD_SPRING), animate(rotate, target.r, CARD_SPRING)];
+    return () => runs.forEach(run => run.stop());
+  }, [baseX, baseY, angle, front, follow, reduced]);
+  return <motion.article {...props} style={{ ...style, x, y, rotate }}>{children}</motion.article>;
 }
 /** Live state of one video's preparation; the card on top jumps the queue. */
 function useVideoStore(get: () => VideoStore, asset: Asset | undefined): VideoState {
@@ -133,10 +202,12 @@ export function ManoApp() {
   const [saved]=useState(()=>readSession(sessionKey));const resumeContext=useRef(saved?.active?saved.context:undefined);
   const [state,setState] = useState<RecordState>(()=>saved?.record??readState(key));
   const [sessionOpen,setSessionOpen]=useState(saved?.active??false);
-  const [revisit,setRevisit]=useState<string[]>(saved?.active?saved.context.handIds:[]);
+  // The hand on the table, locked until the person acts on it (sequence.ts).
+  const [lock,setLock]=useState<HandLock>(()=>saved?.active?restoreHand(saved.context,[]):NO_HAND);
   const [newAlbum,setNewAlbum]=useState('');const [creatingAlbum,setCreatingAlbum]=useState(false);
   const [pinnedInspect,setPinnedInspect]=useState(false);const [overHook,setOverHook]=useState(false);const hookHover=useRef(false);const inspectOrigin=useRef<InspectOrigin|undefined>(undefined);
-  const [peek,setPeek]=useState({x:0,y:0});const [anchor,setAnchor]=useState(0);
+  // Holding a card: where the finger is (peek) and how close it is to the dock (0–1). Motion values: no re-render per move.
+  const peekX=useMotionValue(0),peekY=useMotionValue(0),anchor=useMotionValue(0);
   const [display,setDisplay]=useState<DisplaySettings>(()=>readDisplay());
   const [onboarded,setOnboarded]=useState(()=>{try{return localStorage.getItem(ONBOARDING_KEY)==='done';}catch{return false;}});
   const [permission,setPermission]=useState<PhotoPermission|'unknown'>(demo?'authorized':'unknown');
@@ -153,23 +224,32 @@ export function ManoApp() {
   const root=useCallback((element:HTMLElement|null)=>{rootObserver.current?.disconnect();rootObserver.current=null;if(!element||stageMeasured.current)return;const estimate=()=>setPreviewSizing({stage:{width:Math.max(200,element.clientWidth-32),height:Math.max(240,element.clientHeight-330)}});estimate();rootObserver.current=new ResizeObserver(estimate);rootObserver.current.observe(element);},[]);
   const [rawAssets,setAssets] = useState<Asset[]>(demo?demoAssets:[]);
   const [filter,setFilter] = useState<Filter>(saved?.filter??initialFilter);
-  const [session,setSession] = useState(false); const [bundleAnchor,setBundleAnchor]=useState<{group:string;filterKey:string;members:string[]}|null>(null); const [rotated,setRotated] = useState<string[]>(saved?.active?saved.context.rotated:[]); const [selected,setSelected] = useState<string[]>(saved?.active?saved.context.selected:[]);
+  const [session,setSession] = useState(false); const [selected,setSelected] = useState<string[]>(saved?.active?saved.context.selected:[]);
   const [sheet,setSheet] = useState<'filters'|'review'|'albums'|null>(null); const [albums,setAlbums] = useState<Album[]>([]);
   const [loading,setLoading] = useState(false); const [busy,setBusy] = useState(false); const [connected,setConnected] = useState(demo); const [limited,setLimited] = useState(false);
-  const [notice,setNotice] = useState(''); const [error,setError] = useState(''); const [inspect,setInspect] = useState<Asset|null>(null);
+  const [notice,setNoticeState] = useState<Notice|null>(null); const [error,setError] = useState('');
+  const noticeId=useRef(0);
+  /** One notice at a time: a new one replaces the current (crossfade); the
+   * same text again only restarts its time. '\n' breaks the two lines. */
+  const setNotice=useCallback((text:string)=>{if(!text){setNoticeState(null);return;}setNoticeState(previous=>previous?.text===text?{...previous}:{id:++noticeId.current,text});setSpoken(text.replace(/\n/g,' '));},[]); const [inspect,setInspect] = useState<Asset|null>(null);
   const [analyzing,setAnalyzing] = useState(false); const [progress,setProgress] = useState({done:0,total:0});
-  const reduced = useReducedMotion(); const seed = useRef(saved?.seed??Math.floor(Math.random()*100000));
-  const gesture = useRef<{x:number;y:number;t0:number;held:boolean;timer:ReturnType<typeof setTimeout>|null;id:string;review:boolean;element?:Element;asset?:Asset;pinch?:number;zone?:string}|null>(null);
+  const reduced = useReducedMotion(); const seed = useRef(saved?.seed??Math.floor(Math.random()*100000)); const [seedVersion,setSeedVersion]=useState(0);
+  const gesture = useRef<{x:number;y:number;t0:number;held:boolean;timer:ReturnType<typeof setTimeout>|null;id:string;review:boolean;element?:Element;asset?:Asset;pinch?:number;zone?:StampKind|'';followers:string[]}|null>(null);
   const pointers = useRef(new Map<number,{x:number;y:number}>());
   // Decision feedback without interruptions: a stamp over the stack and a
   // VoiceOver-only announcement (no visible notice after each swipe).
   const [flash,setFlash]=useState<{kind:StampKind;key:number}|null>(null);const [spoken,setSpoken]=useState('');
-  const [drag,setDrag] = useState({x:0,y:0});
+  // Swipes: the finger writes each card's offset directly (HandCard); React only
+  // hears which zone (keep/discard/favorite/later) the card is armed for.
+  const [zone,setZone]=useState<StampKind|''>('');const stampOpacity=useMotionValue(0);
+  const offsets=useRef(new Map<string,Offset>());
+  const register=useCallback((id:string,offset:Offset)=>{offsets.current.set(id,offset);return()=>{if(offsets.current.get(id)===offset)offsets.current.delete(id);};},[]);
+  const springBack=(ids:readonly string[])=>{for(const id of ids){const o=offsets.current.get(id);if(!o)continue;if(reduced){o.x.set(0);o.y.set(0);}else{animate(o.x,0,CARD_SPRING);animate(o.y,0,CARD_SPRING);}}};
+  const resetPeek=()=>{peekX.set(0);peekY.set(0);anchor.set(0);};
   const analysisStarted=useRef('');
   const [warming,setWarming]=useState(false);
   const warmingNow=useRef(false);
   const deferredGroups=useRef<Map<string,string>|null>(null);
-  const [prepared,setPrepared]=useState<PreloadSnapshot<PreparedMedia>>({items:[],total:0,ready:0,failed:0,loading:0,completed:0});
   const preloader=useRef<AssetPreloader<PreparedMedia>|null>(null);
   const preloadWindow=useRef<Asset[]>([]);
   const sessionNumber=useRef(0);
@@ -178,22 +258,31 @@ export function ManoApp() {
   const prepareWindow=(items:Asset[],sessionKey:string)=>{
     getPreloader().update(items,sessionKey);getVideos().want(items);
     preloadWindow.current=items;
+    // iCloud downloads live only while their card is in this window (warm-up
+    // included) or anchored; leaving the session ([]) cancels them all natively.
+    cloudPreviews.retain(inspected.current?[...items,inspected.current]:items);
   };
+  const inspected=useRef<Asset|null>(null);
+  // Cards read their own preload entry (Photo); the app does not re-render on
+  // every preparation step.
   useEffect(()=>{
-    const pool=getPreloader();const unsubscribe=pool.subscribe(setPrepared);
-    return()=>{sessionNumber.current++;unsubscribe();pool.dispose();preloader.current=null;warmWait.current?.();videos.current?.dispose();videos.current=null;preloadWindow.current=[];};
+    const pool=getPreloader();
+    return()=>{sessionNumber.current++;pool.dispose();preloader.current=null;warmWait.current?.();videos.current?.dispose();videos.current=null;preloadWindow.current=[];};
   },[]);
-  const waitPrepared=(pool:AssetPreloader<PreparedMedia>,first:string[])=>new Promise<void>(resolve=>{
+  /** The session opens as soon as the front card can be shown (or failed and
+   * shows its own error): the rest of its group and the next cards keep
+   * preparing behind it. */
+  const waitPrepared=(pool:AssetPreloader<PreparedMedia>,front:string|undefined)=>new Promise<void>(resolve=>{
     let unsubscribe=()=>{};let done=false;
     const finish=()=>{if(done)return;done=true;unsubscribe();warmWait.current=null;resolve();};
-    unsubscribe=pool.subscribe(snapshot=>{const wanted=snapshot.items.filter(i=>first.includes(i.id));if(snapshot.completed===snapshot.total||(wanted.length&&wanted.every(i=>i.status==='ready'||i.status==='error'))||(cloudDownloads()&&snapshot.items.some(i=>i.status==='ready')))queueMicrotask(finish);});warmWait.current=finish;
+    unsubscribe=pool.subscribe(snapshot=>{const wanted=snapshot.items.find(i=>i.id===front);if(!front||snapshot.completed===snapshot.total||wanted?.status==='ready'||wanted?.status==='error')queueMicrotask(finish);});warmWait.current=finish;
   });
   const cancelWarmup=()=>{sessionNumber.current++;warmingNow.current=false;prepareWindow([],String(sessionNumber.current));warmWait.current?.();setWarming(false);setLoading(false);const groups=deferredGroups.current;if(groups){deferredGroups.current=null;setAssets(prev=>prev.map(a=>({...a,group:groups.get(a.id)})));}};
   useEffect(()=>{document.title='CocoWash · Lo que importa, se queda';installErrorReporting();},[]);
-  useEffect(()=>{try{localStorage.setItem(key,JSON.stringify(state));}catch{setError('No hay espacio para guardar la sesión. Libera espacio antes de continuar.');}},[state,key]);
   useEffect(()=>{saveDisplay(display);setHapticsEnabled(display.haptics);setPreviewSizing({quality:display.quality,cloud:display.cloud,scale:typeof window!=='undefined'?window.devicePixelRatio||2:2});},[display]);
   useEffect(()=>{try{localStorage.setItem('cocowash-round-v1',JSON.stringify(stats));}catch{/* summary is optional */}},[stats]);
-  useEffect(()=>{if(!notice)return;const t=setTimeout(()=>setNotice(''),3000);return()=>clearTimeout(t);},[notice]);
+  // Long enough to read once, never lingering: 2.5–4.5 s by length.
+  useEffect(()=>{if(!notice)return;const t=setTimeout(()=>setNoticeState(null),Math.min(4500,Math.max(2500,1600+notice.text.length*45)));return()=>clearTimeout(t);},[notice]);
   useEffect(()=>()=>{if(gesture.current?.timer)clearTimeout(gesture.current.timer);},[]);
   const initialLibrary=useRef<ReturnType<typeof Library.assets>|null>(null);
   const loadLibrary=useCallback(()=>{if(demo)return;let alive=true;setLoadError('');const request=initialLibrary.current??(initialLibrary.current=Library.permissionStatus().then(({status})=>{setPermission(status as PhotoPermission);return ['authorized','limited'].includes(status)?Library.assets():{assets:[] as Asset[],status};}));
@@ -203,68 +292,64 @@ export function ManoApp() {
   useEffect(()=>{if(demo)return;const recheck=()=>{if(document.visibilityState!=='visible')return;void Library.permissionStatus().then(({status})=>{setPermission(status as PhotoPermission);setLimited(status==='limited');if(['authorized','limited'].includes(status)&&!connected){initialLibrary.current=null;loadLibrary();}}).catch(()=>{});};document.addEventListener('visibilitychange',recheck);return()=>document.removeEventListener('visibilitychange',recheck);},[connected]);
   // Weight and clean-up signals measured in the background (indexer.ts); the
   // pile, counters and filters all read the enriched list.
-  const fingerprint=useMemo(()=>libraryFingerprint(rawAssets),[rawAssets]);
+  // Recomputed only when the set of items or their edits change (groups or
+  // weights arriving keep the same list order, ids and edit dates).
+  const fingerprintOf=useRef<{list:Asset[];value:string}|null>(null);
+  const fingerprint=useMemo(()=>{const previous=fingerprintOf.current;
+    if(previous&&previous.list.length===rawAssets.length&&previous.list.every((a,i)=>a.id===rawAssets[i].id&&a.modified===rawAssets[i].modified)){fingerprintOf.current={list:rawAssets,value:previous.value};return previous.value;}
+    const value=libraryFingerprint(rawAssets);fingerprintOf.current={list:rawAssets,value};return value;},[rawAssets]);
   const index=useLibraryIndex(rawAssets,fingerprint,!demo&&connected,analyzing||warming||loading);
   const assets=useMemo(()=>enrich(rawAssets,index),[rawAssets,index.version]);
   /** «Favoritas» set: the heart takes items out of Favorites; they cannot be queued for deletion. */
   const favView=filter.smart==='favorites';
-  const queue = useMemo(()=>eligible(assets,state,filter,Date.now(),seed.current),[assets,state,filter,session]);
+  // One canonical sequence: sorted once per library/order/seed; each decision
+  // only re-filters it (linear), so the pile never re-sorts per swipe.
+  const ordered=useMemo(()=>orderAssets(assets,filter.order,seed.current),[assets,filter.order,seedVersion]);
+  const queue=useMemo(()=>eligibleFrom(ordered,state,filter,Date.now()),[ordered,state,filter]);
   // Geek is a display preference: toggling it must not reset bundles or anchors.
   const filterKey=JSON.stringify({...filter,geek:undefined});
-  const sessionHand=useMemo(()=>nextSessionHand(assets,state,filter,Date.now(),seed.current),[assets,state,filter,session]);
-  // A member sent to «Más tarde» leaves the pinned group (it waits at the end).
-  const pinned=bundleAnchor?.filterKey===filterKey?queue.filter(a=>bundleAnchor.members.includes(a.id)&&!state.later.includes(a.id)).slice(0,5):[];
-  const revisited=revisit.map(id=>assets.find(a=>a.id===id)).filter((a):a is Asset=>!!a&&!state.pending.includes(a.id)&&!state.removed.includes(a.id)&&state.favorites.includes(a.id)===favView);
-  // «Descargar siempre»: cards already on the iPhone come first while iCloud
-  // ones download behind (preload window); a card shown this way stays until
-  // decided, so nothing is swapped under the finger. Invisible to the person.
-  const readyIds=useMemo(()=>new Set(prepared.items.filter(i=>i.status==='ready'||i.status==='error').map(i=>i.id)),[prepared]);
-  const [promoted,setPromoted]=useState<string|null>(null);
-  const promotedAsset=promoted?queue.find(a=>a.id===promoted):undefined;
-  const always=display.cloud==='always';
-  useEffect(()=>{
-    if(!always||!session){if(promoted)setPromoted(null);return;}
-    if(promotedAsset)return;
-    const first=sessionHand[0];
-    if(!first||sessionHand.length>1||readyIds.has(first.id)){if(promoted)setPromoted(null);return;}
-    const ready=preloadWindow.current.find(a=>a.id!==first.id&&!a.group&&readyIds.has(a.id)&&queue.some(q=>q.id===a.id));
-    setPromoted(ready?.id??null);
-  },[always,session,sessionHand[0]?.id,sessionHand.length,readyIds,!!promotedAsset]);
-  const natural=revisited.length?revisited:pinned.length?pinned:promotedAsset?[promotedAsset]:sessionHand;
-  // Similar group: the clearly best shot (Vision) goes in front.
-  // Decided once, when the group arrives: ratings that land later never swap
-  // the front card under the person.
-  const bestFor=useRef<{key:string;best?:string}>({key:''});
-  const groupKey=natural.length>1?`${natural[0].group??''}|${filterKey}`:'';
-  if(bestFor.current.key!==groupKey)bestFor.current={key:groupKey,best:groupKey?bestShot(natural):undefined};
-  const best=natural.some(a=>a.id===bestFor.current.best)?bestFor.current.best:undefined;
-  const baseHand=best?[natural.find(a=>a.id===best)!,...natural.filter(a=>a.id!==best)]:natural;
-  const bundleKey=baseHand.length>1?baseHand[0].group??null:null;
-  const anchorKey=pinned.length?bundleAnchor!.group:baseHand.length>1?baseHand[0]?.group??null:null;
-  useEffect(()=>{if(anchorKey&&(bundleAnchor?.group!==anchorKey||bundleAnchor?.filterKey!==filterKey))setBundleAnchor({group:anchorKey,filterKey,members:queue.filter(a=>a.group===anchorKey).map(a=>a.id)});else if(!anchorKey&&bundleAnchor)setBundleAnchor(null);},[anchorKey,filterKey,bundleAnchor?.group,bundleAnchor?.filterKey]);
+  const byId=useMemo(()=>new Map(assets.map(a=>[a.id,a] as const)),[assets]);
+  const isPlayable=useMemo(()=>playable(state,favView),[state,favView]);
+  // The hand on the table stays put (sequence.ts): background work — similar
+  // groups, weights, a preview finishing first, a library refresh — never swaps
+  // it. When it is done, the next hand is dealt from the front of the pile and
+  // locked; the clearly best shot of a group goes in front, decided once then.
+  const shownHand=useMemo(()=>lockedHand(lock,byId,isPlayable),[lock,byId,isPlayable]);
+  const dealt=useMemo(()=>shownHand.length?NO_HAND:dealHand(queue,state.later),[shownHand.length,queue,state.later]);
+  const hand=useMemo(()=>shownHand.length?shownHand:lockedHand(dealt,byId,isPlayable),[shownHand,dealt,byId,isPlayable]);
+  const handLock=shownHand.length?lock:dealt;
+  const best=handLock.best&&hand.length>1&&hand.some(a=>a.id===handLock.best)?handLock.best:undefined;
+  const windowHandKey=hand.map(a=>`${a.id}:${a.modified??0}`).join('|');
+  useEffect(()=>{if(session&&!shownHand.length&&dealt.ids.length)setLock(dealt);},[session,shownHand.length,dealt]);
+  const bundleKey=hand.length>1?hand[0].group??null:null;
 
   useEffect(()=>{if(!session)return;const frame=requestAnimationFrame(()=>document.getElementById('session-heading')?.focus({preventScroll:true}));return()=>cancelAnimationFrame(frame);},[session]);
-  const hand=[...baseHand].sort((a,b)=>rotated.indexOf(a.id)-rotated.indexOf(b.id));
-  const windowHandKey=baseHand.map(a=>`${a.id}:${a.modified??0}`).join('|');
-  useEffect(()=>{const g=gesture.current;if(g&&!g.review&&!baseHand.some(a=>a.id===g.id)){if(g.timer)clearTimeout(g.timer);gesture.current=null;pointers.current.clear();}},[windowHandKey]);
-  const upcoming=useMemo(()=>{
-    const next=upcomingSessionAssets(assets,state,filter,Date.now(),seed.current);
-    return [...baseHand,...next].filter((a,i,all)=>all.findIndex(b=>b.id===a.id)===i).slice(0,10);
-  },[assets,state,filter,session,windowHandKey]);
+  useEffect(()=>{const g=gesture.current;if(g&&!g.review&&!hand.some(a=>a.id===g.id)){if(g.timer)clearTimeout(g.timer);gesture.current=null;pointers.current.clear();}},[windowHandKey]);
+  // Read-ahead: the hand on the table plus the next cards as they will be dealt.
+  const upcoming=useMemo(()=>upcomingFrom(queue,hand,state.later,Math.max(PRELOAD_AHEAD,hand.length+2)),[queue,windowHandKey,state.later]);
   const upcomingKey=upcoming.map(a=>`${a.id}:${a.modified??0}`).join('|');
   useEffect(()=>{if(session&&!warming)prepareWindow(upcoming,String(sessionNumber.current));},[session,warming,upcomingKey]);
-  const context={handIds:baseHand.map(a=>a.id),rotated:[...rotated],selected:[...selected],group:anchorKey??undefined,filter};
+  useEffect(()=>{inspected.current=inspect;cloudPreviews.retain(inspect?[...preloadWindow.current,inspect]:preloadWindow.current);},[inspect?.id]);
+  // What a decision records to be undone exactly: the hand as shown, front first.
+  const context={handIds:hand.map(a=>a.id),rotated:[] as string[],selected:[...selected],group:bundleKey??undefined,filter,...(best?{best}:{})};
   const envelope:ActiveSession={version:1,active:sessionOpen,seed:seed.current,filter,context:session?context:resumeContext.current??context,updatedAt:Date.now(),record:state};
   const latest=useRef(envelope);latest.current=envelope;
-  useEffect(()=>{if(!saveSession(sessionKey,latest.current))setError('No se pudo guardar el progreso. Libera espacio antes de continuar.');},[state,sessionOpen,filterKey,windowHandKey,rotated,selected,session]);
-  useEffect(()=>{const persist=()=>saveSession(sessionKey,latest.current);document.addEventListener('visibilitychange',persist);window.addEventListener('pagehide',persist);return()=>{persist();document.removeEventListener('visibilitychange',persist);window.removeEventListener('pagehide',persist);};},[sessionKey]);
+  // Saving: the record and the session envelope are written together, at most
+  // once every 350 ms while the person sorts (not once per swipe: each write
+  // serialises the whole record), and at once when the app is hidden or closed.
+  const dirty=useRef(false);const flushTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
+  const flush=useCallback(()=>{if(flushTimer.current){clearTimeout(flushTimer.current);flushTimer.current=null;}if(!dirty.current)return;dirty.current=false;
+    try{localStorage.setItem(key,JSON.stringify(latest.current.record));}catch{setError('No hay espacio para guardar la sesión. Libera espacio antes de continuar.');return;}
+    if(!saveSession(sessionKey,latest.current))setError('No se pudo guardar el progreso. Libera espacio antes de continuar.');},[key,sessionKey]);
+  useEffect(()=>{dirty.current=true;if(!flushTimer.current)flushTimer.current=setTimeout(flush,350);},[state,sessionOpen,filterKey,windowHandKey,selected,session]);
+  useEffect(()=>{const persist=()=>{dirty.current=true;flush();};document.addEventListener('visibilitychange',persist);window.addEventListener('pagehide',persist);return()=>{persist();document.removeEventListener('visibilitychange',persist);window.removeEventListener('pagehide',persist);};},[flush]);
   const openFilters=()=>{setError('');setSheet('filters');};
   const active=hand[0]; const targetIds=selected.filter(id=>hand.some(a=>a.id===id)); const targets=targetIds.length?targetIds:active?[active.id]:[];
   // «Elegir las demás»: everything but the best shot, ready for «Eliminar».
   const others=(best?hand.filter(a=>a.id!==best):hand).map(a=>a.id);const allPicked=others.length>0&&targetIds.length===others.length&&others.every(id=>targetIds.includes(id));
-  const reviewAssets=assets.filter(a=>state.pending.includes(a.id));
+  const reviewAssets=useMemo(()=>{const pending=new Set(state.pending);return assets.filter(a=>pending.has(a.id));},[assets,state.pending]);
   // What «Eliminar N» would free; partial while weights are still being measured.
-  const reviewBytes=useMemo(()=>({bytes:reviewAssets.reduce((n,a)=>n+(a.bytes??0),0),partial:reviewAssets.some(a=>!a.bytes)}),[reviewAssets.map(a=>`${a.id}:${a.bytes??0}`).join('|')]);
+  const reviewBytes=useMemo(()=>({bytes:reviewAssets.reduce((n,a)=>n+(a.bytes??0),0),partial:reviewAssets.some(a=>!a.bytes)}),[reviewAssets]);
   // Weights exist only for originals on this iPhone: with any unknown, the figure
   // is a lower bound («al menos») and the button does not state it.
   const freeLabel=formatBytes(reviewBytes.bytes)??'';
@@ -277,77 +362,91 @@ export function ManoApp() {
     if(loading||warming)return;
     let available=connected?assets:await connect();if(available===false)return;available=enrich(available,index);
     const record=connected?state:reconcileLibrary(state,available);
-    const number=++sessionNumber.current;if(!sessionOpen){seed.current=Math.floor(Math.random()*100000);setRevisit([]);setRotated([]);setSelected([]);setState(s=>({...s,history:[]}));setStats(EMPTY_STATS);}setShowDone(false);
-    warmingNow.current=true;setWarming(true);setError('');setNotice('');setBundleAnchor(null);
-    if(!demo&&analyzing)void Library.cancelAnalysis().catch(()=>{});
+    const number=++sessionNumber.current;if(!sessionOpen){seed.current=Math.floor(Math.random()*100000);setSeedVersion(v=>v+1);setLock(NO_HAND);setSelected([]);setState(s=>({...s,history:[]}));setStats(EMPTY_STATS);}setShowDone(false);
+    warmingNow.current=true;setWarming(true);setError('');setNotice('');
+    // The similar-photo search keeps running (utility priority natively): stopping
+    // it here threw away its work and restarted it from zero after every warm-up.
     do {
       const groups=deferredGroups.current;if(groups){deferredGroups.current=null;available=available.map(a=>({...a,group:groups.get(a.id)}));setAssets(available);}
-      const source:Asset[]=available;const first=revisit.map(id=>source.find(a=>a.id===id)).filter((a):a is Asset=>!!a&&!record.pending.includes(a.id)&&!record.removed.includes(a.id)&&record.favorites.includes(a.id)===favView);
-      prepareWindow([...first,...upcomingSessionAssets(available,record,filter,Date.now(),seed.current)].filter((a,i,all)=>all.findIndex(b=>b.id===a.id)===i).slice(0,10),String(number));
-      const firstHand=(first.length?first:nextSessionHand(available,record,filter,Date.now(),seed.current)).map(a=>a.id);
-      await waitPrepared(getPreloader(),firstHand);if(number!==sessionNumber.current)return;
+      // Resume: the locked hand comes back as it was; otherwise the first hand.
+      const source=new Map(available.map(a=>[a.id,a] as const));const pile=eligible(available,record,filter,Date.now(),seed.current);
+      const resumed=sessionOpen?lockedHand(lock,source,playable(record,favView)):[];
+      const first=resumed.length?resumed:lockedHand(dealHand(pile,record.later),source,playable(record,favView));
+      prepareWindow(upcomingFrom(pile,first,record.later,Math.max(PRELOAD_AHEAD,first.length+2)),String(number));
+      await waitPrepared(getPreloader(),first[0]?.id);if(number!==sessionNumber.current)return;
     } while(deferredGroups.current);
-    warmingNow.current=false;setWarming(false);setSession(true);resumeContext.current=undefined;setSessionOpen(true);analysisStarted.current='';
+    warmingNow.current=false;setWarming(false);setSession(true);resumeContext.current=undefined;setSessionOpen(true);
   };
   // «Terminar»: with items marked to delete, «Una última mirada» opens over the
   // session (closing it goes back to the cards); the round ends with «Eliminar».
   // With nothing to delete it ends here.
-  const closeSession=()=>{const review=state.pending.length>0;resumeContext.current=undefined;cancelWarmup();cancel();setSheet(review?'review':null);setSession(false);setSessionOpen(false);setSelected([]);setRotated([]);setRevisit([]);setBundleAnchor(null);setState(s=>({...s,history:[]}));setShowDone(true);haptic(review?'light':'success');};
+  const closeSession=()=>{const review=state.pending.length>0;resumeContext.current=undefined;cancelWarmup();cancel();setSheet(review?'review':null);setSession(false);setSessionOpen(false);setSelected([]);setLock(NO_HAND);setState(s=>({...s,history:[]}));setShowDone(true);haptic(review?'light':'success');};
   /** The decision itself (shared by swipes, buttons and album saves): one
    * undoable history entry, stats, and the move to the next card. */
   const SPOKEN={keep:'Conservada',discard:'Para eliminar; se borra solo al confirmar',favorite:'Favorita',later:'Para más tarde: vuelve al final',unfavorite:'Quitada de Favoritas: vuelve a la pila'} as const;
   const [videoSound,setVideoSound]=useState(false);
-  const hideSeals=()=>{setDisplay(d=>({...d,photo:{...d.photo,seal:false}}));haptic('selection');setNotice('Sellos ocultos. Vuelven en Ajustes › Sellos.');};
+  const hideSeals=()=>{setDisplay(d=>({...d,photo:{...d.photo,seal:false}}));haptic('selection');setNotice('Sellos ocultos\nVuelven en Ajustes');};
   const record=(action:Action,ids:string[],apply=(s:RecordState)=>decide(s,ids,action,Date.now(),context))=>{
-    setState(apply);setRevisit(previous=>previous.filter(id=>!ids.includes(id)));setPinnedInspect(false);setInspect(null);setSelected([]);setRotated([]);
+    // The rest of the hand stays exactly as shown; an empty hand deals the next.
+    setState(apply);setLock(afterDecision(hand,ids,best));setPinnedInspect(false);setInspect(null);setSelected([]);
     if(action!=='unfavorite'){setStats(previous=>({...previous,[action]:previous[action]+ids.length}));setFlash({kind:action,key:Date.now()});}setDecidedHere(previous=>new Set([...previous,...ids]));
     setSpoken(`${SPOKEN[action]}${ids.length>1?`: ${ids.length}`:''}`);
   };
-  const act=async(requested:Action,ids=targets)=>{if(busy||!ids.length)return;
+  /** Resolves true when the decision was recorded. */
+  const act=async(requested:Action,ids=targets):Promise<boolean>=>{if(busy||!ids.length)return false;
     // In «Favoritas» the heart (and the swipe up) takes items out of Favorites,
     // and nothing there can be queued for deletion.
     const action:Action=favView&&requested==='favorite'?'unfavorite':requested;
-    if(favView&&action==='discard'){haptic('warning');setNotice('Las favoritas no se eliminan. Quítala de Favoritas con el corazón.');return;}
+    if(favView&&action==='discard'){haptic('warning');setNotice('Las favoritas\nno se eliminan');return false;}
     setBusy(true);setError('');haptic(action==='favorite'||action==='unfavorite'?'medium':action==='later'?'soft':'light');try{
     if((action==='favorite'||action==='unfavorite')&&!demo)await Library.favorite({ids,value:action==='favorite'});
-    record(action,ids);
-  }catch(e){haptic('error');messageError(e);}finally{setBusy(false);}};
+    record(action,ids);return true;
+  }catch(e){haptic('error');messageError(e);return false;}finally{setBusy(false);}};
   const undoLast=async()=>{if(busy)return;const last=state.history.at(-1);if(!last)return;setBusy(true);try{
-    let missing=0;
-    if((last.action==='favorite'||last.action==='unfavorite')&&!demo){const result=await Library.favorite({ids:last.ids,value:last.action==='unfavorite',ignoreMissing:true});missing=result.missing.length;}
+    let missing=0;let missingIds:string[]=[];
+    if((last.action==='favorite'||last.action==='unfavorite')&&!demo){const result=await Library.favorite({ids:last.ids,value:last.action==='unfavorite',ignoreMissing:true});missing=result.missing.length;missingIds=result.missing;}
     const undone=last.action;haptic('soft');if(undone!=='unfavorite')setStats(previous=>({...previous,[undone]:Math.max(0,previous[undone]-last.ids.length)}));
-    setState(undo);const previous=last.context;setRevisit(previous?.handIds??last.ids);setSelected(previous?.selected??[]);setRotated(previous?.rotated??[]);if(previous?.filter)setFilter(previous.filter);setBundleAnchor(previous?.group?{group:previous.group,filterKey:JSON.stringify(previous.filter??filter),members:previous.handIds}:null);if(missing)setNotice('Decisión deshecha; algunos elementos ya no están disponibles.');setSpoken('Última decisión deshecha');
-    if(last.action==='favorite'&&!demo){const fresh=(await Library.assets()).assets;setAssets(savedGroups(fresh));setState(s=>reconcileLibrary(s,fresh));}
+    // Back to the very hand the decision was made on, in the order it was shown.
+    setState(undo);const previous=last.context;setLock(restoreHand(previous,last.ids));setSelected(previous?.selected??[]);if(previous?.filter)setFilter(previous.filter);if(missing)setNotice(missing===last.ids.length?'Ya no está\nen Fotos':'Algunas ya no\nestán en Fotos');setSpoken('Última decisión deshecha');
+    // No library reload here (it re-read every asset over the bridge while the
+    // buttons waited): Photos already confirmed the change; items it reported
+    // missing leave the pile locally.
+    if(missingIds.length){const gone=new Set(missingIds);setAssets(prev=>prev.filter(a=>!gone.has(a.id)));}
   }catch(e){messageError(e);}finally{setBusy(false);}};
-  const cycle=()=>{if(active&&hand.length>1){const refocus=document.activeElement?.classList.contains('photo-card');setRotated(prev=>[...prev.filter(x=>x!==active.id),active.id]);if(refocus)requestAnimationFrame(()=>document.querySelector<HTMLElement>('.photo-card.front')?.focus({preventScroll:true}));}};
+  const cycle=()=>{if(active&&hand.length>1){const refocus=document.activeElement?.classList.contains('photo-card');setLock(cycleHand(hand,best));if(refocus)requestAnimationFrame(()=>document.querySelector<HTMLElement>('.photo-card.front')?.focus({preventScroll:true}));}};
   const select=(id:string)=>setSelected(prev=>prev.includes(id)?prev.filter(x=>x!==id):[...prev,id]);
   const windowOf=(element:Element)=>(element.querySelector('.photo-window')??element).getBoundingClientRect();
-  const openPinned=(asset:Asset,element:Element)=>{inspectOrigin.current=windowOf(element);setPeek({x:0,y:0});setAnchor(0);setPinnedInspect(true);setInspect(asset);haptic('rigid');};
+  const openPinned=(asset:Asset,element:Element)=>{inspectOrigin.current=windowOf(element);resetPeek();setPinnedInspect(true);setInspect(asset);haptic('rigid');};
   const closeInspect=()=>{setPinnedInspect(false);setInspect(null);haptic('soft');};
   /** Proximity (0–1) to the single bottom dock; armed within 64 px after a
    * deliberate downward drag. Also checked on release, where the last move may
    * not have landed exactly on the dock. */
   const anchorAt=(clientX:number,clientY:number,dragY:number)=>{const box=document.querySelector('[data-inspection-hook]')?.getBoundingClientRect();if(!box)return false;
     const distance=Math.hypot(Math.max(box.left-clientX,0,clientX-box.right),Math.max(box.top-clientY,0,clientY-box.bottom));
-    setAnchor(dragY>16?Math.max(0,Math.min(1,1-Math.max(0,distance-64)/200)):0);return dragY>64&&distance<=64;};
+    anchor.set(dragY>16?Math.max(0,Math.min(1,1-Math.max(0,distance-64)/200)):0);return dragY>64&&distance<=64;};
   // In «Favoritas» a drag left arms nothing: favourites are never queued for deletion.
-  const zoneOf=(x:number,y:number)=>x>45?'keep':x< -45?(favView?'':'discard'):y< -45?'favorite':y>45?'later':'';
+  const zoneOf=(x:number,y:number):StampKind|''=>x>45?'keep':x< -45?(favView?'':'discard'):y< -45?'favorite':y>45?'later':'';
   // Gesture timing uses each event's own timeStamp (when the finger acted), not
   // when a busy main thread got round to the handler or a timer: under load
   // queued moves can run before a 380 ms timer, and a re-render between two taps
   // can push handler time past the double-tap window.
   const HOLD_MS=380;
   const hold=(g:NonNullable<typeof gesture.current>)=>{if(g.held)return;if(g.timer){clearTimeout(g.timer);g.timer=null;}g.held=true;haptic(g.review?'selection':'medium');
-    if(!g.review&&g.element&&g.asset){inspectOrigin.current=windowOf(g.element);setPeek({x:0,y:0});setAnchor(0);setPinnedInspect(false);hookHover.current=false;setOverHook(false);setInspect(g.asset);}};
+    if(!g.review&&g.element&&g.asset){springBack(g.followers);setZone('');inspectOrigin.current=windowOf(g.element);resetPeek();setPinnedInspect(false);hookHover.current=false;setOverHook(false);setInspect(g.asset);
+      // Holding a photo that lives in iCloud is a reason to fetch the larger
+      // preview now: «Anclar» then joins this download instead of starting one.
+      if(g.asset.kind!=='video'&&preloader.current?.peek(g.asset)?.value?.cloud)void cloudPreviews.fetch(g.asset,'zoom').catch(()=>{});}};
   const start=(e:PointerEvent,asset:Asset,review=false)=>{if(busy||(e.target as HTMLElement).closest('button'))return;
     // A finger lifted while its card unmounted never reached end(): drop stale ids.
     if(!gesture.current)pointers.current.clear();
     pointers.current.set(e.pointerId,{x:e.clientX,y:e.clientY});
     const current=gesture.current;
     // Second finger on the top card: a pinch-out opens the anchored, zoomable view.
-    if(current&&!current.review&&!current.held&&pointers.current.size===2){if(current.timer)clearTimeout(current.timer);current.timer=null;const [a,b]=[...pointers.current.values()];current.pinch=Math.hypot(b.x-a.x,b.y-a.y);setDrag(d=>d.x||d.y?{x:0,y:0}:d);e.currentTarget.setPointerCapture(e.pointerId);return;}
+    if(current&&!current.review&&!current.held&&pointers.current.size===2){if(current.timer)clearTimeout(current.timer);current.timer=null;const [a,b]=[...pointers.current.values()];current.pinch=Math.hypot(b.x-a.x,b.y-a.y);springBack(current.followers);setZone('');e.currentTarget.setPointerCapture(e.pointerId);return;}
     e.currentTarget.setPointerCapture(e.pointerId);
-    const g:NonNullable<typeof gesture.current>={x:e.clientX,y:e.clientY,t0:e.timeStamp,held:false,timer:null,id:asset.id,review,element:e.currentTarget,asset};
+    // The card under the finger and any selected cards of the hand move together.
+    const followers=review?[]:[...new Set([...(hand[0]?.id===asset.id?[asset.id]:[]),...targetIds])];
+    const g:NonNullable<typeof gesture.current>={x:e.clientX,y:e.clientY,t0:e.timeStamp,held:false,timer:null,id:asset.id,review,element:e.currentTarget,asset,followers};
     g.timer=setTimeout(()=>{g.timer=null;hold(g);},HOLD_MS);gesture.current=g;};
   const move=(e:PointerEvent)=>{const g=gesture.current;if(!g)return;if(pointers.current.has(e.pointerId))pointers.current.set(e.pointerId,{x:e.clientX,y:e.clientY});
     if(g.pinch){const [a,b]=[...pointers.current.values()];if(a&&b&&Math.hypot(b.x-a.x,b.y-a.y)/g.pinch>1.25){const asset=hand.find(h=>h.id===g.id);gesture.current=null;if(asset)openPinned(asset,e.currentTarget);}return;}
@@ -360,26 +459,36 @@ export function ManoApp() {
     if(g.held&&!g.review){
       // One dock at the bottom. Proximity fills it progressively; it arms only
       // after a deliberate downward drag that reaches it (fewer accidents).
-      setPeek({x,y});const armed=anchorAt(e.clientX,e.clientY,y);
+      peekX.set(x);peekY.set(y);const armed=anchorAt(e.clientX,e.clientY,y);
       if(armed!==hookHover.current){hookHover.current=armed;setOverHook(armed);if(armed)haptic('selection');}
-    }else if(!g.review&&!g.held||g.review&&g.held){setDrag({x,y});if(!g.review){const zone=zoneOf(x,y);if(zone!==(g.zone??'')){g.zone=zone;if(zone)haptic('selection');}}}};
+    }else if(g.review&&g.held){(g.element as HTMLElement).style.transform=`translateX(${Math.max(0,x)}px)`;}
+    else if(!g.review&&!g.held){for(const id of g.followers){const o=offsets.current.get(id);o?.x.set(x);o?.y.set(y);}stampOpacity.set(Math.min(1,.4+Math.max(Math.abs(x),Math.abs(y))/120));
+      const next=zoneOf(x,y);if(next!==(g.zone??'')){g.zone=next;setZone(next);if(next)haptic('selection');}}};
   const end=(e:PointerEvent)=>{pointers.current.delete(e.pointerId);const g=gesture.current;if(!g)return;if(g.pinch){if(!pointers.current.size){gesture.current=null;}return;}if(g.timer)clearTimeout(g.timer);const x=e.clientX-g.x,y=e.clientY-g.y;
     if(g.held&&!g.review&&!hookHover.current)hookHover.current=anchorAt(e.clientX,e.clientY,y);
     // Only touch state that changed: a plain tap must not re-render the whole app.
-    gesture.current=null;setDrag(d=>d.x||d.y?{x:0,y:0}:d);setPeek(p=>p.x||p.y?{x:0,y:0}:p);setAnchor(0);if(g.held&&!g.review&&hookHover.current){setPinnedInspect(true);haptic('rigid');}else if(g.held){setPinnedInspect(false);setInspect(null);}
+    // Only touch state that changed: a plain tap must not re-render the whole app.
+    gesture.current=null;if(g.zone)setZone('');resetPeek();if(g.held&&!g.review&&hookHover.current){setPinnedInspect(true);haptic('rigid');}else if(g.held){setPinnedInspect(false);setInspect(null);}
     if(hookHover.current){hookHover.current=false;setOverHook(false);}
-    if(g.review){if(g.held&&x>65){setState(s=>restore(s,g.id));setNotice('Foto recuperada');haptic('light');}return;}if(g.held)return;
-    if(Math.abs(x)>65&&Math.abs(x)>Math.abs(y))void act(x>0?'keep':'discard');else if(y< -70&&Math.abs(y)>Math.abs(x))void act('favorite');else if(y>70&&Math.abs(y)>Math.abs(x))void act('later');
+    if(g.review){if(g.element)(g.element as HTMLElement).style.transform='';if(g.held&&x>65){setState(s=>restore(s,g.id));setSpoken('Elemento recuperado');haptic('light');}return;}if(g.held)return;
+    const decision:Action|null=Math.abs(x)>65&&Math.abs(x)>Math.abs(y)?(x>0?'keep':'discard'):y< -70&&Math.abs(y)>Math.abs(x)?'favorite':y>70&&Math.abs(y)>Math.abs(x)?'later':null;
+    if(decision){
+      // Decided cards leave from where the finger let go; the others spring back
+      // (also the decided ones if the decision did not happen).
+      const decided=targets;springBack(g.followers.filter(id=>!decided.includes(id)));
+      void act(decision,decided).then(done=>{if(!done)springBack(decided);});return;
+    }
+    springBack(g.followers);
     // A tap advances at once: no double-tap window to wait out. Looking closer is
     // a pinch, a hold dragged to the dock, or the focusable «Anclar» button.
-    else if(Math.hypot(x,y)<10){if(hand[0]?.id===g.id){if(hand.length>1)cycle();}else select(g.id);}};
-  const cancel=()=>{if(gesture.current?.timer)clearTimeout(gesture.current.timer);gesture.current=null;pointers.current.clear();setPinnedInspect(false);setInspect(null);setDrag({x:0,y:0});setPeek({x:0,y:0});setAnchor(0);hookHover.current=false;setOverHook(false);};
+    if(Math.hypot(x,y)<10){if(hand[0]?.id===g.id){if(hand.length>1)cycle();}else select(g.id);}};
+  const cancel=()=>{const g=gesture.current;if(g?.timer)clearTimeout(g.timer);if(g){springBack(g.followers);if(g.review&&g.element)(g.element as HTMLElement).style.transform='';}gesture.current=null;pointers.current.clear();setPinnedInspect(false);setInspect(null);setZone('');resetPeek();hookHover.current=false;setOverHook(false);};
   const analyze=async(manual=false)=>{if(analyzing)return;setAnalyzing(true);if(manual)setError('');let listener:{remove():Promise<void>}|undefined;try{
-    if(demo){if(manual)setNotice('Los grupos de esta vista son de demostración.');return;}listener=await Library.addListener('analysisProgress',setProgress);
+    if(demo){if(manual)setNotice('Grupos de\ndemostración');return;}listener=await Library.addListener('analysisProgress',setProgress);
     const result=await Library.analyze({ids:assets.map(a=>a.id),threshold:.28});const groups=new Map(result.groups.flatMap((ids,i)=>ids.map(id=>[id,`vision-${i}`] as const)));
     localStorage.setItem('mano-similarity-v1',JSON.stringify(Object.fromEntries(groups)));
     if(!result.skipped&&!result.cancelled)localStorage.setItem('mano-analysis-complete-v1',fingerprint);else localStorage.removeItem('mano-analysis-complete-v1');
-    if(warmingNow.current)deferredGroups.current=groups;else setAssets(prev=>prev.map(a=>({...a,group:groups.get(a.id)})));if(manual)setNotice(result.cancelled?'Búsqueda detenida':result.groups.length?`${result.groups.length} grupos de parecidas`:'No hay fotos parecidas');
+    if(warmingNow.current)deferredGroups.current=groups;else setAssets(prev=>prev.map(a=>({...a,group:groups.get(a.id)})));if(manual)setNotice(result.cancelled?'Búsqueda\ndetenida':result.groups.length?`${result.groups.length} grupos\nde parecidas`:'Sin fotos\nparecidas');
   }catch(e){if(manual)messageError(e);}finally{try{await listener?.remove();}finally{setAnalyzing(false);}}};
   useEffect(()=>{if(!demo&&connected&&!loading&&!warming&&!analyzing&&assets.length&&analysisStarted.current!==fingerprint&&localStorage.getItem('mano-analysis-complete-v1')!==fingerprint){analysisStarted.current=fingerprint;void analyze();}},[connected,fingerprint,loading,warming,analyzing]);
   const stopAnalysis=async()=>{try{await Library.cancelAnalysis();}catch(e){messageError(e);}};
@@ -387,13 +496,13 @@ export function ManoApp() {
    * fails, nothing is kept and the card stays. */
   const saveToAlbum=async(write:()=>Promise<{title:string;added?:number}>)=>{const ids=targets;if(busy||!ids.length)return false;setBusy(true);setError('');
     const outcome=await assignToAlbum(write,ids);
-    if(outcome.ok){record('keep',ids,s=>afterAlbum(s,ids,outcome,Date.now(),context));setSheet(null);haptic('success');setNotice(`En «${outcome.title}»`);}
+    if(outcome.ok){record('keep',ids,s=>afterAlbum(s,ids,outcome,Date.now(),context));setSheet(null);haptic('success');setNotice(`Guardada en\n«${outcome.title}»`);}
     else{haptic('error');messageError(outcome.error);}
     setBusy(false);return outcome.ok;};
   const createAlbum=async()=>{const title=newAlbum.trim();if(!title)return;const ok=await saveToAlbum(async()=>{const result=demo?{album:{id:`demo-${Date.now()}`,title},added:targets.length}:await Library.createAlbum({title,ids:targets});setAlbums(a=>[result.album,...a]);return {title:result.album.title,added:result.added};});if(ok){setNewAlbum('');setCreatingAlbum(false);}};
   const openAlbums=async()=>{if(!targets.length)return;setSheet('albums');setCreatingAlbum(false);setNewAlbum('');setError('');try{setAlbums(demo&&albums.length?albums:demo?[{id:'viajes',title:'Viajes'},{id:'recuerdos',title:'Recuerdos'},{id:'familia',title:'Familia'}]:(await Library.albums()).albums);}catch(e){messageError(e);}};
   const addAlbum=(album:Album)=>void saveToAlbum(async()=>{if(!demo)await Library.addToAlbum({ids:targets,albumId:album.id});return {title:album.title};});
-  const commitDelete=async()=>{if(busy)return;setBusy(true);setError('');setNotice('Esperando confirmación de Fotos…');const ids=reviewAssets.map(a=>a.id);try{
+  const commitDelete=async()=>{if(busy)return;setBusy(true);setError('');const ids=reviewAssets.map(a=>a.id);try{
     const result=demo?{deleted:ids}:await Library.deleteAssets({ids});
     // The reward: what this deletion frees (measured weights; «al menos» when some
     // were unknown), counted for the round and for CocoWash as a whole.
@@ -401,9 +510,9 @@ export function ManoApp() {
     setStats(p=>({...p,freed:p.freed+bytes,freedPhotos:p.freedPhotos+gone.length-videos,freedVideos:p.freedVideos+videos,freedPartial:p.freedPartial||gone.some(a=>!a.bytes)}));
     setLifetime(p=>{const next={bytes:p.bytes+bytes,items:p.items+gone.length};saveLifetime(lifetimeKey,next);return next;});
     setState(s=>({...s,pending:s.pending.filter(id=>!result.deleted.includes(id)),removed:[...new Set([...s.removed,...result.deleted])],history:[]}));
-    cancelWarmup();setRevisit([]);setSessionOpen(false);setSheet(null);setSession(false);setShowDone(true);haptic('success');setNotice(demo?'Borrado simulado. Tus fotos reales están intactas.':`${result.deleted.length} enviadas a Eliminado recientemente`);
-  }catch(e){setNotice('');messageError(e);}finally{setBusy(false);}};
-  const play=async(asset:Asset)=>{if(demo){setNotice('La reproducción a pantalla completa está disponible en el iPhone.');return;}try{await Library.preview({id:asset.id});}catch(e){messageError(e);}};
+    cancelWarmup();setLock(NO_HAND);setSessionOpen(false);setSheet(null);setSession(false);setShowDone(true);haptic('success');if(demo)setNotice('Borrado simulado\nTus fotos, intactas');else setSpoken(`${result.deleted.length} enviadas a Eliminado recientemente`);
+  }catch(e){messageError(e);}finally{setBusy(false);}};
+  const play=async(asset:Asset)=>{if(demo){setNotice('Pantalla completa\nsolo en el iPhone');return;}try{await Library.preview({id:asset.id});}catch(e){messageError(e);}};
   const requestAccess=async():Promise<PhotoPermission>=>{if(demo)return 'authorized';try{const {status}=await Library.authorize();setPermission(status as PhotoPermission);if(['authorized','limited'].includes(status)){initialLibrary.current=null;loadLibrary();}return status as PhotoPermission;}catch{return 'denied';}};
   const finishOnboarding=(status:PhotoPermission)=>{try{localStorage.setItem(ONBOARDING_KEY,'done');}catch{/* shown again next launch */}setOnboarded(true);haptic(['authorized','limited'].includes(status)?'success':'warning');};
   const openSettings=()=>{void Library.openSettings().catch(()=>setError('Abre Ajustes › CocoWash › Fotos para permitir el acceso.'));};
@@ -411,20 +520,21 @@ export function ManoApp() {
   const allowed=permission==='authorized'||permission==='limited';
   // No landing page: once onboarded and allowed, the session (or its resume) starts by itself.
   useEffect(()=>{if(onboarded&&allowed&&connected&&!session&&!showDone&&!warming&&!loading&&!loadError)void beginSession();},[onboarded,allowed,connected,session,showDone,warming,loading,loadError]);
-  useEffect(()=>{setDecidedHere(new Set());setPromoted(null);},[filterKey]);
+  useEffect(()=>{setDecidedHere(new Set());},[filterKey]);
   const frontVideo=useVideoStore(getVideos,active);
   const placeWanted=(a:Asset)=>a.kind==='video'?display.video.location:display.photo.location;
   const frontPlace=usePlace(active,!!active&&placeWanted(active));
   // Resolve the next places in the window ahead of time, one request at a time
   // behind the card on screen (native pacing and per-id cache unchanged).
   useEffect(()=>{if(session)prefetchPlaces(upcoming.filter(a=>a.hasLocation&&placeWanted(a)));},[session,upcomingKey,display.photo.location,display.video.location]);
-  const scope=useMemo(()=>filterScope(assets,state,filter,Date.now(),decidedHere),[assets,state,filter,decidedHere]);
-  const currentColor=zoneOf(drag.x,drag.y);
+  const scope=useMemo(()=>filterScope(assets,state,filter,Date.now(),decidedHere,queue.length),[assets,state,filter,decidedHere,queue.length]);
+  const currentColor=zone;
   const lastDecision=state.history.at(-1);
-  const brandMessage=error||notice;
+  const noticeRoom=useNoticeRoom();
   const filtersButton=<button id="filter-trigger" className="header-action header-filters" onClick={openFilters}><SlidersHorizontalIcon size={18}/><span>Filtros</span></button>;
-  const brand=<h1 id="session-heading" tabIndex={-1} className="header-brand"><BrandStatus message={brandMessage} error={!!error} clear={()=>setError('')}/></h1>;
-  const doneHeader=<header className="archive-header">{filtersButton}{brand}<span className="header-spacer" aria-hidden="true"/></header>;
+  const brand=<h1 id="session-heading" tabIndex={-1} className="header-brand"><BrandStatus notice={notice}/></h1>;
+  const alert=error&&!sheet?<ErrorAlert message={error} clear={()=>setError('')}/>:null;
+  const doneHeader=<><header ref={noticeRoom} className="archive-header">{filtersButton}{brand}<span className="header-spacer" aria-hidden="true"/></header>{alert}</>;
   const pending=state.pending.length;
   let screen:ReactNode;
   if(!onboarded)screen=<Onboarding requestAccess={requestAccess} finish={finishOnboarding} granted={permission==='authorized'||permission==='limited'}/>;
@@ -434,31 +544,31 @@ export function ManoApp() {
   else if(!session)screen=showDone&&sheet==='review'?<div className="session-content">{doneHeader}<main className="status-screen is-quiet"><Character pose="memo-cards" height={120} motion="still"/><p className="status-line">Una última mirada antes de terminar.</p></main></div>:showDone?<div className="session-content">{doneHeader}<SessionDone stats={stats} pending={pending} pendingBytes={reviewBytes.bytes} pendingPartial={reviewBytes.partial} lifetime={lifetime.bytes} again={()=>{setShowDone(false);setNotice('');}} review={()=>{setError('');setSheet('review');}}/></div>:<PreparingScreen cancel={()=>{cancelWarmup();setShowDone(true);}}/>;
   else screen=<div className="session-content" inert={pinnedInspect}>
     {/* «Terminar» ends the round: the summary keeps pending discards and offers the review. */}
-    <header className="archive-header is-session">{filtersButton}{brand}<button id="review-trigger" className="header-action finish" disabled={busy} onClick={()=>{cancel();setError('');if(pending>0){setSheet('review');haptic('light');}else closeSession();}}><span>Terminar</span>{pending>0&&<><span className="finish-count" aria-hidden="true"><AnimatedNumber value={pending}/></span><span className="sr-only">, {pending} para eliminar</span></>}</button></header>
+    <header ref={noticeRoom} className="archive-header is-session">{filtersButton}{brand}<button id="review-trigger" className="header-action finish" disabled={busy} onClick={()=>{cancel();setError('');if(pending>0){setSheet('review');haptic('light');}else closeSession();}}><span>Terminar</span>{pending>0&&<><span className="finish-count" aria-hidden="true"><AnimatedNumber value={pending}/></span><span className="sr-only">, {pending} para eliminar</span></>}</button></header>
     {/* Second row: how far through the filtered pile (same calculation as before). */}
     <div className="archive-progress">{limited&&<button className="access-indicator" onClick={()=>void manageLimited()}><InfoIcon size={14} weight="bold"/>Acceso limitado</button>}<PileProgress reviewed={scope.reviewed} total={scope.total} count={<><AnimatedNumber value={scope.reviewed}/><span className="pile-slash">/</span><AnimatedNumber value={scope.total} className="is-total"/></>}/></div>
-    <section ref={stage} className={`hand-space ${currentColor}`} aria-label="Pila de recuerdos">
+    <section ref={stage} className={`hand-space ${currentColor}`} aria-label="Pila de recuerdos">{alert}
       {!connected?<div className="empty-state"><Character pose="coqui-wave" height={140} className="empty-character"/><h2>Tu carrete, en tus manos.</h2><p>Revisa, conserva y ordena tus recuerdos. Nada se borra sin tu confirmación.</p><button className="primary-empty" onClick={connect} disabled={loading}>{loading?'Abriendo Fotos…':'Abrir mi biblioteca'}</button><small>Todo se analiza en tu iPhone.</small></div>:!active?<div className="empty-state"><Character pose={scope.total?'memo-calm':'memo-wonder'} height={120} className="empty-character" motion="sway"/><h2>{favView&&!scope.total?'Aún no hay favoritas.':scope.total?'Todo en su sitio.':'Nada con estos filtros.'}</h2><p>{favView&&!scope.total?'Toca el corazón o desliza hacia arriba para guardar una.':pending?'Lo marcado para eliminar te espera al pulsar Terminar.':scope.total?'No quedan fotos pendientes con estos filtros.':'Prueba con otras fechas o con todo el contenido.'}</p><button className="primary-empty" onClick={()=>{setSheetTab('filters');setSheet('filters');}}>Cambiar filtros</button>{!demo&&<button className="text-button" onClick={connect}>Actualizar biblioteca</button>}</div>:<div className="polaroid-stack" data-testid="photo-hand">
         <AnimatePresence>{bundleKey&&<motion.div className="bundle-arrival" key={bundleKey} initial={reduced?false:{opacity:0,scale:.94,y:-6}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{duration:.24,ease:[.2,.8,.2,1]}} role="status"><StackIcon size={15} weight="bold"/><span>{hand.length} parecidas{best?' · la mejor delante':''}</span></motion.div>}</AnimatePresence>
         {bundleKey&&!reduced&&<motion.div key={`flash-${bundleKey}`} className="bundle-flash" initial={{opacity:0}} animate={{opacity:[0,.14,0]}} transition={{duration:.5}}/>}
-        <AnimatePresence custom={lastDecision}>{[...hand].reverse().map(asset=>{const tape=asset.kind==='video';const {cardWidth,cardHeight}=cardBox(stageSize,asset);const index=hand.indexOf(asset),picked=targetIds.includes(asset.id),angle=index===0?0:index%2?3+index:-3-index;
+        <AnimatePresence custom={lastDecision}>{[...hand].reverse().map(asset=>{const tape=asset.kind==='video';const {cardWidth,cardHeight}=cardBox(stageSize,asset);const index=hand.indexOf(asset),picked=targetIds.includes(asset.id);
           const kindLabel=asset.kind==='video'?'Vídeo':asset.kind==='live'?'Live Photo':'Foto';const lifting=index===0&&!!inspect&&inspect.id===asset.id;
-          return <motion.article key={asset.id} inert={index!==0} data-testid={`card-${asset.id}`} className={`photo-card ${tape?'tape':'paper'} ${index===0?'front':''} ${picked?'picked':''} ${lifting?'is-lifted':''}`} style={{zIndex:20-index,width:cardWidth,height:cardHeight,left:`calc(50% - ${cardWidth/2}px)`,top:`calc(50% - ${cardHeight/2}px)`} as CSSProperties}
-            initial={reduced?false:{opacity:0,y:16,scale:.97}} animate={{opacity:1,x:(index===0?0:index%2?8:-8)+(index===0||picked?drag.x:0),y:-index*6+(index===0||picked?drag.y*.55:0),rotate:angle+(index===0?drag.x*.035:0),scale:1-index*.018}}
+          return <HandCard key={asset.id} id={asset.id} index={index} follow={index===0||picked} reduced={!!reduced} register={register} inert={index!==0} data-testid={`card-${asset.id}`} className={`photo-card ${tape?'tape':'paper'} ${index===0?'front':''} ${picked?'picked':''} ${lifting?'is-lifted':''}`} style={{zIndex:20-index,width:cardWidth,height:cardHeight,left:`calc(50% - ${cardWidth/2}px)`,top:`calc(50% - ${cardHeight/2}px)`} as CSSProperties}
+            initial={reduced?false:{opacity:0,scale:.97}} animate={{opacity:1,scale:1-index*.018}}
             variants={{leave:(decision?:Decision)=>cardExit(asset.id,decision,reduced)}} exit="leave"
-            transition={reduced?{duration:0}:{type:'spring',stiffness:380,damping:34}}
+            transition={reduced?{duration:0}:CARD_SPRING}
             onPointerDown={e=>start(e,asset)} onPointerMove={move} onPointerUp={end} onPointerCancel={cancel}
             tabIndex={index===0?0:-1} aria-hidden={index!==0} aria-label={`${kindLabel} ${index+1} de ${hand.length}${picked?', seleccionada':''}${hand.length>1?'. Intro para ver la siguiente; espacio para seleccionar.':''}`} onKeyDown={e=>{if(e.target!==e.currentTarget)return;if(e.key===' '){e.preventDefault();select(asset.id);}if(e.key==='Enter'){e.preventDefault();index===0?cycle():select(asset.id);}}}>
-            <div className="photo-window">{tape&&index===0?<InlineVideo key={asset.id} asset={asset} state={frontVideo} active={!inspect&&!sheet} retry={()=>getVideos().retry(asset)} download={()=>getVideos().download(asset)} fullscreen={()=>void play(asset)} openSettings={openSettings} meta={display.video} place={frontPlace} sound={videoSound} onSound={()=>setVideoSound(v=>!v)} onOsd={()=>setDisplay(d=>({...d,video:{...d.video,osd:!d.video.osd}}))}><Photo asset={asset} quiet prepared={preloader.current?.get(asset)?.poster}/></InlineVideo>:<Photo asset={asset} quiet={tape} prepared={preloader.current?.get(asset)?.poster} lite={preloader.current?.get(asset)?.cloud}/>}</div>
+            <div className="photo-window">{tape&&index===0?<InlineVideo key={asset.id} asset={asset} state={frontVideo} active={!inspect&&!sheet} retry={()=>getVideos().retry(asset)} download={()=>getVideos().download(asset)} fullscreen={()=>void play(asset)} openSettings={openSettings} meta={display.video} place={frontPlace} sound={videoSound} onSound={()=>setVideoSound(v=>!v)} onOsd={()=>setDisplay(d=>({...d,video:{...d.video,osd:!d.video.osd}}))}><Photo asset={asset} quiet pool={preloader.current}/></InlineVideo>:<Photo asset={asset} quiet={tape} pool={preloader.current}/>}</div>
             {index===0&&!tape&&<PolaroidCaption asset={asset} settings={display.photo} place={frontPlace} pending={display.photo.location&&!!asset.hasLocation&&frontPlace===undefined}/>}
             {hand.length>1&&<button tabIndex={index===0?0:-1} className={`pick-toggle ${picked?'selected':''}`} aria-label={`${picked?'Deseleccionar':'Seleccionar'} ${kindLabel.toLowerCase()} ${index+1}`} aria-pressed={picked} onPointerDown={e=>e.stopPropagation()} onClick={()=>{haptic('selection');select(asset.id);}}><CheckIcon size={16} weight="bold"/></button>}
             {index===0&&<button className="zoom-access" onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();openPinned(asset,e.currentTarget.closest('article')!);}}><PushPinIcon size={16} weight="bold"/>Anclar</button>}
             {index===0&&filter.geek&&<button className="geek-access" aria-label="Ver datos del archivo" onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();openPinned(asset,e.currentTarget.closest('article')!);}}><InfoIcon size={18} weight="bold"/></button>}
             {index===0&&asset.id===best&&<span className="best-chip"><SparkleIcon size={13} weight="fill"/>Mejor toma</span>}
             {display.photo.seal&&state.marks[asset.id]&&<Seal level={state.marks[asset.id].level} hide={hideSeals}/>}{asset.kind==='live'&&<button className="media-play" onPointerDown={e=>e.stopPropagation()} onClick={()=>play(asset)} aria-label="Reproducir Live Photo"><PlayIcon weight="fill" size={14}/>LIVE</button>}
-          </motion.article>;
+          </HandCard>;
         })}</AnimatePresence>
-        {currentColor&&!(favView&&currentColor==='favorite')&&<span className={`drag-stamp ${currentColor}`} style={{opacity:Math.min(1,.4+Math.max(Math.abs(drag.x),Math.abs(drag.y))/120)}}><Stamp kind={currentColor}/></span>}
+        {currentColor&&!(favView&&currentColor==='favorite')&&<motion.span className={`drag-stamp ${currentColor}`} style={{opacity:stampOpacity}}><Stamp kind={currentColor}/></motion.span>}
         {flash&&<DecisionStamp key={flash.key} kind={flash.kind} reduced={!!reduced} done={()=>setFlash(f=>f?.key===flash.key?null:f)}/>}
       </div>}
     </section>
@@ -485,19 +595,19 @@ export function ManoApp() {
   return <div ref={root} className={`mano-app ${isNative?'on-device':''} ${session?'in-session':'on-screen'}`} onContextMenu={blockMenu}>
     {screen}
     <p className="sr-only" role="status" aria-live="polite">{spoken}</p>
-    <AnimatePresence>{inspect&&<InspectorBoundary key={inspect.id} close={closeInspect}><Inspector asset={inspect} src={sharpPreview(inspect)??preloader.current?.get(inspect)?.poster} pinned={pinnedInspect} origin={inspectOrigin.current} drag={peek} anchor={anchor} armed={overHook} geek={!!filter.geek} close={closeInspect} pin={()=>{setPinnedInspect(true);haptic('rigid');}}
+    <AnimatePresence>{inspect&&<InspectorBoundary key={inspect.id} close={closeInspect}><Inspector asset={inspect} src={sharpPreview(inspect)??(preloader.current?.get(inspect)?.poster||undefined)} cloud={!!preloader.current?.peek(inspect)?.value?.cloud} pinned={pinnedInspect} origin={inspectOrigin.current} peek={{x:peekX,y:peekY}} anchor={anchor} armed={overHook} geek={!!filter.geek} close={closeInspect} pin={()=>{setPinnedInspect(true);haptic('rigid');}}
       video={inspect.kind==='video'&&inspect.id===active?.id?{state:frontVideo,retry:()=>getVideos().retry(inspect),download:()=>getVideos().download(inspect),fullscreen:()=>void play(inspect),openSettings}:undefined}/></InspectorBoundary>}</AnimatePresence>
     <Sheet open={sheet==='filters'} close={()=>setSheet(null)} title="Filtros y ajustes" description={sheetTab==='filters'?'Elige qué fotos entran en la pila.':'Elige cómo se ven tus recuerdos.'} error={error} returnTo="filter-trigger">
       <div className="sheet-tabs" role="group" aria-label="Sección"><button aria-pressed={sheetTab==='filters'} onClick={()=>{haptic('selection');setSheetTab('filters');}}>Filtros</button><button aria-pressed={sheetTab==='settings'} onClick={()=>{haptic('selection');setSheetTab('settings');}}>Ajustes</button></div>
       <div hidden={sheetTab!=='filters'}>
-        <Filters filter={filter} assets={assets} state={state} preview={draft=>prewarm(eligible(assets,state,draft,Date.now(),seed.current))} index={{sized:index.sized,total:rawAssets.length,analyzed:index.analyzed,photos:index.photos,measuring:index.measuring,analyzing:index.analyzing}} apply={value=>{resumeContext.current=undefined;setFilter(f=>({...value,geek:f.geek}));setSelected([]);setRotated([]);setRevisit([]);setBundleAnchor(null);setSheet(null);haptic('light');setNotice('Filtros actualizados');}}/>
-        {demo&&<button className="sheet-action secondary" onClick={()=>{setState(initialState());setStats(EMPTY_STATS);setSessionOpen(false);setSession(false);setShowDone(false);setRevisit([]);setFilter(initialFilter);setSelected([]);setRotated([]);setSheet(null);setNotice('Demostración reiniciada');}}>Reiniciar demostración</button>}
+        <Filters filter={filter} assets={assets} state={state} preview={draft=>prewarm(eligible(assets,state,draft,Date.now(),seed.current))} index={{sized:index.sized,total:rawAssets.length,analyzed:index.analyzed,photos:index.photos,measuring:index.measuring,analyzing:index.analyzing}} apply={value=>{resumeContext.current=undefined;setFilter(f=>({...value,geek:f.geek}));setSelected([]);setLock(NO_HAND);setSheet(null);haptic('light');setSpoken('Filtros aplicados');}}/>
+        {demo&&<button className="sheet-action secondary" onClick={()=>{setState(initialState());setStats(EMPTY_STATS);setSessionOpen(false);setSession(false);setShowDone(false);setLock(NO_HAND);setFilter(initialFilter);setSelected([]);setSheet(null);setSpoken('Demostración reiniciada');}}>Reiniciar demostración</button>}
       </div>
       <div hidden={sheetTab!=='settings'}><DisplaySettingsPanel display={display} change={setDisplay} geek={!!filter.geek} setGeek={value=>setFilter(f=>({...f,geek:value}))} library={libraryActions}/></div>
     </Sheet>
     <Sheet open={sheet==='albums'} close={()=>setSheet(null)} title="Guardar en un álbum" description="Se conserva y pasa a la siguiente. También sigue en tu carrete." error={error} returnTo="album-trigger"><p className="sheet-intro"><strong>{targets.length}</strong> seleccionada{targets.length>1?'s':''}</p><button className="album-row album-new" onClick={()=>setCreatingAlbum(v=>!v)} disabled={busy}><span className="row-icon"><PlusIcon size={20} weight="bold"/></span>Crear álbum nuevo</button>{creatingAlbum&&<div className="new-album"><label className="field">Nombre del álbum<AlbumInput value={newAlbum} change={setNewAlbum}/></label><button className="sheet-action" onClick={createAlbum} disabled={busy||!newAlbum.trim()}>Crear y añadir {targets.length} elemento{targets.length===1?'':'s'}</button></div>}{albums.map(a=><button className="album-row" key={a.id} onClick={()=>addAlbum(a)} disabled={busy}><span className="row-icon"><FolderOpenIcon size={20}/></span>{a.title}<CaretRightIcon size={16} weight="bold"/></button>)}</Sheet>
     <Sheet open={sheet==='review'} close={()=>setSheet(null)} title="Una última mirada" description="Recupera lo que quieras conservar antes de eliminar." error={error} returnTo={session?'review-trigger':'filter-trigger'}><p className="sheet-intro">{reviewAssets.length?<><strong>{reviewAssets.length} para eliminar</strong>{freeLabel&&<> · liberarías {reviewBytes.partial?'al menos ':''}<strong>{freeLabel}</strong></>}. Aún no se ha borrado nada.</>:'No hay nada marcado para eliminar.'}</p>
-      {reviewAssets.length>0&&<><p className="review-hint">Mantén pulsada una foto y deslízala a la derecha para recuperarla.</p><Carousel ariaLabel="Revisar lo marcado para eliminar" draggingEnabled={false} className="review-carousel"><div className="review-grid">{reviewAssets.map(a=><article key={a.id} className="review-card paper" onPointerDown={e=>start(e,a,true)} onPointerMove={move} onPointerUp={end} onPointerCancel={cancel} style={gesture.current?.id===a.id?{transform:`translateX(${Math.max(0,drag.x)}px)`}:undefined}><div className="review-photo"><Photo asset={a} small/></div><button className="recover-button" onPointerDown={e=>e.stopPropagation()} onClick={()=>{setState(s=>restore(s,a.id));setSpoken('Elemento recuperado');}}><ArrowCounterClockwiseIcon size={16}/>Recuperar</button></article>)}</div></Carousel>
+      {reviewAssets.length>0&&<><p className="review-hint">Mantén pulsada una foto y deslízala a la derecha para recuperarla.</p><Carousel ariaLabel="Revisar lo marcado para eliminar" draggingEnabled={false} className="review-carousel"><div className="review-grid">{reviewAssets.map(a=><article key={a.id} className="review-card paper" onPointerDown={e=>start(e,a,true)} onPointerMove={move} onPointerUp={end} onPointerCancel={cancel} ><div className="review-photo"><Photo asset={a} small/></div><button className="recover-button" onPointerDown={e=>e.stopPropagation()} onClick={()=>{setState(s=>restore(s,a.id));setSpoken('Elemento recuperado');}}><ArrowCounterClockwiseIcon size={16}/>Recuperar</button></article>)}</div></Carousel>
         <div className="review-primary"><button className="sheet-action danger" onClick={commitDelete} disabled={busy} aria-busy={busy}><TrashIcon size={20}/>{busy?'Esperando a Fotos…':`Eliminar ${reviewAssets.length}${freeLabel&&!reviewBytes.partial?` · ${freeLabel}`:''}`}</button><p className="sheet-fine">Fotos te pedirá confirmación; lo eliminado queda 30 días en «Eliminado recientemente», también en iCloud.</p>
           <button className="sheet-action secondary recover-all" disabled={busy} onClick={recoverAll}><ArrowCounterClockwiseIcon size={20}/>{reviewAssets.length===1?'Recuperar':`Recuperar todo (${reviewAssets.length})`}</button></div></>}
     </Sheet>

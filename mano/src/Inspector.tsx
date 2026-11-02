@@ -1,9 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
-import { motion, useReducedMotion } from 'motion/react';
-import { PushPinIcon, XIcon, PlusIcon, MinusIcon, CloudArrowDownIcon } from '@phosphor-icons/react';
+import { motion, useReducedMotion, useSpring, useTransform, type MotionValue } from 'motion/react';
+import { PushPinIcon, XIcon, PlusIcon, MinusIcon } from '@phosphor-icons/react';
 import { Library, thumbnail, inCloudError, type AssetMetadata } from './library';
 import { InlineVideo } from './InlineVideo';
-import { loadZoomPreview, type VideoState } from './media';
+import { loadZoomPreview, cloudPreviews, type VideoState } from './media';
+import { CloudBadge, useCloud } from './Cloud';
 import { cardPixels } from './preview';
 import { formatBytes } from './meta';
 import type { Asset } from './domain';
@@ -17,17 +18,18 @@ const follow={type:'spring',stiffness:900,damping:60,mass:.6} as const;
 /** Hold = isolate in place (a 3 % lift, no zoom jump); drag down to the single
  * dock to anchor; anchored = fit to screen with pinch/pan and controls. */
 export type InspectVideo={state:VideoState;retry:()=>void;download:()=>void;fullscreen:()=>void;openSettings:()=>void};
-export function Inspector({asset,src,pinned,origin,drag,anchor,armed,geek,close,pin,video}: {asset:Asset;src?:string;pinned:boolean;origin?:InspectOrigin;drag:{x:number;y:number};anchor:number;armed:boolean;geek:boolean;close:()=>void;pin:()=>void;video?:InspectVideo}) {
+export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed,geek,close,pin,video}: {asset:Asset;src?:string;cloud?:boolean;pinned:boolean;origin?:InspectOrigin;peek:{x:MotionValue<number>;y:MotionValue<number>};anchor:MotionValue<number>;armed:boolean;geek:boolean;close:()=>void;pin:()=>void;video?:InspectVideo}) {
  // An iCloud-only photo (no local preview under «Ahorrar iCloud») is not an
  // error: it says so, and anchoring downloads it (loadZoomPreview below).
- const [posterError,setPosterError]=useState(false);const [posterCloud,setPosterCloud]=useState(false);const [posterRetry,setPosterRetry]=useState(0);const [poster,setPoster]=useState(src);useEffect(()=>{let alive=true;if(src){setPoster(src);return;}setPosterError(false);setPosterCloud(false);thumbnail(asset,cardPixels(asset),posterRetry>0).then(value=>{if(alive)setPoster(value);}).catch(e=>{if(!alive)return;if(inCloudError(e))setPosterCloud(true);else setPosterError(true);});return()=>{alive=false;};},[asset.id,src,posterRetry]);
+ const [posterError,setPosterError]=useState(false);const [posterCloud,setPosterCloud]=useState(false);const [posterRetry,setPosterRetry]=useState(0);const [poster,setPoster]=useState(src);useEffect(()=>{let alive=true;if(src){setPoster(src);return;}setPosterError(false);setPosterCloud(false);thumbnail(asset,cardPixels(asset),posterRetry>0,false).then(value=>{if(alive)setPoster(value);}).catch(e=>{if(!alive)return;if(inCloudError(e))setPosterCloud(true);else setPosterError(true);});return()=>{alive=false;};},[asset.id,src,posterRetry]);
  const outer=useRef<HTMLDivElement>(null);const reduced=useReducedMotion();const frame=useRef<HTMLDivElement>(null);
  // Anchored on purpose: fetch the larger preview once, decode it off screen and
  // swap it into the same <img> (same box, same object-fit): no blank frame and
  // no reframing. The card-size poster stays if this fails. Anchoring may fetch
- // from iCloud: the progress pill says so only while bytes actually arrive.
- const [sharp,setSharp]=useState('');const [fetching,setFetching]=useState(0);
- useEffect(()=>{if(!pinned||asset.kind==='video')return;const controller=new AbortController();loadZoomPreview(asset,controller.signal,value=>setFetching(Math.max(.01,Math.min(.99,value)))).then(setSharp).catch(()=>{}).finally(()=>{if(!controller.signal.aborted)setFetching(0);});return()=>{controller.abort();setFetching(0);};},[pinned,asset.id]);
+ // from iCloud — joining the download that holding the card already started —
+ // and the card's own iCloud indicator follows it here, with real progress.
+ const [sharp,setSharp]=useState('');const download=useCloud(asset.kind==='video'?undefined:asset);
+ useEffect(()=>{if(!pinned||asset.kind==='video')return;const controller=new AbortController();loadZoomPreview(asset,controller.signal).then(value=>{if(!controller.signal.aborted)setSharp(value);}).catch(()=>{});return()=>controller.abort();},[pinned,asset.id]);
  const [space,setSpace]=useState<{target:Box;origin:Box;scale:number}|null>(null);
  const [meta,setMeta]=useState<AssetMetadata|null>(null);const [metaError,setMetaError]=useState('');const [zoom,setZoom]=useState(1);const [pan,setPan]=useState({x:0,y:0});
  const points=useRef(new Map<number,{x:number;y:number}>());const base=useRef({distance:0,zoom:1,x:0,y:0,panX:0,panY:0});
@@ -57,18 +59,22 @@ export function Inspector({asset,src,pinned,origin,drag,anchor,armed,geek,close,
  const values=expanded?[...(weight?[['Peso',weight]]:[]),...Object.entries(expanded).filter(([key,value])=>!['id','exifStatus','exif','location'].includes(key)&&value!==undefined&&value!==null).map(([key,value])=>[({latitude:'Latitud',longitude:'Longitud',altitude:'Altitud',filename:'Archivo',width:'Ancho',height:'Alto',creationDate:'Capturada',modified:'Modificada',duration:'Duración',kind:'Tipo',uniformTypeIdentifier:'Formato',cameraMake:'Fabricante',cameraModel:'Cámara',lensModel:'Objetivo',fNumber:'Apertura',exposureTime:'Exposición',dateTimeOriginal:'Fecha EXIF',orientation:'Orientación',camera:'Cámara',lens:'Objetivo',iso:'ISO',aperture:'Apertura',shutter:'Exposición',focalLength:'Distancia focal',isFavorite:'Favorita',isHidden:'Oculta'} as Record<string,string>)[key]??key,key.toLowerCase().includes('date')&&typeof value==='number'?new Date(value).toLocaleString('es'):typeof value==='boolean'?(value?'Sí':'No'):String(value)])]:[];
  // Transform the anchored-size frame back onto the card: crisp image, no layout animation.
  const toBox=(box:Box,lift=1,offset={x:0,y:0})=>space?{x:box.x+box.width/2-(space.target.x+space.target.width/2)+offset.x,y:box.y+box.height/2-(space.target.y+space.target.height/2)+offset.y,scale:box.width/space.target.width*lift}:{x:0,y:0,scale:1};
- const finger={x:drag.x/(space?.scale??1),y:drag.y/(space?.scale??1)};
+ // The finger while holding: followed through a stiff spring on a wrapper, so
+ // the photo's own pose (lift, anchor, exit) never re-renders per move.
+ const scale=useRef(1);scale.current=space?.scale??1;
+ const fingerX=useTransform(()=>peek.x.get()/scale.current),fingerY=useTransform(()=>peek.y.get()/scale.current);
+ const smoothX=useSpring(fingerX,follow),smoothY=useSpring(fingerY,follow);
  const atOrigin=space?toBox(space.origin):undefined;
- const pose=!space?undefined:pinned?{x:0,y:0,scale:1}:toBox(space.origin,reduced?1:1.03,finger);
+ const pose=!space?undefined:pinned?{x:0,y:0,scale:1}:toBox(space.origin,reduced?1:1.03);
  return <div ref={outer} className={`inspection ${pinned?'is-pinned':''} ${geek?'is-geek':''}`} role={pinned?'dialog':undefined} aria-modal={pinned?true:undefined} aria-label="Inspeccionar recuerdo">
   <motion.div className="inspection-shade" onClick={()=>{if(pinned)close();}} initial={{opacity:0}} animate={{opacity:pinned?.94:.84}} exit={{opacity:0}} transition={{duration:reduced?0:.2,ease:[.2,.8,.2,1]}}/>
-  {space&&<motion.div ref={frame} className="inspection-photo" tabIndex={pinned?0:-1} style={{left:space.target.x,top:space.target.y,width:space.target.width,height:space.target.height,'--inspect-ratio':asset.width/asset.height} as CSSProperties}
+  {space&&<motion.div className="inspection-follow" style={{x:reduced?fingerX:smoothX,y:reduced?fingerY:smoothY}}><motion.div ref={frame} className="inspection-photo" tabIndex={pinned?0:-1} style={{left:space.target.x,top:space.target.y,width:space.target.width,height:space.target.height,'--inspect-ratio':asset.width/asset.height} as CSSProperties}
    initial={reduced?false:atOrigin} animate={pose} exit={reduced?{opacity:0,transition:{duration:0}}:{...atOrigin,transition:settle}}
-   transition={reduced?{duration:0}:pinned?settle:(drag.x||drag.y)?follow:settle} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onClick={e=>e.stopPropagation()}>
+   transition={reduced?{duration:0}:settle} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onClick={e=>e.stopPropagation()}>
    {pinned&&video?<div className="inspection-media"><InlineVideo asset={asset} state={video.state} mode="full" retry={video.retry} download={video.download} fullscreen={video.fullscreen} openSettings={video.openSettings}>{poster?<img src={poster} alt="" draggable={false}/>:null}</InlineVideo></div>
-    :poster||(pinned&&sharp)?<img src={pinned&&sharp?sharp:poster} alt="Recuerdo ampliado" draggable={false} style={{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}}/>:<span>{posterCloud?(pinned?'':'En iCloud. Ancla para descargarla.'):posterError?'No se pudo cargar la imagen.':''}{posterError&&pinned&&<button onClick={()=>setPosterRetry(v=>v+1)}>Reintentar</button>}</span>}
-   {pinned&&fetching>0&&<span className="cloud-download" role="status"><CloudArrowDownIcon size={16} weight="bold"/>Descargando de iCloud… {Math.round(fetching*100)} %</span>}
-  </motion.div>}
+    :poster||(pinned&&sharp)||download?.src?<img src={pinned&&sharp?sharp:poster||download?.src} alt="Recuerdo ampliado" draggable={false} style={{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}}/>:<span>{posterCloud?(pinned?'':'En iCloud. Ancla para descargarla.'):posterError?'No se pudo cargar la imagen.':''}{posterError&&pinned&&<button onClick={()=>setPosterRetry(v=>v+1)}>Reintentar</button>}</span>}
+   {!sharp&&(cloud||download?.status==='downloading')&&<CloudBadge className="cloud-download" state={download?.status==='ready'?undefined:download} lite={cloud} onRetry={()=>void cloudPreviews.retry(asset,'zoom').then(setSharp).catch(()=>{})}/>}
+  </motion.div></motion.div>}
   <motion.div layout={!reduced} className={`inspection-dock ${pinned?'is-pinned':''} ${armed?'is-armed':''}`} data-inspection-hook style={{'--anchor':anchor} as CSSProperties}
    initial={reduced?false:{opacity:0,y:16}} animate={{opacity:1,y:0}} exit={reduced?{opacity:0,transition:{duration:0}}:{opacity:0,y:16}} transition={reduced?{duration:0}:{type:'spring',stiffness:420,damping:36}}>
    {pinned?<>

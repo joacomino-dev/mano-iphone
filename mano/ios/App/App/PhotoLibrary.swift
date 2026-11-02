@@ -329,12 +329,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
             }
             let job = PreparedThumbnailJob(call: call)
             self.thumbnailJobs[token] = job
-            let timeout = DispatchWorkItem { [weak self, weak job] in
-                guard let self, let job else { return }
-                self.stopThumbnail(token, job: job, message: "La vista previa tardó demasiado. Comprueba iCloud y reintenta.", code: "PREPARATION_TIMEOUT")
-            }
-            job.timeout = timeout
-            self.thumbnailQueue.asyncAfter(deadline: .now() + 60, execute: timeout)
+            self.armThumbnailTimeout(token, job: job)
             // requestImage produces a video's poster without requesting/exporting
             // its full AVAsset. One final result settles this promise exactly once.
             func request(lite: Bool) {
@@ -343,8 +338,12 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                 options.deliveryMode = lite ? .fastFormat : .highQualityFormat; options.resizeMode = .fast
                 if network {
                     // Only called while iCloud bytes arrive: the card shows the download.
-                    options.progressHandler = { [weak self] progress, _, _, _ in
-                        self?.notifyListeners("mediaPreparationProgress", data: ["requestId": token, "phase": "download", "progress": progress])
+                    // Bytes arriving also restart the 60 s limit, so a slow download that
+                    // keeps moving is not cut off; a stalled one still times out.
+                    options.progressHandler = { [weak self, weak job] progress, _, _, _ in
+                        guard let self else { return }
+                        self.notifyListeners("mediaPreparationProgress", data: ["requestId": token, "phase": "download", "progress": progress])
+                        self.thumbnailQueue.async { if let job { job.lastProgress = Date() } }
                     }
                 }
                 job.photoRequest = self.imageManager.requestImage(for: item, targetSize: CGSize(width: CGFloat(size), height: CGFloat(size)), contentMode: .aspectFit, options: options) { [weak self, weak job] image, info in
@@ -379,6 +378,20 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
             }
             request(lite: false)
         }
+    }
+    /// A preview's inactivity limit: 60 s without iCloud progress. One timer per
+    /// window; when it fires after recent progress it re-arms for the time left.
+    /// Runs on thumbnailQueue.
+    private func armThumbnailTimeout(_ token: String, job: PreparedThumbnailJob, after seconds: Double = 60) {
+        job.timeout?.cancel()
+        let timeout = DispatchWorkItem { [weak self, weak job] in
+            guard let self, let job, self.thumbnailJobs[token] === job else { return }
+            let idle = Date().timeIntervalSince(job.lastProgress)
+            if idle < 60 { self.armThumbnailTimeout(token, job: job, after: 60 - idle); return }
+            self.stopThumbnail(token, job: job, message: "La vista previa tardó demasiado. Comprueba iCloud y reintenta.", code: "PREPARATION_TIMEOUT")
+        }
+        job.timeout = timeout
+        thumbnailQueue.asyncAfter(deadline: .now() + seconds, execute: timeout)
     }
     @objc func cancelThumbnailPreparation(_ call: CAPPluginCall) {
         guard let token = call.getString("requestId") else { call.reject("Falta el identificador de preparación.", "INVALID_REQUEST"); return }
@@ -922,9 +935,14 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                             // A coarse luminance signature shortlists cross-date candidates. Bound
                             // expensive Vision comparisons to 64 per image, rather than all prints.
                             let signature = self.imageHash(cgImage)
-                            let candidates = prints.indices.sorted {
-                                (prints[$0].hash ^ signature).nonzeroBitCount < (prints[$1].hash ^ signature).nonzeroBitCount
-                            }.prefix(64)
+                            // The 64 closest signatures by Hamming distance (0…64), in one pass
+                            // into distance buckets instead of sorting every print per image
+                            // (that sort made the whole search grow as n² log n).
+                            var buckets = [[Int]](repeating: [], count: 65)
+                            for i in prints.indices { buckets[(prints[i].hash ^ signature).nonzeroBitCount].append(i) }
+                            var candidates: [Int] = []
+                            candidates.reserveCapacity(64)
+                            for bucket in buckets where candidates.count < 64 { candidates.append(contentsOf: bucket.prefix(64 - candidates.count)) }
                             var nearest: (Int, Float)?
                             for i in candidates {
                                 if self.cancelled() { break }
@@ -1117,6 +1135,8 @@ private final class PreparedThumbnailJob {
     let call: CAPPluginCall
     var photoRequest: PHImageRequestID = PHInvalidImageRequestID
     var timeout: DispatchWorkItem?
+    /// Last iCloud progress (or creation); read and written on thumbnailQueue.
+    var lastProgress = Date()
     init(call: CAPPluginCall) { self.call = call }
 }
 

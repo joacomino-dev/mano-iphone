@@ -6,6 +6,7 @@
 - Checkout: `C:/Users/Joaco/OneDrive/Documentos/ChatGPT/iPhone`; main local sincronizada
   con origin/main + **1 commit local sin push** (mano/CLAUDE.md y mano/tools/). Ver CW-HO-004.
   Sin publicar a propósito: `CURRENT.md` (notas operativas privadas de Codex, sin seguimiento).
+- **CW-CL-027 (rama local claude/perf-stability-cotton sobre PR #1, 2026-11-02, sin push):** 0.9.3 (12) rendimiento (una secuencia, mano fija, arrastre sin re-render, persistencia agrupada), Deshacer exacto, progreso real de iCloud compartido con Anclar, avisos en el hueco del nombre, tour común + demo de 4 gestos, textura Cotton Fiber. Pendiente: push autorizado, CI macOS (Swift), iPhone real. Informe: docs/ai-handoff/CLAUDE_PERF_CW-CL-027.md.
 - **CW-CL-026 (PR #1, 2026-11-02):** 0.9.2 (11) fondo #F3ECE1 + losa de papel WebP. CI: el simulador sin GPU se atasca con la textura; el workflow la aplana solo en la copia del simulador y la restaura para el IPA. Entrada manual ipa_even_if_smoke_fails publica el IPA aunque falle el smoke test (run en rojo). Pendiente: CI verde e iPhone real.
 - **CW-CL-025 (publicado en PR #1, 2026-11-01):** 0.9.1 (10) cabecera de dos filas con wordmark, cápsulas Filtros/Terminar, insignia superpuesta, fondo Warm Paper con textura procedural. Pendiente push autorizado, CI e iPhone.
 - **CW-CL-024 (publicado en PR #1, 2026-11-01):** 0.9.0 (9) refinamiento visual + paleta Coco Cream (Coco Mint preparada por tokens). Falta push autorizado, CI macOS y QA en iPhone. Ver CLAUDE_LOG.
