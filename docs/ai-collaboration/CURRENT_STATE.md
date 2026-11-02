@@ -41,6 +41,7 @@ Riesgos abiertos (no resueltos, ver informe §9): medición con Instruments pend
 mejora futura de servir pósters fuera del hilo principal (descartada por ahora: CSP protegida).
 
 ## Historial reciente
+- **CI 0.9.4 (CW-CL-031):** run 41497571357 intento 2 — XCTest pasó (590 s), IPA publicado; rojo solo por límite de tiempo de xcodebuild. Presupuestos ampliados (test 840 s, xcodebuild 1320 s, paso 45 min, job 62 min) y relanzado; resultado en CLAUDE_LOG.
 - **CW-CL-030 (2026-11-02):** 0.9.4 (13) logo nuevo (SVG trazado), icono, pantalla de inicio con isotipo de Zángano, loader sin coco, «Ver la introducción de nuevo» en Ajustes, vídeos nunca en pila, toque play/pausa y continuidad carta ↔ mantener ↔ anclada. QA en iPhone añadida a CW-HO-005.
 - **CW-CL-028 (2026-11-02):** pendientes nativos que eran de Codex, hechos por Claude por falta de cupo (caché de huellas de Vision, codificación concurrente). Publicado en la rama; Swift a validar por CI.
 - **CW-CL-027 (rama claude/perf-stability-cotton sobre PR #1, 2026-11-02, publicada):** 0.9.3 (12) rendimiento (una secuencia, mano fija, arrastre sin re-render, persistencia agrupada), Deshacer exacto, progreso real de iCloud compartido con Anclar, avisos en el hueco del nombre, tour común + demo de 4 gestos, textura Cotton Fiber. Pendiente: push autorizado, CI macOS (Swift), iPhone real. Informe: docs/ai-handoff/CLAUDE_PERF_CW-CL-027.md.

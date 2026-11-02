@@ -37,10 +37,10 @@ jobs:
     # Standard free Intel runner: avoids current hosted ARM capacity failures. Never use -large/-xlarge.
     runs-on: macos-26-intel
     # Includes bounded cold-start readiness; this remains the standard free runner.
-    # 55: a smoke test that fails slowly (up to its own 38 min) still leaves time
+    # 62: a smoke test that fails slowly (up to its own 45 min) still leaves time
     # to keep diagnostics and, on manual request, build the IPA; a job cancelled
     # at its cap loses its log (run 41482349450).
-    timeout-minutes: 55
+    timeout-minutes: 62
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
     defaults:
@@ -71,7 +71,7 @@ jobs:
           ! grep -q -e '--cw-paper-texture:url(' $css
       - name: Smoke test installed app bridge and PhotoKit on iPhone simulator
         id: smoke
-        timeout-minutes: 38
+        timeout-minutes: 45
         run: bash scripts/test-ios-simulator.sh
       - name: Keep failed simulator diagnostics (generated test photo only)
         if: failure()

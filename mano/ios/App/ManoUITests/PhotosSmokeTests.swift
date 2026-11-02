@@ -3,7 +3,8 @@ import XCTest
 final class PhotosSmokeTests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
-        executionTimeAllowance = 600
+        // 0.9.3 passed in 527 s and 0.9.4 in 590 s on the free simulator runner.
+        executionTimeAllowance = 840
     }
 
     @MainActor
