@@ -1,6 +1,6 @@
 # CocoWash 0.9.5 — prompt listo (observaciones del usuario tras probar 0.9.4)
 
-Estado: **solo planificación**. Nada de esto está implementado. Rama de partida:
+Estado (CW-CL-032): **implementado 2–7** (vídeo, favoritas, última mirada, introducción, Coqui y Memo, color). **Pendiente 1** (firma de Zángano Studio: falta el texto en curvas). Falta CI macOS y QA en iPhone. Rama de partida:
 `claude/perf-stability-cotton` (0.9.4, build 13). Siguiente versión: 0.9.5 (build 14).
 
 Asset recibido:

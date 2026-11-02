@@ -373,7 +373,29 @@ permissions, `cocowash-media://` and CSP).
 - Video: a quick tap on the card pauses/plays it (brief glyph, tick). One
   playhead per video shared by the card, the held view and the anchored view:
   holding keeps it playing from the same moment (the card's frame is painted
-  under it), anchoring keeps the same element (no restart; sound turns on),
+  under it), anchoring keeps the same element (no restart; sound as the person left it — 0.9.5),
   closing returns to the card at the anchored time; a pause is kept everywhere.
 - Version 0.9.4 (build 13).
 
+## CocoWash 0.9.5 — refinements after 0.9.4 (2 November 2026, user request, CW-CL-032)
+
+Plan and the user's notes: `docs/ai-handoff/NEXT_0.9.5_PROMPT.md`.
+- Video: an interrupted `play()` (AbortError) is not a refusal; only
+  NotAllowedError shows «Toca para reproducir», and `canplay` retries. Sound
+  follows the person's choice in every view (anchoring no longer turns it on).
+  The anchored video has no zoom controls (zoom is for photos).
+- Favoritas: the filter chip counts every favourite in the library (Photos and
+  app, `favoritesTotal`), ignoring seals and the wait after «Conservar»; the
+  pile is unchanged and favourites never enter the general pile.
+- Última mirada: «Recuperar» above «Eliminar»; recovering is only by button
+  (no hold-and-swipe gesture, no hint).
+- Tour: 1.6 s per swipe, card 3 phases 3.2 s; cards 2–3 arrive with the photo
+  at rest (copy swaps with `popLayout`) and the demo starts after 0.7 s. Anchor
+  and pinch end with the photo open, larger and opaque; copy says pinch anchors
+  too. Active row: no box, the others step back. No limited-access line.
+- Coqui washing Memo asset: white foam (was a transparent hole), transparent
+  triangle between the legs (was white).
+- Colour: `--cw-accent` (coffee #6E3B22) for selected states in Filtros y
+  ajustes; turquoise stays for identity, Conservar and primary actions.
+- Pending: Zángano Studio signature on the launch mark — its SVG uses Candara
+  (not on iOS); needs the text as curves (`mano/brand/zangano-studio-logo-source.svg`).

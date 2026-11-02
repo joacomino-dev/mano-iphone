@@ -9,7 +9,7 @@
 - Pendiente del usuario: decidir si PR #1 y esta rama se fusionan a `main` (no se ha abierto PR
   de esta rama: puede abrirse contra `claude/decision-bar-favoritas` o contra `main` tras PR #1).
 
-- **Siguiente versión (0.9.5, solo planificada):** observaciones del usuario y prompt listo en
+- **0.9.5 (14) implementada en la rama (CW-CL-032)** salvo la firma de Zángano Studio (falta el texto en curvas). Falta CI macOS y QA en iPhone (autoplay, favoritas, introducción). Observaciones y prompt en
   [NEXT_0.9.5_PROMPT](../ai-handoff/NEXT_0.9.5_PROMPT.md); logo de Zángano Studio en `mano/brand/zangano-studio-logo-source.svg`.
 
 ## CW-HO-005 — 0.9.3 entregada, Claude → Codex (lista, no recibida)
