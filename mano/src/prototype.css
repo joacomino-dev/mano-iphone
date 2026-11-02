@@ -850,7 +850,7 @@
    on the frame's cream and paper; Zángano's isotype near the bottom, like a
    studio card. Over everything, never interactive. */
 .splash{position:absolute;inset:0;z-index:200;display:grid;place-items:center;container-type:inline-size;pointer-events:none;background:var(--cw-paper-base,var(--cw-bg))}
-.splash::before{content:'';position:absolute;inset:0;background:var(--cw-paper-texture);opacity:var(--cw-paper-intensity);transform:translateZ(0)}
+/* No texture layer here: one less full-screen composited layer at launch. */
 .splash-lockup{position:relative;display:flex;align-items:center;gap:clamp(6px,2.5cqw,14px);margin-top:-6cqw}
 .splash-hero{height:clamp(104px,40cqw,176px);width:auto;filter:drop-shadow(0 6px 10px rgba(18,45,46,.16))}
 .splash-logo{height:clamp(66px,25cqw,110px);width:auto}
