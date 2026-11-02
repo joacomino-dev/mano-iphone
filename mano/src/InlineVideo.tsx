@@ -25,6 +25,7 @@ function remember(key: string, time: number, paused: boolean) {
   while (playheads.size > 40) playheads.delete(playheads.keys().next().value!);
 }
 export type VideoControl = { toggle: () => void };
+const interrupted = (e: unknown) => (e as { name?: string } | null)?.name === 'AbortError';
 const useDocumentVisible = () => {
   const [visible, setVisible] = useState(() => typeof document === 'undefined' || document.visibilityState !== 'hidden');
   useEffect(() => { const update = () => setVisible(document.visibilityState !== 'hidden'); document.addEventListener('visibilitychange', update); return () => document.removeEventListener('visibilitychange', update); }, []);
@@ -64,7 +65,7 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
   const [frame, setFrame] = useState(false);
   const [time, setTime] = useState(0);
   const [length, setLength] = useState(asset.duration || 0);
-  const [muted, setMuted] = useState(!full);
+  const [muted, setMuted] = useState(!(full && sound));
   const [blocked, setBlocked] = useState(false);
   const [chosen, setChosen] = useState(false);
   const [playError, setPlayError] = useState(false);
@@ -88,9 +89,14 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
     setPlayError(false);
     if (video.ended) video.currentTime = 0;
     video.muted = !withSound; setMuted(!withSound);
-    void video.play().then(() => setBlocked(false)).catch(() => {
-      // Sound refused: retry silent once (full mode); silent refused: show the chip.
-      if (withSound) { video.muted = true; setMuted(true); void video.play().catch(() => setBlocked(true)); }
+    // A play() interrupted by a load, pause or seek (AbortError, frequent on iOS
+    // while the element is attached or re-sourced) is not a refusal: `canplay`
+    // tries again. Only a real refusal shows «Toca para reproducir» (0.9.4 showed
+    // it for interruptions too, so cards stopped playing by themselves).
+    void video.play().then(() => setBlocked(false)).catch((e: unknown) => {
+      if (interrupted(e)) return;
+      // Sound refused: retry silent once; silent refused: show the chip.
+      if (withSound) { video.muted = true; setMuted(true); void video.play().catch(err => { if (!interrupted(err)) setBlocked(true); }); }
       else setBlocked(true);
     });
   };
@@ -104,9 +110,9 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
       const head = playheads.get(key);
       if (head?.paused) { setUserPaused(true); return; }
       if (head && video.readyState >= 1 && Math.abs(video.currentTime - head.time) > .25 && head.time < (video.duration || Infinity) - .25) video.currentTime = head.time;
-      start(full || sound);
+      start(sound);
     } else if (!video.paused) video.pause();
-    // `full`: anchoring a held video turns sound on (the same element, still playing).
+    // Sound follows the person's choice in every view: anchoring keeps it as it was.
   }, [wantsPlay, url, sound, full]);
   // Quick tap on the card: pause or play, with a short glyph and a tick.
   const showGlyph = (kind: 'play' | 'pause') => setGlyph(g => ({ kind, n: (g?.n ?? 0) + 1 }));
@@ -115,11 +121,11 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
     const video = player.current; if (!video || !url) return;
     haptic('selection');
     if (!video.paused) { video.pause(); setUserPaused(true); remember(key, video.currentTime, true); showGlyph('pause'); }
-    else { setUserPaused(false); setChosen(true); remember(key, video.currentTime, false); start(full || sound); showGlyph('play'); }
+    else { setUserPaused(false); setChosen(true); remember(key, video.currentTime, false); start(sound); showGlyph('play'); }
   };
   useEffect(() => { if (!control || !card) return; const own = { toggle }; control.current = own; return () => { if (control.current === own) control.current = null; }; });
 
-  const choose = () => { haptic('light'); setChosen(true); setUserPaused(false); start(full); };
+  const choose = () => { haptic('light'); setChosen(true); setUserPaused(false); start(sound); };
   const pause = () => { player.current?.pause(); setUserPaused(true); haptic('soft'); };
   const toggleSound = () => { const video = player.current; if (!video) return; video.muted = !video.muted; setMuted(video.muted); haptic('selection'); };
   const enterFullscreen = () => {
@@ -150,7 +156,8 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
         // Same moment as the view it came from (card ↔ held ↔ anchored).
         const head = playheads.get(key); if (head && head.time > .05 && (!Number.isFinite(d) || head.time < d - .25)) { v.currentTime = head.time; setTime(head.time); } }}
       onPlay={() => setPlaying(true)} onPause={e => { setPlaying(false); remember(key, e.currentTarget.currentTime, pausedRef.current); }} onEnded={() => setPlaying(false)}
-      onWaiting={() => setWaiting(true)} onPlaying={() => setWaiting(false)} onCanPlay={() => setWaiting(false)}
+      onWaiting={() => setWaiting(true)} onPlaying={() => setWaiting(false)}
+      onCanPlay={e => { setWaiting(false); const v = e.currentTarget; if (wantsPlay && !blocked && v.paused && !v.ended) start(sound); }}
       onTimeUpdate={e => { const t = e.currentTarget.currentTime; remember(key, t, pausedRef.current); if (full || !time) setTime(t); }}
       onError={() => { setPlaying(false); setPlayError(true); }}/>}
     {card && meta && (meta.date || meta.time || meta.location || meta.duration || meta.size) && <VhsOverlay asset={asset} place={place} settings={meta}/>}

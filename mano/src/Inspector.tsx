@@ -86,7 +86,8 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
    initial={reduced?false:{opacity:0,y:16}} animate={{opacity:1,y:0}} exit={reduced?{opacity:0,transition:{duration:0}}:{opacity:0,y:16}} transition={reduced?{duration:0}:{type:'spring',stiffness:420,damping:36}}>
    {pinned?<>
     <span className="dock-state"><PushPinIcon weight="fill" size={18}/>Anclada</span>
-    <button aria-label="Reducir zoom" onClick={()=>setZoom(z=>Math.max(1,z-.5))} disabled={zoom<=1}><MinusIcon size={20}/></button><span className="dock-zoom">{Math.round(zoom*100)}%</span><button aria-label="Ampliar" onClick={()=>setZoom(z=>Math.min(5,z+.5))} disabled={zoom>=5||!!video}><PlusIcon size={20}/></button>
+    {/* Zoom is for photos: an anchored video has no zoom controls (0.9.5). */}
+    {!video&&<><button aria-label="Reducir zoom" onClick={()=>setZoom(z=>Math.max(1,z-.5))} disabled={zoom<=1}><MinusIcon size={20}/></button><span className="dock-zoom">{Math.round(zoom*100)}%</span><button aria-label="Ampliar" onClick={()=>setZoom(z=>Math.min(5,z+.5))} disabled={zoom>=5}><PlusIcon size={20}/></button></>}
     <button className="inspection-close" onClick={close}><XIcon size={18} weight="bold"/>Cerrar</button>
    </>:<button className="dock-target" tabIndex={-1} onClick={pin}><PushPinIcon weight={armed?'fill':'regular'} size={20}/><span>{armed?'Suelta para anclar':'Arrastra aquí para anclar'}</span></button>}
   </motion.div>
