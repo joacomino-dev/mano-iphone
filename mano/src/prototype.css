@@ -653,8 +653,14 @@
 .ob-stage .ob-fine{font-size:var(--cw-text-sm)}
 .ob-rows{display:flex;flex-direction:column;gap:0;width:100%;max-width:360px;margin:var(--cw-space-2) 0 0;padding:0;list-style:none;text-align:left}
 .ob-row{display:grid;grid-template-columns:64px 1fr;align-items:center;gap:var(--cw-stack);padding:var(--cw-space-2);border-radius:var(--cw-radius-md);transition:background-color var(--cw-base) var(--cw-ease)}
-.ob-row.is-on{background:var(--cw-paper-light);box-shadow:inset 3px 0 0 var(--cw-turquoise)}
-.ob-row-art{width:64px;height:44px;display:grid;place-items:center;color:var(--cw-turquoise)}
+/* 0.9.5: no box around the active row. The others step back (their art fades,
+   the title softens); the active one comes forward: full-colour art, a touch
+   larger, ink title. Text stays readable in every row. */
+.ob-row-art{width:64px;height:44px;display:grid;place-items:center;color:var(--cw-turquoise);opacity:.36;transform:scale(.94);transition:opacity var(--cw-base) var(--cw-ease),transform var(--cw-base) var(--cw-ease)}
+.ob-row.is-on .ob-row-art{opacity:1;transform:scale(1.06)}
+.ob-row strong{transition:color var(--cw-base) var(--cw-ease)}
+.ob-rows .ob-row:not(.is-on) strong{color:var(--cw-ink-soft)}
+@media (prefers-reduced-motion:reduce){.ob-row-art,.ob-row.is-on .ob-row-art{transform:none}}
 .ob-row-art .stamp{width:44px;--stamp-fill:var(--cw-paper-light)}.ob-row-art .stamp-discard{width:64px}.ob-row-art .stamp-favorite{width:40px}.ob-row-art .stamp-later{width:66px}
 .ob-row strong{display:block;font-size:var(--cw-text-md);font-weight:600;color:var(--cw-ink)}
 .ob-row strong small{margin-left:var(--cw-space-1);font:500 var(--cw-text-xs) var(--cw-font-mono);color:var(--cw-ink-soft)}

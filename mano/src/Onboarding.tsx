@@ -42,8 +42,13 @@ function MeetDemo({ still }: { still: boolean }) {
    Más tarde. Each step: the finger takes the photo out to its side, the
    decision's stamp lands, the photo comes back faint (a return, never read as
    a gesture). One full round = 4 × STEP_MS; «Continuar» waits for it once. */
-const STEP_MS = 1250;
+const STEP_MS = 1600;
 export const GESTURE_ROUND_MS = STEP_MS * 4;
+/** Cards 2–3: the photo is already in place when the card arrives, and the demo
+ * starts only after this pause (the card's own transition has settled). */
+const DEMO_DELAY_MS = 700;
+/** Card 3: each of tap / anchor / pinch plays this long. */
+const PHASE_MS = 3200;
 type Step = 'keep' | 'discard' | 'favorite' | 'later';
 const STEPS: Step[] = ['keep', 'discard', 'favorite', 'later'];
 const OUT: Record<Step, { x: number; y: number; rotate: number }> = {
@@ -58,32 +63,39 @@ const PHASES: Phase[] = ['tap', 'anchor', 'zoom'];
 
 /** Cards 2 and 3 share this one photo: it acts out the three decisions, then
  * stays on screen to show the tap in a group, Anclar and Ampliar. */
-function PhotoDemo({ step, still, phase, gesture, turn }: { step: 1 | 2; still: boolean; phase: Phase; gesture: Step; turn: number }) {
-  const gestures = step === 1 && !still;
+function PhotoDemo({ step, still, waiting, phase, gesture, turn }: { step: 1 | 2; still: boolean; waiting: boolean; phase: Phase; gesture: Step; turn: number }) {
+  const gestures = step === 1 && !still && !waiting;
+  const acting = step === 2 && !still && !waiting;
+  const D = PHASE_MS / 1000 - .2;
   const out = OUT[gesture];
   const group = step === 2;
   // One step: out (finger on), hold with the stamp, back (faint, finger off).
   const card = gestures ? { x: [0, out.x, out.x, 0, 0], y: [0, out.y, out.y, 0, 0], rotate: [0, out.rotate, out.rotate, 0, 0], opacity: [1, 1, 1, .45, 1], scale: out.y ? [1, .92, .92, 1, 1] : 1 }
-    : !group || still ? { x: 0, y: 0, rotate: 0, opacity: 1, scale: phase === 'zoom' && !still ? 1.22 : 1 }
-    : phase === 'anchor' ? { x: 0, y: [0, 0, 0, 58, 58, 0], rotate: 0, opacity: [1, 1, 1, 1, 1, .4], scale: [1, 1.04, 1.04, .9, .9, 1] }
-    : phase === 'zoom' ? { x: 0, y: 0, rotate: 0, opacity: [1, 1, 1, .4], scale: [1, 1.28, 1.28, 1] }
-    : { x: 0, y: 0, rotate: 0, opacity: 1, scale: [1, .97, 1] };
-  const timing = gestures ? { duration: STEP_MS / 1000, times: [0, .36, .66, .86, 1], ease: 'easeInOut' as const } : group && !still ? { duration: 2.2, times: phase === 'anchor' ? [0, .18, .3, .62, .8, 1] : phase === 'zoom' ? [0, .45, .8, 1] : [0, .3, 1], ease: 'easeInOut' as const } : { duration: .2 };
+    : !acting ? { x: 0, y: 0, rotate: 0, opacity: 1, scale: 1 }
+    // Anchor: hold (lift), drag down onto «Anclar», let go: the photo comes back
+    // up open and larger, fully opaque, and stays — that is what anchoring does.
+    : phase === 'anchor' ? { x: 0, y: [0, 0, 0, 58, 58, 0, 0], rotate: 0, opacity: 1, scale: [1, 1.04, 1.04, .9, .9, 1.12, 1.12] }
+    // Pinch does the same: it opens the photo large, and stays.
+    : phase === 'zoom' ? { x: 0, y: 0, rotate: 0, opacity: 1, scale: [1, 1, 1.22, 1.22] }
+    // Tap: a visible press, then the next photo of the group takes its place.
+    : { x: 0, y: 0, rotate: 0, opacity: 1, scale: [1, 1, .95, 1, 1] };
+  const timing = gestures ? { duration: STEP_MS / 1000, times: [0, .36, .66, .86, 1], ease: 'easeInOut' as const }
+    : acting ? { duration: D, times: phase === 'anchor' ? [0, .1, .22, .46, .56, .72, 1] : phase === 'zoom' ? [0, .12, .5, 1] : [0, .14, .26, .4, 1], ease: 'easeInOut' as const } : { duration: .2 };
   return <div className={`ob-demo ob-photo ${group ? 'is-group' : ''}`} aria-hidden="true">
     {group && <><span className="ob-behind paper is-a"><img src={NEXT} alt="" draggable={false}/></span><span className="ob-behind paper is-b"><img src="/assets/demo/postcard-3.svg" alt="" draggable={false}/></span></>}
     <motion.span key={step === 1 ? `1-${turn}` : `2-${phase}`} className={`ob-card paper ${step === 1 ? 'is-gesture' : ''}`} initial={still ? false : REST} animate={card} transition={timing}>
       <span className="ob-card-photo"><img src={PHOTO} alt="" draggable={false}/>
-        {group && phase === 'tap' && <motion.img className="is-next" src={NEXT} alt="" draggable={false} initial={{ opacity: 0 }} animate={{ opacity: still ? 1 : [0, 0, 1] }} transition={still ? { duration: 0 } : { duration: 2.2, times: [0, .3, .36] }}/>}
+        {group && phase === 'tap' && (still || acting) && <motion.img className="is-next" src={NEXT} alt="" draggable={false} initial={{ opacity: 0 }} animate={{ opacity: still ? 1 : [0, 0, 1, 1] }} transition={still ? { duration: 0 } : { duration: D, times: [0, .3, .5, 1] }}/>}
       </span>
-      {step === 1 && <motion.span key={`stamp-${turn}`} className={`ob-stamp is-${gesture}`} initial={{ opacity: 0 }}
+      {step === 1 && (still || gestures) && <motion.span key={`stamp-${turn}`} className={`ob-stamp is-${gesture}`} initial={{ opacity: 0 }}
         animate={{ opacity: still ? 1 : [0, 0, 1, 1, 0] }} transition={still ? { duration: .2 } : { duration: STEP_MS / 1000, times: [0, .3, .42, .8, 1] }}><Stamp kind={gesture}/></motion.span>}
     </motion.span>
     {gestures && <motion.span key={`finger-${turn}`} className="ob-finger" initial={{ x: 0, y: 0, opacity: 0 }} animate={{ x: [0, out.x, out.x, 0], y: [0, out.y, out.y, 0], opacity: [0, 1, .9, 0] }} transition={{ duration: STEP_MS / 1000, times: [0, .38, .7, .85] }}/>}
     {/* Reduce Motion: no travel — the stamp lands in place and an arrow says which way. */}
     {step === 1 && still && <span className={`ob-arrow is-${gesture}`}>{ARROW[gesture]}</span>}
-    {group && !still && phase === 'tap' && <motion.span key="tap" className="ob-finger is-tap" initial={{ opacity: 0, scale: 1 }} animate={{ opacity: [0, 1, 1, 0], scale: [1, .82, 1, 1] }} transition={{ duration: 2.2, times: [0, .18, .32, .5] }}/>}
-    {group && !still && phase === 'anchor' && <motion.span key="hold" className="ob-finger" initial={{ opacity: 0, y: 0 }} animate={{ opacity: [0, 1, 1, 1, 0, 0], y: [0, 0, 0, 58, 58, 0] }} transition={{ duration: 2.2, times: [0, .18, .3, .62, .72, 1] }}/>}
-    {group && !still && phase === 'zoom' && <><motion.span key="z1" className="ob-finger is-pinch" initial={{ opacity: 0, x: -10, y: 10 }} animate={{ opacity: [0, 1, 1, 0], x: [-10, -10, -46, -46], y: [10, 10, 34, 34] }} transition={{ duration: 2.2, times: [0, .12, .45, .6] }}/><motion.span key="z2" className="ob-finger is-pinch" initial={{ opacity: 0, x: 10, y: -10 }} animate={{ opacity: [0, 1, 1, 0], x: [10, 10, 46, 46], y: [-10, -10, -34, -34] }} transition={{ duration: 2.2, times: [0, .12, .45, .6] }}/></>}
+    {acting && phase === 'tap' && <motion.span key="tap" className="ob-finger is-tap" initial={{ opacity: 0, scale: 1 }} animate={{ opacity: [0, 1, 1, 1, 0], scale: [1, 1, .82, 1, 1] }} transition={{ duration: D, times: [0, .1, .24, .34, .5] }}/>}
+    {acting && phase === 'anchor' && <motion.span key="hold" className="ob-finger" initial={{ opacity: 0, y: 0 }} animate={{ opacity: [0, 1, 1, 1, 0, 0], y: [0, 0, 0, 58, 58, 58] }} transition={{ duration: D, times: [0, .1, .22, .46, .56, 1] }}/>}
+    {acting && phase === 'zoom' && <><motion.span key="z1" className="ob-finger is-pinch" initial={{ opacity: 0, x: -10, y: 10 }} animate={{ opacity: [0, 1, 1, 0], x: [-10, -10, -46, -46], y: [10, 10, 34, 34] }} transition={{ duration: D, times: [0, .1, .5, .62] }}/><motion.span key="z2" className="ob-finger is-pinch" initial={{ opacity: 0, x: 10, y: -10 }} animate={{ opacity: [0, 1, 1, 0], x: [10, 10, 46, 46], y: [-10, -10, -34, -34] }} transition={{ duration: D, times: [0, .1, .5, .62] }}/></>}
     {group && <span className={`ob-dock ${phase === 'anchor' ? 'is-on' : ''}`}><PushPinIcon size={16} weight={phase === 'anchor' ? 'fill' : 'regular'}/>{phase === 'anchor' ? 'Anclada' : 'Anclar'}</span>}
   </div>;
 }
@@ -133,11 +145,14 @@ export function Onboarding({ requestAccess, finish, granted = false }: { request
   const card = cards[index];
   const last = index === cards.length - 1;
   const locked = index === 1 && !seen;
-  useEffect(() => { if (index !== 1) return; setTurn(0); const t = setInterval(() => setTurn(n => n + 1), STEP_MS); return () => clearInterval(t); }, [index]);
+  // Cards 2–3 arrive with the photo at rest; the demo starts after a pause.
+  const [waiting, setWaiting] = useState(true);
+  useEffect(() => { if (index !== 1 && index !== 2) return; setWaiting(true); const t = setTimeout(() => setWaiting(false), DEMO_DELAY_MS); return () => clearTimeout(t); }, [index]);
+  useEffect(() => { if (index !== 1 || waiting) return; setTurn(0); const t = setInterval(() => setTurn(n => n + 1), STEP_MS); return () => clearInterval(t); }, [index, waiting]);
   // «Continuar» waits for one full round of the four swipes, the first time only
   // (the same round with Reduce Motion: stamps in place and arrows).
-  useEffect(() => { if (index !== 1 || seen) return; const t = setTimeout(() => setSeen(true), GESTURE_ROUND_MS); return () => clearTimeout(t); }, [index, seen]);
-  useEffect(() => { if (index !== 2) return; setPhase('tap'); const t = setInterval(() => setPhase(p => PHASES[(PHASES.indexOf(p) + 1) % PHASES.length]), still ? 2600 : 2400); return () => clearInterval(t); }, [index, still]);
+  useEffect(() => { if (index !== 1 || seen) return; const t = setTimeout(() => setSeen(true), DEMO_DELAY_MS + GESTURE_ROUND_MS); return () => clearTimeout(t); }, [index, seen]);
+  useEffect(() => { if (index !== 2 || waiting) return; setPhase('tap'); const t = setInterval(() => setPhase(p => PHASES[(PHASES.indexOf(p) + 1) % PHASES.length]), PHASE_MS); return () => clearInterval(t); }, [index, waiting]);
   const go = (next: number) => { if (next < 0 || next >= cards.length || asking || (next > index && locked)) return; setDirection(next > index ? 1 : -1); setIndex(next); haptic('selection'); };
   useEffect(() => { heading.current?.focus({ preventScroll: true }); }, [index]);
   useEffect(() => {
@@ -148,7 +163,7 @@ export function Onboarding({ requestAccess, finish, granted = false }: { request
     setAsking(true); haptic('light');
     try { finish(await requestAccess()); } finally { setAsking(false); }
   };
-  const demo = index === 0 ? <MeetDemo still={still}/> : index === 3 ? <PrivacyDemo still={still}/> : <PhotoDemo step={index as 1 | 2} still={still} phase={phase} gesture={gesture} turn={turn}/>;
+  const demo = index === 0 ? <MeetDemo still={still}/> : index === 3 ? <PrivacyDemo still={still}/> : <PhotoDemo step={index as 1 | 2} still={still} waiting={waiting} phase={phase} gesture={gesture} turn={turn}/>;
   return <main className="onboarding" aria-roledescription="Introducción">
     <Ghost/>
     <div className="ob-sheet paper">
@@ -162,7 +177,9 @@ export function Onboarding({ requestAccess, finish, granted = false }: { request
       {/* The photo demo keeps one element across cards 2–3: the same image continues. */}
       <div className="ob-demo-area" key={index === 1 || index === 2 ? 'photo' : card.key}>{demo}</div>
       <div className="ob-stage">
-        <AnimatePresence mode="wait" initial={false} custom={direction}>
+        {/* popLayout: the leaving copy steps out of the layout at once, so the photo
+            above is already where it will stay (no drift into place). */}
+        <AnimatePresence mode="popLayout" initial={false} custom={direction}>
           <motion.section key={card.key} custom={direction}
             initial={reduced ? { opacity: 0 } : { opacity: 0, x: 24 * direction }} animate={{ opacity: 1, x: 0 }} exit={reduced ? { opacity: 0 } : { opacity: 0, x: -24 * direction }}
             transition={reduced ? { duration: .12 } : { type: 'spring', stiffness: 380, damping: 36 }}>
@@ -176,10 +193,9 @@ export function Onboarding({ requestAccess, finish, granted = false }: { request
             </ul>}
             {card.key === 'group' && <ul className="ob-rows">
               <Row on={phase === 'tap'} art={<HandTapIcon size={22} weight="bold"/>} title="Toca la foto">En un grupo de parecidas, pasa a la siguiente al instante.</Row>
-              <Row on={phase === 'anchor'} art={<PushPinIcon size={22} weight="bold"/>} title="Mantén y arrastra abajo">Queda Anclada para mirarla con calma.</Row>
-              <Row on={phase === 'zoom'} art={<ArrowsOutSimpleIcon size={22} weight="bold"/>} title="Pellizca">Ampliar para ver los detalles.</Row>
+              <Row on={phase === 'anchor'} art={<PushPinIcon size={22} weight="bold"/>} title="Mantén y arrastra abajo">La foto queda anclada: abierta en grande, para mirarla con calma.</Row>
+              <Row on={phase === 'zoom'} art={<ArrowsOutSimpleIcon size={22} weight="bold"/>} title="O pellízcala">Hace lo mismo: la ancla, y puedes ampliar los detalles.</Row>
             </ul>}
-            {card.key === 'privacy' && <p className="ob-fine">Puedes dar acceso solo a algunas fotos. Para mostrar la ciudad de una foto, iOS consulta a Apple el nombre del lugar.</p>}
           </motion.section>
         </AnimatePresence>
       </div>
@@ -189,7 +205,7 @@ export function Onboarding({ requestAccess, finish, granted = false }: { request
         {last ? <button className="ob-next" onClick={allow} disabled={asking} aria-busy={asking}>{asking ? <><CocoLoader size={24}/>Esperando permiso…</> : <>{granted ? 'Empezar' : 'Permitir acceso a Fotos'}</>}</button>
           : <button className={`ob-next ${locked ? 'is-waiting' : ''}`} onClick={() => go(index + 1)} aria-disabled={locked || undefined} aria-describedby={locked ? 'ob-wait' : undefined}>
             {/* While the first round plays, the button fills with it: waiting, not broken. Same size and label throughout. */}
-            {locked && <motion.span key="fill" className="ob-next-fill" aria-hidden="true" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: GESTURE_ROUND_MS / 1000, ease: 'linear' }}/>}
+            {locked && <motion.span key="fill" className="ob-next-fill" aria-hidden="true" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: DEMO_DELAY_MS / 1000, duration: GESTURE_ROUND_MS / 1000, ease: 'linear' }}/>}
             <span className="ob-next-label">Continuar<CaretRightIcon size={18} weight="bold"/></span></button>}
       </footer>
       <p id="ob-wait" className={`ob-wait ${locked ? 'is-on' : ''}`} aria-live="polite">{index === 1 ? (locked ? 'Mira las cuatro direcciones una vez.' : replay ? '' : 'Ya puedes continuar.') : ''}</p>
