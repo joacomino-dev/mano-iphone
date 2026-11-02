@@ -561,7 +561,6 @@
 .album-new{font-weight:600}.album-new .row-icon{background:var(--cw-teal-800);color:var(--cw-paper)}
 .new-album{padding:var(--cw-space-2) 0 var(--cw-space-3);border-bottom:1px solid var(--cw-line)}
 /* Review */
-.review-hint{margin:0 0 var(--cw-space-3);font-size:var(--cw-text-sm);color:var(--cw-ink-soft)}
 .review-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--cw-space-2);width:100%}
 .review-carousel .mobile-carousel-content{width:100%}
 .review-card{padding:5px 5px 0;border-radius:var(--cw-radius-xs);touch-action:pan-y;box-shadow:var(--cw-shadow-1)}
@@ -570,8 +569,9 @@
 .review-photo .photo-loading{background:var(--cw-paper-dim);color:var(--cw-ink-soft)}
 .recover-button{width:100%;min-height:var(--cw-touch);display:flex;align-items:center;justify-content:center;gap:var(--cw-space-1);border:0;background:none;color:var(--cw-ink);font-size:var(--cw-text-xs);font-weight:600}
 .review-primary{margin-top:var(--cw-section)}
-.review-primary .sheet-fine{margin:0 0 var(--cw-section);text-align:left}
-.review-primary .recover-all{margin-top:0}
+.review-primary .sheet-fine{margin:var(--cw-space-2) 0 0;text-align:left}
+/* 0.9.5: «Recuperar» comes first, above «Eliminar» (only the button recovers). */
+.review-primary .recover-all{margin:0 0 var(--cw-space-3)}
 /* Filters */
 .filters-panel fieldset{min-width:0;margin:0;padding:var(--cw-space-5) 0;border:0;border-bottom:1px solid var(--cw-line)}
 .filters-panel fieldset:first-of-type{padding-top:var(--cw-space-3)}
