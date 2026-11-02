@@ -15,11 +15,11 @@ Objetivo: que Codex retome sin releer la sesión. Leer primero
 [CLAUDE_PERF_CW-CL-027](../ai-handoff/CLAUDE_PERF_CW-CL-027.md) (diagnóstico, arquitectura,
 mediciones, límites) y las entradas CW-CL-027/028 de [CLAUDE_LOG](CLAUDE_LOG.md).
 
-1. **CI**: run [41395519365](https://github.com/joacomino-dev/mano-iphone/actions/runs/41395519365) (3ce3e19): Swift compiló e IPA generado; XCTest pasó; falló la comprobación del vídeo preparado (corregido en ee86516, ver CW-CL-029). Run nuevo [41399471365](https://github.com/joacomino-dev/mano-iphone/actions/runs/41399471365) (ee86516) en curso; workflow «Build Mano for AltStore» lanzado por workflow_dispatch en la rama
+1. **CI (hecho)**: run [41395519365](https://github.com/joacomino-dev/mano-iphone/actions/runs/41395519365) (3ce3e19): Swift compiló e IPA generado; XCTest pasó; falló la comprobación del vídeo preparado (corregido en ee86516, ver CW-CL-029). Run [41399471365](https://github.com/joacomino-dev/mano-iphone/actions/runs/41399471365) (ee86516) **verde de punta a punta**: Swift compilado, XCTest 527 s sin fallos, `MEMSWIPE_PHOTOS_READ_OK count=8` y `MEMSWIPE_VIDEO_PREPARED_OK bytes=9060`, IPA sin firmar y artefacto `Mano-AltStore` publicados (la app de HEAD es la misma: después solo cambió documentación). Origen: workflow «Build Mano for AltStore» lanzado por workflow_dispatch en la rama
    (`ipa_even_if_smoke_fails: true`, así el IPA se publica aunque el smoke test falle; el run
-   quedaría en rojo). Comprobar primero que **Swift compila** (PhotoLibrary.swift cambió:
+   quedaría en rojo). Swift ya compila (PhotoLibrary.swift cambió:
    timeout por inactividad, `encodeQueue` concurrente, caché `ManoPrints` de huellas de Vision,
-   selección de candidatos lineal). Si no compila, corregir solo lo mínimo.
+   selección de candidatos lineal). Siguiente paso real: el punto 2.
 2. **QA en iPhone (no destructiva, nunca confirmar borrados en la biblioteca personal)**:
    - Fluidez al deslizar y deshacer con biblioteca grande; Deshacer devuelve siempre la foto exacta
      (también dentro de grupos de parecidas).

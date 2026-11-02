@@ -117,13 +117,13 @@ Límites: la memoria de imágenes decodificadas en WKWebView, el tiempo de Photo
 `mano/src/sequence.ts` (nuevo), `Cloud.tsx` (nuevo), `ManoApp.tsx`, `Inspector.tsx`, `Onboarding.tsx`, `domain.ts`, `media.ts`, `preload.ts`, `indexer.ts`, `library.ts`, `prototype.css`; `tests/sequence.test.mjs` (nuevo); `brand/cotton-fiber.py` (nuevo); `public/assets/paper-cotton.webp` (sustituye `paper-cream.webp` y `brand/paper-cream-tile.svg`); `ios/App/App/PhotoLibrary.swift` (límite por inactividad, selección de candidatos lineal); `package.json` (script de test); versión 0.9.3 (12); `mano/AGENTS.md`, `CLAUDE_LOG`, `CURRENT_STATE`.
 
 ## 9. Cuestiones pendientes
-- **Swift sin compilar** (no hay macOS aquí): requiere el workflow macOS, y por tanto push autorizado.
+- ~~Swift sin compilar~~: compilado y smoke test verde en CI (run 41399471365). Corrección necesaria por el camino: los vídeos vuelven a prepararse hasta 10 por delante (CW-CL-029).
 - **Sin medición en iPhone**: Instruments (Time Profiler, Hitches, Allocations), progreso real de iCloud, textura en Retina/OLED y Dynamic Type real.
 - **Hecho después por Claude (CW-CL-028, en lugar de Codex por falta de cupo)**:
   - Caché persistente de huellas de Vision (`Caches/ManoPrints`, una por foto + fecha de edición, podada tras cada pasada completa): repetir o reanudar la búsqueda solo calcula lo nuevo o editado.
   - Codificación JPEG de miniaturas en una cola concurrente: la cola serie sigue respondiendo a la carta visible mientras la ventana codifica.
   - Servir los pósters por `cocowash-media://`: **evaluado y descartado por ahora**. Exige tocar la CSP de `native.html` (protegida desde 0.6) y el beneficio no se puede medir sin iPhone; reabrir solo si Instruments muestra el manejador de Capacitor en el hilo principal.
-  - Todo ello sin compilar aquí: lo valida el workflow macOS.
+  - Validado por CI: run 41399471365 (ee86516) verde — Swift compilado, smoke test en simulador superado, IPA generado. Lo único sin verificar sigue siendo el comportamiento en un iPhone real.
 - **No cambiado a propósito**:
   - Algoritmo de huella de la biblioteca (cambiarlo relanzaría el análisis completo).
   - Precalentamiento al elegir filtros (≤ 2 descargas, aprobado en 0.7).
