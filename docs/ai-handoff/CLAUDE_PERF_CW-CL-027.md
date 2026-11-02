@@ -119,10 +119,11 @@ Límites: la memoria de imágenes decodificadas en WKWebView, el tiempo de Photo
 ## 9. Cuestiones pendientes
 - **Swift sin compilar** (no hay macOS aquí): requiere el workflow macOS, y por tanto push autorizado.
 - **Sin medición en iPhone**: Instruments (Time Profiler, Hitches, Allocations), progreso real de iCloud, textura en Retina/OLED y Dynamic Type real.
-- **Para Codex**:
-  - Caché persistente de huellas de Vision (hoy cualquier cambio de la huella de la biblioteca recalcula todo).
-  - Codificación de miniaturas fuera de la cola serie, con prioridad para la carta visible.
-  - Valorar servir los pósters por `cocowash-media://` (lectura fuera del hilo principal).
+- **Hecho después por Claude (CW-CL-028, en lugar de Codex por falta de cupo)**:
+  - Caché persistente de huellas de Vision (`Caches/ManoPrints`, una por foto + fecha de edición, podada tras cada pasada completa): repetir o reanudar la búsqueda solo calcula lo nuevo o editado.
+  - Codificación JPEG de miniaturas en una cola concurrente: la cola serie sigue respondiendo a la carta visible mientras la ventana codifica.
+  - Servir los pósters por `cocowash-media://`: **evaluado y descartado por ahora**. Exige tocar la CSP de `native.html` (protegida desde 0.6) y el beneficio no se puede medir sin iPhone; reabrir solo si Instruments muestra el manejador de Capacitor en el hilo principal.
+  - Todo ello sin compilar aquí: lo valida el workflow macOS.
 - **No cambiado a propósito**:
   - Algoritmo de huella de la biblioteca (cambiarlo relanzaría el análisis completo).
   - Precalentamiento al elegir filtros (≤ 2 descargas, aprobado en 0.7).

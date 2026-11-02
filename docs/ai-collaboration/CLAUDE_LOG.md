@@ -222,3 +222,12 @@ Rendimiento (medido, ver docs/ai-handoff/CLAUDE_PERF_CW-CL-027.md): dominio por 
 Validaciones: tsc; npm test 82/82 (16 nuevos); check:runtime 28; build + Sites 4/4; build:native; runtime Playwright 7/8 (fallo previo de la fixture BottomSheet); recorrido funcional 11/11 y trazas de deshacer en navegador; code-review (10 hallazgos, corregidos).
 No verificado: Swift sin compilar (CI macOS); iPhone real (progreso de iCloud real, WKWebView, textura en Retina, hápticos).
 Impacto para Codex: revisar sequence.ts (contrato de la mano fija) y CloudPreviews; cambios Swift: timeout por inactividad en miniaturas y selección de candidatos O(n) en el análisis.
+
+### CW-CL-028 — Pendientes nativos de Codex hechos por Claude + publicación
+Fecha: 2026-11-02, America/Bogota
+Agente: Claude (el usuario pidió hacer lo pendiente de Codex por falta de cupo, y autorizó el push)
+Base Git / commit: rama `claude/perf-stability-cotton` (a8694c9, publicada) + este commit; workflow «Build Mano for AltStore» lanzado por workflow_dispatch en la rama.
+Archivos: mano/ios/App/App/PhotoLibrary.swift; docs (CURRENT_STATE, este log, CLAUDE_PERF_CW-CL-027, PROJECT_MAP); mano/AGENTS.md.
+Cambios: huellas de Vision persistentes por foto (Caches/ManoPrints: firma de 8 bytes + observación archivada con NSSecureCoding; sin datos de imagen; poda tras pasada completa); JPEG de miniaturas en cola concurrente (`encodeQueue`), la cola serie solo decide y escribe; evaluado y descartado servir pósters por cocowash-media:// (CSP protegida, beneficio no medible aquí).
+Validaciones: JS sin cambios en este paso (82/82 siguen); Swift sin compilar aquí: lo decide el run de CI.
+Impacto para Codex: CW-HO-005 en CURRENT_STATE (revisar el run, QA en iPhone, revisar PhotoLibrary.swift).

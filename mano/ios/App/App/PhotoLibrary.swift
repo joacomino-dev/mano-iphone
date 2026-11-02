@@ -149,6 +149,10 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
     private let analysisQueue = DispatchQueue(label: "work.joaquin.mano.vision", qos: .utility)
     private let videoQueue = DispatchQueue(label: "work.joaquin.mano.video-cache", qos: .userInitiated)
     private let thumbnailQueue = DispatchQueue(label: "work.joaquin.mano.thumbnail-cache", qos: .userInitiated)
+    /// JPEG encoding of previews (tens of ms each) runs here, concurrently, so the
+    /// serial thumbnailQueue keeps answering cache hits — the card on screen —
+    /// while the read-ahead window encodes.
+    private let encodeQueue = DispatchQueue(label: "work.joaquin.mano.thumbnail-encode", qos: .userInitiated, attributes: .concurrent)
     private var thumbnailJobs: [String: PreparedThumbnailJob] = [:]
     /// Writes since launch; the preview cache is pruned on the first and then every 16th.
     private var thumbnailWrites = 0
@@ -354,24 +358,31 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                         if (info?[PHImageCancelledKey] as? Bool) == true {
                             self.stopThumbnail(token, job: job, message: "Preparación cancelada.", code: "PREPARATION_CANCELLED"); return
                         }
-                        guard let data = image?.jpegData(compressionQuality: 0.88) else {
-                            if !network && !lite { request(lite: true); return }
-                            if network { self.stopThumbnail(token, job: job, message: "No se pudo descargar la vista previa. Comprueba tu conexión a iCloud.", code: "THUMBNAIL_UNAVAILABLE") }
-                            else { self.stopThumbnail(token, job: job, message: "Esta foto está en iCloud y aún no tiene vista previa en el iPhone.", code: "IN_CLOUD") }
-                            return
-                        }
-                        let file = lite ? litePath : path
-                        do {
-                            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-                            try data.write(to: file, options: .atomic)
-                            job.timeout?.cancel(); self.thumbnailJobs.removeValue(forKey: token)
-                            call.resolve(["path": file.path, "cloud": lite])
-                            // Measurement signal for the quality profiles: no ids, names or paths.
-                            NSLog("COCOWASH_PREVIEW size=%ld bytes=%ld ms=%ld lite=%d", size, data.count, Int(Date().timeIntervalSince(started) * 1000), lite ? 1 : 0)
-                            self.thumbnailWrites += 1
-                            if cacheLimit > 0, self.thumbnailWrites % 16 == 1 { self.pruneThumbnails(folder, limit: cacheLimit) }
-                        } catch {
-                            self.stopThumbnail(token, job: job, message: "No se pudo guardar la vista previa. Libera espacio y reintenta.", code: "CACHE_WRITE_FAILED")
+                        self.encodeQueue.async {
+                            let encoded = image?.jpegData(compressionQuality: 0.88)
+                            self.thumbnailQueue.async {
+                                // Cancelled or timed out while encoding: the call is already settled.
+                                guard self.thumbnailJobs[token] === job else { return }
+                                guard let data = encoded else {
+                                    if !network && !lite { request(lite: true); return }
+                                    if network { self.stopThumbnail(token, job: job, message: "No se pudo descargar la vista previa. Comprueba tu conexión a iCloud.", code: "THUMBNAIL_UNAVAILABLE") }
+                                    else { self.stopThumbnail(token, job: job, message: "Esta foto está en iCloud y aún no tiene vista previa en el iPhone.", code: "IN_CLOUD") }
+                                    return
+                                }
+                                let file = lite ? litePath : path
+                                do {
+                                    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+                                    try data.write(to: file, options: .atomic)
+                                    job.timeout?.cancel(); self.thumbnailJobs.removeValue(forKey: token)
+                                    call.resolve(["path": file.path, "cloud": lite])
+                                    // Measurement signal for the quality profiles: no ids, names or paths.
+                                    NSLog("COCOWASH_PREVIEW size=%ld bytes=%ld ms=%ld lite=%d", size, data.count, Int(Date().timeIntervalSince(started) * 1000), lite ? 1 : 0)
+                                    self.thumbnailWrites += 1
+                                    if cacheLimit > 0, self.thumbnailWrites % 16 == 1 { self.pruneThumbnails(folder, limit: cacheLimit) }
+                                } catch {
+                                    self.stopThumbnail(token, job: job, message: "No se pudo guardar la vista previa. Libera espacio y reintenta.", code: "CACHE_WRITE_FAILED")
+                                }
+                            }
                         }
                     }
                 }
@@ -920,21 +931,48 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                 var prints: [(index: Int, hash: UInt64, feature: VNFeaturePrintObservation)] = []; var skipped = 0
                 var parent = Array(0..<items.count)
                 func root(_ n: Int) -> Int { var k = n; while parent[k] != k { k = parent[k] }; return k }
+                // Feature prints persist per item (identifier + edit date) in Caches, so a
+                // search that was stopped, or one rerun because the library changed, only
+                // computes prints for new or edited items. One small file each: 8 bytes of
+                // signature + the archived observation. No image data is stored.
+                let printFolder = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("ManoPrints", isDirectory: true)
+                try? FileManager.default.createDirectory(at: printFolder, withIntermediateDirectories: true)
+                var livePrints = Set<String>()
                 for (index, item) in items.enumerated() {
                     if self.cancelled() { break }
                     autoreleasepool {
-                        let options = PHImageRequestOptions(); options.isSynchronous = true; options.isNetworkAccessAllowed = false
-                        options.deliveryMode = .highQualityFormat; options.resizeMode = .fast
-                        var image: UIImage?
-                        self.imageManager.requestImage(for: item, targetSize: CGSize(width: 300, height: 300), contentMode: .aspectFit, options: options) { value, _ in image = value }
-                        guard let cgImage = image?.cgImage else { skipped += 1; return }
-                        let request = VNGenerateImageFeaturePrintRequest(); request.revision = VNGenerateImageFeaturePrintRequestRevision2
+                        let key = item.localIdentifier + "-\(item.modificationDate?.timeIntervalSince1970 ?? 0)"
+                        let name = SHA256.hash(data: Data(key.utf8)).map { String(format: "%02x", $0) }.joined() + ".print"
+                        let file = printFolder.appendingPathComponent(name)
+                        livePrints.insert(name)
+                        var cached: (UInt64, VNFeaturePrintObservation)?
+                        if let blob = try? Data(contentsOf: file), blob.count > 8,
+                           let observation = try? NSKeyedUnarchiver.unarchivedObject(ofClass: VNFeaturePrintObservation.self, from: blob.dropFirst(8)) {
+                            let stored = blob.prefix(8).withUnsafeBytes { $0.loadUnaligned(as: UInt64.self) }
+                            cached = (stored, observation)
+                        }
+                        if cached == nil {
+                            let options = PHImageRequestOptions(); options.isSynchronous = true; options.isNetworkAccessAllowed = false
+                            options.deliveryMode = .highQualityFormat; options.resizeMode = .fast
+                            var image: UIImage?
+                            self.imageManager.requestImage(for: item, targetSize: CGSize(width: 300, height: 300), contentMode: .aspectFit, options: options) { value, _ in image = value }
+                            guard let cgImage = image?.cgImage else { skipped += 1; return }
+                            let request = VNGenerateImageFeaturePrintRequest(); request.revision = VNGenerateImageFeaturePrintRequestRevision2
+                            guard (try? VNImageRequestHandler(cgImage: cgImage, options: [:]).perform([request])) != nil,
+                                  let observation = request.results?.first as? VNFeaturePrintObservation else { skipped += 1; return }
+                            // A coarse luminance signature shortlists cross-date candidates.
+                            let computed = self.imageHash(cgImage)
+                            cached = (computed, observation)
+                            if let archived = try? NSKeyedArchiver.archivedData(withRootObject: observation, requiringSecureCoding: true) {
+                                var blob = withUnsafeBytes(of: computed) { Data($0) }
+                                blob.append(archived)
+                                try? blob.write(to: file, options: .atomic)
+                            }
+                        }
+                        guard let entry = cached else { skipped += 1; return }
+                        let (signature, print) = entry
                         do {
-                            try VNImageRequestHandler(cgImage: cgImage, options: [:]).perform([request])
-                            guard let print = request.results?.first as? VNFeaturePrintObservation else { skipped += 1; return }
-                            // A coarse luminance signature shortlists cross-date candidates. Bound
-                            // expensive Vision comparisons to 64 per image, rather than all prints.
-                            let signature = self.imageHash(cgImage)
+                            // Bound expensive Vision comparisons to 64 per image, rather than all prints.
                             // The 64 closest signatures by Hamming distance (0…64), in one pass
                             // into distance buckets instead of sorting every print per image
                             // (that sort made the whole search grow as n² log n).
@@ -955,6 +993,11 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                         } catch { skipped += 1 }
                     }
                     if index % 10 == 0 || index == items.count - 1 { self.notifyListeners("analysisProgress", data: ["done": index + 1, "total": items.count]) }
+                }
+                // A complete pass knows every live print: drop the ones of deleted or
+                // edited items so the cache does not grow without bound.
+                if !self.cancelled(), let files = try? FileManager.default.contentsOfDirectory(atPath: printFolder.path) {
+                    for file in files where !livePrints.contains(file) { try? FileManager.default.removeItem(at: printFolder.appendingPathComponent(file)) }
                 }
                 var groups: [Int: [String]] = [:]
                 for i in items.indices { groups[root(i), default: []].append(items[i].localIdentifier) }

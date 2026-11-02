@@ -1,12 +1,47 @@
 # CocoWash — estado operativo conocido
 
-- Actualizado: 2026-10-30, America/Bogota. Snapshot local, no estado en tiempo real.
-- Remoto: `origin/main` contiene CocoWash 0.4 (Codex), los arreglos del runner Intel,
-  el rediseño «Sello y papel» (8e73093) y los documentos de colaboración/handoff.
-- Checkout: `C:/Users/Joaco/OneDrive/Documentos/ChatGPT/iPhone`; main local sincronizada
-  con origin/main + **1 commit local sin push** (mano/CLAUDE.md y mano/tools/). Ver CW-HO-004.
-  Sin publicar a propósito: `CURRENT.md` (notas operativas privadas de Codex, sin seguimiento).
-- **CW-CL-027 (rama local claude/perf-stability-cotton sobre PR #1, 2026-11-02, sin push):** 0.9.3 (12) rendimiento (una secuencia, mano fija, arrastre sin re-render, persistencia agrupada), Deshacer exacto, progreso real de iCloud compartido con Anclar, avisos en el hueco del nombre, tour común + demo de 4 gestos, textura Cotton Fiber. Pendiente: push autorizado, CI macOS (Swift), iPhone real. Informe: docs/ai-handoff/CLAUDE_PERF_CW-CL-027.md.
+- Actualizado: 2026-11-02, America/Bogota (Claude, sesión en la nube). Snapshot, no estado en tiempo real.
+- **Trabajo vigente: rama `claude/perf-stability-cotton`** (publicada), basada en
+  `claude/decision-bar-favoritas` (PR #1, 0.9.2). Contiene 0.9.3 (12): CW-CL-027 y CW-CL-028.
+  `main` sigue en 0.7 (f6133d4). `claude/ci-probe-flat-paper` es solo una prueba de CI (no fusionar).
+- La captura de referencia del usuario (fondo crema) corresponde a PR #1, no a `main`: trabajar
+  siempre desde la rama vigente.
+- Pendiente del usuario: decidir si PR #1 y esta rama se fusionan a `main` (no se ha abierto PR
+  de esta rama: puede abrirse contra `claude/decision-bar-favoritas` o contra `main` tras PR #1).
+
+## CW-HO-005 — 0.9.3 entregada, Claude → Codex (lista, no recibida)
+
+Objetivo: que Codex retome sin releer la sesión. Leer primero
+[CLAUDE_PERF_CW-CL-027](../ai-handoff/CLAUDE_PERF_CW-CL-027.md) (diagnóstico, arquitectura,
+mediciones, límites) y las entradas CW-CL-027/028 de [CLAUDE_LOG](CLAUDE_LOG.md).
+
+1. **CI**: workflow «Build Mano for AltStore» lanzado por workflow_dispatch en la rama
+   (`ipa_even_if_smoke_fails: true`, así el IPA se publica aunque el smoke test falle; el run
+   quedaría en rojo). Comprobar primero que **Swift compila** (PhotoLibrary.swift cambió:
+   timeout por inactividad, `encodeQueue` concurrente, caché `ManoPrints` de huellas de Vision,
+   selección de candidatos lineal). Si no compila, corregir solo lo mínimo.
+2. **QA en iPhone (no destructiva, nunca confirmar borrados en la biblioteca personal)**:
+   - Fluidez al deslizar y deshacer con biblioteca grande; Deshacer devuelve siempre la foto exacta
+     (también dentro de grupos de parecidas).
+   - iCloud: «vista ligera», mantener pulsado inicia la descarga, Anclar se une, progreso real en el
+     indicador, error/reintento sin red; «Descargar siempre» sin descargas duplicadas.
+   - Avisos en el hueco del nombre (sin mover cabecera), tour (demo de 4 gestos, espera de una
+     ronda solo la primera vez, VoiceOver), textura Cotton Fiber en Retina/OLED.
+   - Búsqueda de parecidas: segunda ejecución mucho más rápida (caché de huellas).
+3. Contratos nuevos a respetar: `src/sequence.ts` (mano fija; el orden nunca depende de qué
+   descarga termina antes), `cloudPreviews` en `src/media.ts` (una descarga por foto, nunca
+   originales), tokens `--cw-paper-*` (base / patrón / intensidad; modo oscuro = otra base e
+   intensidad, misma losa de `brand/cotton-fiber.py`).
+4. Aceptación: run con Swift compilado, smoke test verde (o fallo explicado de infraestructura) y
+   QA en dispositivo registrada en CODEX_LOG con el ID de recepción. Al recibir: marcar este
+   handoff como recibido aquí y registrar CW-CX-NNN.
+
+Riesgos abiertos (no resueltos, ver informe §9): medición con Instruments pendiente; posible
+mejora futura de servir pósters fuera del hilo principal (descartada por ahora: CSP protegida).
+
+## Historial reciente
+- **CW-CL-028 (2026-11-02):** pendientes nativos que eran de Codex, hechos por Claude por falta de cupo (caché de huellas de Vision, codificación concurrente). Publicado en la rama; Swift a validar por CI.
+- **CW-CL-027 (rama claude/perf-stability-cotton sobre PR #1, 2026-11-02, publicada):** 0.9.3 (12) rendimiento (una secuencia, mano fija, arrastre sin re-render, persistencia agrupada), Deshacer exacto, progreso real de iCloud compartido con Anclar, avisos en el hueco del nombre, tour común + demo de 4 gestos, textura Cotton Fiber. Pendiente: push autorizado, CI macOS (Swift), iPhone real. Informe: docs/ai-handoff/CLAUDE_PERF_CW-CL-027.md.
 - **CW-CL-026 (PR #1, 2026-11-02):** 0.9.2 (11) fondo #F3ECE1 + losa de papel WebP. CI: el simulador sin GPU se atasca con la textura; el workflow la aplana solo en la copia del simulador y la restaura para el IPA. Entrada manual ipa_even_if_smoke_fails publica el IPA aunque falle el smoke test (run en rojo). Pendiente: CI verde e iPhone real.
 - **CW-CL-025 (publicado en PR #1, 2026-11-01):** 0.9.1 (10) cabecera de dos filas con wordmark, cápsulas Filtros/Terminar, insignia superpuesta, fondo Warm Paper con textura procedural. Pendiente push autorizado, CI e iPhone.
 - **CW-CL-024 (publicado en PR #1, 2026-11-01):** 0.9.0 (9) refinamiento visual + paleta Coco Cream (Coco Mint preparada por tokens). Falta push autorizado, CI macOS y QA en iPhone. Ver CLAUDE_LOG.

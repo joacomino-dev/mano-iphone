@@ -346,4 +346,10 @@ permissions, `cocowash-media://` and CSP).
   `--cw-paper-intensity`; tone comes from the base. Dark mode = new base and
   intensity, same tile. Frame only; Polaroid/tour/celebration surfaces keep
   their approved paper. Replaces paper-cream.webp.
+- Native (CW-CL-028): Vision feature prints persist per item (identifier +
+  edit date) in Caches/ManoPrints (signature + archived observation, no image
+  data; pruned after a complete pass), so a stopped or rerun similar search only
+  computes new/edited items. Preview JPEG encoding runs on a concurrent queue so
+  the serial thumbnail queue keeps answering the card on screen. Thumbnail
+  timeouts count inactivity (60 s without iCloud progress).
 - Version 0.9.3 (build 12).
