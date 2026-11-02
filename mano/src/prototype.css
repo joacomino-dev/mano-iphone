@@ -35,6 +35,10 @@
   --cw-turquoise:var(--pal-turquoise);--cw-turquoise-deep:#17605C;--cw-turquoise-light:#7CCBC2;
   --cw-paper:#F2E7D5;--cw-paper-light:#FAF6EE;--cw-paper-dim:#E6D9C3;--cw-paper-edge:#D9C8AC;
   --cw-coconut:#AF6742;--cw-coconut-deep:var(--pal-coffee);--cw-coconut-ink:#6E3B22;
+  /* 0.9.5 colour pass: the app reads coffee, pink and beige, so the selected state
+     of settings and filters (switches, chips, dates) is coffee. Turquoise stays
+     for identity and Conservar. Paper text on it: 7.4:1. */
+  --cw-accent:var(--cw-coconut-ink);
   --cw-pink:var(--pal-heart);--cw-pink-deep:var(--pal-heart-deep);--cw-pink-text:#F9C6C4; /* light pink: text on dark overlays only */
   --cw-graphite:var(--pal-discard);
   /* Decision bar: heart, the band inside each piece and the contour ink. The
@@ -582,13 +586,13 @@
 .filter-intro button{display:flex;align-items:center;gap:6px;min-height:var(--cw-touch);padding:0 var(--cw-space-2);border:0;background:none;color:var(--cw-ink);font-size:var(--cw-text-sm);font-weight:500}
 .filter-chips{display:flex;flex-wrap:wrap;gap:var(--cw-space-2)}
 .filter-chips button{min-height:var(--cw-touch);padding:0 var(--cw-space-4);border:1.5px solid var(--cw-line-strong);border-radius:var(--cw-radius-pill);background:var(--cw-field);color:var(--cw-ink);font-size:var(--cw-text-sm)}
-.filter-chips button[aria-pressed=true]{background:var(--cw-teal-800);border-color:var(--cw-teal-800);color:var(--cw-paper);font-weight:500}
+.filter-chips button[aria-pressed=true]{background:var(--cw-accent);border-color:var(--cw-accent);color:var(--cw-paper);font-weight:500}
 .switch-field{display:flex;align-items:center;justify-content:space-between;gap:var(--cw-space-4);min-height:56px;padding:var(--cw-space-1) 0;margin-top:var(--cw-space-2)}
 .switch-field>span{font-size:var(--cw-text-md);font-weight:500}
 .switch-field small{display:block;max-width:240px;margin-top:2px;font-size:var(--cw-text-sm);font-weight:400;color:var(--cw-ink-soft)}
 .switch-field input{flex-shrink:0;appearance:none;-webkit-appearance:none;position:relative;width:51px;height:31px;margin:0;border-radius:var(--cw-radius-pill);background:var(--cw-line-strong);cursor:pointer;transition:background var(--cw-base) var(--cw-ease)}
 .switch-field input:before{content:'';position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.2);transition:transform var(--cw-base) var(--cw-ease)}
-.switch-field input:checked{background:var(--cw-teal-800)}.switch-field input:checked:before{transform:translateX(20px)}
+.switch-field input:checked{background:var(--cw-accent)}.switch-field input:checked:before{transform:translateX(20px)}
 .switch-field input:focus-visible{outline:3px solid var(--cw-focus-on-light);outline-offset:2px}
 .filters-panel details{margin-top:var(--cw-space-3)}
 .filters-panel summary{min-height:var(--cw-touch);display:flex;align-items:center;list-style:none;font-size:var(--cw-text-md);font-weight:500;cursor:pointer}.filters-panel summary::-webkit-details-marker{display:none}.filters-panel summary:after{content:"";margin:0 6px 4px auto;width:8px;height:8px;border-right:2px solid var(--cw-ink-soft);border-bottom:2px solid var(--cw-ink-soft);rotate:45deg;transition:rotate var(--cw-base) var(--cw-ease)}.filters-panel details[open] summary:after{rotate:225deg;margin-bottom:-4px}
@@ -603,14 +607,14 @@
 .range-endpoints{display:grid;grid-template-columns:1fr 1fr;gap:var(--cw-space-2)}
 .range-endpoints button{min-height:56px;padding:var(--cw-space-2) var(--cw-space-3);border:1.5px solid var(--cw-line-strong);border-radius:var(--cw-radius-md);background:var(--cw-field);color:var(--cw-ink-soft);text-align:left;font-size:var(--cw-text-xs)}
 .range-endpoints strong{display:block;margin-top:2px;font-size:var(--cw-text-sm);font-weight:600;color:var(--cw-ink)}
-.range-endpoints button[aria-pressed=true]{border-color:var(--cw-teal-800);box-shadow:inset 0 0 0 1px var(--cw-teal-800)}
+.range-endpoints button[aria-pressed=true]{border-color:var(--cw-accent);box-shadow:inset 0 0 0 1px var(--cw-accent)}
 .calendar-heading{display:flex;align-items:center;justify-content:space-between;margin-top:var(--cw-space-3);font-weight:600}.calendar-heading>span{display:inline-block}.calendar-heading>span::first-letter{text-transform:uppercase}
 .calendar-heading button{min-width:var(--cw-touch);min-height:var(--cw-touch);border:0;border-radius:50%;background:none;color:var(--cw-ink);font-size:24px;line-height:1}
 .calendar-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
 .calendar-days>span{min-height:24px;text-align:center;font-size:var(--cw-text-xs);color:var(--cw-ink-faint)}
 .calendar-days button{min-width:0;min-height:var(--cw-touch);padding:0;border:0;border-radius:var(--cw-radius-sm);background:transparent;color:var(--cw-ink);font-size:var(--cw-text-sm);font-variant-numeric:tabular-nums}
 .calendar-days button.in-range{background:var(--cw-paper)}
-.calendar-days button[aria-pressed=true]{background:var(--cw-teal-800);color:var(--cw-paper);font-weight:600}
+.calendar-days button[aria-pressed=true]{background:var(--cw-accent);color:var(--cw-paper);font-weight:600}
 .date-error{display:block;margin-top:var(--cw-space-2);color:var(--cw-coconut-ink);font-size:var(--cw-text-sm)}
 
 /* Installed app sheet (Radix Dialog, app-owned) */
@@ -800,10 +804,10 @@
 .smart-chips button{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:var(--cw-space-2);min-height:52px;padding:0 var(--cw-space-3);border:1.5px solid var(--cw-line-strong);border-radius:var(--cw-radius-md);background:var(--cw-field);color:var(--cw-ink);font-size:var(--cw-text-sm);text-align:left}
 .smart-chips button:first-child{grid-column:1/-1}
 .smart-chips button svg{color:var(--cw-ink-soft)}
-.smart-chips button[aria-pressed=true]{background:var(--cw-teal-800);border-color:var(--cw-teal-800);color:var(--cw-paper);font-weight:500}
+.smart-chips button[aria-pressed=true]{background:var(--cw-accent);border-color:var(--cw-accent);color:var(--cw-paper);font-weight:500}
 .smart-chips button[aria-pressed=true] svg{color:var(--cw-paper)}
 .chip-count{min-width:28px;padding:2px var(--cw-space-2);border-radius:var(--cw-radius-pill);background:var(--cw-paper-light);box-shadow:inset 0 0 0 1px var(--cw-line);font:600 var(--cw-text-xs)/1.4 var(--cw-font-mono);color:var(--cw-ink);text-align:center}
-.smart-chips button[aria-pressed=true] .chip-count{background:var(--cw-paper);box-shadow:none;color:var(--cw-teal-800)}
+.smart-chips button[aria-pressed=true] .chip-count{background:var(--cw-paper);box-shadow:none;color:var(--cw-accent)}
 /* iCloud: a quiet chip on a lighter local preview, a placeholder when none. */
 .photo-window{position:relative}
 .cloud-chip{position:absolute;left:var(--cw-space-2);bottom:var(--cw-space-2);z-index:2;display:flex;align-items:center;gap:5px;min-height:24px;padding:3px var(--cw-space-2) 3px 4px;border-radius:var(--cw-radius-pill);background:rgba(15,38,39,.84);color:var(--cw-white);font-size:var(--cw-text-xs);font-weight:500;pointer-events:none;font-variant-numeric:tabular-nums}
