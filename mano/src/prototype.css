@@ -52,7 +52,7 @@
      WebKit re-renders filtered SVG backgrounds on paint (the likely cause of the
      stalled simulator smoke test on 0.9.2). The tile carries the Coco Cream colour, so other palettes turn it off.
      On the frame only — never on text, icons, photos, videos or controls. */
-  --cw-paper-texture:url('/assets/paper-cream.webp') 0 0/512px 512px;
+  --cw-paper-texture:none; /* CI PROBE ONLY: flat frame to test whether the paper texture stalls the simulator */
   --cw-on-bg:var(--pal-text);
   --cw-on-bg-soft:var(--pal-text-soft);--cw-on-bg-faint:var(--pal-text-faint);
   /* Hairlines and quiet fills are the text colour at low strength, so they
