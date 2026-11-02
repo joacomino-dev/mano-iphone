@@ -149,8 +149,12 @@
 
 /* ---------- App shell ---------- */
 .mano-app{position:relative;isolation:isolate;display:flex;flex-direction:column;height:100%;min-height:0;overflow:hidden;
-  background:var(--cw-paper-texture),var(--cw-bg);color:var(--cw-on-bg);padding:calc(var(--cw-space-12) + var(--cw-space-4)) var(--cw-gutter) var(--cw-space-8);
+  background:var(--cw-bg);color:var(--cw-on-bg);padding:calc(var(--cw-space-12) + var(--cw-space-4)) var(--cw-gutter) var(--cw-space-8);
   font:400 var(--cw-text-md)/1.4 var(--cw-font);-webkit-font-smoothing:antialiased}
+/* Warm Paper on its own compositing layer: rasterised once, never repainted by
+   the cards, sheets and tour animations above it (painting it as part of the
+   frame cost a full-screen bitmap redraw per frame on CPU-only simulators). */
+.mano-app::before{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;background:var(--cw-paper-texture);transform:translateZ(0)}
 /* No loupe, text selection or callout menu on cards, images, labels or empty
    space: long press belongs to the card gestures. Text fields keep editing.
    CSS only, so VoiceOver reading and activation are unaffected. */
