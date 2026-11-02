@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { HeartIcon, CalendarBlankIcon, ImagesIcon, StampIcon, ArrowCounterClockwiseIcon, BroomIcon, SortAscendingIcon, ClockCountdownIcon, DeviceMobileIcon, ImageBrokenIcon, ReceiptIcon, SparkleIcon } from '@phosphor-icons/react';
-import { initialFilter, pileCount, LEVELS, type Asset, type Filter, type Order, type RecordState, type Smart } from './domain';
+import { initialFilter, pileCount, favoritesTotal, LEVELS, type Asset, type Filter, type Order, type RecordState, type Smart } from './domain';
 import { AnimatedNumber } from './Loader';
 import { haptic } from './haptics';
 import { ROMAN, sealRest, Stamp } from './Stamp';
@@ -46,7 +46,8 @@ export function Filters({filter,assets,state,apply,index,preview}: {filter:Filte
  const invalid=draft.dateRange==='custom'&&(!draft.from||!draft.to||draft.from>draft.to);
  const count=pileCount(assets,state,draft);
  const smart=draft.smart??'all';
- const counts=Object.fromEntries(SMART.map(({value})=>[value,value===smart?count:pileCount(assets,state,{...draft,smart:value})])) as Record<Smart,number>;
+ // «Favoritas» shows how many favourites there are (as in Photos), not how many are left to review.
+ const counts=Object.fromEntries(SMART.map(({value})=>[value,value==='favorites'?favoritesTotal(assets,state,draft):value===smart?count:pileCount(assets,state,{...draft,smart:value})])) as Record<Smart,number>;
  const visionPending=(smart==='lowQuality'||smart==='text')&&index.analyzing&&index.analyzed<index.photos;
  const sizePending=(draft.order==='largest'||draft.order==='smallest')&&index.measuring&&index.sized<index.total;
  return <div className="filters-panel">

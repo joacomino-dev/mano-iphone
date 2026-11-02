@@ -123,3 +123,18 @@ test('favourites are never queued for deletion nor un-favourited when they are n
 test('keeping a favourite in «Favoritas» seals it: it rests there and stays a favourite',()=>{const a=[photo('f')];let s=decide(initialState(),['f'],'favorite',0);s=decide(s,['f'],'keep',1);assert.equal(s.marks.f.level,1);assert.deepEqual(s.favorites,['f']);assert.equal(eligible(a,s,favs,2).length,0);assert.equal(eligible(a,s,favs,1+7*86400000).length,1);});
 test('native refresh: Photos favourites join the record, a returned item without the flag leaves it',()=>{const s=reconcileLibrary({...initialState(),favorites:['was','gone']},[{...photo('was')},{...photo('p'),favorite:true}]);assert.deepEqual([...s.favorites].sort(),['gone','p']);});
 test('a saved history with unfavorite survives validation',()=>{const s=decide(decide(initialState(),['f'],'favorite',0),['f'],'unfavorite',1);assert.equal(validateRecordState(JSON.parse(JSON.stringify(s))).history.at(-1).action,'unfavorite');});
+test('Favoritas counts every favourite (Photos and app), never in the general pile', async()=>{
+  const { favoritesTotal, pileCount } = await import('../src/domain.ts');
+  const lib=[{...photo('n1'),favorite:true},{...photo('n2'),favorite:true},photo('a1'),photo('x'),{...photo('v'),kind:'video',favorite:true}];
+  let s=reconcileLibrary(initialState(),lib);            // n1, n2, v from Photos
+  s=decide(s,['a1'],'favorite',0);                        // one made in the app
+  s=decide(s,['n1'],'keep',0);                            // a kept favourite waits in the pile...
+  const fav={...initialFilter,smart:'favorites'};
+  assert.equal(favoritesTotal(lib,s,fav,1),4);            // ...but still counts as a favourite
+  assert.equal(favoritesTotal(lib,s,{...fav,media:'photo'},1),3);
+  assert.deepEqual(eligible(lib,s,initialFilter,1).map(a=>a.id),['x']);
+  assert.equal(pileCount(lib,s,initialFilter,1),1);
+  // Next enumeration: Photos now also flags a1 (the app wrote it there); n2 was unfavourited in Photos.
+  s=reconcileLibrary(s,lib.map(a=>a.id==='n2'?{...a,favorite:false}:a.id==='a1'?{...a,favorite:true}:a));
+  assert.equal(favoritesTotal(lib,s,fav,1),3);
+});

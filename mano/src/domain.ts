@@ -153,6 +153,15 @@ function pileTest(state: RecordState, filter: Filter, now: number) {
     && (filter.seal === 'all' || (filter.seal === 'none' ? !mark : mark?.level === filter.seal))
     && (filter.includeWaiting || filter.seal !== 'all' || !mark || mark.due <= now); };
 }
+/** «Favoritas» in the filter sheet: every favourite in the library (Photos'
+ * own and those made here) within the media and date filters — the number the
+ * person sees in Photos. Unlike the pile, it ignores seals and the wait after
+ * «Conservar»: a favourite never stops being one. */
+export function favoritesTotal(assets: Asset[], state: RecordState, filter: Filter, now = Date.now()) {
+  const favorites = new Set(state.favorites), removed = new Set(state.removed); let n = 0;
+  for (const a of assets) if (favorites.has(a.id) && !removed.has(a.id) && (filter.media === 'all' || filter.media === a.kind) && matchesDate(a.date, filter, now)) n++;
+  return n;
+}
 /** How many files a filter puts in the pile, without sorting (filter sheet). */
 export function pileCount(assets: Asset[], state: RecordState, filter: Filter, now = Date.now()) {
   const test = pileTest(state, filter, now); let n = 0;
