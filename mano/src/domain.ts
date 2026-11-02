@@ -209,11 +209,14 @@ export function nextHand(queue: Asset[], similar: boolean) {
   return queue.filter(a => a.group === queue[0].group).slice(0, 7);
 }
 /** The hand that `first` opens: its similar group (up to 5), leaving out members
- * postponed with «Más tarde» unless the hand itself is a postponed one. */
+ * postponed with «Más tarde» unless the hand itself is a postponed one. Videos
+ * are never stacked: a video is always a hand of its own and never joins a
+ * group of photos. */
+export const stackable = (a: Asset) => !!a.group && a.kind !== 'video';
 export function handOf(queue: Asset[], first: Asset, later: readonly string[] = []) {
-  if (!first.group) return [first];
+  if (!stackable(first)) return [first];
   const waiting = new Set(later.includes(first.id) ? [] : later);
-  return queue.filter(a => a.group === first.group && !waiting.has(a.id)).slice(0, 5);
+  return queue.filter(a => a.group === first.group && stackable(a) && !waiting.has(a.id)).slice(0, 5);
 }
 export function nextSessionHand(assets: Asset[], state: RecordState, filter: Filter = initialFilter, now = Date.now(), seed = 1): Asset[] {
   const queue = eligible(assets, state, filter, now, seed);

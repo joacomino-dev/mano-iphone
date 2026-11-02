@@ -212,3 +212,13 @@ test('upcomingFrom equivale a repartir mano tras mano', () => {
     assert.deepEqual(upcomingFrom(queue, [], state.later, 12).map(a => a.id), expected, `round ${round}`);
   }
 });
+
+test('los vídeos nunca forman pila: un vídeo es su propia mano y no entra en grupos de fotos', () => {
+  const video = (id, date, group) => ({ id, kind: 'video', date, width: 100, height: 60, duration: 4, group });
+  const assets = [video('v0', 0, 'g'), photo('p1', 1, { group: 'g' }), photo('p2', 2, { group: 'g' }), video('v3', 3, 'g'), photo('p4', 4)];
+  const t = new Table(assets);
+  assert.deepEqual(t.hand.map(a => a.id), ['v0']);
+  t.decide('keep');
+  assert.deepEqual(t.hand.map(a => a.id), ['p1', 'p2']);
+  assert.deepEqual(upcomingFrom(t.queue, t.hand, t.state.later, 6).map(a => a.id), ['p1', 'p2', 'v3', 'p4']);
+});

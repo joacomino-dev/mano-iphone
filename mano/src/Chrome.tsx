@@ -1,43 +1,16 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 /** Main-screen chrome in the decision bar's language (see DecisionBar.tsx):
  * solid colour, cream band, ink contour, an ink base under what can be pressed.
  * Brand and chrome labels use Fredoka (rounded, straight stems); decision verbs
  * keep Patua One. */
 
-const BRAND_FONT = 'Fredoka';
-let canvas: HTMLCanvasElement | null = null;
-function measure(text: string, px: number) {
-  canvas ??= document.createElement('canvas');
-  const ctx = canvas.getContext('2d'); if (!ctx) return text.length * px * .56;
-  ctx.font = `600 ${px}px "${BRAND_FONT}", sans-serif`;
-  return ctx.measureText(text).width;
-}
-/** True once the brand font is ready (measurements made before are re-run). */
-function useBrandFont() {
-  const spec = `600 16px "${BRAND_FONT}"`;
-  const [ready, setReady] = useState(() => typeof document === 'undefined' || document.fonts?.check?.(spec) !== false);
-  useEffect(() => { if (ready) return; let alive = true; document.fonts?.load(spec).then(() => { if (alive) setReady(true); }).catch(() => {}); return () => { alive = false; }; }, [ready]);
-  return ready;
-}
-
-/* Line weights (CSS px): inner ink, cream band, outer ink, base. */
-const INNER = 1.75, CREAM = 3, OUTER = 2.5, BASE = 3;
-const PAD = INNER + CREAM + OUTER;
-
-/** «CocoWash» as a sticker: white «Coco», pink «Wash», an ink line, a cream
- * margin, an outer ink contour and the ink base. SVG, so the thick contours
- * join round (HTML text strokes would spike on the W). */
-export function Wordmark({ size = 24 }: { size?: number }) {
-  const ready = useBrandFont();
-  const [width, setWidth] = useState(0);
-  useEffect(() => { setWidth(measure('CocoWash', size)); }, [ready, size]);
-  // No room reserved for the base since 0.9 hides it: the name stays optically centred.
-  const w = (width || size * 4.6) + PAD * 2, h = size * 1.04 + PAD * 2, base = PAD + size * .8;
-  const text = (className: string, dy = 0) => <text className={className} x={PAD} y={base + dy} fontSize={size}>Coco<tspan className="wm-wash">Wash</tspan></text>;
-  return <svg className="wordmark" width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true" focusable="false">
-    {text('wm-base', BASE)}{text('wm-outer')}{text('wm-cream')}{text('wm-face')}
-  </svg>;
+/** The CocoWash logo (2 Nov 2026): «Coco» in coffee over «Wash» in pink, the
+ * brand's own lettering traced to SVG from the approved artwork
+ * (brand/cocowash-logo.svg, brand/trace-logo.py). One cached file for every use;
+ * the accessible name lives next to it (sr-only), so this stays decorative. */
+export function Wordmark({ className = '' }: { className?: string; size?: number }) {
+  return <img className={`wordmark ${className}`} src="/assets/brand/cocowash-logo.svg" alt="" aria-hidden="true" draggable={false} decoding="async"/>;
 }
 
 /** Progress through the filtered pile: a turquoise track and the count on a

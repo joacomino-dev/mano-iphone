@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type SyntheticEvent } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type MutableRefObject, type ReactNode, type SyntheticEvent } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { PlayIcon, PauseIcon, CornersOutIcon, ArrowClockwiseIcon, GearSixIcon, SpeakerHighIcon, SpeakerSlashIcon, CloudArrowDownIcon, EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
 import type { Asset } from './domain';
@@ -12,6 +12,19 @@ import { haptic } from './haptics';
 const pad = (n: number) => String(n).padStart(2, '0');
 const clock = (seconds: number) => { const t = Math.max(0, Math.floor(seconds || 0)), h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60); return h ? `${h}:${pad(m)}:${pad(t % 60)}` : `${m}:${pad(t % 60)}`; };
 const stop = (e: SyntheticEvent) => e.stopPropagation();
+
+/** Where each video is, shared by every element that shows it — the card, the
+ * held view and the anchored view — so moving between them never restarts it:
+ * the next one seeks to the same moment and keeps the person's pause. Memory
+ * only, a few dozen entries. */
+const playheads = new Map<string, { time: number; paused: boolean }>();
+const headKey = (asset: Asset) => `${asset.id}:${asset.modified ?? 0}`;
+function remember(key: string, time: number, paused: boolean) {
+  if (!Number.isFinite(time)) return;
+  playheads.delete(key); playheads.set(key, { time, paused });
+  while (playheads.size > 40) playheads.delete(playheads.keys().next().value!);
+}
+export type VideoControl = { toggle: () => void };
 const useDocumentVisible = () => {
   const [visible, setVisible] = useState(() => typeof document === 'undefined' || document.visibilityState !== 'hidden');
   useEffect(() => { const update = () => setVisible(document.visibilityState !== 'hidden'); document.addEventListener('visibilitychange', update); return () => document.removeEventListener('visibilitychange', update); }, []);
@@ -24,19 +37,28 @@ const useDocumentVisible = () => {
  *   gesture (swipes, hold, tap). If iOS refuses to start, or Reduce Motion asks
  *   for no autoplay, one explicit «Reproducir» chip appears instead.
  * - full: the anchored view opened on purpose — sound, timeline and fullscreen.
+ * - peek: the held (not yet anchored) view — plays on, muted like the card, with
+ *   nothing over it; anchoring turns the same element into `full`, so it never
+ *   restarts. Every mode shares the playhead (`playheads`).
+ * A quick tap on the card toggles pause/play (`control`), with a brief glyph.
  * The element is released when the card leaves; the poster stays underneath.
  * A video only in iCloud (with «Ahorrar iCloud») is not downloaded by itself:
  * its poster, weight and VHS letters stay, and «Descargar y ver» asks for it.
  * The card carries two quiet toggles: sound (kept for the session) and the VHS
  * letters (saved with Ajustes). */
-export function InlineVideo({ asset, state, active = true, mode = 'card', retry, download, fullscreen, openSettings, meta, place, sound = false, onSound, onOsd, children }: {
-  asset: Asset; state: VideoState; active?: boolean; mode?: 'card' | 'full'; retry: () => void; download: () => void; fullscreen: () => void; openSettings: () => void;
-  meta?: VideoMeta; place?: Place; sound?: boolean; onSound?: () => void; onOsd?: () => void; children: ReactNode;
+export function InlineVideo({ asset, state, active = true, mode = 'card', retry, download, fullscreen, openSettings, meta, place, sound = false, onSound, onOsd, control, children }: {
+  asset: Asset; state: VideoState; active?: boolean; mode?: 'card' | 'peek' | 'full'; retry: () => void; download: () => void; fullscreen: () => void; openSettings: () => void;
+  meta?: VideoMeta; place?: Place; sound?: boolean; onSound?: () => void; onOsd?: () => void; control?: MutableRefObject<VideoControl | null>; children: ReactNode;
 }) {
   const player = useRef<HTMLVideoElement>(null);
   const reduced = useReducedMotion();
   const visible = useDocumentVisible();
-  const full = mode === 'full';
+  const full = mode === 'full', card = mode === 'card';
+  const key = headKey(asset);
+  // The person's own pause, shared with the other views of this video.
+  const [userPaused, setUserPaused] = useState(() => playheads.get(key)?.paused ?? false);
+  const pausedRef = useRef(userPaused); pausedRef.current = userPaused;
+  const [glyph, setGlyph] = useState<{ kind: 'play' | 'pause'; n: number } | null>(null);
   const [playing, setPlaying] = useState(false);
   const [waiting, setWaiting] = useState(false);
   const [frame, setFrame] = useState(false);
@@ -54,10 +76,11 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
   // previous cleanup removed, and React would not set an unchanged prop again.
   useEffect(() => {
     setPlaying(false); setFrame(false); setTime(0); setPlayError(false); setBlocked(false); setChosen(false);
+    setUserPaused(playheads.get(key)?.paused ?? false);
     if (url) setFetching(false);
     const video = player.current;
     if (video && url && video.getAttribute('src') !== url) { video.src = url; video.load(); }
-    return () => { if (video) { video.pause(); video.removeAttribute('src'); video.load(); } };
+    return () => { if (video) { if (video.currentTime > 0) remember(key, video.currentTime, pausedRef.current); video.pause(); video.removeAttribute('src'); video.load(); } };
   }, [asset.id, url]);
 
   const start = (withSound: boolean) => {
@@ -72,14 +95,32 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
     });
   };
   // Card: play while on top and uncovered; Reduce Motion waits for a tap.
-  const wantsPlay = !!url && visible && active && (full || !reduced || chosen);
+  const wantsPlay = !!url && visible && active && !userPaused && (full || !reduced || chosen);
   useEffect(() => {
     const video = player.current; if (!video || !url) return;
-    if (wantsPlay) start(full || sound); else if (!video.paused) video.pause();
-  }, [wantsPlay, url, sound]);
+    if (wantsPlay) {
+      // Coming back from another view of this video: continue where it was, and
+      // keep a pause the person made there.
+      const head = playheads.get(key);
+      if (head?.paused) { setUserPaused(true); return; }
+      if (head && video.readyState >= 1 && Math.abs(video.currentTime - head.time) > .25 && head.time < (video.duration || Infinity) - .25) video.currentTime = head.time;
+      start(full || sound);
+    } else if (!video.paused) video.pause();
+    // `full`: anchoring a held video turns sound on (the same element, still playing).
+  }, [wantsPlay, url, sound, full]);
+  // Quick tap on the card: pause or play, with a short glyph and a tick.
+  const showGlyph = (kind: 'play' | 'pause') => setGlyph(g => ({ kind, n: (g?.n ?? 0) + 1 }));
+  useEffect(() => { if (!glyph) return; const t = setTimeout(() => setGlyph(null), 650); return () => clearTimeout(t); }, [glyph]);
+  const toggle = () => {
+    const video = player.current; if (!video || !url) return;
+    haptic('selection');
+    if (!video.paused) { video.pause(); setUserPaused(true); remember(key, video.currentTime, true); showGlyph('pause'); }
+    else { setUserPaused(false); setChosen(true); remember(key, video.currentTime, false); start(full || sound); showGlyph('play'); }
+  };
+  useEffect(() => { if (!control || !card) return; const own = { toggle }; control.current = own; return () => { if (control.current === own) control.current = null; }; });
 
-  const choose = () => { haptic('light'); setChosen(true); start(full); };
-  const pause = () => { player.current?.pause(); haptic('soft'); };
+  const choose = () => { haptic('light'); setChosen(true); setUserPaused(false); start(full); };
+  const pause = () => { player.current?.pause(); setUserPaused(true); haptic('soft'); };
   const toggleSound = () => { const video = player.current; if (!video) return; video.muted = !video.muted; setMuted(video.muted); haptic('selection'); };
   const enterFullscreen = () => {
     const video = player.current as (HTMLVideoElement & { webkitEnterFullscreen?: () => void; webkitSupportsFullscreen?: boolean }) | null;
@@ -103,22 +144,28 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
 
   return <div className={`inline-media ${shown ? 'is-started' : ''} ${playing ? 'is-playing' : ''} ${frame ? 'has-frame' : ''}`}>
     {children}
-    {url && <video data-testid="inline-video" ref={player} src={url} playsInline muted={muted} loop={!full} preload={full ? 'auto' : 'metadata'} aria-label="Vídeo de tu biblioteca"
-      onLoadedData={() => setFrame(true)} onLoadedMetadata={e => { const d = e.currentTarget.duration; if (Number.isFinite(d) && d > 0) setLength(d); }}
-      onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)}
+    {url && <video data-testid="inline-video" ref={player} src={url} playsInline muted={muted} loop={!full} preload={card ? 'metadata' : 'auto'} aria-label="Vídeo de tu biblioteca"
+      onLoadedData={() => setFrame(true)}
+      onLoadedMetadata={e => { const v = e.currentTarget, d = v.duration; if (Number.isFinite(d) && d > 0) setLength(d);
+        // Same moment as the view it came from (card ↔ held ↔ anchored).
+        const head = playheads.get(key); if (head && head.time > .05 && (!Number.isFinite(d) || head.time < d - .25)) { v.currentTime = head.time; setTime(head.time); } }}
+      onPlay={() => setPlaying(true)} onPause={e => { setPlaying(false); remember(key, e.currentTarget.currentTime, pausedRef.current); }} onEnded={() => setPlaying(false)}
       onWaiting={() => setWaiting(true)} onPlaying={() => setWaiting(false)} onCanPlay={() => setWaiting(false)}
-      onTimeUpdate={full ? e => setTime(e.currentTarget.currentTime) : e => { if (!time) setTime(e.currentTarget.currentTime); }}
+      onTimeUpdate={e => { const t = e.currentTarget.currentTime; remember(key, t, pausedRef.current); if (full || !time) setTime(t); }}
       onError={() => { setPlaying(false); setPlayError(true); }}/>}
-    {!full && meta && (meta.date || meta.time || meta.location || meta.duration || meta.size) && <VhsOverlay asset={asset} place={place} settings={meta}/>}
-    {!full && (onSound || onOsd) && <div className="video-toggles">
+    {card && meta && (meta.date || meta.time || meta.location || meta.duration || meta.size) && <VhsOverlay asset={asset} place={place} settings={meta}/>}
+    {card && (onSound || onOsd) && <div className="video-toggles">
       {/* The icon follows what really plays: iOS may refuse sound and fall back
           to silent. A tap asks for the opposite inside the gesture itself. */}
       {onSound && <button onPointerDown={stop} onClick={e => { e.stopPropagation(); haptic('selection'); if (url) start(muted); if (muted !== sound) onSound(); }} aria-pressed={!muted} aria-label={muted ? 'Activar sonido' : 'Silenciar'}>{muted ? <SpeakerSlashIcon size={18} weight="bold"/> : <SpeakerHighIcon size={18} weight="bold"/>}</button>}
       {onOsd && <button onPointerDown={stop} onClick={e => { e.stopPropagation(); haptic('selection'); onOsd(); }} aria-pressed={meta?.osd !== false} aria-label={meta?.osd !== false ? 'Ocultar letras VHS' : 'Mostrar letras VHS'}>{meta?.osd !== false ? <EyeIcon size={18} weight="bold"/> : <EyeSlashIcon size={18} weight="bold"/>}</button>}
     </div>}
 
+    <AnimatePresence>{glyph && <motion.span key={glyph.n} className="video-glyph" aria-hidden="true"
+      initial={reduced ? { opacity: 0 } : { opacity: 0, scale: .82 }} animate={{ opacity: 1, scale: 1 }} exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 1.08 }} transition={{ duration: .18 }}>
+      {glyph.kind === 'pause' ? <PauseIcon weight="fill" size={26}/> : <PlayIcon weight="fill" size={26}/>}</motion.span>}</AnimatePresence>
     <AnimatePresence initial={false}>
-      {(loading || chip) && <motion.div key="center" className="video-center"
+      {mode !== 'peek' && (loading || chip) && <motion.div key="center" className="video-center"
         initial={reduced ? false : { opacity: 0, scale: .9 }} animate={{ opacity: 1, scale: 1 }} exit={reduced ? { opacity: 0, transition: { duration: 0 } } : { opacity: 0, scale: .92 }}
         transition={{ type: 'spring', stiffness: 460, damping: 34 }}>
         {loading ? <Deferred><span className="video-preparing" role="status"><CocoLoader progress={progress} size={56} label={fetching ? `Descargando de iCloud, ${percent} %` : percent ? `Preparando vídeo, ${percent} %` : 'Preparando vídeo'}/>
@@ -138,7 +185,7 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
       <button onClick={enterFullscreen} aria-label="Pantalla completa"><CornersOutIcon size={20} weight="bold"/></button>
     </div>}
 
-    {copy && <div className={`video-error ${copy.action === 'download' ? 'is-cloud' : ''}`} role={copy.action === 'download' ? 'status' : 'alert'}>
+    {copy && mode !== 'peek' && <div className={`video-error ${copy.action === 'download' ? 'is-cloud' : ''}`} role={copy.action === 'download' ? 'status' : 'alert'}>
       <span>{copy.message}</span>
       {copy.action === 'download' && <button onPointerDown={stop} onClick={e => { e.stopPropagation(); haptic('light'); setFetching(true); download(); }}><CloudArrowDownIcon size={18} weight="bold"/>Descargar y ver{formatBytes(asset.bytes) ? ` · ${formatBytes(asset.bytes)}` : ''}</button>}
       {copy.action === 'retry' && <button onClick={() => { setPlayError(false); retry(); }}><ArrowClockwiseIcon size={18} weight="bold"/>Reintentar</button>}

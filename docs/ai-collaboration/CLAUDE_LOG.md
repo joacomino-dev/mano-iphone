@@ -237,3 +237,12 @@ Fecha: 2026-11-02, America/Bogota
 Agente: Claude (el usuario pidió vigilar el CI y corregir hasta que pase)
 Run 41395519365 (3ce3e19): Swift compila (IPA sin firmar generado); XCTest pasó (416 s); falló la comprobación posterior del script: sin `MEMSWIPE_VIDEO_PREPARED_OK`. Causa: la biblioteca del simulador tiene 8 elementos (run verde 41373241834: count=8, vídeo preparado 2 s después de leer Fotos) y el vídeo generado es el más reciente; con la ventana de 0.9.3 (~6) nunca entraba en la precarga y la prueba solo avanza una carta. Corrección en la app, no en la prueba: los vídeos miran hasta 10 por delante (`VIDEO_AHEAD`, como antes de 0.9.3); los pósters siguen en ~6. Validaciones: 82/82, runtime 28, build:native, recorrido 11/11. Nuevo run: ver CURRENT_STATE.
 Resultado: run 41399471365 (ee86516) verde de punta a punta (smoke 21 min: XCTest 527 s; PHOTOS_READ_OK count=8; VIDEO_PREPARED_OK bytes=9060; IPA y artefacto Mano-AltStore publicados). Pendiente para Codex: QA en iPhone (CW-HO-005).
+
+### CW-CL-030 — 0.9.4: logo nuevo, pantalla de inicio con Zángano, continuidad de vídeo, loader, Ajustes
+Fecha: 2026-11-02, America/Bogota
+Agente: Claude (encargo del usuario tras probar 0.9.3)
+Base: rama `claude/perf-stability-cotton` (b7effc9). Archivos: mano/src/{Splash.tsx (nuevo),Chrome,Loader,InlineVideo,Inspector,ManoApp,DisplaySettings}.tsx, domain.ts, sequence.ts, prototype.css; brand/{cocowash-logo.svg,zangano-isotipo.svg,trace-logo.py,*-source.png,README.md}; public/assets/brand/; app-icon.png y AppIcon; Splash.imageset (crema); tests/sequence.test.mjs; versión 0.9.4 (13).
+Logo: trazado con potrace por color (IoU 0,989/0,983; 0,998 el isotipo; fuera de la banda de antialias de 1 px coinciden exactamente). Icono = logo al 80 % sobre su crema #FDF9F6.
+Vídeo: playhead compartido (carta ↔ mantener ↔ anclada); el mismo elemento al anclar; fotograma congelado bajo la vista mantenida; toque = pausa/reproducir. Medido en Chromium con un vídeo de prueba de 12 s: carta 3,91 s → mantenida 4,67 s (sigue) → anclada mismo elemento 5,77 → 7,28 s → cerrar 8,53 s; pausa respetada al anclar.
+Validaciones: tsc; npm test 83/83 (1 nueva: vídeos nunca en pila); runtime 28; build + build:native; capturas de inicio, cabecera, loader, Ajustes y vista mantenida; sin errores de consola.
+No verificado: iPhone real (sonido al anclar en WKWebView, icono en pantalla de inicio). CI: ver CURRENT_STATE.

@@ -59,3 +59,22 @@ the no-yellow rule applies to UI chrome, not to the characters.
 The earlier vector mascot (`cocowash*.svg`, built by `generate-assets.mjs`) is
 superseded and no longer used by the app; do not regenerate the app icon from
 it. New poses should be added to the model sheets first and cut the same way.
+
+## Logo, icon and maker mark — 0.9.4 (2 November 2026, user)
+
+- **Logo** `cocowash-logo.svg` (served as `public/assets/brand/cocowash-logo.svg`):
+  the user's lettering — «Coco» coffee `#90481D` over «Wash» pink `#F17472` —
+  traced from `cocowash-logo-source.png` by `trace-logo.py` (potrace, one path per
+  colour). Measured against the source: IoU 0.989 / 0.983; outside the 1 px
+  anti-aliasing band the shapes match exactly. Used in the header, the tour and
+  wherever the name appears (`Wordmark` in `src/Chrome.tsx`).
+- **Full logo** (launch mark only, `src/Splash.tsx`): Coqui washing Memo
+  (`characters/coqui-memo.webp`) with the logo to its right.
+- **App icon** `public/assets/app-icon.png` = `AppIcon-512@2x.png`: the logo at
+  80 % width centred on its own cream `#FDF9F6`, 1024² opaque RGB. Supersedes the
+  0.8 character icon below.
+- **Maker mark** `zangano-isotipo.svg`: Zángano's isotype (`#1A1A1A`), traced the
+  same way (IoU 0.998), shown under the full logo at launch. Full Zángano
+  lockup (with name) pending from the user.
+- Native launch screen (`Splash.imageset`): plain cream `#F3ECE1`, so the web
+  launch mark appears over the same colour without a flash.

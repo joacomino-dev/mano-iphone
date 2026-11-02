@@ -1,4 +1,4 @@
-import { handOf, type Asset, type DecisionContext, type RecordState } from './domain.ts';
+import { handOf, stackable, type Asset, type DecisionContext, type RecordState } from './domain.ts';
 import { bestShot } from './insights.ts';
 
 /** The hand on the table, locked.
@@ -71,15 +71,15 @@ export function upcomingFrom(queue: Asset[], hand: Asset[], later: readonly stri
   hand.forEach(add);
   const waiting = new Set(later);
   const groups = new Map<string, Asset[]>();
-  for (const a of queue) if (a.group) { const g = groups.get(a.group); if (g) g.push(a); else groups.set(a.group, [a]); }
+  for (const a of queue) if (stackable(a)) { const g = groups.get(a.group!); if (g) g.push(a); else groups.set(a.group!, [a]); }
   for (const first of queue) {
     if (result.length >= limit) break;
     if (seen.has(first.id)) continue;
-    if (!first.group) { add(first); continue; }
+    if (!stackable(first)) { add(first); continue; }
     // Same members handOf() would deal from here (postponed ones stay apart).
     const skipWaiting = !waiting.has(first.id);
     let taken = 0;
-    for (const member of groups.get(first.group)!) {
+    for (const member of groups.get(first.group!)!) {
       if (taken >= 5) break;
       if (seen.has(member.id) || (skipWaiting && waiting.has(member.id))) continue;
       add(member); taken++;

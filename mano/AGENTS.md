@@ -354,3 +354,26 @@ permissions, `cocowash-media://` and CSP).
   the serial thumbnail queue keeps answering the card on screen. Thumbnail
   timeouts count inactivity (60 s without iCloud progress).
 - Version 0.9.3 (build 12).
+
+## CocoWash 0.9.4 — logo, launch mark, video continuity (2 November 2026, user request, CW-CL-030)
+
+- New logo: the user's «Coco / Wash» lettering traced to SVG (brand/README.md),
+  in the header, tour and app icon (logo centred on cream). The full logo — Coqui
+  washing Memo with the lettering to the right — is only for the launch mark.
+- Launch mark (`Splash.tsx`): every launch, ~1.5 s, full logo centred and
+  Zángano's isotype near the bottom (maker's mark, like a studio card); purely
+  decorative (no touches, hidden from VoiceOver); the app loads underneath.
+  Native launch screen is plain cream to match.
+- Loaders: a rinse ring — turquoise arc that stretches as it turns with a short
+  pink counter-swirl; real progress fills the arc. No Coqui face (supersedes
+  0.5 «Coqui's face in every loader»).
+- Ajustes starts with «Introducción › Ver la introducción de nuevo» (no wait).
+- Videos are never stacked: a video is always its own hand, never joins a group
+  of photos, and is not sent to the similar-photo search.
+- Video: a quick tap on the card pauses/plays it (brief glyph, tick). One
+  playhead per video shared by the card, the held view and the anchored view:
+  holding keeps it playing from the same moment (the card's frame is painted
+  under it), anchoring keeps the same element (no restart; sound turns on),
+  closing returns to the card at the anchored time; a pause is kept everywhere.
+- Version 0.9.4 (build 13).
+

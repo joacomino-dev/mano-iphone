@@ -2,7 +2,7 @@
 
 - Actualizado: 2026-11-02, America/Bogota (Claude, sesión en la nube). Snapshot, no estado en tiempo real.
 - **Trabajo vigente: rama `claude/perf-stability-cotton`** (publicada), basada en
-  `claude/decision-bar-favoritas` (PR #1, 0.9.2). Contiene 0.9.3 (12): CW-CL-027 y CW-CL-028.
+  `claude/decision-bar-favoritas` (PR #1, 0.9.2). Contiene 0.9.3 (12) y 0.9.4 (13): CW-CL-027 a CW-CL-030.
   `main` sigue en 0.7 (f6133d4). `claude/ci-probe-flat-paper` es solo una prueba de CI (no fusionar).
 - La captura de referencia del usuario (fondo crema) corresponde a PR #1, no a `main`: trabajar
   siempre desde la rama vigente.
@@ -28,6 +28,7 @@ mediciones, límites) y las entradas CW-CL-027/028 de [CLAUDE_LOG](CLAUDE_LOG.md
    - Avisos en el hueco del nombre (sin mover cabecera), tour (demo de 4 gestos, espera de una
      ronda solo la primera vez, VoiceOver), textura Cotton Fiber en Retina/OLED.
    - Búsqueda de parecidas: segunda ejecución mucho más rápida (caché de huellas).
+   - 0.9.4: pantalla de inicio (logo completo + isotipo Zángano), icono nuevo, toque para pausar el vídeo, mantener/anclar/soltar un vídeo sin saltos ni reinicios (y con sonido al anclar), loader nuevo.
 3. Contratos nuevos a respetar: `src/sequence.ts` (mano fija; el orden nunca depende de qué
    descarga termina antes), `cloudPreviews` en `src/media.ts` (una descarga por foto, nunca
    originales), tokens `--cw-paper-*` (base / patrón / intensidad; modo oscuro = otra base e
@@ -40,6 +41,7 @@ Riesgos abiertos (no resueltos, ver informe §9): medición con Instruments pend
 mejora futura de servir pósters fuera del hilo principal (descartada por ahora: CSP protegida).
 
 ## Historial reciente
+- **CW-CL-030 (2026-11-02):** 0.9.4 (13) logo nuevo (SVG trazado), icono, pantalla de inicio con isotipo de Zángano, loader sin coco, «Ver la introducción de nuevo» en Ajustes, vídeos nunca en pila, toque play/pausa y continuidad carta ↔ mantener ↔ anclada. QA en iPhone añadida a CW-HO-005.
 - **CW-CL-028 (2026-11-02):** pendientes nativos que eran de Codex, hechos por Claude por falta de cupo (caché de huellas de Vision, codificación concurrente). Publicado en la rama; Swift a validar por CI.
 - **CW-CL-027 (rama claude/perf-stability-cotton sobre PR #1, 2026-11-02, publicada):** 0.9.3 (12) rendimiento (una secuencia, mano fija, arrastre sin re-render, persistencia agrupada), Deshacer exacto, progreso real de iCloud compartido con Anclar, avisos en el hueco del nombre, tour común + demo de 4 gestos, textura Cotton Fiber. Pendiente: push autorizado, CI macOS (Swift), iPhone real. Informe: docs/ai-handoff/CLAUDE_PERF_CW-CL-027.md.
 - **CW-CL-026 (PR #1, 2026-11-02):** 0.9.2 (11) fondo #F3ECE1 + losa de papel WebP. CI: el simulador sin GPU se atasca con la textura; el workflow la aplana solo en la copia del simulador y la restaura para el IPA. Entrada manual ipa_even_if_smoke_fails publica el IPA aunque falle el smoke test (run en rojo). Pendiente: CI verde e iPhone real.

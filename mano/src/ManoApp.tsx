@@ -10,7 +10,7 @@ import { useLibraryIndex, enrich } from './indexer';
 import { AssetPreloader } from './preload';
 import { prepareReviewAsset, VideoStore, prewarm, sharpPreview, subscribeSharp, cloudPreviews, type PreparedMedia, type VideoState } from './media';
 import { CloudBadge, CloudPlaceholder, useCloud } from './Cloud';
-import { InlineVideo } from './InlineVideo';
+import { InlineVideo, type VideoControl } from './InlineVideo';
 import { Filters } from './Filters';
 import { Inspector, type InspectOrigin } from './Inspector';
 import { readSession, saveSession, DEMO_SESSION_KEY, LIBRARY_SESSION_KEY, type ActiveSession } from './session';
@@ -19,6 +19,7 @@ import { usePlace, prefetchPlaces } from './place';
 import { haptic, setHapticsEnabled } from './haptics';
 import { AnimatedNumber, CocoLoader, Deferred } from './Loader';
 import { Onboarding } from './Onboarding';
+import { Splash } from './Splash';
 import { AccessScreen, PreparingScreen, LoadErrorScreen, SessionDone, EMPTY_STATS, readStats, readLifetime, saveLifetime, type RoundStats } from './Screens';
 import { DisplaySettingsPanel } from './DisplaySettings';
 import { InspectorBoundary } from './Boundary';
@@ -51,7 +52,8 @@ function cardExit(id: string, decision: Decision | undefined, reduced: boolean |
   return { ...flight, opacity: 0, pointerEvents: 'none' as const, transition: { duration: .34, ease: leaveEase } };
 }
 function savedGroups(items: Asset[]) {
-  try { const groups = JSON.parse(localStorage.getItem('mano-similarity-v1') || '{}') as Record<string,string>; return items.map(a=>({...a,group:groups[a.id]})); } catch { return items; }
+  // Videos are never stacked (domain.handOf): they carry no group.
+  try { const groups = JSON.parse(localStorage.getItem('mano-similarity-v1') || '{}') as Record<string,string>; return items.map(a=>({...a,group:a.kind==='video'?undefined:groups[a.id]})); } catch { return items; }
 }
 /** One card picture, in this order of preference: the sharper version fetched
  * on purpose (Anclar), a preview that just downloaded from iCloud, the poster
@@ -213,6 +215,8 @@ export function ManoApp() {
   // Holding a card: where the finger is (peek) and how close it is to the dock (0–1). Motion values: no re-render per move.
   const peekX=useMotionValue(0),peekY=useMotionValue(0),anchor=useMotionValue(0);
   const [display,setDisplay]=useState<DisplaySettings>(()=>readDisplay());
+  // Launch mark (Splash.tsx): shown once per launch while the app loads underneath.
+  const [splash,setSplash]=useState(true);
   const [onboarded,setOnboarded]=useState(()=>{try{return localStorage.getItem(ONBOARDING_KEY)==='done';}catch{return false;}});
   const [permission,setPermission]=useState<PhotoPermission|'unknown'>(demo?'authorized':'unknown');
   const [loadError,setLoadError]=useState('');const [showDone,setShowDone]=useState(false);const [sheetTab,setSheetTab]=useState<'filters'|'settings'>('filters');
@@ -391,6 +395,8 @@ export function ManoApp() {
    * undoable history entry, stats, and the move to the next card. */
   const SPOKEN={keep:'Conservada',discard:'Para eliminar; se borra solo al confirmar',favorite:'Favorita',later:'Para más tarde: vuelve al final',unfavorite:'Quitada de Favoritas: vuelve a la pila'} as const;
   const [videoSound,setVideoSound]=useState(false);
+  // The front video card: a quick tap pauses/plays it; holding it hands its frame to the held view.
+  const videoControl=useRef<VideoControl|null>(null);const heldVideo=useRef<HTMLVideoElement|null>(null);
   const hideSeals=()=>{setDisplay(d=>({...d,photo:{...d.photo,seal:false}}));haptic('selection');setNotice('Sellos ocultos\nVuelven en Ajustes');};
   const record=(action:Action,ids:string[],apply=(s:RecordState)=>decide(s,ids,action,Date.now(),context))=>{
     // The rest of the hand stays exactly as shown; an empty hand deals the next.
@@ -422,7 +428,7 @@ export function ManoApp() {
   const cycle=()=>{if(active&&hand.length>1){const refocus=document.activeElement?.classList.contains('photo-card');setLock(cycleHand(hand,best));if(refocus)requestAnimationFrame(()=>document.querySelector<HTMLElement>('.photo-card.front')?.focus({preventScroll:true}));}};
   const select=(id:string)=>setSelected(prev=>prev.includes(id)?prev.filter(x=>x!==id):[...prev,id]);
   const windowOf=(element:Element)=>(element.querySelector('.photo-window')??element).getBoundingClientRect();
-  const openPinned=(asset:Asset,element:Element)=>{inspectOrigin.current=windowOf(element);resetPeek();setPinnedInspect(true);setInspect(asset);haptic('rigid');};
+  const openPinned=(asset:Asset,element:Element)=>{heldVideo.current=element.querySelector('video');inspectOrigin.current=windowOf(element);resetPeek();setPinnedInspect(true);setInspect(asset);haptic('rigid');};
   const closeInspect=()=>{setPinnedInspect(false);setInspect(null);haptic('soft');};
   /** Proximity (0–1) to the single bottom dock; armed within 64 px after a
    * deliberate downward drag. Also checked on release, where the last move may
@@ -438,7 +444,7 @@ export function ManoApp() {
   // can push handler time past the double-tap window.
   const HOLD_MS=380;
   const hold=(g:NonNullable<typeof gesture.current>)=>{if(g.held)return;if(g.timer){clearTimeout(g.timer);g.timer=null;}g.held=true;haptic(g.review?'selection':'medium');
-    if(!g.review&&g.element&&g.asset){springBack(g.followers);setZone('');inspectOrigin.current=windowOf(g.element);resetPeek();setPinnedInspect(false);hookHover.current=false;setOverHook(false);setInspect(g.asset);
+    if(!g.review&&g.element&&g.asset){springBack(g.followers);setZone('');heldVideo.current=g.element.querySelector('video');inspectOrigin.current=windowOf(g.element);resetPeek();setPinnedInspect(false);hookHover.current=false;setOverHook(false);setInspect(g.asset);
       // Holding a photo that lives in iCloud is a reason to fetch the larger
       // preview now: «Anclar» then joins this download instead of starting one.
       if(g.asset.kind!=='video'&&preloader.current?.peek(g.asset)?.value?.cloud)void cloudPreviews.fetch(g.asset,'zoom').catch(()=>{});}};
@@ -487,11 +493,13 @@ export function ManoApp() {
     springBack(g.followers);
     // A tap advances at once: no double-tap window to wait out. Looking closer is
     // a pinch, a hold dragged to the dock, or the focusable «Anclar» button.
-    if(Math.hypot(x,y)<10){if(hand[0]?.id===g.id){if(hand.length>1)cycle();}else select(g.id);}};
+    // On a video card the tap pauses or plays it (videos never come in groups).
+    if(Math.hypot(x,y)<10){if(hand[0]?.id===g.id){if(hand[0].kind==='video')videoControl.current?.toggle();else if(hand.length>1)cycle();}else select(g.id);}};
   const cancel=()=>{const g=gesture.current;if(g?.timer)clearTimeout(g.timer);if(g){springBack(g.followers);if(g.review&&g.element)(g.element as HTMLElement).style.transform='';}gesture.current=null;pointers.current.clear();setPinnedInspect(false);setInspect(null);setZone('');resetPeek();hookHover.current=false;setOverHook(false);};
   const analyze=async(manual=false)=>{if(analyzing)return;setAnalyzing(true);if(manual)setError('');let listener:{remove():Promise<void>}|undefined;try{
     if(demo){if(manual)setNotice('Grupos de\ndemostración');return;}listener=await Library.addListener('analysisProgress',setProgress);
-    const result=await Library.analyze({ids:assets.map(a=>a.id),threshold:.28});const groups=new Map(result.groups.flatMap((ids,i)=>ids.map(id=>[id,`vision-${i}`] as const)));
+    // Photos only: videos are never stacked, so they are not compared either.
+    const result=await Library.analyze({ids:assets.filter(a=>a.kind!=='video').map(a=>a.id),threshold:.28});const groups=new Map(result.groups.flatMap((ids,i)=>ids.map(id=>[id,`vision-${i}`] as const)));
     localStorage.setItem('mano-similarity-v1',JSON.stringify(Object.fromEntries(groups)));
     if(!result.skipped&&!result.cancelled)localStorage.setItem('mano-analysis-complete-v1',fingerprint);else localStorage.removeItem('mano-analysis-complete-v1');
     if(warmingNow.current)deferredGroups.current=groups;else setAssets(prev=>prev.map(a=>({...a,group:groups.get(a.id)})));if(manual)setNotice(result.cancelled?'Búsqueda\ndetenida':result.groups.length?`${result.groups.length} grupos\nde parecidas`:'Sin fotos\nparecidas');
@@ -564,8 +572,8 @@ export function ManoApp() {
             variants={{leave:(decision?:Decision)=>cardExit(asset.id,decision,reduced)}} exit="leave"
             transition={reduced?{duration:0}:CARD_SPRING}
             onPointerDown={e=>start(e,asset)} onPointerMove={move} onPointerUp={end} onPointerCancel={cancel}
-            tabIndex={index===0?0:-1} aria-hidden={index!==0} aria-label={`${kindLabel} ${index+1} de ${hand.length}${picked?', seleccionada':''}${hand.length>1?'. Intro para ver la siguiente; espacio para seleccionar.':''}`} onKeyDown={e=>{if(e.target!==e.currentTarget)return;if(e.key===' '){e.preventDefault();select(asset.id);}if(e.key==='Enter'){e.preventDefault();index===0?cycle():select(asset.id);}}}>
-            <div className="photo-window">{tape&&index===0?<InlineVideo key={asset.id} asset={asset} state={frontVideo} active={!inspect&&!sheet} retry={()=>getVideos().retry(asset)} download={()=>getVideos().download(asset)} fullscreen={()=>void play(asset)} openSettings={openSettings} meta={display.video} place={frontPlace} sound={videoSound} onSound={()=>setVideoSound(v=>!v)} onOsd={()=>setDisplay(d=>({...d,video:{...d.video,osd:!d.video.osd}}))}><Photo asset={asset} quiet pool={preloader.current}/></InlineVideo>:<Photo asset={asset} quiet={tape} pool={preloader.current}/>}</div>
+            tabIndex={index===0?0:-1} aria-hidden={index!==0} aria-label={`${kindLabel} ${index+1} de ${hand.length}${picked?', seleccionada':''}${tape?'. Toca o pulsa Intro para pausar o reproducir.':hand.length>1?'. Intro para ver la siguiente; espacio para seleccionar.':''}`} onKeyDown={e=>{if(e.target!==e.currentTarget)return;if(e.key===' '){e.preventDefault();select(asset.id);}if(e.key==='Enter'){e.preventDefault();index===0?(tape?videoControl.current?.toggle():cycle()):select(asset.id);}}}>
+            <div className="photo-window">{tape&&index===0?<InlineVideo key={asset.id} asset={asset} state={frontVideo} active={!inspect&&!sheet} retry={()=>getVideos().retry(asset)} download={()=>getVideos().download(asset)} fullscreen={()=>void play(asset)} openSettings={openSettings} meta={display.video} place={frontPlace} sound={videoSound} onSound={()=>setVideoSound(v=>!v)} onOsd={()=>setDisplay(d=>({...d,video:{...d.video,osd:!d.video.osd}}))} control={videoControl}><Photo asset={asset} quiet pool={preloader.current}/></InlineVideo>:<Photo asset={asset} quiet={tape} pool={preloader.current}/>}</div>
             {index===0&&!tape&&<PolaroidCaption asset={asset} settings={display.photo} place={frontPlace} pending={display.photo.location&&!!asset.hasLocation&&frontPlace===undefined}/>}
             {hand.length>1&&<button tabIndex={index===0?0:-1} className={`pick-toggle ${picked?'selected':''}`} aria-label={`${picked?'Deseleccionar':'Seleccionar'} ${kindLabel.toLowerCase()} ${index+1}`} aria-pressed={picked} onPointerDown={e=>e.stopPropagation()} onClick={()=>{haptic('selection');select(asset.id);}}><CheckIcon size={16} weight="bold"/></button>}
             {index===0&&<button className="zoom-access" onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();openPinned(asset,e.currentTarget.closest('article')!);}}><PushPinIcon size={16} weight="bold"/>Anclar</button>}
@@ -592,7 +600,6 @@ export function ManoApp() {
     {analyzing&&<button className="sheet-action quiet" onClick={stopAnalysis}>Detener búsqueda</button>}
     {!demo&&<button className="sheet-action secondary" onClick={connect}>Actualizar biblioteca</button>}
     {limited&&<button className="sheet-action secondary" onClick={()=>void manageLimited()}>Elegir más fotos</button>}
-    <button className="sheet-action quiet" onClick={()=>{setSheet(null);setOnboarded(false);}}>Ver la introducción otra vez</button>
     <p className="sheet-fine">Todo se analiza en tu iPhone. Las fotos de iCloud pueden necesitar conexión.</p>
   </>;
   const recoverAll=()=>{setState(s=>({...s,pending:[],history:s.history.filter(d=>d.action!=='discard')}));setSpoken('Todo recuperado');haptic('soft');};
@@ -601,15 +608,16 @@ export function ManoApp() {
   return <div ref={root} className={`mano-app ${isNative?'on-device':''} ${session?'in-session':'on-screen'}`} onContextMenu={blockMenu}>
     {screen}
     <p className="sr-only" role="status" aria-live="polite">{spoken}</p>
+    <AnimatePresence>{splash&&<Splash key="splash" done={()=>setSplash(false)}/>}</AnimatePresence>
     <AnimatePresence>{inspect&&<InspectorBoundary key={inspect.id} close={closeInspect}><Inspector asset={inspect} src={sharpPreview(inspect)??(preloader.current?.get(inspect)?.poster||undefined)} cloud={!!preloader.current?.peek(inspect)?.value?.cloud} pinned={pinnedInspect} origin={inspectOrigin.current} peek={{x:peekX,y:peekY}} anchor={anchor} armed={overHook} geek={!!filter.geek} close={closeInspect} pin={()=>{setPinnedInspect(true);haptic('rigid');}}
-      video={inspect.kind==='video'&&inspect.id===active?.id?{state:frontVideo,retry:()=>getVideos().retry(inspect),download:()=>getVideos().download(inspect),fullscreen:()=>void play(inspect),openSettings}:undefined}/></InspectorBoundary>}</AnimatePresence>
+      video={inspect.kind==='video'&&inspect.id===active?.id?{state:frontVideo,retry:()=>getVideos().retry(inspect),download:()=>getVideos().download(inspect),fullscreen:()=>void play(inspect),openSettings,sound:videoSound,freeze:heldVideo.current}:undefined}/></InspectorBoundary>}</AnimatePresence>
     <Sheet open={sheet==='filters'} close={()=>setSheet(null)} title="Filtros y ajustes" description={sheetTab==='filters'?'Elige qué fotos entran en la pila.':'Elige cómo se ven tus recuerdos.'} error={error} returnTo="filter-trigger">
       <div className="sheet-tabs" role="group" aria-label="Sección"><button aria-pressed={sheetTab==='filters'} onClick={()=>{haptic('selection');setSheetTab('filters');}}>Filtros</button><button aria-pressed={sheetTab==='settings'} onClick={()=>{haptic('selection');setSheetTab('settings');}}>Ajustes</button></div>
       <div hidden={sheetTab!=='filters'}>
         <Filters filter={filter} assets={assets} state={state} preview={draft=>prewarm(eligible(assets,state,draft,Date.now(),seed.current))} index={{sized:index.sized,total:rawAssets.length,analyzed:index.analyzed,photos:index.photos,measuring:index.measuring,analyzing:index.analyzing}} apply={value=>{resumeContext.current=undefined;setFilter(f=>({...value,geek:f.geek}));setSelected([]);setLock(NO_HAND);setSheet(null);haptic('light');setSpoken('Filtros aplicados');}}/>
         {demo&&<button className="sheet-action secondary" onClick={()=>{setState(initialState());setStats(EMPTY_STATS);setSessionOpen(false);setSession(false);setShowDone(false);setLock(NO_HAND);setFilter(initialFilter);setSelected([]);setSheet(null);setSpoken('Demostración reiniciada');}}>Reiniciar demostración</button>}
       </div>
-      <div hidden={sheetTab!=='settings'}><DisplaySettingsPanel display={display} change={setDisplay} geek={!!filter.geek} setGeek={value=>setFilter(f=>({...f,geek:value}))} library={libraryActions}/></div>
+      <div hidden={sheetTab!=='settings'}><DisplaySettingsPanel display={display} change={setDisplay} geek={!!filter.geek} setGeek={value=>setFilter(f=>({...f,geek:value}))} library={libraryActions} replayIntro={()=>{setSheet(null);setOnboarded(false);haptic('selection');}}/></div>
     </Sheet>
     <Sheet open={sheet==='albums'} close={()=>setSheet(null)} title="Guardar en un álbum" description="Se conserva y pasa a la siguiente. También sigue en tu carrete." error={error} returnTo="album-trigger"><p className="sheet-intro"><strong>{targets.length}</strong> seleccionada{targets.length>1?'s':''}</p><button className="album-row album-new" onClick={()=>setCreatingAlbum(v=>!v)} disabled={busy}><span className="row-icon"><PlusIcon size={20} weight="bold"/></span>Crear álbum nuevo</button>{creatingAlbum&&<div className="new-album"><label className="field">Nombre del álbum<AlbumInput value={newAlbum} change={setNewAlbum}/></label><button className="sheet-action" onClick={createAlbum} disabled={busy||!newAlbum.trim()}>Crear y añadir {targets.length} elemento{targets.length===1?'':'s'}</button></div>}{albums.map(a=><button className="album-row" key={a.id} onClick={()=>addAlbum(a)} disabled={busy}><span className="row-icon"><FolderOpenIcon size={20}/></span>{a.title}<CaretRightIcon size={16} weight="bold"/></button>)}</Sheet>
     <Sheet open={sheet==='review'} close={()=>setSheet(null)} title="Una última mirada" description="Recupera lo que quieras conservar antes de eliminar." error={error} returnTo={session?'review-trigger':'filter-trigger'}><p className="sheet-intro">{reviewAssets.length?<><strong>{reviewAssets.length} para eliminar</strong>{freeLabel&&<> · liberarías {reviewBytes.partial?'al menos ':''}<strong>{freeLabel}</strong></>}. Aún no se ha borrado nada.</>:'No hay nada marcado para eliminar.'}</p>

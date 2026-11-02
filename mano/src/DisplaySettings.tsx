@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { CameraIcon, FilmStripIcon, HandTapIcon, BooksIcon, ImageSquareIcon, CloudArrowDownIcon, StampIcon } from '@phosphor-icons/react';
+import { CameraIcon, FilmStripIcon, HandTapIcon, BooksIcon, ImageSquareIcon, CloudArrowDownIcon, StampIcon, GraduationCapIcon, PlayCircleIcon } from '@phosphor-icons/react';
 import type { Asset } from './domain';
 import { DATE_FORMATS, formatDate, formatTime, polaroidCaption, type CloudMode, type DateFormat, type DisplaySettings, type OsdSize } from './meta';
 import { VhsOverlay } from './Vhs';
@@ -37,9 +37,9 @@ const dateOptions = (upper: boolean) => DATE_FORMATS.map(format => [format, form
 
 /** How information looks on cards. Applied live and saved; it never affects
  * which files the filters put in the pile. */
-export function DisplaySettingsPanel({ display, change, geek, setGeek, library }: {
+export function DisplaySettingsPanel({ display, change, geek, setGeek, library, replayIntro }: {
   display: DisplaySettings; change: (next: DisplaySettings) => void; geek: boolean; setGeek: (value: boolean) => void;
-  library: ReactNode;
+  library: ReactNode; replayIntro: () => void;
 }) {
   const photo = display.photo, video = display.video;
   const setPhoto = (patch: Partial<typeof photo>) => change({ ...display, photo: { ...photo, ...patch } });
@@ -47,6 +47,12 @@ export function DisplaySettingsPanel({ display, change, geek, setGeek, library }
   const caption = polaroidCaption(SAMPLE, SAMPLE_PLACE, photo, locale);
   return <div className="settings-panel">
     <p className="settings-intro">Cambia cómo se ven tus recuerdos. No cambia qué fotos entran en la pila.</p>
+    {/* The tour again, on purpose: first in Ajustes, a full button (no wait this time). */}
+    <fieldset>
+      <legend><GraduationCapIcon size={18}/>Introducción</legend>
+      <button className="sheet-action secondary replay-intro" onClick={replayIntro}><PlayCircleIcon size={20} weight="bold"/>Ver la introducción de nuevo</button>
+      <p className="settings-intro">Las tarjetas del primer día: los gestos, anclar, ampliar y la privacidad.</p>
+    </fieldset>
     <fieldset>
       <legend><CameraIcon size={18}/>Fotos · Polaroid</legend>
       <div className="setting-preview" aria-hidden="true"><div className="mini-polaroid paper"><img src={SAMPLE_PHOTO} alt="" draggable={false}/>

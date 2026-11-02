@@ -17,12 +17,19 @@ const follow={type:'spring',stiffness:900,damping:60,mass:.6} as const;
 
 /** Hold = isolate in place (a 3 % lift, no zoom jump); drag down to the single
  * dock to anchor; anchored = fit to screen with pinch/pan and controls. */
-export type InspectVideo={state:VideoState;retry:()=>void;download:()=>void;fullscreen:()=>void;openSettings:()=>void};
+/** `freeze`: the card's own <video>, whose current frame is painted under the
+ * held view while its element catches up — no flash of the first frame. */
+export type InspectVideo={state:VideoState;retry:()=>void;download:()=>void;fullscreen:()=>void;openSettings:()=>void;sound?:boolean;freeze?:HTMLVideoElement|null};
 export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed,geek,close,pin,video}: {asset:Asset;src?:string;cloud?:boolean;pinned:boolean;origin?:InspectOrigin;peek:{x:MotionValue<number>;y:MotionValue<number>};anchor:MotionValue<number>;armed:boolean;geek:boolean;close:()=>void;pin:()=>void;video?:InspectVideo}) {
  // An iCloud-only photo (no local preview under «Ahorrar iCloud») is not an
  // error: it says so, and anchoring downloads it (loadZoomPreview below).
  const [posterError,setPosterError]=useState(false);const [posterCloud,setPosterCloud]=useState(false);const [posterRetry,setPosterRetry]=useState(0);const [poster,setPoster]=useState(src);useEffect(()=>{let alive=true;if(src){setPoster(src);return;}setPosterError(false);setPosterCloud(false);thumbnail(asset,cardPixels(asset),posterRetry>0,false).then(value=>{if(alive)setPoster(value);}).catch(e=>{if(!alive)return;if(inCloudError(e))setPosterCloud(true);else setPosterError(true);});return()=>{alive=false;};},[asset.id,src,posterRetry]);
  const outer=useRef<HTMLDivElement>(null);const reduced=useReducedMotion();const frame=useRef<HTMLDivElement>(null);
+ // A held video continues from the card's frame: paint that frame once, under the
+ // video element, until the element shows the same moment (drawing a video into a
+ // canvas never reads its pixels back, so any source is allowed).
+ const freeze=video?.freeze;
+ const still=(c:HTMLCanvasElement|null)=>{const v=freeze;if(!v||!c||c.dataset.painted||v.readyState<2||!v.videoWidth)return;c.dataset.painted='1';try{const k=Math.min(1,960/Math.max(v.videoWidth,v.videoHeight));c.width=Math.round(v.videoWidth*k);c.height=Math.round(v.videoHeight*k);c.getContext('2d')?.drawImage(v,0,0,c.width,c.height);}catch{/* poster stays */}};
  // Anchored on purpose: fetch the larger preview once, decode it off screen and
  // swap it into the same <img> (same box, same object-fit): no blank frame and
  // no reframing. The card-size poster stays if this fails. Anchoring may fetch
@@ -71,7 +78,7 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
   {space&&<motion.div className="inspection-follow" style={{x:reduced?fingerX:smoothX,y:reduced?fingerY:smoothY}}><motion.div ref={frame} className="inspection-photo" tabIndex={pinned?0:-1} style={{left:space.target.x,top:space.target.y,width:space.target.width,height:space.target.height,'--inspect-ratio':asset.width/asset.height} as CSSProperties}
    initial={reduced?false:atOrigin} animate={pose} exit={reduced?{opacity:0,transition:{duration:0}}:{...atOrigin,transition:settle}}
    transition={reduced?{duration:0}:settle} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onClick={e=>e.stopPropagation()}>
-   {pinned&&video?<div className="inspection-media"><InlineVideo asset={asset} state={video.state} mode="full" retry={video.retry} download={video.download} fullscreen={video.fullscreen} openSettings={video.openSettings}>{poster?<img src={poster} alt="" draggable={false}/>:null}</InlineVideo></div>
+   {video?<div className="inspection-media"><InlineVideo asset={asset} state={video.state} mode={pinned?'full':'peek'} sound={video.sound} retry={video.retry} download={video.download} fullscreen={video.fullscreen} openSettings={video.openSettings}>{freeze?<canvas ref={still} className="inspection-still"/>:poster?<img src={poster} alt="" draggable={false}/>:null}</InlineVideo></div>
     :poster||(pinned&&sharp)||download?.src?<img src={pinned&&sharp?sharp:poster||download?.src} alt="Recuerdo ampliado" draggable={false} style={{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}}/>:<span>{posterCloud?(pinned?'':'En iCloud. Ancla para descargarla.'):posterError?'No se pudo cargar la imagen.':''}{posterError&&pinned&&<button onClick={()=>setPosterRetry(v=>v+1)}>Reintentar</button>}</span>}
    {!sharp&&(cloud||download?.status==='downloading')&&<CloudBadge className="cloud-download" state={download?.status==='ready'?undefined:download} lite={cloud} onRetry={()=>void cloudPreviews.retry(asset,'zoom').then(setSharp).catch(()=>{})}/>}
   </motion.div></motion.div>}
