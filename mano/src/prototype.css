@@ -570,6 +570,8 @@
 .new-album{padding:var(--cw-space-2) 0 var(--cw-space-3);border-bottom:1px solid var(--cw-line)}
 /* Review */
 .review-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--cw-space-2);width:100%}
+.review-window{display:block;position:relative}
+.review-row{position:absolute;left:0;right:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:inherit}
 .review-carousel .mobile-carousel-content{width:100%}
 .review-card{padding:5px 5px 0;border-radius:var(--cw-radius-xs);touch-action:pan-y;box-shadow:var(--cw-shadow-1)}
 .review-photo{aspect-ratio:4/5;overflow:hidden;background:var(--cw-paper-dim)}

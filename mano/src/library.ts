@@ -70,6 +70,22 @@ export function thumbnailInfo(asset: Asset, size = 900, refresh = false, network
   return request;
 }
 export const thumbnail = (asset: Asset, size = 900, refresh = false, network?: boolean) => thumbnailInfo(asset, size, refresh, network).then(t => t.src);
+/** Owned by the review loader, independently cancellable from the main pile.
+ * Local-only, as the previous review thumbnails; no original or iCloud fetch. */
+let reviewRequest = 0;
+export async function reviewThumbnail(asset: Asset, size: number, signal: AbortSignal): Promise<Thumb> {
+  const aborted = () => new DOMException('Revisión cancelada', 'AbortError');
+  if (signal.aborted) throw aborted();
+  if (asset.demo) return { src: demoPostcard(asset), cloud: !!asset.cloud };
+  const requestId = `review-grid-${Date.now()}-${++reviewRequest}`;
+  const cancel = () => { void Library.cancelThumbnailPreparation({ requestId }).catch(() => {}); };
+  signal.addEventListener('abort', cancel, { once: true });
+  try {
+    const result = await Library.thumbnail({ id: asset.id, size, network: false, requestId });
+    if (signal.aborted) throw aborted();
+    return { src: Capacitor.convertFileSrc(result.path), cloud: !!result.cloud };
+  } finally { signal.removeEventListener('abort', cancel); }
+}
 export const inCloudError = (error: unknown) => (error as { code?: string })?.code === 'IN_CLOUD';
 // Demo media spans several days so date filters and the counter can be tried;
 // only some carry a (demonstration) place, to show the layouts without one.

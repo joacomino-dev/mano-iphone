@@ -2,6 +2,12 @@
 
 Actualizado: 2026-11-04, America/Bogota. Codex trabaja solo por indicación del usuario.
 
+## Etapa 1 completada local — Codex
+
+Usuario autorizó el 2026-11-04 publicar únicamente la etapa 1 en rama `codex/stage1-review` y ejecutar el workflow macOS gratuito, sin fusionar main. Preparando compilación; IPA aún pendiente. Destino solicitado: Descargas. No generar IPA si falla el smoke test.
+
+Autorizada por el usuario el 2026-11-04. Trabajo aislado en `C:/Users/Joaco/Developer/CocoWash-stage1`, base `3cc28d2` (0.9.6/17), sin commit. Revisión por filas visibles, cola de dos miniaturas y cancelación. 90/90 pruebas, runtime28, TypeScript, builds web/assets nativos, Sites4 y QA demo en Edge pasan. [Entrega y pruebas físicas pendientes](../ai-handoff/STAGE_1_REVIEW.md), bitácora CW-CX-006. Sin publicación, merges ni cambios en el checkout anterior. Respaldo de 1.457 archivos y .git verificado en `C:/Users/Joaco/CocoWash-Backups/20261104-stage1-current`. Dependencias existentes copiadas, sin instalación. No iniciar etapa 2 sin autorización.
+
 ## Base vigente
 
 - **main contiene CocoWash 0.9.6, build 17**. [PR #2](https://github.com/joacomino-dev/mano-iphone/pull/2) fusionado en `769ef54f29bf4e3bef16be2d57273cd37e2025d7`; fuente `dddccbb36a7e78f06f6673e4de28866283f66917` de `claude/perf-stability-cotton`. Los árboles de fuente y merge son idénticos. Los commits posteriores solo actualizan esta documentación y CODEX_LOG.

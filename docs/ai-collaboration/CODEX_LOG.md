@@ -54,3 +54,29 @@ Decisiones relevantes: conservar mano fija, MotionValue y contratos de Fotos. Pr
 Validaciones: 84/84 tests del SHA remoto en memoria; 1.000 solicitudes de miniaturas simultáneas y duplicación prewarm/cloud reproducidas con puente simulado; IN_CLOUD no reintenta al cambiar preferencia; índice JS por ID reutiliza señales antiguas. Banco Node de derivaciones: 0,05/0,26/3,11/18,10 ms para 100/1.000/10.000/50.000 assets (medianas, 20 % pendientes, orden aleatorio, sin UI/PhotoKit). No son tiempos de iPhone. CI [41837796389](https://github.com/joacomino-dev/mano-iphone/actions/runs/41837796389): tests/runtime/build y sync verdes; smoke en curso al registrar.
 Impacto para Claude: no se requiere su intervención; continuar desde main remoto y el estado actualizado.
 Pendientes: resultado completo del CI, Instruments/iPhone, actualizar checkout local con base recuperable sin perder cambios. No implementar optimizaciones sin autorización.
+
+### CW-CX-006 — Etapa 1: revisión acotada
+Fecha: 2026-11-04, America/Bogota.
+Agente: Codex, solo.
+Tarea: etapa 1 autorizada; preservar presentación e interacciones.
+Estado: completada local, pendiente de integrar y aceptar físicamente.
+Base Git / commit: main 3cc28d2, clon independiente CocoWash-stage1; sin commit.
+Archivos modificados: ReviewGrid, review, library, ManoApp, prototype.css, test/script y documentación.
+Cambios realizados: filas visibles, cola de dos miniaturas, cancelación, deduplicación y foco conservado.
+Decisiones relevantes: conservar runtime, decisiones, Swift y animaciones; otras etapas excluidas.
+Validaciones: 90/90 tests, runtime28, TypeScript, builds web/assets nativos, Sites4 y QA Edge pasan. Con 1.000 demos: 18 tarjetas iniciales/30 intermedias; recuperación, persistencia, teclado, swipe/undo y geometría antes/después correctos. Respaldo original verificado.
+Impacto para Claude: [entrega y evidencia](../ai-handoff/STAGE_1_REVIEW.md); no requiere intervención.
+Pendientes: compilación/instalación autorizada, QA iPhone/VoiceOver e Instruments. Sin publicación ni etapa 2.
+
+### CW-CX-007 — Compilación de etapa 1 autorizada
+Fecha: 2026-11-04, America/Bogota.
+Agente: Codex.
+Tarea: publicar solo etapa 1 en rama independiente y generar IPA en Descargas.
+Estado: preparando publicación/CI; compilación todavía no verificada.
+Base Git / commit: 3cc28d2 más CW-CX-006; rama codex/stage1-review.
+Archivos modificados: solo documentación de distribución además de la entrega aprobada.
+Cambios realizados: autorización y destino registrados; sin cambios funcionales nuevos.
+Decisiones relevantes: main intacto, runner gratuito existente, smoke obligatorio y firma personal AltStore.
+Validaciones: checks locales de CW-CX-006 vigentes; revisar diff exacto antes de publicar.
+Impacto para Claude: etapa 2 no iniciada; no se necesita intervención.
+Pendientes: SHA/run/IPA y recibo de descarga; QA física sigue pendiente.
