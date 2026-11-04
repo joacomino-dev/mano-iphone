@@ -4,6 +4,8 @@ Actualizado: 2026-11-04, America/Bogota. Codex trabaja solo por indicación del 
 
 ## Entrega vigente — 0.9.7 / 18
 
+**Resultado final del smoke:** 41893615114 failure por timeout de XCTest en snapshot de accesibilidad de SpringBoard, después de «Permitir acceso a Fotos»; test 840 s/comando 1.320 s. No errores JS registrados. Diagnósticos descargados en evidencia all-097. No atribuir causa raíz concluyente ni QA nativa completa. El IPA de paquete 41899040312 sigue disponible y verificado, con este límite documentado también en su recibo JSON. Instalación física pendiente; no hay cambio de código por este diagnóstico.
+
 **IPA completo entregado:** `C:/Users/Joaco/Downloads/CocoWash-0.9.7-completa-ed47909f.ipa`, 5.553.746 bytes. Recibo JSON adyacente; CI de paquete [41899040312](https://github.com/joacomino-dev/mano-iphone/actions/runs/41899040312) success sobre ed47909, nuevas fuentes Swift compiladas Release para iPhone, tests/runtime/oráculo e integridad PASS. Hash y alcance en [informe](../ai-handoff/OPTIMIZATION_097.md). No reutiliza binario antiguo. **Smoke UI 41893615114 sigue en curso; aceptación física pendiente.** No declarar CI completo ni rendimiento físico verificados. Usuario instala con AltStore. Main intacto y 366 fuentes originales verificadas sin cambios.
 
 Distribución: full CI 41893615114 pasa preparación, 106 tests y build-for-testing; el log queda en arranque CoreSimulator. Se mantiene ese smoke y se separa el IPA personal en workflow build-ios-package.yml (misma rama, runner gratuito), con pruebas de lógica/runtime/oráculo y build Release real para iPhone. El paquete no acreditará por sí solo el smoke ni aceptación física; no atribuir todo el CI verde a esta entrega.

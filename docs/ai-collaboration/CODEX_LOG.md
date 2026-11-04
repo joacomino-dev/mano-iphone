@@ -151,3 +151,5 @@ Decisiones relevantes: separar artefacto personal de disponibilidad de CoreSimul
 Validaciones: CI paquete 41899040312 success (106 tests/runtime/oráculo/Release). Hash GitHub, CRC, versión, identidad, arm64, textura y marcador nativo nuevo PASS. QA demo de preferencias conserva mano/orden tras recarga. 366 fuentes originales intactas; main intacto.
 Impacto para Claude: entrega autosuficiente, no requiere intervención.
 Pendientes: full smoke 41893615114 en curso y pruebas físicas; ninguna medición de FPS/RAM de iPhone atribuida a escritorio.
+
+Actualización CW-CX-012: full smoke terminó failure: XCTest quedó solicitando snapshot de accesibilidad de SpringBoard después del permiso Fotos (840 s y watchdog 1.320 s); cero errores JS registrados. Diagnósticos 13357503774 descargados: captura posterior de SpringBoard y bootstrap tardío PhotosTCCNotificationExtension. Probable entorno de automatización, causa raíz no acreditada; no marcar QA funcional nativa completa. Recibo/estado actualizados; IPA Release 41899040312 y sus verificaciones permanecen válidos. Sin cambiar código ni repetir una ejecución idéntica.

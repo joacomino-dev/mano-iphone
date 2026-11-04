@@ -7,7 +7,12 @@ Tests/runtime, oráculo Swift y Release iPhone PASS. CRC, versión 0.9.7/18,
 bundle original, textura, marcador Swift nuevo y binario arm64 verificados.
 SHA256 IPA: `1db4dc6a25c79aedc05573c0fb740b557f5f8485dbc6493f4df304d2b7e4d68c`.
 No se reutilizó binario anterior; firma personal mediante AltStore.
-**Smoke UI 41893615114 aún en curso y aceptación física pendientes.** El verde
+**Smoke UI 41893615114 falló por timeout de XCTest al pedir el snapshot de
+accesibilidad de SpringBoard tras solicitar permiso de Fotos.** Excedió 840 s
+del test y el comando 1.320 s; no hubo errores JS registrados. La captura posterior
+muestra SpringBoard y el log retrasa PhotosTCCNotificationExtension hasta el cierre.
+Probable problema del entorno de automatización; no se declara causa raíz resuelta
+ni validación funcional nativa completa. Aceptación física pendiente. El verde
 del job de paquete acredita sus pasos, no esas validaciones. La comparación UI
 demo adicional confirma que calidad/iCloud no cambian mano ni orden al recargar
 (`policy-qa.mjs/json` en evidencia).
