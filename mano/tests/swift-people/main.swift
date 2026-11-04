@@ -1,4 +1,5 @@
 import Foundation
+import CoreGraphics
 
 func require(_ value: Bool, _ message: String) { if !value { fatalError(message) } }
 for size in [(300.0, 1000.0), (1000.0, 300.0), (1400.0, 1400.0)] {
