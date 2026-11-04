@@ -49,7 +49,13 @@ export const cacheBytes = (quality: PreviewQuality) => (PREVIEW_PROFILES[quality
 /** Where the stack will draw cards, set by the app as soon as it is measured.
  * Before that, a conservative phone-sized stage keeps the first requests sharp. */
 const sizing = { quality: 'balanced' as PreviewQuality, stage: { width: 340, height: 460 }, scale: 3, cloud: 'save' as 'save' | 'always' };
-export function setPreviewSizing(next: Partial<typeof sizing>) { Object.assign(sizing, next); }
+const policyListeners = new Set<() => void>();
+export const previewPolicyKey = () => `${sizing.quality}:${sizing.cloud}`;
+export const subscribePreviewPolicy = (listener: () => void) => { policyListeners.add(listener); return () => { policyListeners.delete(listener); }; };
+export function setPreviewSizing(next: Partial<typeof sizing>) {
+  const before = previewPolicyKey(); Object.assign(sizing, next);
+  if (before !== previewPolicyKey()) for (const listener of policyListeners) listener();
+}
 export const previewQuality = () => sizing.quality;
 /** May a card preview download from iCloud by itself? («Descargar siempre»). */
 export const cloudDownloads = () => sizing.cloud === 'always';

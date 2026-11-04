@@ -1,11 +1,11 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type PointerEvent } from 'react';
 import { motion, useReducedMotion, useSpring, useTransform, type MotionValue } from 'motion/react';
 import { PushPinIcon, XIcon, PlusIcon, MinusIcon } from '@phosphor-icons/react';
 import { Library, thumbnail, inCloudError, type AssetMetadata } from './library';
 import { InlineVideo } from './InlineVideo';
 import { loadZoomPreview, cloudPreviews, type VideoState } from './media';
 import { CloudBadge, useCloud } from './Cloud';
-import { cardPixels } from './preview';
+import { cardPixels, previewPolicyKey, subscribePreviewPolicy } from './preview';
 import { formatBytes } from './meta';
 import type { Asset } from './domain';
 
@@ -21,6 +21,7 @@ const follow={type:'spring',stiffness:900,damping:60,mass:.6} as const;
  * held view while its element catches up — no flash of the first frame. */
 export type InspectVideo={state:VideoState;retry:()=>void;download:()=>void;fullscreen:()=>void;openSettings:()=>void;sound?:boolean;freeze?:HTMLVideoElement|null};
 export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed,geek,close,pin,video}: {asset:Asset;src?:string;cloud?:boolean;pinned:boolean;origin?:InspectOrigin;peek:{x:MotionValue<number>;y:MotionValue<number>};anchor:MotionValue<number>;armed:boolean;geek:boolean;close:()=>void;pin:()=>void;video?:InspectVideo}) {
+ const policy=useSyncExternalStore(subscribePreviewPolicy,previewPolicyKey);
  // An iCloud-only photo (no local preview under «Ahorrar iCloud») is not an
  // error: it says so, and anchoring downloads it (loadZoomPreview below).
  const [posterError,setPosterError]=useState(false);const [posterCloud,setPosterCloud]=useState(false);const [posterRetry,setPosterRetry]=useState(0);const [poster,setPoster]=useState(src);useEffect(()=>{let alive=true;if(src){setPoster(src);return;}setPosterError(false);setPosterCloud(false);thumbnail(asset,cardPixels(asset),posterRetry>0,false).then(value=>{if(alive)setPoster(value);}).catch(e=>{if(!alive)return;if(inCloudError(e))setPosterCloud(true);else setPosterError(true);});return()=>{alive=false;};},[asset.id,src,posterRetry]);
@@ -36,7 +37,7 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
  // from iCloud — joining the download that holding the card already started —
  // and the card's own iCloud indicator follows it here, with real progress.
  const [sharp,setSharp]=useState('');const download=useCloud(asset.kind==='video'?undefined:asset);
- useEffect(()=>{if(!pinned||asset.kind==='video')return;const controller=new AbortController();loadZoomPreview(asset,controller.signal).then(value=>{if(!controller.signal.aborted)setSharp(value);}).catch(()=>{});return()=>controller.abort();},[pinned,asset.id]);
+ useEffect(()=>{if(!pinned||asset.kind==='video')return;const controller=new AbortController();loadZoomPreview(asset,controller.signal).then(value=>{if(!controller.signal.aborted)setSharp(value);}).catch(()=>{});return()=>controller.abort();},[pinned,asset.id,asset.modified,policy]);
  const [space,setSpace]=useState<{target:Box;origin:Box;scale:number}|null>(null);
  const [meta,setMeta]=useState<AssetMetadata|null>(null);const [metaError,setMetaError]=useState('');const [zoom,setZoom]=useState(1);const [pan,setPan]=useState({x:0,y:0});
  const points=useRef(new Map<number,{x:number;y:number}>());const base=useRef({distance:0,zoom:1,x:0,y:0,panX:0,panY:0});

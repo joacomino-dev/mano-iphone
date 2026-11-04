@@ -4,15 +4,16 @@ import { Carousel } from './mobile';
 import type { Asset } from './domain';
 import { reviewThumbnail, inCloudError, type Thumb } from './library';
 import { sharpPreview, subscribeSharp } from './media';
-import { thumbPixels } from './preview';
+import { thumbPixels, previewPolicyKey, subscribePreviewPolicy } from './preview';
 import { CocoLoader, Deferred } from './Loader';
 import { ReviewLoader, reviewRows, reviewHeight } from './review';
 
 function ReviewPhoto({ asset, loader, open }: { asset: Asset; loader: ReviewLoader<Thumb>; open: boolean }) {
+  const policy = useSyncExternalStore(subscribePreviewPolicy, previewPolicyKey);
   const [thumb, setThumb] = useState<Thumb>();
   const [error, setError] = useState(false), [cloud, setCloud] = useState(false), [retry, setRetry] = useState(0);
   const sharp = useSyncExternalStore(subscribeSharp, () => sharpPreview(asset));
-  const size = thumbPixels(), key = `${asset.id}:${asset.modified ?? 0}:${size}`;
+  const size = thumbPixels(), key = `${asset.id}:${asset.modified ?? 0}:${size}:${policy}`;
   const src = (retry === 0 ? sharp : undefined) || thumb?.src;
   useEffect(() => {
     if (!open || (sharp && retry === 0)) return;

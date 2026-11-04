@@ -9,7 +9,7 @@ import { NO_HAND, playable, lockedHand, dealHand, afterDecision, cycleHand, rest
 import { Library, isNative, demoAssets, thumbnailInfo, inCloudError, type Album, type PhotoPermission } from './library';
 import { useLibraryIndex, enrich } from './indexer';
 import { AssetPreloader } from './preload';
-import { prepareReviewAsset, VideoStore, prewarm, sharpPreview, subscribeSharp, cloudPreviews, type PreparedMedia, type VideoState } from './media';
+import { prepareReviewAsset, VideoStore, prewarm, sharpPreview, subscribeSharp, cloudPreviews, resetPreviewPolicy, type PreparedMedia, type VideoState } from './media';
 import { CloudBadge, CloudPlaceholder, useCloud } from './Cloud';
 import { InlineVideo, type VideoControl } from './InlineVideo';
 import { Filters } from './Filters';
@@ -30,7 +30,7 @@ import { DecisionBar } from './DecisionBar';
 import { Wordmark, PileProgress } from './Chrome';
 import { Character } from './Characters';
 import { assignToAlbum, afterAlbum } from './album';
-import { cardBox, cardPixels, thumbPixels, setPreviewSizing, cloudDownloads } from './preview';
+import { cardBox, cardPixels, thumbPixels, setPreviewSizing, cloudDownloads, previewPolicyKey, subscribePreviewPolicy } from './preview';
 import '@fontsource/ibm-plex-mono/latin-500.css';
 import '@fontsource/ibm-plex-sans/latin-400.css';
 import '@fontsource/ibm-plex-sans/latin-500.css';
@@ -65,24 +65,25 @@ function savedGroups(items: Asset[]) {
  * `quiet`: the owner (a video card) shows the one error state; this only
  * renders the poster or a neutral placeholder, so messages never stack. */
 function Photo({ asset, small=false, pool, quiet=false }: { asset: Asset; small?: boolean; pool?: AssetPreloader<PreparedMedia>|null; quiet?: boolean }) {
+  const policy = useSyncExternalStore(subscribePreviewPolicy, previewPolicyKey);
   const [own, setOwn] = useState<{src:string;cloud:boolean;missing:boolean}|null>(null); const [error, setError] = useState(false); const [retry, setRetry] = useState(0);
   useSyncExternalStore(useCallback((listener:()=>void)=>pool?pool.subscribeItem(asset,listener):()=>{},[pool,asset.id,asset.modified]), ()=>pool?.version(asset)??'');
   const entry = retry===0 ? pool?.peek(asset) : undefined;
   const waiting = entry?.status==='queued'||entry?.status==='loading';
-  const ready = entry?.status==='ready' ? entry.value : undefined;
+  const ready = entry?.value;
   const cloud = useCloud(small ? undefined : asset);
   // Anchored once and downloaded: that sharper version stays on the card.
   const upgraded = useSyncExternalStore(subscribeSharp, () => sharpPreview(asset));
   const needOwn = !ready && !waiting;
-  useEffect(() => { if (!needOwn) return; let alive = true; setError(false); setOwn(null);
-    thumbnailInfo(asset, small?thumbPixels():cardPixels(asset), retry>0, false)
+  useEffect(() => { if (!needOwn) return; let alive = true; const controller=new AbortController(); setError(false);
+    thumbnailInfo(asset, small?thumbPixels():cardPixels(asset), retry>0, false, controller.signal, undefined, true)
       .then(t => { if (!alive) return; setOwn({src:t.src,cloud:t.cloud,missing:false}); if (t.cloud&&!small&&cloudDownloads()) void cloudPreviews.fetch(asset,'card').catch(()=>{}); })
       .catch(e => { if (!alive) return; if (inCloudError(e)) { setOwn({src:'',cloud:true,missing:true}); if (!small&&cloudDownloads()) void cloudPreviews.fetch(asset,'card').catch(()=>{}); } else setError(true); });
-    return () => { alive = false; }; }, [asset.id, asset.modified, retry, small, needOwn]);
+    return () => { alive = false; controller.abort(); }; }, [asset.id, asset.modified, retry, small, needOwn, policy]);
   const local = ready ?? (own ? { poster: own.src, cloud: own.cloud, missing: own.missing } : undefined);
   // «Descargar siempre»: a lite card whose download job was dropped (e.g. back
   // through undo) asks again; the full preview is already on the iPhone by then.
-  useEffect(() => { if (!small && local?.cloud && !cloud && cloudDownloads()) void cloudPreviews.fetch(asset,'card').catch(()=>{}); }, [small, !!local?.cloud, !!cloud, asset.id]);
+  useEffect(() => { if (!small && local?.cloud && !cloud && cloudDownloads()) void cloudPreviews.fetch(asset,'card').catch(()=>{}); }, [small, !!local?.cloud, !!cloud, asset.id, policy]);
   const src = upgraded ?? (cloud?.src||undefined) ?? (local?.poster||undefined);
   const alt = asset.kind === 'video' ? 'Vista previa de vídeo' : 'Foto del carrete';
   const download = () => { haptic('light'); void cloudPreviews.fetch(asset,'card',true).catch(()=>{}); };
@@ -288,7 +289,9 @@ export function ManoApp() {
   });
   const cancelWarmup=()=>{sessionNumber.current++;warmingNow.current=false;prepareWindow([],String(sessionNumber.current));warmWait.current?.();setWarming(false);setLoading(false);const groups=deferredGroups.current;if(groups){deferredGroups.current=null;setAssets(prev=>prev.map(a=>({...a,group:groups.get(a.id)})));}};
   useEffect(()=>{document.title='CocoWash · Lo que importa, se queda';installErrorReporting();},[]);
-  useEffect(()=>{saveDisplay(display);setHapticsEnabled(display.haptics);setPreviewSizing({quality:display.quality,cloud:display.cloud,scale:typeof window!=='undefined'?window.devicePixelRatio||2:2});},[display]);
+  const appliedPolicy=useRef('');
+  useEffect(()=>{saveDisplay(display);setHapticsEnabled(display.haptics);setPreviewSizing({quality:display.quality,cloud:display.cloud,scale:typeof window!=='undefined'?window.devicePixelRatio||2:2});
+    const key=previewPolicyKey();if(appliedPolicy.current&&appliedPolicy.current!==key){resetPreviewPolicy();preloader.current?.invalidate();videos.current?.reconcilePolicy();}appliedPolicy.current=key;},[display]);
   useEffect(()=>{try{localStorage.setItem('cocowash-round-v1',JSON.stringify(stats));}catch{/* summary is optional */}},[stats]);
   // Long enough to read once, never lingering: 2.5–4.5 s by length.
   useEffect(()=>{if(!notice)return;const t=setTimeout(()=>setNoticeState(null),Math.min(4500,Math.max(2500,1600+notice.text.length*45)));return()=>clearTimeout(t);},[notice]);

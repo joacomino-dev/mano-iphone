@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import type { Asset } from './domain';
-import { Library, isNative, thumbnailInfo, inCloudError } from './library';
+import { Library, isNative, thumbnailInfo, inCloudError, clearThumbnailReferences } from './library';
 import { cardPixels, cloudDownloads, zoomPixels } from './preview';
 
 /** Poster only. Videos prepare separately (VideoStore) so a slow or failed
@@ -122,6 +122,10 @@ class CloudPreviews {
   private jobs = new Map<string, CloudJob>();
   private listeners = new Map<string, Set<() => void>>();
   private running = 0;
+  reset() {
+    const jobs = [...this.jobs.values()]; this.jobs.clear();
+    for (const job of jobs) { job.controller.abort(); job.reject(aborted()); this.notify(job.key); }
+  }
 
   state(asset: Asset): CloudState | undefined { return this.jobs.get(videoKey(asset))?.state; }
   subscribe(asset: Asset, listener: () => void) {
@@ -227,6 +231,10 @@ class CloudPreviews {
   private notify(key: string) { for (const listener of [...(this.listeners.get(key) ?? [])]) listener(); }
 }
 export const cloudPreviews = new CloudPreviews();
+export function resetPreviewPolicy() {
+  clearThumbnailReferences(); cloudPreviews.reset(); sharp.clear();
+  for (const listener of sharpListeners) listener();
+}
 
 /** The larger preview for the anchored/zoomed view, on demand. Decoded off
  * screen, so the caller can swap it into the same <img> without a blank frame
@@ -235,10 +243,10 @@ export const cloudPreviews = new CloudPreviews();
  * or the one started when the person began holding the card). */
 export async function loadZoomPreview(asset: Asset, signal: AbortSignal): Promise<string> {
   if (signal.aborted) throw aborted();
-  signal.addEventListener('abort', () => cloudPreviews.yieldPriority(asset), { once: true });
-  const src = await cloudPreviews.fetch(asset, 'zoom', true);
-  if (signal.aborted) throw aborted();
-  return src;
+  const cancel = () => cloudPreviews.yieldPriority(asset);
+  signal.addEventListener('abort', cancel, { once: true });
+  try { const src = await cloudPreviews.fetch(asset, 'zoom', true); if (signal.aborted) throw aborted(); return src; }
+  finally { signal.removeEventListener('abort', cancel); }
 }
 
 /* ---------- Video preparation ---------- */
@@ -288,6 +296,21 @@ export class VideoStore {
   private allowed = new Set<string>();
   private progressListener?: Promise<{ remove(): Promise<void> }>;
   private disposed = false;
+  private network = cloudDownloads();
+  reconcilePolicy() {
+    const network = cloudDownloads(); if (network === this.network) return;
+    this.network = network;
+    for (const asset of this.wanted.values()) {
+      const key = videoKey(asset), state = this.get(asset);
+      if (network && state.status === 'error' && state.failure === 'cloud') {
+        this.set(key, idle); this.enqueue(asset, false);
+      } else if (!network && !this.allowed.has(key) && state.status !== 'ready') {
+        this.cancel(key); this.queue = this.queue.filter(q => videoKey(q.asset) !== key);
+        this.set(key, idle); this.enqueue(asset, false);
+      }
+    }
+    this.pump();
+  }
 
   get(asset: Asset): VideoState { return this.states.get(videoKey(asset)) ?? idle; }
 
