@@ -185,3 +185,17 @@ Validaciones locales iniciales: 110 tests, TypeScript, runtime28, web/native-web
 Sites4 PASS. Swift/API, exactitud/privacidad y rendimiento físicos pendientes.
 Impacto para Claude: no requerido; contratos de borrado/favoritas permanecen.
 Pendientes: compilar Swift27 y probar UI/errores/cancelación antes de entregar.
+
+Cierre CW-CX-014 — 9.7.1/19 **completada en rama, pendiente de aceptación física**.
+Fuente 268224a; [CI 41936437603](https://github.com/joacomino-dev/mano-iphone/actions/runs/41936437603)
+success. 111 tests/runtime28/TypeScript/builds/Sites4; Edge normal/reducido,
+respuestas tardías, revelado interrumpido, membresía estable, input nativo sin
+provider de preview y undo30 tras recarga PASS. Swift: API pública, geometría300,
+firmas exactas y SQLite50.000 metadatos con actualización/borrado/reapertura PASS.
+IPA nuevo Release arm64 en Descargas, verificado con digest GitHub/CRC/versión/
+textura/símbolos y enlace débil de Media Intelligence; [recibo y QA](../ai-handoff/COCOWASH_971.md).
+Sin dependencias nuevas, instalación, Release ni merge. Main remoto sigue a3dba60.
+Tres fallos iniciales de compilación (CoreGraphics, literales Swift y tipo del
+bridge) corregidos sin debilitar checks. Historial por commits reversible.
+CW-HO-007 lista para usuario; precisión/censura real y rendimiento físico pendientes.
+No se atribuyen resultados de mocks o 50.000 filas a 50.000 fotografías.

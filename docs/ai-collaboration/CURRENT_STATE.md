@@ -10,6 +10,18 @@ Alcance del documento del usuario: Personas local/incremental, Breakup Mode,
 Terminar, logo, nube y undo 30. Usuario confirma iOS 27. API oficial elegida:
 Media Intelligence / FaceGroupAnalyzer, iOS 27+, gate de inicialización real.
 Se conservan iOS 17+ para el resto y todos los contratos de PhotoKit.
+Detalle/QA: [COCOWASH_971](../ai-handoff/COCOWASH_971.md).
+111 pruebas Node, runtime28, TypeScript, web/native-web, Sites4 y regresiones
+Edge PASS. [CI final 41936437603](https://github.com/joacomino-dev/mano-iphone/actions/runs/41936437603)
+success para `268224a`: API pública, oráculos Swift, SQLite 50.000 metadatos,
+sync y Release iPhone. IPA de desarrollo verificado en Descargas:
+`CocoWash-9.7.1-desarrollo-268224a9.ipa` (5.665.113 bytes), SHA256
+`729dfa41479f9757540c9412c026ba5a3b812db4a9e3e9f45d768eca56e32b7a`.
+Mach-O arm64 enlaza Media Intelligence **débilmente**, mínimo iOS17; fotos, textura,
+versión/build, CRC y digest de GitHub verificados. Sin instalación ni publicación de app.
+CW-HO-007: Codex → usuario, **lista para pruebas físicas**, no aceptada ni integrada.
+Precisión, censura con fotos reales y memoria/calor físicos pendientes; no son métricas
+acreditadas por fixtures ni por la prueba de metadatos.
 No modificar main, publicar app ni distribuir una entrega definitiva.
 Los cambios aparentes del runtime son el estado CRLF previo; no tocarlos.
 
@@ -38,11 +50,11 @@ actualizan después con un commit solo documental. Cierre: [CW-CX-013](CODEX_LOG
 
 - [Smoke 41893615114](https://github.com/joacomino-dev/mano-iphone/actions/runs/41893615114): failure por timeout de snapshot de accesibilidad de SpringBoard tras permiso Fotos. No errores JS registrados; causa raíz no acreditada. Mantener separado de la aceptación física y del CI de paquete.
 - Vision conserva peor caso cuadrático; buckets temporales acotados y prioridad multimedia mejorados. Instrumentar antes de sustituir agrupación.
-- No hay autorización para nuevas funcionalidades o refactorizaciones fuera del alcance entregado.
+- La actualización 9.7.1 está autorizada en su rama; no integrar ni publicar sin nueva autorización.
 
 ## Continuidad y recuperación
 
-Checkout de trabajo actualizado en rama `main`: `C:/Users/Joaco/Developer/CocoWash-stage1`. El checkout anterior
+Checkout de trabajo ahora en rama `cocowash/9.7.1`, con `main` estable preservada: `C:/Users/Joaco/Developer/CocoWash-stage1`. El checkout anterior
 en OneDrive, HEAD 76744e2 y sus cambios previos permanecen intactos. Respaldo de
 1.457 archivos/.git verificado en `C:/Users/Joaco/CocoWash-Backups/20261104-stage1-current`;
 366 fuentes originales revalidadas tras la implementación.

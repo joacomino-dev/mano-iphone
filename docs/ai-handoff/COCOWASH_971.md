@@ -7,6 +7,19 @@ estable permanecen intactos. Sin Release, App Store ni instalación en el teléf
 El IPA de desarrollo usa el bundle existente: instalarlo sustituye la app local;
 no ofrece instalación paralela. No desinstalar para probar: conserva las decisiones.
 
+## Paquete de prueba verificado
+
+Fuente `268224a9f49bb52bbc62c7b149d2d9b4327338c7`;
+[CI 41936437603](https://github.com/joacomino-dev/mano-iphone/actions/runs/41936437603) **success**.
+111 pruebas Node, runtime28, TypeScript, web/native-web, Sites4, regresiones Edge,
+oráculos Swift de firmas/geometría y checkpoint de 50.000 registros sintéticos PASS.
+IPA: `C:/Users/Joaco/Downloads/CocoWash-9.7.1-desarrollo-268224a9.ipa`;
+5.665.113 bytes; SHA256 `729dfa41479f9757540c9412c026ba5a3b812db4a9e3e9f45d768eca56e32b7a`.
+CRC/identidad/textura, digest de artefacto y símbolos de agrupación nativa verificados;
+Media Intelligence enlazada débilmente con mínimo iOS17. No es validación de ejecución
+en iOS17 ni de reconocimiento/censura en iPhone. Recibo JSON junto al IPA.
+Solo documentación cambia después de ese commit, manteniendo idéntica la app compilada.
+
 ## Implementación
 
 - Personas, dentro de Filtros: consentimiento explícito, grupos anónimos con
