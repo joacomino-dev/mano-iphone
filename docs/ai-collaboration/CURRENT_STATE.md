@@ -1,53 +1,36 @@
 # CocoWash — estado operativo conocido
 
-Actualizado: 2026-11-04, America/Bogota. Codex trabaja solo por indicación del usuario; no se requiere disponibilidad de Claude.
+Actualizado: 2026-11-04, America/Bogota. Codex trabaja solo por indicación del usuario.
 
-## Base vigente e integración
+## Base vigente
 
-- **main contiene CocoWash 0.9.6, build 17**. El usuario autorizó actualizar GitHub durante la auditoría. PR [#2](https://github.com/joacomino-dev/mano-iphone/pull/2) fusionado: `769ef54f29bf4e3bef16be2d57273cd37e2025d7`.
-- Fuente integrada: `dddccbb36a7e78f06f6673e4de28866283f66917`, rama `claude/perf-stability-cotton`, 32 commits sobre el antiguo main `f6133d4`. El árbol del merge coincide exactamente con el de esa fuente; no se implementaron optimizaciones nuevas.
-- La rama vigente incorpora PR #1 (`claude/decision-bar-favoritas`, 0.9.2). Se conservaron las ramas. `claude/ci-probe-flat-paper` es una sonda de CI y no debe integrarse.
-- **El checkout Windows sigue en `76744e2`, con fuentes 0.7 y documentos locales modificados previos.** No se hizo fetch, checkout, reset, stash, commit local ni se sobrescribió trabajo. Su commit de herramientas Windows sigue sin publicarse. Antes de desarrollar, preparar una base local recuperable y actualizarla sin perder esos cambios.
+- **main contiene CocoWash 0.9.6, build 17**. [PR #2](https://github.com/joacomino-dev/mano-iphone/pull/2) fusionado en `769ef54f29bf4e3bef16be2d57273cd37e2025d7`; fuente `dddccbb36a7e78f06f6673e4de28866283f66917` de `claude/perf-stability-cotton`. Los árboles de fuente y merge son idénticos. Los commits posteriores solo actualizan esta documentación y CODEX_LOG.
+- El usuario autorizó actualizar GitHub durante la auditoría. Se incorporaron 32 commits existentes; no se implementaron optimizaciones nuevas. PR #1 también figura integrado. Ramas conservadas; no integrar `claude/ci-probe-flat-paper`.
+- **Windows permanece en `76744e2`, con fuentes 0.7 y documentos locales previos modificados.** Checkout, índice, herramientas sin publicar y cambios previos preservados; no hubo fetch, checkout, reset, stash ni commit local. Preparar una base recuperable antes de actualizar el checkout.
 
-## Validación y límites
+## Validación y aceptación
 
-- Codex ejecutó **84/84 pruebas de lógica** desde las fuentes remotas del SHA 0.9.6, cargadas en memoria con Node; sin instalar dependencias ni escribir fuentes. No equivale a compilar Swift ni a medir un iPhone.
-- CI anterior confirmado por API: [41530807373](https://github.com/joacomino-dev/mano-iphone/actions/runs/41530807373), verde sobre `1586a37` (0.9.5, build 16).
-- CI de la integración 0.9.6: [41837796389](https://github.com/joacomino-dev/mano-iphone/actions/runs/41837796389), **en curso al registrar esta entrada**. Verificar resultado y SHA antes de entregar un IPA. El artefacto de 0.9.5 no demuestra la compilación de 0.9.6.
-- No se actuó sobre el iPhone ni se confirmó ningún borrado. QA física de fluidez, iCloud, HEVC/slow-motion, continuidad de vídeo, VoiceOver y Dynamic Type sigue pendiente. El simulador usa papel plano; el IPA restaura la textura, por lo que el smoke no valida su coste gráfico real.
+- Codex ejecutó **84/84 pruebas de lógica** del SHA 0.9.6 en memoria, sin instalar dependencias ni sobrescribir fuentes. No equivale a QA física.
+- CI 0.9.5/16 confirmado verde: [41530807373](https://github.com/joacomino-dev/mano-iphone/actions/runs/41530807373), SHA `1586a37`.
+- CI de la integración 0.9.6: [41837796389](https://github.com/joacomino-dev/mano-iphone/actions/runs/41837796389). Tests/runtime/build y sync:ios pasaron; **smoke en curso al registrar**. Verificar resultado y SHA antes de entregar IPA. El simulador usa papel plano y el IPA restaura la textura.
+- **CW-HO-005 recibido técnicamente por CW-CX-005; aceptación física pendiente.** Sin acciones sobre iPhone ni confirmación de borrados. Pendientes: Instruments, iCloud/HEVC/slow-motion, continuidad de vídeo, VoiceOver y Dynamic Type.
 
-## CW-HO-005 — recibido por Codex; aceptación física pendiente
+## Auditoría — propuestas, no implementadas
 
-Leídos el código 0.9.6, [CLAUDE_PERF_CW-CL-027](../ai-handoff/CLAUDE_PERF_CW-CL-027.md) y CLAUDE_LOG hasta CW-CL-033. Recepción técnica, sin afirmar QA física completa.
+Conservar mano fija (`sequence.ts`), MotionValue, historial exacto, cachés de referencias acotadas, póster independiente del vídeo y contratos de Fotos. Priorizar:
 
-Conservar: secuencia canónica y mano fija (`sequence.ts`), arrastre por MotionValue, historial exacto, cachés de referencias acotadas, póster independiente del vídeo, originales de Fotos protegidos y borrado solo desde revisión con confirmación de Fotos.
+1. Revisión por visibilidad, cola global y cancelación: el grid monta todos los descartes; reproducidas 1.000 solicitudes simultáneas con puente simulado.
+2. Cachés e invalidación: thumbnailInfo omite cacheBytes; prewarm evita el coordinador iCloud (dos solicitudes del mismo ID/tamaño reproducidas); sizes/flags JS se indexan por ID y conservan resultados tras una edición.
+3. Política de vídeo y presupuesto: IN_CLOUD no reintenta al cambiar a Descargar siempre; diez vídeos protegidos pueden agotar la caché.
+4. Medir Vision: caché de huellas y selección lineal por foto existentes, pero recorrido total cuadrático en el peor caso.
 
-## Auditoría de rendimiento — propuestas, no implementadas
+Las optimizaciones esperan autorización expresa. Detalle y banco Node en [CODEX_LOG, CW-CX-005](CODEX_LOG.md); informe completo en la conversación de auditoría del 2026-11-04. Mapas de octubre son históricos: contrastar con el SHA vigente.
 
-- Revisión: el grid monta todos los descartes y solicita miniaturas fuera de la cola acotada. Ensayo con puente simulado: 1.000 solicitudes simultáneas. Prioridad: carga por visibilidad, cola global y cancelación.
-- Caché: `thumbnailInfo` omite `cacheBytes`; esos caminos no disparan poda. `prewarm` también evita el coordinador iCloud: reproducidas dos solicitudes del mismo ID/tamaño, una sin seguimiento.
-- Índice: sizes/flags se guardan por ID en JS; una edición con el mismo ID conserva resultados viejos. Native sí versiona por modificación. Unificar invalidación.
-- Vídeo: cambiar de Ahorrar a Descargar siempre no reintenta un error IN_CLOUD existente. La ventana fija de hasta diez vídeos puede agotar el presupuesto de archivos protegidos; medir y priorizar por bytes.
-- Vision: hay caché persistente de huellas y selección lineal por imagen, pero el recorrido total de representantes sigue siendo cuadrático en el peor caso. Medir antes de cambiar el agrupamiento.
-- No reinstalar herramientas, sustituir la arquitectura ni eliminar animaciones por conjetura. Las propuestas esperan autorización expresa. Informe completo entregado en la conversación de auditoría del 2026-11-04.
+Referencias: [PROTOCOL](PROTOCOL.md), [CLAUDE_LOG](CLAUDE_LOG.md), [rendimiento 0.9.3](../ai-handoff/CLAUDE_PERF_CW-CL-027.md), [PROJECT_MAP](../ai-handoff/PROJECT_MAP.md), [UI_ARCHITECTURE](../ai-handoff/UI_ARCHITECTURE.md), [UI_BASELINE](../ai-handoff/UI_BASELINE.md).
 
-## Referencias
+## Historial conservado — snapshots anteriores, no estado vigente
 
-[CLAUDE_LOG](CLAUDE_LOG.md), [CODEX_LOG](CODEX_LOG.md), [PROTOCOL](PROTOCOL.md), [PROJECT_MAP](../ai-handoff/PROJECT_MAP.md), [UI_ARCHITECTURE](../ai-handoff/UI_ARCHITECTURE.md), [UI_BASELINE](../ai-handoff/UI_BASELINE.md), [notas 0.9.5](../ai-handoff/NEXT_0.9.5_PROMPT.md). Los mapas de octubre contienen descripciones históricas: contrastar siempre con el SHA vigente.
 
-- **CW-CL-022 / CW-CL-023 (PR #1, rama claude/decision-bar-favoritas, 2026-11-01):** barra de decisiones cartoon + set «Favoritas»; 0.8.0 (8): pantalla principal en el mismo lenguaje, wordmark Fredoka, icono recoloreado, Terminar→última mirada→cerrar vuelve a las cartas, VHS y sellos. IPA por workflow_dispatch en la rama. Ver CLAUDE_LOG.
-- **CW-CL-013 (sin commit):** mejoras UI/UX del usuario (vídeo, onboarding, anclaje, metadatos Polaroid/VHS, ajustes, contador). Checks Windows verdes; falta CI macOS (Swift + XCTest actualizado) y QA en iPhone de vídeo local/iCloud. Ver CLAUDE_LOG.
-- Último Claude anterior: CW-CL-005, publicación y preparación de la compilación. Antes: CW-CL-002/003
-  (rediseño y render nativo simulado). Informe [CLAUDE_REDESIGN](../ai-handoff/CLAUDE_REDESIGN_CW-CL-002.md).
-- Último Codex: CW-CX-003, recepción, revisión técnica, orden aprobado actualizado y Fase 0 completada.
-- Protección: respaldo externo verificado en
-  `C:/Users/Joaco/CocoWash-Backups/20261030T173452Z-pre-redesign/` (estado previo al rediseño).
-- CI: run iOS [41124449495](https://github.com/joacomino-dev/mano-iphone/actions/runs/41124449495)
-  sobre 8e73093, en curso al cerrar Claude; resultado sin consultar. Un push que toque `mano/**`
-  en main cancela el run en curso del mismo ref (`cancel-in-progress`).
-- Pendiente: revisión del diff por Codex (CW-HO-003), QA en dispositivo (hoja nativa, VoiceOver,
-  Dynamic Type, vídeo), release/IPA verificado. Playwright test:runtime no se ejecutó.
-- CW-CL-006: run 41124449495 falló por bloqueo ibtool/actool con arranque paralelo del simulador; corrección (compilar antes de arrancar + selectores del rediseño) publicada; ver nuevo run en CLAUDE_LOG.
 - Próximo: usuario revisa resultado del run 41124449495. Codex confirmó `in_progress`
   en CW-CX-004 y se detuvo sin polling. No hizo push: el único commit local añade
   adaptador/herramientas Windows, no cambia la app que ya se está compilando.
