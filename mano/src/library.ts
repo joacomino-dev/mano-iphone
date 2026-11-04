@@ -73,16 +73,17 @@ export function thumbnailInfo(asset: Asset, size = 900, refresh = false, network
     try {
       const result = await Library.thumbnail({ id: asset.id, size, network, requestId, cacheBytes: budget });
       if (owned.aborted) throw new DOMException('Solicitud cancelada', 'AbortError');
-      return { src: Capacitor.convertFileSrc(result.path), cloud: !!result.cloud };
+      const src = Capacitor.convertFileSrc(result.path);
+      return { src: refresh ? `${src}${src.includes('?') ? '&' : '?'}cw=${requestId}` : src, cloud: !!result.cloud };
     } finally { owned.removeEventListener('abort', cancel); void listener?.then(l => l.remove()).catch(() => {}); }
   }, signal, priority, progress);
 }
-export const thumbnail = (asset: Asset, size = 900, refresh = false, network?: boolean) => thumbnailInfo(asset, size, refresh, network).then(t => t.src);
+export const thumbnail = (asset: Asset, size = 900, refresh = false, network?: boolean, signal?: AbortSignal) => thumbnailInfo(asset, size, refresh, network, signal).then(t => t.src);
 /** Owned by the review loader, independently cancellable from the main pile.
  * Local-only, as the previous review thumbnails; no original or iCloud fetch. */
-export async function reviewThumbnail(asset: Asset, size: number, signal: AbortSignal): Promise<Thumb> {
+export async function reviewThumbnail(asset: Asset, size: number, signal: AbortSignal, refresh = false): Promise<Thumb> {
   if (signal.aborted) throw new DOMException('Revisión cancelada', 'AbortError');
-  return thumbnailInfo(asset, size, false, false, signal);
+  return thumbnailInfo(asset, size, refresh, false, signal);
 }
 export const inCloudError = (error: unknown) => (error as { code?: string })?.code === 'IN_CLOUD';
 // Demo media spans several days so date filters and the counter can be tried;

@@ -18,7 +18,7 @@ function ReviewPhoto({ asset, loader, open }: { asset: Asset; loader: ReviewLoad
   useEffect(() => {
     if (!open || (sharp && retry === 0)) return;
     const controller = new AbortController(); setError(false); setCloud(false);
-    void loader.request(key, signal => reviewThumbnail(asset, size, signal), controller.signal)
+    void loader.request(key, signal => reviewThumbnail(asset, size, signal, retry > 0), controller.signal)
       .then(value => { if (!controller.signal.aborted) setThumb(value); })
       .catch(e => { if (!controller.signal.aborted) { if (inCloudError(e)) setCloud(true); else setError(true); } });
     return () => controller.abort();

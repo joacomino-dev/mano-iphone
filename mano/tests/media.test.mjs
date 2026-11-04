@@ -10,8 +10,18 @@ const server=await createServer({configFile:false,ssr:{noExternal:['@capacitor/c
 }]});
 const {VideoStore}=await server.ssrLoadModule('/src/media.ts');
 const {setPreviewSizing}=await server.ssrLoadModule('/src/preview.ts');
+const {thumbnailInfo,reviewThumbnail}=await server.ssrLoadModule('/src/library.ts');
 const video=id=>({id,kind:'video',duration:1,modified:1,bytes:100});
 try {
+ await test('review and card share previews, every native call has a budget and stale paths refresh',async()=>{
+  let calls=0,options;
+  fake.thumbnail=async o=>{calls++;options=o;return {path:'/same.jpg',cloud:false};};
+  const asset={...video('preview'),kind:'photo'};
+  const [a,b]=await Promise.all([thumbnailInfo(asset,512,false,false),reviewThumbnail(asset,512,new AbortController().signal)]);
+  assert.equal(calls,1);assert.equal(a.src,b.src);assert.ok(options.cacheBytes>0);assert.equal(options.network,false);
+  const refreshed=await thumbnailInfo(asset,512,true,false);
+  assert.equal(calls,2);assert.match(refreshed.src,/\?cw=preview-/);assert.notEqual(refreshed.src,a.src);
+ });
  await test('video iCloud error automatically retries after switching to always download',async()=>{
   setPreviewSizing({cloud:'save'});let calls=0;
   fake.prepareVideo=async options=>{calls++;if(!options.network)throw Object.assign(Error('cloud'),{code:'IN_CLOUD'});return {path:'/video.mp4',bytes:100};};

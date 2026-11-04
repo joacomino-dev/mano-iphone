@@ -953,6 +953,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                 items.sort { ($0.creationDate ?? .distantPast) < ($1.creationDate ?? .distantPast) }
                 var prints: [(index: Int, feature: VNFeaturePrintObservation)] = []; var skipped = 0
                 var signatures = SignatureIndex()
+                var signatureVisits = 0
                 var parent = Array(0..<items.count)
                 func root(_ n: Int) -> Int { var k = n; while parent[k] != k { k = parent[k] }; return k }
                 // Feature prints persist per item (identifier + edit date) in Caches, so a
@@ -999,6 +1000,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                             // Bound expensive Vision comparisons to 64 per image, rather than all prints.
                             // Exact candidates and ties, with bounded reusable distance buckets.
                             let candidates = signatures.nearest(signature)
+                            signatureVisits += signatures.visitedNodes
                             var nearest: (Int, Float)?
                             for i in candidates {
                                 if self.cancelled() { break }
@@ -1018,6 +1020,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                     for file in files where !livePrints.contains(file) { try? FileManager.default.removeItem(at: printFolder.appendingPathComponent(file)) }
                 }
                 var groups: [Int: [String]] = [:]
+                NSLog("COCOWASH_VISION_CANDIDATES representatives=%ld visits=%ld", prints.count, signatureVisits)
                 for i in items.indices { groups[root(i), default: []].append(items[i].localIdentifier) }
                 call.resolve(["groups": groups.values.filter { $0.count > 1 }, "skipped": skipped, "cancelled": self.cancelled()])
             }

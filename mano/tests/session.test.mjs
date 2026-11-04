@@ -64,3 +64,11 @@ test('writer: canonical failure preserves both old copies; retry stores exact la
   assert.equal(writer.save(LIBRARY_SESSION_KEY,first,storage,'legacy'),true);
   assert.deepEqual(readSession(LIBRARY_SESSION_KEY,storage).record,first.record);
 });
+
+test('large authoritative record retains 50,000 marks and exact session context',()=>{
+ const record=initialState();for(let i=0;i<50000;i++)record.marks['id-'+i]={level:1,due:100,keptAt:50};
+ record.pending=['p1','p2'];const storage=memory(), writer=new SessionWriter();
+ const session={...sample(),record};assert.equal(writer.save(LIBRARY_SESSION_KEY,session,storage),true);
+ const restored=readSession(LIBRARY_SESSION_KEY,storage);assert.equal(Object.keys(restored.record.marks).length,50000);
+ assert.deepEqual(restored.record,record);assert.deepEqual(restored.context.handIds,['b','a']);
+});

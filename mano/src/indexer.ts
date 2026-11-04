@@ -36,11 +36,11 @@ export function useLibraryIndex(assets: Asset[], fingerprint: string, enabled: b
   const [version, setVersion] = useState(0);
   const [measuring, setMeasuring] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
-  const [sized, setSized] = useState(false);
+  const [sized, setSized] = useState(-1);
 
   useEffect(() => {
     if (!enabled) return;
-    let alive = true; setSized(false);
+    let alive = true; setSized(-1);
     void (async () => {
       // Videos first: they weigh the most and the VHS shows their weight.
       const ids = [...latest.current].sort((a, b) => Number(b.kind === 'video') - Number(a.kind === 'video')).map(a => a.id).filter(id => !sizes.current.has(id));
@@ -56,13 +56,13 @@ export function useLibraryIndex(assets: Asset[], fingerprint: string, enabled: b
           if (pending && performance.now() - shown > SIZE_REFRESH_MS) { shown = performance.now(); pending = false; setVersion(v => v + 1); }
         }
       } catch { /* unavailable: the weights measured so far still show */ }
-      finally { if (alive) { if (pending) setVersion(v => v + 1); setMeasuring(false); setSized(true); } }
+      finally { if (alive) { if (pending) setVersion(v => v + 1); setMeasuring(false); setSized(generation); } }
     })();
     return () => { alive = false; };
   }, [enabled, fingerprint, generation]);
 
   useEffect(() => {
-    if (!enabled || !sized || paused) return;
+    if (!enabled || sized !== generation || paused) return;
     let alive = true;
     void (async () => {
       const ids = latest.current.filter(a => a.kind !== 'video' && !flags.current.has(a.id)).map(a => a.id);

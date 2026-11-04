@@ -123,3 +123,16 @@ Decisiones relevantes: Git demuestra Swift/recursos/dependencias iguales; no nue
 Validaciones: hash artefacto GitHub, CRC, arm64, identidad, textura, 28 recursos nativos y 64 web byte a byte PASS. [Entrega](../ai-handoff/STAGE_1_REVIEW.md) y recibo JSON en Descargas.
 Impacto para Claude: no necesario.
 Pendientes: firma AltStore/QA física; full CI 41885957816 aparte. Main intacto.
+
+### CW-CX-011 — Optimización conjunta autorizada, etapas 2–7
+Fecha: 2026-11-04, America/Bogota.
+Agente: Codex, solo.
+Tarea: completar etapas restantes y entregar IPA; usuario acepta etapa 1 y solicita misma rama.
+Estado: implementación y QA local completadas; compilación nativa/IPA pendientes.
+Base Git / commit: 24fb03d, codex/stage1-review; commits por etapa en [informe](../ai-handoff/OPTIMIZATION_097.md).
+Archivos modificados: previews, persistencia, índice, vídeo, Vision y pruebas; versión 0.9.7/18; workflow y registros.
+Cambios realizados: seis intervenciones delimitadas y correcciones de integración, sin cambios visuales.
+Decisiones relevantes: presupuesto vídeo conservador; Vision exacto, buckets acotados, mantiene peor caso cuadrático; no reempaquetar binario antiguo.
+Validaciones: 106 tests, runtime28, TypeScript, builds, Sites4 y QA demo antes/después PASS; prueba Swift exhaustiva preparada en CI.
+Impacto para Claude: no requerido; main intacto.
+Pendientes: compilación/IPA nuevo y aceptación física; no atribuir FPS ni rendimiento iPhone a escritorio.

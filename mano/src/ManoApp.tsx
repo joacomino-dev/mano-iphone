@@ -84,7 +84,7 @@ function Photo({ asset, small=false, pool, quiet=false }: { asset: Asset; small?
   // «Descargar siempre»: a lite card whose download job was dropped (e.g. back
   // through undo) asks again; the full preview is already on the iPhone by then.
   useEffect(() => { if (!small && local?.cloud && !cloud && cloudDownloads()) void cloudPreviews.fetch(asset,'card').catch(()=>{}); }, [small, !!local?.cloud, !!cloud, asset.id, policy]);
-  const src = upgraded ?? (cloud?.src||undefined) ?? (local?.poster||undefined);
+  const src = (retry===0 ? upgraded ?? (cloud?.src||undefined) : undefined) ?? (local?.poster||undefined);
   const alt = asset.kind === 'video' ? 'Vista previa de vídeo' : 'Foto del carrete';
   const download = () => { haptic('light'); void cloudPreviews.fetch(asset,'card',true).catch(()=>{}); };
   const retryCloud = () => { haptic('light'); void cloudPreviews.retry(asset).catch(()=>{}); };
@@ -354,7 +354,7 @@ export function ManoApp() {
   // serialises the whole record), and at once when the app is hidden or closed.
   const dirty=useRef(false);const flushTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
   const flush=useCallback((checkpoint=false)=>{if(flushTimer.current){clearTimeout(flushTimer.current);flushTimer.current=null;}if(!dirty.current)return;
-    if(writer.save(sessionKey,latest.current,localStorage,checkpoint?key:undefined))dirty.current=false;
+    if(writer.save(sessionKey,latest.current,undefined,checkpoint?key:undefined))dirty.current=false;
     else setError('No se pudo guardar el progreso. Libera espacio antes de continuar.');},[key,sessionKey,writer]);
   useEffect(()=>{dirty.current=true;if(!flushTimer.current)flushTimer.current=setTimeout(flush,350);},[state,sessionOpen,filterKey,windowHandKey,selected,session]);
   useEffect(()=>{const persist=()=>{dirty.current=true;flush(true);};document.addEventListener('visibilitychange',persist);window.addEventListener('pagehide',persist);return()=>{persist();document.removeEventListener('visibilitychange',persist);window.removeEventListener('pagehide',persist);};},[flush]);

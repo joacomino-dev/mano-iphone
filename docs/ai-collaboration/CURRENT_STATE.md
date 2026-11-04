@@ -2,6 +2,10 @@
 
 Actualizado: 2026-11-04, America/Bogota. Codex trabaja solo por indicación del usuario.
 
+## Entrega vigente — 0.9.7 / 18
+
+Etapa 1 aceptada por el usuario. Etapas 2–7 implementadas en esta misma rama por autorización expresa; detalle en [OPTIMIZATION_097](../ai-handoff/OPTIMIZATION_097.md). 106 tests Node, runtime28, TypeScript, builds y QA demo pasan. Commits por etapa, integración y compilación nativa nuevas pendientes al preparar este estado. No hay IPA nuevo todavía; el anterior de Descargas es solo etapa 1. **No reutilizar ese binario para esta entrega Swift.** Main intacto, sin merge ni instalaciones adicionales. Codex único escritor.
+
 ## Etapa 1 completada local — Codex
 
 **Trabajo vigente:** usuario acepta etapa 1 y autoriza implementar conjuntamente etapas 2–7 el 2026-11-04, en esta misma rama `codex/stage1-review`. Codex único escritor: previews/caché, guardado, índice, preferencias, vídeo y Vision/planificación. Sin cambios visuales ni merge a main. Un commit por intervención; pruebas automáticas y compilación nativa nueva requeridas antes del IPA final. No reutilizar el binario anterior si cambia Swift. Base recuperable 24fb03d y previo IPA conservados.

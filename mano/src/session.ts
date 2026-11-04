@@ -38,8 +38,9 @@ export function saveSession(key: string, session: ActiveSession, storage?: Sessi
  * only at lifecycle checkpoints, after the atomic write succeeds. */
 export class SessionWriter {
   private records = new WeakMap<RecordState, RecordState>();
-  save(key: string, session: ActiveSession, storage: SessionStorage, legacyKey?: string): boolean {
+  save(key: string, session: ActiveSession, storage?: SessionStorage, legacyKey?: string): boolean {
     try {
+      const target = storage ?? localStorage;
       const envelope = validateSession({ ...session, record: undefined });
       if (!envelope || !session.record) return false;
       let record = this.records.get(session.record);
@@ -48,9 +49,9 @@ export class SessionWriter {
         if (!record) return false;
         this.records.set(session.record, record);
       }
-      storage.setItem(key, JSON.stringify({ ...envelope, record }));
+      target.setItem(key, JSON.stringify({ ...envelope, record }));
       // A legacy mirror failure cannot invalidate a successful authoritative save.
-      if (legacyKey) try { storage.setItem(legacyKey, JSON.stringify(record)); } catch { /* canonical saved */ }
+      if (legacyKey) try { target.setItem(legacyKey, JSON.stringify(record)); } catch { /* canonical saved */ }
       return true;
     } catch { return false; }
   }
