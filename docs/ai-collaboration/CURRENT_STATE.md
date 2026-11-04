@@ -4,6 +4,8 @@ Actualizado: 2026-11-04, America/Bogota. Codex trabaja solo por indicación del 
 
 ## Entrega vigente — 0.9.7 / 18
 
+Distribución: full CI 41893615114 pasa preparación, 106 tests y build-for-testing; el log queda en arranque CoreSimulator. Se mantiene ese smoke y se separa el IPA personal en workflow build-ios-package.yml (misma rama, runner gratuito), con pruebas de lógica/runtime/oráculo y build Release real para iPhone. El paquete no acreditará por sí solo el smoke ni aceptación física; no atribuir todo el CI verde a esta entrega.
+
 Etapa 1 aceptada por el usuario. Etapas 2–7 implementadas en esta misma rama por autorización expresa; detalle en [OPTIMIZATION_097](../ai-handoff/OPTIMIZATION_097.md). 106 tests Node, runtime28, TypeScript, builds y QA demo pasan. Commits por etapa, integración y compilación nativa nuevas pendientes al preparar este estado. No hay IPA nuevo todavía; el anterior de Descargas es solo etapa 1. **No reutilizar ese binario para esta entrega Swift.** Main intacto, sin merge ni instalaciones adicionales. Codex único escritor.
 
 ## Etapa 1 completada local — Codex

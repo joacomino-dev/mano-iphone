@@ -47,3 +47,11 @@ Al instalar con AltStore, comprobación mínima pendiente: abrir sesión y revis
 recuperar un elemento y reiniciar; reproducir un vídeo local/iCloud. No confirmar
 borrados en la biblioteca personal. El usuario no necesita probar cada etapa
 por separado, pero no se atribuye aceptación física de 0.9.7 sin esa evidencia.
+
+Actualización de distribución: CI 41893615114 pasa tests, runtime y oráculo Swift;
+build-for-testing llega a generar fixtures, acreditando compilación de simulador.
+El log se detiene después en arranque CoreSimulator. Se separa la generación de
+IPA personal en `build-ios-package.yml`: repite lógica/runtime/oráculo y compila
+Release para dispositivo con textura. El smoke original permanece ejecutándose;
+su resultado no queda acreditado por el job de paquete. No se publica release ni
+se integra main. Paquete pendiente al preparar este cambio de CI.

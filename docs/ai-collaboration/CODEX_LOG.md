@@ -136,3 +136,5 @@ Decisiones relevantes: presupuesto vídeo conservador; Vision exacto, buckets ac
 Validaciones: 106 tests, runtime28, TypeScript, builds, Sites4 y QA demo antes/después PASS; prueba Swift exhaustiva preparada en CI.
 Impacto para Claude: no requerido; main intacto.
 Pendientes: compilación/IPA nuevo y aceptación física; no atribuir FPS ni rendimiento iPhone a escritorio.
+
+Actualización CW-CX-011: oráculo Swift de CI 41893615114 PASS; compilación simulador pasa antes de fixtures/boot. Tras espera prolongada en CoreSimulator, se separa job de IPA personal, conservando smoke original. Nuevo job repite tests/runtime/oráculo y exige Release iPhone real antes de subir IPA; no se declara aceptación del smoke pendiente. Solo workflow/documentación, sin cambiar fuente funcional de fce0deb.
