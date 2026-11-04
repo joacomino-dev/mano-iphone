@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { CalendarBlankIcon, ImagesIcon, StampIcon, ArrowCounterClockwiseIcon, BroomIcon, SortAscendingIcon, ClockCountdownIcon, DeviceMobileIcon, ImageBrokenIcon, ReceiptIcon, SparkleIcon } from '@phosphor-icons/react';
-import { initialFilter, pileCount, LEVELS, type Asset, type Filter, type Order, type RecordState, type Smart } from './domain';
+import { HeartIcon, CalendarBlankIcon, ImagesIcon, StampIcon, ArrowCounterClockwiseIcon, BroomIcon, SortAscendingIcon, ClockCountdownIcon, DeviceMobileIcon, ImageBrokenIcon, ReceiptIcon, SparkleIcon } from '@phosphor-icons/react';
+import { initialFilter, pileCount, favoritesTotal, LEVELS, type Asset, type Filter, type Order, type RecordState, type Smart } from './domain';
 import { AnimatedNumber } from './Loader';
 import { haptic } from './haptics';
-import { ROMAN, sealRest } from './Stamp';
+import { ROMAN, sealRest, Stamp } from './Stamp';
 
 function DateCalendar({from,to,change}:{from?:string;to?:string;change:(value:Partial<Filter>)=>void}) {
  const [month,setMonth]=useState(()=>{const date=from?new Date(`${from}T12:00:00`):new Date();return new Date(date.getFullYear(),date.getMonth(),1);});
@@ -22,6 +22,7 @@ const SMART: { value: Smart; label: string; icon: typeof BroomIcon; hint: string
  { value: 'screenshots', label: 'Capturas', icon: DeviceMobileIcon, hint: 'Capturas y grabaciones de pantalla, marcadas así por tu iPhone.' },
  { value: 'lowQuality', label: 'Baja calidad', icon: ImageBrokenIcon, hint: 'Borrosas, muy oscuras o quemadas, según Vision en tu iPhone.' },
  { value: 'text', label: 'Texto y documentos', icon: ReceiptIcon, hint: 'Facturas, recibos, transferencias y chats. Las que tienen caras van al final.' },
+ { value: 'favorites', label: 'Favoritas', icon: HeartIcon, hint: 'Solo tus favoritas, que nunca entran en la pila general. Aquí el corazón las quita de Favoritas y vuelven a la pila; no se pueden eliminar.' },
 ];
 const ORDER: [Order, string][] = [['oldest', 'Más antiguas'], ['newest', 'Más recientes'], ['largest', 'Más pesadas'], ['smallest', 'Más ligeras'], ['random', 'Al azar']];
 const ORDER_HINT: Record<Order, string> = {
@@ -45,7 +46,8 @@ export function Filters({filter,assets,state,apply,index,preview}: {filter:Filte
  const invalid=draft.dateRange==='custom'&&(!draft.from||!draft.to||draft.from>draft.to);
  const count=pileCount(assets,state,draft);
  const smart=draft.smart??'all';
- const counts=Object.fromEntries(SMART.map(({value})=>[value,value===smart?count:pileCount(assets,state,{...draft,smart:value})])) as Record<Smart,number>;
+ // «Favoritas» shows how many favourites there are (as in Photos), not how many are left to review.
+ const counts=Object.fromEntries(SMART.map(({value})=>[value,value==='favorites'?favoritesTotal(assets,state,draft):value===smart?count:pileCount(assets,state,{...draft,smart:value})])) as Record<Smart,number>;
  const visionPending=(smart==='lowQuality'||smart==='text')&&index.analyzing&&index.analyzed<index.photos;
  const sizePending=(draft.order==='largest'||draft.order==='smallest')&&index.measuring&&index.sized<index.total;
  return <div className="filters-panel">
@@ -61,7 +63,14 @@ export function Filters({filter,assets,state,apply,index,preview}: {filter:Filte
   <fieldset><legend><SortAscendingIcon size={18}/>Orden</legend><div className="filter-chips" role="group" aria-label="Orden">{ORDER.map(([value,label])=><button key={value} aria-pressed={draft.order===value} onClick={()=>update({order:value})}>{label}</button>)}</div>
    <p className="setting-note" role="status">{ORDER_HINT[draft.order]}{(draft.order==='largest'||draft.order==='smallest')&&<small>{sizePending?`Midiendo el peso: ${number(index.sized)} de ${number(index.total)}. `:''}Se mide lo que está en tu iPhone; lo que solo está en iCloud va al final.</small>}</p>
   </fieldset>
-  <fieldset><legend><StampIcon size={18}/>Sellos</legend><label className="field">Mostrar<select value={draft.seal} onChange={e=>update({seal:['all','none'].includes(e.target.value)?e.target.value as 'all'|'none':Number(e.target.value)})}><option value="all">Todos los niveles</option><option value="none">Sin sello · pendientes de descubrir</option>{LEVELS.map((l,i)=><option key={l} value={i+1}>Sello {ROMAN[i]} · {sealRest(i+1)}</option>)}</select></label><label className="switch-field"><span>Incluir las que descansan<small>Las conservadas vuelven con menor frecuencia.</small></span><input type="checkbox" role="switch" checked={draft.includeWaiting} onChange={e=>update({includeWaiting:e.target.checked})}/></label></fieldset>
+  <fieldset><legend><StampIcon size={18}/>Sellos</legend>
+   {/* How seals work lives next to the seal filter, where the levels are chosen. */}
+   <div className="seal-explainer">
+    <span className="seal-sample" aria-hidden="true"><Stamp kind="keep" level={2}/></span>
+    <p>Cuando conservas una foto, recibe un <strong>sello</strong> y descansa: no vuelve a aparecer en un tiempo. Si la conservas otra vez, el sello sube de nivel y descansa más, hasta quedarse para siempre. Así cada ronda trae lo que aún no has decidido.</p>
+   </div>
+   <ul className="seal-levels" aria-label="Niveles de sello">{[1, 2, 3, 8].map(level => <li key={level}><strong>{ROMAN[level - 1]}</strong>{sealRest(level)}</li>)}</ul>
+   <label className="field">Mostrar<select value={draft.seal} onChange={e=>update({seal:['all','none'].includes(e.target.value)?e.target.value as 'all'|'none':Number(e.target.value)})}><option value="all">Todos los niveles</option><option value="none">Sin sello · pendientes de descubrir</option>{LEVELS.map((l,i)=><option key={l} value={i+1}>Sello {ROMAN[i]} · {sealRest(i+1)}</option>)}</select></label><label className="switch-field"><span>Incluir las que descansan<small>Las conservadas vuelven con menor frecuencia.</small></span><input type="checkbox" role="switch" checked={draft.includeWaiting} onChange={e=>update({includeWaiting:e.target.checked})}/></label></fieldset>
   <div className="filter-apply"><span>{invalid?(!draft.from||!draft.to?'Elige desde y hasta para aplicar':'La fecha inicial debe ir antes de la final'):<><AnimatedNumber value={count}/> {count===1?'archivo':'archivos'} en la pila con estos filtros</>}</span><button className="sheet-action" disabled={invalid} onClick={()=>apply({...draft,v:2})}>Aplicar filtros</button></div>
  </div>;
 }

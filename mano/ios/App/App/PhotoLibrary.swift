@@ -30,7 +30,8 @@ class ManoBridgeController: CAPBridgeViewController {
         bridge?.registerPluginInstance(PhotoLibraryPlugin())
         NSLog("MEMSWIPE_BRIDGE_READY")
     }
-    override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
+    // Coco Cream (0.9): dark status bar text on the light cream frame.
+    override var preferredStatusBarStyle: UIStatusBarStyle { .darkContent }
 }
 
 /// Serves only finished files from `preparedVideoFolder`, in bounded chunks with
@@ -148,6 +149,10 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
     private let analysisQueue = DispatchQueue(label: "work.joaquin.mano.vision", qos: .utility)
     private let videoQueue = DispatchQueue(label: "work.joaquin.mano.video-cache", qos: .userInitiated)
     private let thumbnailQueue = DispatchQueue(label: "work.joaquin.mano.thumbnail-cache", qos: .userInitiated)
+    /// JPEG encoding of previews (tens of ms each) runs here, concurrently, so the
+    /// serial thumbnailQueue keeps answering cache hits — the card on screen —
+    /// while the read-ahead window encodes.
+    private let encodeQueue = DispatchQueue(label: "work.joaquin.mano.thumbnail-encode", qos: .userInitiated, attributes: .concurrent)
     private var thumbnailJobs: [String: PreparedThumbnailJob] = [:]
     /// Writes since launch; the preview cache is pruned on the first and then every 16th.
     private var thumbnailWrites = 0
@@ -279,7 +284,10 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         guard ["authorized", "limited"].contains(status) else { call.resolve(["assets": [], "status": status]); return }
         DispatchQueue.global(qos: .userInitiated).async {
             let options = PHFetchOptions()
-            options.predicate = NSPredicate(format: "(mediaType == %d OR mediaType == %d) AND favorite == NO AND hidden == NO", PHAssetMediaType.image.rawValue, PHAssetMediaType.video.rawValue)
+            // Favourites are listed too, flagged: the web layer keeps them out of the
+            // general pile and shows them only in the «Favoritas» set. Deletion still
+            // rechecks the flag at the last moment (deleteAssets).
+            options.predicate = NSPredicate(format: "(mediaType == %d OR mediaType == %d) AND hidden == NO", PHAssetMediaType.image.rawValue, PHAssetMediaType.video.rawValue)
             options.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: true)]
             let result = PHAsset.fetchAssets(with: options)
             var items: [[String: Any]] = []
@@ -289,6 +297,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                               "width": item.pixelWidth, "height": item.pixelHeight, "duration": item.duration,
                               "modified": (item.modificationDate?.timeIntervalSince1970 ?? 0) * 1000,
                               "hasLocation": item.location != nil,
+                              "favorite": item.isFavorite,
                               "screenshot": item.mediaSubtypes.contains(.photoScreenshot) || item.mediaSubtypes.contains(.videoScreenRecording)])
             }
             // Runtime smoke-test signal: no asset IDs, names, paths or image data.
@@ -324,12 +333,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
             }
             let job = PreparedThumbnailJob(call: call)
             self.thumbnailJobs[token] = job
-            let timeout = DispatchWorkItem { [weak self, weak job] in
-                guard let self, let job else { return }
-                self.stopThumbnail(token, job: job, message: "La vista previa tardó demasiado. Comprueba iCloud y reintenta.", code: "PREPARATION_TIMEOUT")
-            }
-            job.timeout = timeout
-            self.thumbnailQueue.asyncAfter(deadline: .now() + 60, execute: timeout)
+            self.armThumbnailTimeout(token, job: job)
             // requestImage produces a video's poster without requesting/exporting
             // its full AVAsset. One final result settles this promise exactly once.
             func request(lite: Bool) {
@@ -338,8 +342,12 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                 options.deliveryMode = lite ? .fastFormat : .highQualityFormat; options.resizeMode = .fast
                 if network {
                     // Only called while iCloud bytes arrive: the card shows the download.
-                    options.progressHandler = { [weak self] progress, _, _, _ in
-                        self?.notifyListeners("mediaPreparationProgress", data: ["requestId": token, "phase": "download", "progress": progress])
+                    // Bytes arriving also restart the 60 s limit, so a slow download that
+                    // keeps moving is not cut off; a stalled one still times out.
+                    options.progressHandler = { [weak self, weak job] progress, _, _, _ in
+                        guard let self else { return }
+                        self.notifyListeners("mediaPreparationProgress", data: ["requestId": token, "phase": "download", "progress": progress])
+                        self.thumbnailQueue.async { if let job { job.lastProgress = Date() } }
                     }
                 }
                 job.photoRequest = self.imageManager.requestImage(for: item, targetSize: CGSize(width: CGFloat(size), height: CGFloat(size)), contentMode: .aspectFit, options: options) { [weak self, weak job] image, info in
@@ -350,30 +358,51 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                         if (info?[PHImageCancelledKey] as? Bool) == true {
                             self.stopThumbnail(token, job: job, message: "Preparación cancelada.", code: "PREPARATION_CANCELLED"); return
                         }
-                        guard let data = image?.jpegData(compressionQuality: 0.88) else {
-                            if !network && !lite { request(lite: true); return }
-                            if network { self.stopThumbnail(token, job: job, message: "No se pudo descargar la vista previa. Comprueba tu conexión a iCloud.", code: "THUMBNAIL_UNAVAILABLE") }
-                            else { self.stopThumbnail(token, job: job, message: "Esta foto está en iCloud y aún no tiene vista previa en el iPhone.", code: "IN_CLOUD") }
-                            return
-                        }
-                        let file = lite ? litePath : path
-                        do {
-                            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-                            try data.write(to: file, options: .atomic)
-                            job.timeout?.cancel(); self.thumbnailJobs.removeValue(forKey: token)
-                            call.resolve(["path": file.path, "cloud": lite])
-                            // Measurement signal for the quality profiles: no ids, names or paths.
-                            NSLog("COCOWASH_PREVIEW size=%ld bytes=%ld ms=%ld lite=%d", size, data.count, Int(Date().timeIntervalSince(started) * 1000), lite ? 1 : 0)
-                            self.thumbnailWrites += 1
-                            if cacheLimit > 0, self.thumbnailWrites % 16 == 1 { self.pruneThumbnails(folder, limit: cacheLimit) }
-                        } catch {
-                            self.stopThumbnail(token, job: job, message: "No se pudo guardar la vista previa. Libera espacio y reintenta.", code: "CACHE_WRITE_FAILED")
+                        self.encodeQueue.async {
+                            let encoded = image?.jpegData(compressionQuality: 0.88)
+                            self.thumbnailQueue.async {
+                                // Cancelled or timed out while encoding: the call is already settled.
+                                guard self.thumbnailJobs[token] === job else { return }
+                                guard let data = encoded else {
+                                    if !network && !lite { request(lite: true); return }
+                                    if network { self.stopThumbnail(token, job: job, message: "No se pudo descargar la vista previa. Comprueba tu conexión a iCloud.", code: "THUMBNAIL_UNAVAILABLE") }
+                                    else { self.stopThumbnail(token, job: job, message: "Esta foto está en iCloud y aún no tiene vista previa en el iPhone.", code: "IN_CLOUD") }
+                                    return
+                                }
+                                let file = lite ? litePath : path
+                                do {
+                                    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+                                    try data.write(to: file, options: .atomic)
+                                    job.timeout?.cancel(); self.thumbnailJobs.removeValue(forKey: token)
+                                    call.resolve(["path": file.path, "cloud": lite])
+                                    // Measurement signal for the quality profiles: no ids, names or paths.
+                                    NSLog("COCOWASH_PREVIEW size=%ld bytes=%ld ms=%ld lite=%d", size, data.count, Int(Date().timeIntervalSince(started) * 1000), lite ? 1 : 0)
+                                    self.thumbnailWrites += 1
+                                    if cacheLimit > 0, self.thumbnailWrites % 16 == 1 { self.pruneThumbnails(folder, limit: cacheLimit) }
+                                } catch {
+                                    self.stopThumbnail(token, job: job, message: "No se pudo guardar la vista previa. Libera espacio y reintenta.", code: "CACHE_WRITE_FAILED")
+                                }
+                            }
                         }
                     }
                 }
             }
             request(lite: false)
         }
+    }
+    /// A preview's inactivity limit: 60 s without iCloud progress. One timer per
+    /// window; when it fires after recent progress it re-arms for the time left.
+    /// Runs on thumbnailQueue.
+    private func armThumbnailTimeout(_ token: String, job: PreparedThumbnailJob, after seconds: Double = 60) {
+        job.timeout?.cancel()
+        let timeout = DispatchWorkItem { [weak self, weak job] in
+            guard let self, let job, self.thumbnailJobs[token] === job else { return }
+            let idle = Date().timeIntervalSince(job.lastProgress)
+            if idle < 60 { self.armThumbnailTimeout(token, job: job, after: 60 - idle); return }
+            self.stopThumbnail(token, job: job, message: "La vista previa tardó demasiado. Comprueba iCloud y reintenta.", code: "PREPARATION_TIMEOUT")
+        }
+        job.timeout = timeout
+        thumbnailQueue.asyncAfter(deadline: .now() + seconds, execute: timeout)
     }
     @objc func cancelThumbnailPreparation(_ call: CAPPluginCall) {
         guard let token = call.getString("requestId") else { call.reject("Falta el identificador de preparación.", "INVALID_REQUEST"); return }
@@ -902,24 +931,56 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                 var prints: [(index: Int, hash: UInt64, feature: VNFeaturePrintObservation)] = []; var skipped = 0
                 var parent = Array(0..<items.count)
                 func root(_ n: Int) -> Int { var k = n; while parent[k] != k { k = parent[k] }; return k }
+                // Feature prints persist per item (identifier + edit date) in Caches, so a
+                // search that was stopped, or one rerun because the library changed, only
+                // computes prints for new or edited items. One small file each: 8 bytes of
+                // signature + the archived observation. No image data is stored.
+                let printFolder = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("ManoPrints", isDirectory: true)
+                try? FileManager.default.createDirectory(at: printFolder, withIntermediateDirectories: true)
+                var livePrints = Set<String>()
                 for (index, item) in items.enumerated() {
                     if self.cancelled() { break }
                     autoreleasepool {
-                        let options = PHImageRequestOptions(); options.isSynchronous = true; options.isNetworkAccessAllowed = false
-                        options.deliveryMode = .highQualityFormat; options.resizeMode = .fast
-                        var image: UIImage?
-                        self.imageManager.requestImage(for: item, targetSize: CGSize(width: 300, height: 300), contentMode: .aspectFit, options: options) { value, _ in image = value }
-                        guard let cgImage = image?.cgImage else { skipped += 1; return }
-                        let request = VNGenerateImageFeaturePrintRequest(); request.revision = VNGenerateImageFeaturePrintRequestRevision2
+                        let key = item.localIdentifier + "-\(item.modificationDate?.timeIntervalSince1970 ?? 0)"
+                        let name = SHA256.hash(data: Data(key.utf8)).map { String(format: "%02x", $0) }.joined() + ".print"
+                        let file = printFolder.appendingPathComponent(name)
+                        livePrints.insert(name)
+                        var cached: (UInt64, VNFeaturePrintObservation)?
+                        if let blob = try? Data(contentsOf: file), blob.count > 8,
+                           let observation = try? NSKeyedUnarchiver.unarchivedObject(ofClass: VNFeaturePrintObservation.self, from: blob.dropFirst(8)) {
+                            let stored = blob.prefix(8).withUnsafeBytes { $0.loadUnaligned(as: UInt64.self) }
+                            cached = (stored, observation)
+                        }
+                        if cached == nil {
+                            let options = PHImageRequestOptions(); options.isSynchronous = true; options.isNetworkAccessAllowed = false
+                            options.deliveryMode = .highQualityFormat; options.resizeMode = .fast
+                            var image: UIImage?
+                            self.imageManager.requestImage(for: item, targetSize: CGSize(width: 300, height: 300), contentMode: .aspectFit, options: options) { value, _ in image = value }
+                            guard let cgImage = image?.cgImage else { skipped += 1; return }
+                            let request = VNGenerateImageFeaturePrintRequest(); request.revision = VNGenerateImageFeaturePrintRequestRevision2
+                            guard (try? VNImageRequestHandler(cgImage: cgImage, options: [:]).perform([request])) != nil,
+                                  let observation = request.results?.first as? VNFeaturePrintObservation else { skipped += 1; return }
+                            // A coarse luminance signature shortlists cross-date candidates.
+                            let computed = self.imageHash(cgImage)
+                            cached = (computed, observation)
+                            if let archived = try? NSKeyedArchiver.archivedData(withRootObject: observation, requiringSecureCoding: true) {
+                                var blob = withUnsafeBytes(of: computed) { Data($0) }
+                                blob.append(archived)
+                                try? blob.write(to: file, options: .atomic)
+                            }
+                        }
+                        guard let entry = cached else { skipped += 1; return }
+                        let (signature, print) = entry
                         do {
-                            try VNImageRequestHandler(cgImage: cgImage, options: [:]).perform([request])
-                            guard let print = request.results?.first as? VNFeaturePrintObservation else { skipped += 1; return }
-                            // A coarse luminance signature shortlists cross-date candidates. Bound
-                            // expensive Vision comparisons to 64 per image, rather than all prints.
-                            let signature = self.imageHash(cgImage)
-                            let candidates = prints.indices.sorted {
-                                (prints[$0].hash ^ signature).nonzeroBitCount < (prints[$1].hash ^ signature).nonzeroBitCount
-                            }.prefix(64)
+                            // Bound expensive Vision comparisons to 64 per image, rather than all prints.
+                            // The 64 closest signatures by Hamming distance (0…64), in one pass
+                            // into distance buckets instead of sorting every print per image
+                            // (that sort made the whole search grow as n² log n).
+                            var buckets = [[Int]](repeating: [], count: 65)
+                            for i in prints.indices { buckets[(prints[i].hash ^ signature).nonzeroBitCount].append(i) }
+                            var candidates: [Int] = []
+                            candidates.reserveCapacity(64)
+                            for bucket in buckets where candidates.count < 64 { candidates.append(contentsOf: bucket.prefix(64 - candidates.count)) }
                             var nearest: (Int, Float)?
                             for i in candidates {
                                 if self.cancelled() { break }
@@ -932,6 +993,11 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                         } catch { skipped += 1 }
                     }
                     if index % 10 == 0 || index == items.count - 1 { self.notifyListeners("analysisProgress", data: ["done": index + 1, "total": items.count]) }
+                }
+                // A complete pass knows every live print: drop the ones of deleted or
+                // edited items so the cache does not grow without bound.
+                if !self.cancelled(), let files = try? FileManager.default.contentsOfDirectory(atPath: printFolder.path) {
+                    for file in files where !livePrints.contains(file) { try? FileManager.default.removeItem(at: printFolder.appendingPathComponent(file)) }
                 }
                 var groups: [Int: [String]] = [:]
                 for i in items.indices { groups[root(i), default: []].append(items[i].localIdentifier) }
@@ -1112,6 +1178,8 @@ private final class PreparedThumbnailJob {
     let call: CAPPluginCall
     var photoRequest: PHImageRequestID = PHInvalidImageRequestID
     var timeout: DispatchWorkItem?
+    /// Last iCloud progress (or creation); read and written on thumbnailQueue.
+    var lastProgress = Date()
     init(call: CAPPluginCall) { self.call = call }
 }
 

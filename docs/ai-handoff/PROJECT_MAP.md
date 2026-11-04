@@ -39,6 +39,8 @@ mano/
     ManoApp.tsx / Filters.tsx / Inspector.tsx / InlineVideo.tsx
     prototype.css / native.css
     domain.ts / session.ts / library.ts / preload.ts / media.ts
+    sequence.ts                      # 0.9.3: mano fija, reparto, ventana (puro, probado)
+    Cloud.tsx                        # 0.9.3: indicador de iCloud con progreso real
     main.tsx / App.tsx / Prototype.tsx / native.tsx
     mobile/                          # runtime protegido; COMPONENTS.md
   brand/                             # fuentes vectoriales, paleta y guía
@@ -150,6 +152,13 @@ dos rutas con cambios sin preparar (`.github/workflows/build-ios.yml` y
 Revisar `git status --short` actual: esta descripción es una foto inicial.
 Hay evidencia de desfase entre HEAD local y fuentes remotas en CURRENT; no fetch,
 reset, stash, checkout, commit, ramas ni push en esta misión. No asumir paridad.
+
+Actualización 2026-11-02 (CW-CL-027/028, Linux en la nube): `npm test` = 82 pruebas
+(incluye `tests/sequence.test.mjs`); `check:runtime` 28; `build`, `test:sites` 4/4 y
+`build:native` OK. La suite Playwright del runtime se ejecutó con un config temporal no
+versionado que apunta al Chromium del contenedor (`launchOptions.executablePath`): 7/8,
+con el fallo previo de la fixture BottomSheet. Mediciones y bancos: ver
+`CLAUDE_PERF_CW-CL-027.md`. Swift solo se compila en el workflow macOS.
 
 Ignorados: raíz `work/`, `outputs/`; app `node_modules/`, `dist/`, `build/`,
 `test-results/`, `playwright-report/`, `.env*`, `.p12`, `.mobileprovision`, `.ipa`,

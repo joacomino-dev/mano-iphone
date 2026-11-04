@@ -1,12 +1,13 @@
 import { Capacitor } from '@capacitor/core';
 import type { Asset } from './domain';
-import { Library, isNative, thumbnailInfo } from './library';
+import { Library, isNative, thumbnailInfo, inCloudError } from './library';
 import { cacheBytes, cardPixels, cloudDownloads, previewQuality, zoomPixels } from './preview';
 
 /** Poster only. Videos prepare separately (VideoStore) so a slow or failed
  * video download can never take its poster down with it, and vice versa.
- * `cloud`: the poster is the smaller version already on the iPhone (iCloud). */
-export type PreparedMedia = { poster: string; cloud?: boolean };
+ * `cloud`: the poster is the smaller version already on the iPhone (iCloud);
+ * `missing`: nothing of it is on the iPhone yet (empty poster). */
+export type PreparedMedia = { poster: string; cloud?: boolean; missing?: boolean };
 const aborted = () => new DOMException('Preparación cancelada', 'AbortError');
 function decodePoster(src: string, signal: AbortSignal) {
   return new Promise<void>((resolve, reject) => {
@@ -23,14 +24,25 @@ function decodePoster(src: string, signal: AbortSignal) {
 }
 
 /** Native requests are owned by this task, so cancelling one window cannot cancel
- * another component's thumbnail. */
+ * another component's thumbnail.
+ *
+ * Local first, always: a card never waits on the network to appear. What is on
+ * the iPhone (the preview, or the smaller version of an iCloud original) is
+ * prepared and decoded here; with «Descargar siempre» the full preview then
+ * downloads behind it through `cloudPreviews` (tracked, shared, cancellable),
+ * and the card swaps to it in place when it lands. */
 export async function prepareReviewAsset(asset: Asset, signal: AbortSignal): Promise<PreparedMedia> {
   if (signal.aborted) throw aborted();
-  // Demonstration: an «iCloud» item takes a moment to arrive with «Descargar siempre».
-  if (asset.demo && asset.cloud && cloudDownloads()) await simulateDownload(signal, undefined, 2500);
-  const { src, cloud } = asset.demo ? await thumbnailInfo(asset, cardPixels(asset)) : await nativeThumbnail(asset, cardPixels(asset), 'review', signal, cloudDownloads());
-  await decodePoster(src, signal);
-  return { poster: src, cloud };
+  let local: { src: string; cloud: boolean };
+  try { local = asset.demo ? await thumbnailInfo(asset, cardPixels(asset), false, false) : await nativeThumbnail(asset, cardPixels(asset), 'review', signal, false); }
+  catch (error) {
+    if (!inCloudError(error)) throw error;
+    if (cloudDownloads()) void cloudPreviews.fetch(asset, 'card').catch(() => {});
+    return { poster: '', cloud: true, missing: true };
+  }
+  await decodePoster(local.src, signal);
+  if (local.cloud && cloudDownloads()) void cloudPreviews.fetch(asset, 'card').catch(() => {});
+  return { poster: local.src, cloud: local.cloud };
 }
 
 /** One native preview request owned by the caller's signal: cancelled natively
@@ -75,7 +87,9 @@ const sharpKey = (asset: Pick<Asset, 'id' | 'modified'>) => `${asset.id}:${asset
 export const sharpPreview = (asset: Pick<Asset, 'id' | 'modified'>) => sharp.get(sharpKey(asset));
 export function subscribeSharp(listener: () => void) { sharpListeners.add(listener); return () => { sharpListeners.delete(listener); }; }
 function keepSharp(asset: Asset, src: string) {
-  sharp.set(sharpKey(asset), src);
+  sharp.delete(sharpKey(asset)); sharp.set(sharpKey(asset), src);
+  // Only anchored items, but still bounded for very long sessions.
+  while (sharp.size > 80) sharp.delete(sharp.keys().next().value!);
   for (const listener of sharpListeners) listener();
   if (!asset.demo && isNative) void thumbnailInfo(asset, cardPixels(asset), false, true).catch(() => {});
 }
@@ -91,15 +105,149 @@ export function prewarm(assets: Asset[]) {
   for (const asset of batch) void thumbnailInfo(asset, cardPixels(asset)).catch(() => {}).finally(() => { warming--; });
 }
 
-let cancelZoom: (() => void) | null = null;
-export async function loadZoomPreview(asset: Asset, signal: AbortSignal, onProgress?: (value: number) => void): Promise<string> {
-  cancelZoom?.(); cancelZoom = null;
-  const size = zoomPixels(asset);
-  if (asset.demo && asset.cloud) await simulateDownload(signal, onProgress);
-  const src = asset.demo || !isNative ? (await thumbnailInfo(asset, size, false, true)).src : (await nativeThumbnail(asset, size, 'zoom', signal, true, cancel => { cancelZoom = cancel; }, onProgress)).src;
+/* ---------- iCloud previews: one tracked download per item ---------- */
+
+/** What the iCloud indicator shows, always from a real request:
+ * - pending: asked for, no bytes yet (indeterminate);
+ * - downloading: PhotoKit reports progress (0–1) while bytes arrive;
+ * - ready: the preview is here (`src`); retrying: one automatic retry after a
+ *   transient failure; error: it failed (the card offers «Reintentar»);
+ * A card that leaves the table drops its job (cancelled natively, no state).
+ * A request answered from the iPhone never reports progress and never shows. */
+export type CloudStatus = 'pending' | 'downloading' | 'ready' | 'retrying' | 'error';
+export type CloudState = { status: CloudStatus; progress?: number; src?: string; zoom: boolean };
+type CloudJob = { key: string; asset: Asset; zoom: boolean; priority: boolean; state: CloudState; started: boolean; attempts: number;
+  controller: AbortController; promise: Promise<string>; resolve: (src: string) => void; reject: (error: unknown) => void };
+const TRANSIENT = new Set(['PREPARATION_TIMEOUT', 'THUMBNAIL_UNAVAILABLE']);
+
+/** Card previews and anchored (zoom) previews that need iCloud, shared by the
+ * card, «Anclar», the hold gesture and the read-ahead window:
+ * - one job per item: asking again joins it (no second download of the same
+ *   item); anchoring while the card preview downloads waits for it and then
+ *   asks for the larger size, which PhotoKit answers from what just arrived;
+ * - at most two at a time, the card on screen and the anchored one first;
+ * - items that leave the table are cancelled natively (`retain`).
+ * Originals are never requested: only preview sizes (preview.ts). */
+class CloudPreviews {
+  private jobs = new Map<string, CloudJob>();
+  private listeners = new Map<string, Set<() => void>>();
+  private running = 0;
+
+  state(asset: Asset): CloudState | undefined { return this.jobs.get(videoKey(asset))?.state; }
+  subscribe(asset: Asset, listener: () => void) {
+    const key = videoKey(asset); const set = this.listeners.get(key) ?? new Set();
+    set.add(listener); this.listeners.set(key, set);
+    return () => { set.delete(listener); if (!set.size) this.listeners.delete(key); };
+  }
+
+  /** The card-size preview (`card`) or the anchored size (`zoom`), downloading
+   * if needed. Resolves with the file to show. */
+  fetch(asset: Asset, purpose: 'card' | 'zoom', priority = false): Promise<string> {
+    const key = videoKey(asset); const existing = this.jobs.get(key);
+    if (existing && existing.state.status !== 'error') {
+      if (purpose === 'zoom' && !existing.zoom) { existing.zoom = true; this.set(existing, { ...existing.state, zoom: true }); if (existing.state.status === 'ready') return this.restart(existing); }
+      if (priority && !existing.priority) { existing.priority = true; this.pump(); }
+      return existing.promise;
+    }
+    let resolve!: (src: string) => void, reject!: (error: unknown) => void;
+    const promise = new Promise<string>((ok, fail) => { resolve = ok; reject = fail; });
+    const job: CloudJob = { key, asset, zoom: purpose === 'zoom', priority, state: { status: 'pending', zoom: purpose === 'zoom' }, started: false, attempts: 0, controller: new AbortController(), promise, resolve, reject };
+    this.jobs.set(key, job); this.notify(key); this.pump();
+    return promise;
+  }
+
+  /** «Reintentar» after an error. */
+  retry(asset: Asset, purpose: 'card' | 'zoom' = 'card') { const job = this.jobs.get(videoKey(asset)); if (job?.state.status === 'error') this.jobs.delete(job.key); return this.fetch(asset, job?.zoom ? 'zoom' : purpose, true); }
+
+  /** Cancel what is no longer on the table or in the read-ahead window. */
+  retain(keep: Iterable<Asset>) {
+    const wanted = new Set([...keep].map(videoKey));
+    for (const job of [...this.jobs.values()]) {
+      if (wanted.has(job.key) || job.state.status === 'ready') continue;
+      job.controller.abort(); this.jobs.delete(job.key);
+      job.reject(aborted()); this.notify(job.key);
+    }
+    // Finished jobs only hold a file reference: keep enough for the ten
+    // undoable hands (Photo asks again from the iPhone if one was dropped).
+    const done = [...this.jobs.values()].filter(j => j.state.status === 'ready' && !wanted.has(j.key));
+    for (const job of done.slice(0, Math.max(0, done.length - 48))) this.jobs.delete(job.key);
+  }
+  /** The anchored view closed: its download keeps going (the card gets the
+   * sharper version) but no longer jumps ahead of the next cards' previews. */
+  yieldPriority(asset: Asset) { const job = this.jobs.get(videoKey(asset)); if (job && job.state.status !== 'ready') job.priority = false; }
+
+  private restart(job: CloudJob) {
+    // A card preview already here and now the anchored size is wanted: one more
+    // local request (the bytes arrived with the card), tracked the same way.
+    const next = { ...job, started: false, attempts: 0, controller: new AbortController() } as CloudJob;
+    next.promise = new Promise<string>((ok, fail) => { next.resolve = ok; next.reject = fail; });
+    next.state = { status: 'pending', zoom: true, src: job.state.src };
+    this.jobs.set(job.key, next); this.notify(job.key); this.pump();
+    return next.promise;
+  }
+
+  private pump() {
+    while (this.running < 2) {
+      const waiting = [...this.jobs.values()].filter(j => !j.started && (j.state.status === 'pending' || j.state.status === 'retrying'));
+      const job = waiting.find(j => j.priority) ?? waiting[0];
+      if (!job) return;
+      job.started = true; this.running++;
+      void this.run(job).finally(() => { this.running--; this.pump(); });
+    }
+  }
+
+  private async run(job: CloudJob) {
+    const { asset, controller } = job;
+    const progress = (value: number) => { if (this.jobs.get(job.key) === job && !controller.signal.aborted) this.set(job, { ...job.state, status: 'downloading', progress: Math.max(job.state.progress ?? 0, Math.min(1, value)) }); };
+    try {
+      let src = '';
+      // Anchoring goes straight to the larger size (one download). A card
+      // download that the person then anchors finishes first; the larger size
+      // follows from the bytes that just arrived.
+      let zoom = job.zoom;
+      for (;;) {
+        const size = zoom ? zoomPixels(asset) : cardPixels(asset);
+        if (asset.demo) {
+          // Demonstration only: a stand-in «iCloud» item that takes a moment.
+          if (asset.cloud && !job.state.src) await simulateDownload(controller.signal, progress, 2200);
+          src = (await thumbnailInfo(asset, size, false, true)).src;
+        } else src = (await nativeThumbnail(asset, size, zoom ? 'zoom' : 'cloud', controller.signal, true, undefined, progress)).src;
+        await decodePoster(src, controller.signal);
+        if (this.jobs.get(job.key) !== job) return;
+        if (!zoom && job.zoom) { zoom = true; this.set(job, { status: 'pending', zoom: true, src }); continue; }
+        this.set(job, { status: 'ready', zoom: job.zoom, src });
+        break;
+      }
+      job.resolve(src);
+      if (job.zoom) keepSharp(asset, src);
+    } catch (error) {
+      if (this.jobs.get(job.key) !== job || controller.signal.aborted) return;
+      const code = (error as { code?: string })?.code ?? '';
+      if (TRANSIENT.has(code) && job.attempts < 1) {
+        job.attempts++; job.started = false; this.set(job, { ...job.state, status: 'retrying', progress: undefined });
+        await new Promise(r => setTimeout(r, 1200));
+        if (this.jobs.get(job.key) === job) this.pump();
+        return;
+      }
+      this.set(job, { ...job.state, status: 'error', progress: undefined }); job.reject(error);
+    }
+  }
+
+  private set(job: CloudJob, state: CloudState) { job.state = state; this.notify(job.key); }
+  private notify(key: string) { for (const listener of [...(this.listeners.get(key) ?? [])]) listener(); }
+}
+export const cloudPreviews = new CloudPreviews();
+
+/** The larger preview for the anchored/zoomed view, on demand. Decoded off
+ * screen, so the caller can swap it into the same <img> without a blank frame
+ * or reframing. Anchoring is asking to look closer, so it may download from
+ * iCloud; it joins a download already under way for the same item (the card's,
+ * or the one started when the person began holding the card). */
+export async function loadZoomPreview(asset: Asset, signal: AbortSignal): Promise<string> {
   if (signal.aborted) throw aborted();
-  await decodePoster(src, signal);
-  keepSharp(asset, src);
+  signal.addEventListener('abort', () => cloudPreviews.yieldPriority(asset), { once: true });
+  const src = await cloudPreviews.fetch(asset, 'zoom', true);
+  if (signal.aborted) throw aborted();
   return src;
 }
 

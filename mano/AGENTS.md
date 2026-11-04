@@ -234,3 +234,179 @@ bundle, keys and permissions; `cocowash-media://` and `native.html` CSP untouche
 - «Terminar» with items to delete opens «Una última mirada» directly; the
   celebration appears after «Eliminar» (or after closing the review).
 - Version 0.7.0 (build 7).
+
+## Decision bar and «Favoritas» — 1 November 2026 (user request, CW-CL-022)
+
+- Decision bar = `DecisionBar.tsx`: Eliminar (graphite #4E5A68, trash) · heart
+  (pink #EB4E69, protagonist, rises above and below) · Conservar (turquoise
+  #1E7470, bookmark). Cartoon set like Coqui and Memo: solid colours, cream band
+  #FCEFD9, ink contour #2A1C14, ink base the face sinks onto. No gradients,
+  textures or blur. Side buttons are hollowed by the heart's exact offset
+  silhouette (constant gap, never touching). Labels in Patua One (OFL, local
+  woff2), only in this bar. Arrows only when the word keeps ≥ 16 px.
+- Favourites still leave the general pile. Filtros › «Favoritas» shows only
+  them: the heart is on (pressed) and takes the item out of Favorites (back to
+  the pile, undoable); Eliminar is unavailable there; Conservar seals it.
+  Native enumeration now lists favourites flagged; deletion still rechecks.
+
+## CocoWash 0.8 — 1 November 2026 (user feedback after device test, CW-CL-023)
+
+- Main screen speaks the decision bar's language (bar itself unchanged): every
+  control is a sticker — cream border, ink ring and solid ink base (no blur),
+  sinking onto the base when pressed. Neutral tools teal #26504F (Filtros,
+  Terminar, Deshacer, Álbum, group segmented); «Más tarde» coffee (its
+  postmark colour); Terminar's count is a graphite badge (Eliminar's colour).
+- Wordmark «CocoWash»: Fredoka 600 (rounded, straight stems), white Coco /
+  pink Wash, ink line, cream margin, ink contour and base (SVG, `Chrome.tsx`).
+  Fredoka for main-screen chrome, Patua One only for decision verbs.
+- Progress: sticker trough filling with sponge turquoise #7CCBC2, count on a tag.
+- Cards centred at 50 % of a stage with equal air above (progress) and below
+  (the heart).
+- «Terminar» with items to delete opens «Una última mirada» over the session:
+  closing it returns to the cards; the round ends with «Eliminar N»
+  (supersedes the 0.7 rule «celebration after closing the review»).
+- How seals work is explained in Filtros › Sellos; Ajustes keeps the switch.
+- App icon: the user's art on the official turquoise #1E7470, model ink lines
+  (brand/recolor-app-icon.py). The tour shows once after updating to 0.8.
+- Version 0.8.0 (build 8).
+
+## CocoWash 0.9 — Coco Cream refinement, 1 November 2026 (user request, CW-CL-024)
+
+Supersedes the 0.8 rule «every main-screen control is a sticker».
+- Palette Coco Cream (default): `--pal-*` primitives in prototype.css (bg
+  #F6F4EC, surface #FFFDF7, text/contour #253A3A, turquoise #1E7470, graphite
+  #4E5A68, heart #EF9A98, heart details #A3405A, coffee #8A4B2D as a small
+  accent only). Coco Mint is prepared as `:root[data-palette="mint"]`; no
+  public switch. Status bar text is dark (`.darkContent`).
+- Hierarchy: level 1 decision bar keeps the sticker (contour, ivory band, base);
+  level 2 Polaroid/VHS on one ivory paper with soft tinted shadows; level 3
+  tools are quiet (ivory + one hairline, IBM Plex, no base, no text contour).
+- Sorting header: Filtros · thin progress + count · Terminar (count shown as a
+  graphite trash chip = items to delete). The wordmark is for brand moments
+  (summary, tour), not the sorting screen. Selection mark only in groups.
+- Version 0.9.0 (build 9).
+
+## CocoWash 0.9.1 — header and Warm Paper, 1 November 2026 (user request, CW-CL-025)
+
+Version line: 0.9.x until 1.0 (user). Supersedes the 0.9 single-row header.
+- Style rule: characters and brand = most expressive; decision bar = refined
+  cartoon (thick contour, band, base); header capsules = intermediate (one
+  1.75 pt contour, slim 2 pt base, Fredoka); secondary tools = modern and flat;
+  frame = warm, discreetly textured paper. Never all three treatments on one
+  component; textures never on text, icons, photos, videos or quick-read controls.
+- Header: Filtros · CocoWash wordmark (centred) · Terminar; second row: progress
+  track + count capsule. Terminar's count is a badge over its top-right corner
+  (does not change the button's width).
+- Background Warm Paper #F4EFE6 + procedural grain/tone SVGs (~1–3 %).
+  «Revisión guardada» / celebration may show the paper more.
+- Version 0.9.1 (build 10).
+- 0.9.2 (CW-CL-026, user): frame #F3ECE1 with a third, fine paper-fibre layer
+  (paper-fibre.svg); more paper, still clean. Faint text #51625E. Version 0.9.2 (11).
+
+## CocoWash 0.9.3 — speed, a stable pile, real iCloud progress, Cotton Fiber (2 November 2026, user request, CW-CL-027)
+
+Requested by the user and implemented directly. Functional protections unchanged
+(deletion only from the review with Photos' confirmation and the favourites
+recheck; demo-only destructive QA; protected preview runtime; same bundle, keys,
+permissions, `cocowash-media://` and CSP).
+- The pile: one canonical sequence (`orderAssets` once per library/order/seed,
+  `eligibleFrom` per decision, linear). The hand on screen is **locked**
+  (`sequence.ts`): background work — similar groups, weights, a preview that
+  finishes first, a library refresh — never swaps it; only a decision,
+  «Siguiente», undo or a filter change replace it. Decisions record the hand in
+  display order (+ its «Mejor toma»); undo restores exactly that. Undo of a
+  postponed item puts it back in its exact place in `later`. No card is ever
+  promoted ahead because its image is ready (0.7 «Descargar siempre» promotion
+  removed: order never depends on download completion).
+- Read-ahead: the hand + about six next cards for posters; videos look up to ten
+  ahead (preparing a video takes far longer; the smoke test relies on it). Cards read their own preload
+  entry; the app does not re-render per preparation step. Local first: a card
+  never waits on the network; downloads go through `cloudPreviews` (media.ts):
+  one tracked job per item, at most two at a time, visible card / anchored view
+  first, joined by «Anclar» (holding an iCloud photo starts the larger preview),
+  cancelled when the item leaves the window or the session ends. Never originals.
+- iCloud indicator: the existing chip, now with a ring of **real** PhotoKit
+  progress (indeterminate until bytes arrive), retry once, «Reintentar» on error;
+  the same indicator in the anchored view. No simulated percentages on device.
+- Swipes write motion values (no app re-render per pointer move); saving the
+  record/session is grouped (≤ 350 ms, flushed when hidden). Undoing a favourite
+  no longer reloads the whole library. The similar-photo search is no longer
+  cancelled and restarted at every warm-up.
+- Temporary notices take the wordmark's place (same cell, header height and
+  buttons fixed), two lines at most, by-length duration; routine results speak
+  through the interface/VoiceOver only. Errors use their own persistent alert.
+- Tour: one composition for every card (illustration + copy centred between
+  progress and buttons). Card 2 demonstrates the four real swipes in list order
+  (right Conservar, left Eliminar, up Favorita, down Más tarde), ~5 s round;
+  «Continuar» waits for one round on first view only (aria-disabled, fills with
+  the demo; Reduce Motion: same round without travel); not when replayed.
+- Background material **Cotton Fiber** (user chose option B): fine light and
+  dark cotton fibres, uniform, matte, σ ≈ 2.3 levels, mean = #F3ECE1. Parts:
+  `--cw-paper-base`, `--cw-paper-texture` (neutral RGBA tile, no colour of its
+  own, `public/assets/paper-cotton.webp` from `brand/cotton-fiber.py`),
+  `--cw-paper-intensity`; tone comes from the base. Dark mode = new base and
+  intensity, same tile. Frame only; Polaroid/tour/celebration surfaces keep
+  their approved paper. Replaces paper-cream.webp.
+- Native (CW-CL-028): Vision feature prints persist per item (identifier +
+  edit date) in Caches/ManoPrints (signature + archived observation, no image
+  data; pruned after a complete pass), so a stopped or rerun similar search only
+  computes new/edited items. Preview JPEG encoding runs on a concurrent queue so
+  the serial thumbnail queue keeps answering the card on screen. Thumbnail
+  timeouts count inactivity (60 s without iCloud progress).
+- Version 0.9.3 (build 12).
+
+## CocoWash 0.9.4 — logo, launch mark, video continuity (2 November 2026, user request, CW-CL-030)
+
+- New logo: the user's «Coco / Wash» lettering traced to SVG (brand/README.md),
+  in the header, tour and app icon (logo centred on cream). The full logo — Coqui
+  washing Memo with the lettering to the right — is only for the launch mark.
+- Launch mark (`Splash.tsx`): every launch, ~1.5 s, full logo centred and
+  Zángano's isotype near the bottom (maker's mark, like a studio card); purely
+  decorative (no touches, hidden from VoiceOver); the app loads underneath.
+  Native launch screen is plain cream to match.
+- Loaders: a rinse ring — turquoise arc that stretches as it turns with a short
+  pink counter-swirl; real progress fills the arc. No Coqui face (supersedes
+  0.5 «Coqui's face in every loader»).
+- Ajustes starts with «Introducción › Ver la introducción de nuevo» (no wait).
+- Videos are never stacked: a video is always its own hand, never joins a group
+  of photos, and is not sent to the similar-photo search.
+- Video: a quick tap on the card pauses/plays it (brief glyph, tick). One
+  playhead per video shared by the card, the held view and the anchored view:
+  holding keeps it playing from the same moment (the card's frame is painted
+  under it), anchoring keeps the same element (no restart; sound as the person left it — 0.9.5),
+  closing returns to the card at the anchored time; a pause is kept everywhere.
+- Version 0.9.4 (build 13).
+
+## CocoWash 0.9.5 — refinements after 0.9.4 (2 November 2026, user request, CW-CL-032)
+
+Plan and the user's notes: `docs/ai-handoff/NEXT_0.9.5_PROMPT.md`.
+- Video: an interrupted `play()` (AbortError) is not a refusal; only
+  NotAllowedError shows «Toca para reproducir», and `canplay` retries. Sound
+  follows the person's choice in every view (anchoring no longer turns it on).
+  The anchored video has no zoom controls (zoom is for photos).
+- Favoritas: the filter chip counts every favourite in the library (Photos and
+  app, `favoritesTotal`), ignoring seals and the wait after «Conservar»; the
+  pile is unchanged and favourites never enter the general pile.
+- Última mirada: «Recuperar» above «Eliminar»; recovering is only by button
+  (no hold-and-swipe gesture, no hint).
+- Tour: 1.6 s per swipe, card 3 phases 3.2 s; cards 2–3 arrive with the photo
+  at rest (copy swaps with `popLayout`) and the demo starts after 0.7 s. Anchor
+  and pinch end with the photo open, larger and opaque; copy says pinch anchors
+  too. Active row: no box, the others step back. No limited-access line.
+- Coqui washing Memo asset: white foam (was a transparent hole), transparent
+  triangle between the legs (was white).
+- Colour: `--cw-accent` holds the selected state in Filtros y ajustes. Coffee
+  (#6E3B22) was tried in build 14 and reverted to dark teal in build 15 at the
+  user's request («luego lo arreglamos»): a future colour pass is still open.
+- Launch mark (build 16): Zángano Studio signature — isotype plus «ZANGANO»
+  with a lighter «studio» under its right end, small and soft ink. The name is
+  set in the system font because the logo's Candara is not on iOS; swap in the
+  lettering as curves when available (`mano/brand/zangano-studio-logo-source.svg`).
+
+## CocoWash 0.9.6 — illustrated stamps (2 November 2026, user request)
+
+- The four decision stamps are the user's illustrations: sources in `mano/brand/stamps/*-source.webp`,
+  cut by `cut-stamps.py` (white background removed; the icon is its own opaque piece) into
+  `public/assets/stamps/{kind}.webp` (icon) and `{kind}-word.webp` (icon + word).
+- Tour (rows and demo): icon only, no word. Cards (drag and decision stamps): icon + word on a
+  cream plate so it reads over photos. A kept item's seal level (I–VIII) stays the drawn seal.

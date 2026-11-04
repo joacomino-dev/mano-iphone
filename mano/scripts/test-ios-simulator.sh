@@ -138,7 +138,7 @@ grep -E 'Resolved source packages|capacitor-swift-pm|CapApp-SPM' "$smoke_dir/res
 # Build BEFORE booting. Run 41124449495 overlapped first-boot data migration with
 # compilation: ibtool/actool (which use CoreSimulator services) stalled 15 min
 # without compiling any app Swift. Unbooted, this build took ~2–3.5 min
-# (runs 40964299983, 41132758705); 420s keeps the step budget below 38 min.
+# (runs 40964299983, 41132758705); 420s keeps the step budget below 45 min.
 bounded 420 xcodebuild -project ios/App/App.xcodeproj -scheme ManoSmoke \
   -configuration Release -sdk iphonesimulator -destination "platform=iOS Simulator,id=$simulator_id" \
   -derivedDataPath build/simulator-smoke/DerivedData \
@@ -274,13 +274,16 @@ report_ui_failure() {
   tail -n 40 "$smoke_dir/ui-test.log"
 }
 run_ui_test() {
-  bounded 900 xcodebuild -project ios/App/App.xcodeproj -scheme ManoSmoke \
+  # Run 41497571357 (attempt 2): the test passed in 590 s, but launching the
+  # XCTest runner on the loaded simulator took ~5 min, so the 900 s bound cut
+  # xcodebuild off right after the pass. 1320 s = 840 s test + bootstrap.
+  bounded 1320 xcodebuild -project ios/App/App.xcodeproj -scheme ManoSmoke \
     -configuration Release -sdk iphonesimulator -destination "platform=iOS Simulator,id=$simulator_id" \
     -derivedDataPath build/simulator-smoke/DerivedData \
     -resultBundlePath build/simulator-smoke/PhotosSmoke.xcresult \
     -only-testing:ManoUITests/PhotosSmokeTests/testFullPhotosAuthorizationStartsSession \
     -parallel-testing-enabled NO -maximum-concurrent-test-simulator-destinations 1 \
-    -test-timeouts-enabled YES -maximum-test-execution-time-allowance 600 \
+    -test-timeouts-enabled YES -maximum-test-execution-time-allowance 840 \
     CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' test-without-building \
     > "$smoke_dir/ui-test.log" 2>&1
 }

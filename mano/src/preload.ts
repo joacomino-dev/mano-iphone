@@ -1,19 +1,9 @@
-import { eligible, handOf, initialFilter, type Asset, type Filter, type RecordState } from './domain.ts';
+import { eligible, initialFilter, type Asset, type Filter, type RecordState } from './domain.ts';
+import { upcomingFrom } from './sequence.ts';
 
 /** Flatten the actual upcoming hands, rather than preloading unrelated queue neighbours. */
 export function upcomingSessionAssets(assets: Asset[], state: RecordState, filter: Filter = initialFilter, now = Date.now(), seed = 1, limit = 10): Asset[] {
-  let queue = eligible(assets, state, filter, now, seed);
-  const result: Asset[] = [];
-  const seen = new Set<string>();
-  const count = Math.max(0, Math.floor(limit));
-  while (queue.length && result.length < count) {
-    const first = queue[0];
-    const hand = handOf(queue, first, state.later);
-    const ids = new Set(hand.map(a => a.id));
-    for (const asset of hand) if (!seen.has(asset.id) && result.length < count) { seen.add(asset.id); result.push(asset); }
-    queue = queue.filter(a => !ids.has(a.id));
-  }
-  return result;
+  return upcomingFrom(eligible(assets, state, filter, now, seed), [], state.later, Math.max(0, Math.floor(limit)));
 }
 
 export type PreloadStatus = 'queued' | 'loading' | 'ready' | 'error';
@@ -22,6 +12,9 @@ export type PreloadSnapshot<T> = { items: PreloadItem<T>[]; total: number; ready
 type Entry<T> = PreloadItem<T> & { asset: Asset; key: string };
 type Task = { controller: AbortController; session: string };
 const assetKey = (asset: Asset) => JSON.stringify([asset.id, asset.modified ?? 0, asset.kind]);
+/** Prepared values kept after their card left the window: enough for the ten
+ * undoable decisions plus the window; values are file references, not pixels. */
+const CACHE_LIMIT = 24;
 
 /** Two preparation calls at a time, including calls still settling after cancellation.
  * The supplied preparer should honour signal and bound native/iCloud request duration.
@@ -32,6 +25,8 @@ export class AssetPreloader<T> {
   private active = new Map<string, Task>();
   private cache = new Map<string, T>();
   private listeners = new Set<(snapshot: PreloadSnapshot<T>) => void>();
+  /** Per-item listeners: a card follows only its own entry (no app re-render). */
+  private itemListeners = new Map<string, Set<() => void>>();
   private session = '';
   private disposed = false;
   private readonly prepare: (asset: Asset, signal: AbortSignal) => Promise<T>;
@@ -72,6 +67,29 @@ export class AssetPreloader<T> {
 
   get(asset: Asset): T | undefined { return this.cache.get(assetKey(asset)); }
 
+  /** This item's state: its window entry, or a value still cached from an
+   * earlier window (e.g. the card brought back by undo); undefined when it is
+   * neither (the caller prepares it itself). */
+  peek(asset: Asset): PreloadItem<T> | undefined {
+    const key = assetKey(asset); const entry = this.entries.get(key);
+    if (entry) return entry.status === 'ready' || !this.cache.has(key) ? { id: entry.id, status: entry.status, value: entry.value, error: entry.error } : { id: entry.id, status: 'ready', value: this.cache.get(key) };
+    return this.cache.has(key) ? { id: asset.id, status: 'ready', value: this.cache.get(key) } : undefined;
+  }
+  /** A string that changes whenever `peek(asset)` would (for useSyncExternalStore):
+   * the status and the identity of the value. */
+  version(asset: Asset): string { const item = this.peek(asset); return item ? `${item.status}:${this.valueId(item.value)}` : ''; }
+  private valueIds = new WeakMap<object, number>(); private nextValueId = 1;
+  private valueId(value: T | undefined) {
+    if (value === undefined || value === null || typeof value !== 'object') return 0;
+    let id = this.valueIds.get(value); if (!id) { id = this.nextValueId++; this.valueIds.set(value, id); }
+    return id;
+  }
+  subscribeItem(asset: Asset, listener: () => void) {
+    const key = assetKey(asset); const set = this.itemListeners.get(key) ?? new Set();
+    set.add(listener); this.itemListeners.set(key, set);
+    return () => { set.delete(listener); if (!set.size) this.itemListeners.delete(key); };
+  }
+
   /** Drop references before the owner releases/evicts a native resource. If the
    * asset is still wanted, prepare it again; a later window must never reuse it.
    */
@@ -97,13 +115,14 @@ export class AssetPreloader<T> {
   dispose() {
     this.disposed = true;
     for (const task of this.active.values()) task.controller.abort();
-    this.entries.clear(); this.cache.clear(); this.listeners.clear();
+    this.entries.clear(); this.cache.clear(); this.listeners.clear(); this.itemListeners.clear();
   }
 
   private emit() {
     if (this.disposed) return;
     const snapshot = this.snapshot();
     for (const listener of this.listeners) listener(snapshot);
+    for (const set of [...this.itemListeners.values()]) for (const listener of [...set]) listener();
   }
 
   private pump() {
@@ -120,7 +139,7 @@ export class AssetPreloader<T> {
         if (!this.isCurrent(entry.key, task)) return;
         this.cache.delete(entry.key); this.cache.set(entry.key, value);
         // Values are local resource references, with a bounded in-memory cache.
-        while (this.cache.size > 60) this.cache.delete(this.cache.keys().next().value!);
+        while (this.cache.size > CACHE_LIMIT) this.cache.delete(this.cache.keys().next().value!);
         const current = this.entries.get(entry.key)!;
         current.status = 'ready'; current.value = value; delete current.error;
       }).catch(error => {
