@@ -28,6 +28,7 @@ class ManoBridgeController: CAPBridgeViewController {
     override func capacitorDidLoad() {
         super.capacitorDidLoad()
         bridge?.registerPluginInstance(PhotoLibraryPlugin())
+        bridge?.registerPluginInstance(PeoplePlugin())
         NSLog("MEMSWIPE_BRIDGE_READY")
     }
     // Coco Cream (0.9): dark status bar text on the light cream frame.
@@ -161,8 +162,8 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
     /// Separate condition avoids reading job dictionaries across their queues.
     private let mediaCondition = NSCondition()
     private var mediaWork = 0
-    private func beginMediaWork() { mediaCondition.lock(); mediaWork += 1; mediaCondition.unlock() }
-    private func endMediaWork() { mediaCondition.lock(); mediaWork = max(0, mediaWork - 1); mediaCondition.broadcast(); mediaCondition.unlock() }
+    private func beginMediaWork() { CocoMediaPressure.change(1); mediaCondition.lock(); mediaWork += 1; mediaCondition.unlock() }
+    private func endMediaWork() { CocoMediaPressure.change(-1); mediaCondition.lock(); mediaWork = max(0, mediaWork - 1); mediaCondition.broadcast(); mediaCondition.unlock() }
     private func waitForMedia(cancelled: () -> Bool = { false }) -> Bool {
         mediaCondition.lock(); defer { mediaCondition.unlock() }
         while mediaWork > 0 && !cancelled() { _ = mediaCondition.wait(until: Date().addingTimeInterval(0.1)) }

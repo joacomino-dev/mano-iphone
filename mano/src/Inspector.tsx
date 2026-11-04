@@ -1,3 +1,4 @@
+import { PeopleImage, usePeopleProtection } from './PeopleMedia';
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type PointerEvent } from 'react';
 import { motion, useReducedMotion, useSpring, useTransform, type MotionValue } from 'motion/react';
 import { PushPinIcon, XIcon, PlusIcon, MinusIcon } from '@phosphor-icons/react';
@@ -21,10 +22,11 @@ const follow={type:'spring',stiffness:900,damping:60,mass:.6} as const;
  * held view while its element catches up — no flash of the first frame. */
 export type InspectVideo={state:VideoState;retry:()=>void;download:()=>void;fullscreen:()=>void;openSettings:()=>void;sound?:boolean;freeze?:HTMLVideoElement|null};
 export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed,geek,close,pin,video}: {asset:Asset;src?:string;cloud?:boolean;pinned:boolean;origin?:InspectOrigin;peek:{x:MotionValue<number>;y:MotionValue<number>};anchor:MotionValue<number>;armed:boolean;geek:boolean;close:()=>void;pin:()=>void;video?:InspectVideo}) {
+ const protectedPhoto=usePeopleProtection();
  const policy=useSyncExternalStore(subscribePreviewPolicy,previewPolicyKey);
  // An iCloud-only photo (no local preview under «Ahorrar iCloud») is not an
  // error: it says so, and anchoring downloads it (loadZoomPreview below).
- const [posterError,setPosterError]=useState(false);const [posterCloud,setPosterCloud]=useState(false);const [posterRetry,setPosterRetry]=useState(0);const [poster,setPoster]=useState(src);useEffect(()=>{let alive=true;const controller=new AbortController();if(src){setPoster(src);return;}setPosterError(false);setPosterCloud(false);thumbnail(asset,cardPixels(asset),posterRetry>0,false,controller.signal).then(value=>{if(alive)setPoster(value);}).catch(e=>{if(!alive)return;if(inCloudError(e))setPosterCloud(true);else setPosterError(true);});return()=>{alive=false;controller.abort();};},[asset.id,asset.modified,src,posterRetry,policy]);
+ const [posterError,setPosterError]=useState(false);const [posterCloud,setPosterCloud]=useState(false);const [posterRetry,setPosterRetry]=useState(0);const [poster,setPoster]=useState(src);useEffect(()=>{let alive=true;const controller=new AbortController();if(protectedPhoto)return;if(src){setPoster(src);return;}setPosterError(false);setPosterCloud(false);thumbnail(asset,cardPixels(asset),posterRetry>0,false,controller.signal).then(value=>{if(alive)setPoster(value);}).catch(e=>{if(!alive)return;if(inCloudError(e))setPosterCloud(true);else setPosterError(true);});return()=>{alive=false;controller.abort();};},[asset.id,asset.modified,src,posterRetry,policy,protectedPhoto]);
  const outer=useRef<HTMLDivElement>(null);const reduced=useReducedMotion();const frame=useRef<HTMLDivElement>(null);
  // A held video continues from the card's frame: paint that frame once, under the
  // video element, until the element shows the same moment (drawing a video into a
@@ -37,7 +39,7 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
  // from iCloud — joining the download that holding the card already started —
  // and the card's own iCloud indicator follows it here, with real progress.
  const [sharp,setSharp]=useState('');const download=useCloud(asset.kind==='video'?undefined:asset);
- useEffect(()=>{if(!pinned||asset.kind==='video')return;const controller=new AbortController();loadZoomPreview(asset,controller.signal).then(value=>{if(!controller.signal.aborted)setSharp(value);}).catch(()=>{});return()=>controller.abort();},[pinned,asset.id,asset.modified,policy]);
+ useEffect(()=>{if(protectedPhoto||!pinned||asset.kind==='video')return;const controller=new AbortController();loadZoomPreview(asset,controller.signal).then(value=>{if(!controller.signal.aborted)setSharp(value);}).catch(()=>{});return()=>controller.abort();},[pinned,asset.id,asset.modified,policy,protectedPhoto]);
  const [space,setSpace]=useState<{target:Box;origin:Box;scale:number}|null>(null);
  const [meta,setMeta]=useState<AssetMetadata|null>(null);const [metaError,setMetaError]=useState('');const [zoom,setZoom]=useState(1);const [pan,setPan]=useState({x:0,y:0});
  const points=useRef(new Map<number,{x:number;y:number}>());const base=useRef({distance:0,zoom:1,x:0,y:0,panX:0,panY:0});
@@ -79,9 +81,9 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
   {space&&<motion.div className="inspection-follow" style={{x:reduced?fingerX:smoothX,y:reduced?fingerY:smoothY}}><motion.div ref={frame} className="inspection-photo" tabIndex={pinned?0:-1} style={{left:space.target.x,top:space.target.y,width:space.target.width,height:space.target.height,'--inspect-ratio':asset.width/asset.height} as CSSProperties}
    initial={reduced?false:atOrigin} animate={pose} exit={reduced?{opacity:0,transition:{duration:0}}:{...atOrigin,transition:settle}}
    transition={reduced?{duration:0}:settle} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onClick={e=>e.stopPropagation()}>
-   {video?<div className="inspection-media"><InlineVideo asset={asset} state={video.state} mode={pinned?'full':'peek'} sound={video.sound} retry={video.retry} download={video.download} fullscreen={video.fullscreen} openSettings={video.openSettings}>{freeze?<canvas ref={still} className="inspection-still"/>:poster?<img src={poster} alt="" draggable={false}/>:null}</InlineVideo></div>
+   {protectedPhoto?<div className="inspection-protected" style={{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}}><PeopleImage asset={asset}/></div>:video?<div className="inspection-media"><InlineVideo asset={asset} state={video.state} mode={pinned?'full':'peek'} sound={video.sound} retry={video.retry} download={video.download} fullscreen={video.fullscreen} openSettings={video.openSettings}>{freeze?<canvas ref={still} className="inspection-still"/>:poster?<img src={poster} alt="" draggable={false}/>:null}</InlineVideo></div>
     :poster||(pinned&&sharp)||download?.src?<img src={pinned&&sharp?sharp:poster||download?.src} alt="Recuerdo ampliado" draggable={false} style={{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}}/>:<span>{posterCloud?(pinned?'':'En iCloud. Ancla para descargarla.'):posterError?'No se pudo cargar la imagen.':''}{posterError&&pinned&&<button onClick={()=>setPosterRetry(v=>v+1)}>Reintentar</button>}</span>}
-   {!sharp&&(cloud||download?.status==='downloading')&&<CloudBadge className="cloud-download" state={download?.status==='ready'?undefined:download} lite={cloud} onRetry={()=>void cloudPreviews.retry(asset,'zoom').then(setSharp).catch(()=>{})}/>}
+   {!protectedPhoto&&!sharp&&(cloud||download?.status==='downloading')&&<CloudBadge className="cloud-download" state={download?.status==='ready'?undefined:download} lite={cloud} onRetry={()=>void cloudPreviews.retry(asset,'zoom').then(setSharp).catch(()=>{})}/>}
   </motion.div></motion.div>}
   <motion.div layout={!reduced} className={`inspection-dock ${pinned?'is-pinned':''} ${armed?'is-armed':''}`} data-inspection-hook style={{'--anchor':anchor} as CSSProperties}
    initial={reduced?false:{opacity:0,y:16}} animate={{opacity:1,y:0}} exit={reduced?{opacity:0,transition:{duration:0}}:{opacity:0,y:16}} transition={reduced?{duration:0}:{type:'spring',stiffness:420,damping:36}}>

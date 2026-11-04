@@ -1,3 +1,7 @@
+import { usePeople } from './usePeople';
+import { PeoplePanel } from './PeoplePanel';
+import { PeopleProtection, PeopleImage, usePeopleProtection } from './PeopleMedia';
+import { FinishButton } from './FinishButton';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type PointerEvent, type MouseEvent } from 'react';
 import { AnimatePresence, motion, useReducedMotion, useMotionValue, useTransform, animate, type MotionValue } from 'motion/react';
 import * as Dialog from '@radix-ui/react-dialog';
@@ -64,7 +68,10 @@ function savedGroups(items: Asset[]) {
  * through `cloudPreviews`, which the iCloud indicator follows.
  * `quiet`: the owner (a video card) shows the one error state; this only
  * renders the poster or a neutral placeholder, so messages never stack. */
-function Photo({ asset, small=false, pool, quiet=false }: { asset: Asset; small?: boolean; pool?: AssetPreloader<PreparedMedia>|null; quiet?: boolean }) {
+function Photo(props: { asset: Asset; small?: boolean; pool?: AssetPreloader<PreparedMedia>|null; quiet?: boolean }) {
+  return usePeopleProtection() ? <PeopleImage asset={props.asset}/> : <UnprotectedPhoto {...props}/>;
+}
+function UnprotectedPhoto({ asset, small=false, pool, quiet=false }: { asset: Asset; small?: boolean; pool?: AssetPreloader<PreparedMedia>|null; quiet?: boolean }) {
   const policy = useSyncExternalStore(subscribePreviewPolicy, previewPolicyKey);
   const [own, setOwn] = useState<{src:string;cloud:boolean;missing:boolean}|null>(null); const [error, setError] = useState(false); const [retry, setRetry] = useState(0);
   useSyncExternalStore(useCallback((listener:()=>void)=>pool?pool.subscribeItem(asset,listener):()=>{},[pool,asset.id,asset.modified]), ()=>pool?.version(asset)??'');
@@ -310,8 +317,9 @@ export function ManoApp() {
   const fingerprint=useMemo(()=>{const previous=fingerprintOf.current;
     if(previous&&previous.list.length===rawAssets.length&&previous.list.every((a,i)=>a.id===rawAssets[i].id&&a.modified===rawAssets[i].modified)){fingerprintOf.current={list:rawAssets,value:previous.value};return previous.value;}
     const value=libraryFingerprint(rawAssets);fingerprintOf.current={list:rawAssets,value};return value;},[rawAssets]);
-  const index=useLibraryIndex(rawAssets,fingerprint,!demo&&connected,analyzing||warming||loading);
-  const assets=useMemo(()=>enrich(rawAssets,index),[rawAssets,index.version]);
+  const people=usePeople(fingerprint,analyzing||warming||loading||!!inspect,filter.person);
+  const index=useLibraryIndex(rawAssets,fingerprint,!demo&&connected,analyzing||warming||loading||people.status.running);
+  const assets=useMemo(()=>enrich(rawAssets,index).map(a=>filter.person?{...a,people:people.members?.has(a.id)?[filter.person]:[]}:a),[rawAssets,index.version,filter.person,people.members]);
   /** «Favoritas» set: the heart takes items out of Favorites; they cannot be queued for deletion. */
   const favView=filter.smart==='favorites';
   // One canonical sequence: sorted once per library/order/seed; each decision
@@ -321,7 +329,7 @@ export function ManoApp() {
   // Geek is a display preference: toggling it must not reset bundles or anchors.
   const filterKey=JSON.stringify({...filter,geek:undefined});
   const byId=useMemo(()=>new Map(assets.map(a=>[a.id,a] as const)),[assets]);
-  const isPlayable=useMemo(()=>playable(state,favView),[state,favView]);
+  const isPlayable=useMemo(()=>{const allowed=playable(state,favView);return (a:Asset|undefined):a is Asset=>allowed(a)&&(!filter.person||!!a.people?.includes(filter.person));},[state,favView,filter.person,people.members]);
   // The hand on the table stays put (sequence.ts): background work — similar
   // groups, weights, a preview finishing first, a library refresh — never swaps
   // it. When it is done, the next hand is dealt from the front of the pile and
@@ -452,7 +460,7 @@ export function ManoApp() {
     if(!g.review&&g.element&&g.asset){springBack(g.followers);setZone('');heldVideo.current=g.element.querySelector('video');inspectOrigin.current=windowOf(g.element);resetPeek();setPinnedInspect(false);hookHover.current=false;setOverHook(false);setInspect(g.asset);
       // Holding a photo that lives in iCloud is a reason to fetch the larger
       // preview now: «Anclar» then joins this download instead of starting one.
-      if(g.asset.kind!=='video'&&preloader.current?.peek(g.asset)?.value?.cloud)void cloudPreviews.fetch(g.asset,'zoom').catch(()=>{});}};
+      if(!(filter.person&&filter.breakup!=='normal')&&g.asset.kind!=='video'&&preloader.current?.peek(g.asset)?.value?.cloud)void cloudPreviews.fetch(g.asset,'zoom').catch(()=>{});}};
   const start=(e:PointerEvent,asset:Asset,review=false)=>{if(busy||(e.target as HTMLElement).closest('button'))return;
     // A finger lifted while its card unmounted never reached end(): drop stale ids.
     if(!gesture.current)pointers.current.clear();
@@ -531,7 +539,7 @@ export function ManoApp() {
     setState(s=>({...s,pending:s.pending.filter(id=>!result.deleted.includes(id)),removed:[...new Set([...s.removed,...result.deleted])],history:[]}));
     cancelWarmup();setLock(NO_HAND);setSessionOpen(false);setSheet(null);setSession(false);setShowDone(true);haptic('success');if(demo)setNotice('Borrado simulado\nTus fotos, intactas');else setSpoken(`${result.deleted.length} enviadas a Eliminado recientemente`);
   }catch(e){messageError(e);}finally{setBusy(false);}};
-  const play=async(asset:Asset)=>{if(demo){setNotice('Pantalla completa\nsolo en el iPhone');return;}try{await Library.preview({id:asset.id});}catch(e){messageError(e);}};
+  const play=async(asset:Asset)=>{if(filter.person&&filter.breakup!=='normal'){setSpoken('La reproducción completa está protegida en Breakup Mode');return;}if(demo){setNotice('Pantalla completa\nsolo en el iPhone');return;}try{await Library.preview({id:asset.id});}catch(e){messageError(e);}};
   const requestAccess=async():Promise<PhotoPermission>=>{if(demo)return 'authorized';try{const {status}=await Library.authorize();setPermission(status as PhotoPermission);if(['authorized','limited'].includes(status)){initialLibrary.current=null;loadLibrary();}return status as PhotoPermission;}catch{return 'denied';}};
   const finishOnboarding=(status:PhotoPermission)=>{try{localStorage.setItem(ONBOARDING_KEY,'done');}catch{/* shown again next launch */}setOnboarded(true);haptic(['authorized','limited'].includes(status)?'success':'warning');};
   const openSettings=()=>{void Library.openSettings().catch(()=>setError('Abre Ajustes › CocoWash › Fotos para permitir el acceso.'));};
@@ -563,7 +571,7 @@ export function ManoApp() {
   else if(!session)screen=showDone&&sheet==='review'?<div className="session-content">{doneHeader}<main className="status-screen is-quiet"><Character pose="memo-cards" height={120} motion="still"/><p className="status-line">Una última mirada antes de terminar.</p></main></div>:showDone?<div className="session-content">{doneHeader}<SessionDone stats={stats} pending={pending} pendingBytes={reviewBytes.bytes} pendingPartial={reviewBytes.partial} lifetime={lifetime.bytes} again={()=>{setShowDone(false);setNotice('');}} review={()=>{setError('');setSheet('review');}}/></div>:<PreparingScreen cancel={()=>{cancelWarmup();setShowDone(true);}}/>;
   else screen=<div className="session-content" inert={pinnedInspect}>
     {/* «Terminar» ends the round: the summary keeps pending discards and offers the review. */}
-    <header ref={noticeRoom} className="archive-header is-session">{filtersButton}{brand}<button id="review-trigger" className="header-action finish" disabled={busy} onClick={()=>{cancel();setError('');if(pending>0){setSheet('review');haptic('light');}else closeSession();}}><span>Terminar</span>{pending>0&&<><span className="finish-count" aria-hidden="true"><AnimatedNumber value={pending}/></span><span className="sr-only">, {pending} para eliminar</span></>}</button></header>
+    <header ref={noticeRoom} className="archive-header is-session">{filtersButton}{brand}<FinishButton pending={pending} busy={busy} announce={setSpoken} finish={()=>{cancel();setError('');setSheet('review');haptic('light');}}/></header>
     {/* Second row: how far through the filtered pile (same calculation as before). */}
     <div className="archive-progress">{limited&&<button className="access-indicator" onClick={()=>void manageLimited()}><InfoIcon size={14} weight="bold"/>Acceso limitado</button>}<PileProgress reviewed={scope.reviewed} total={scope.total} count={<><AnimatedNumber value={scope.reviewed}/><span className="pile-slash">/</span><AnimatedNumber value={scope.total} className="is-total"/></>}/></div>
     <section ref={stage} className={`hand-space ${currentColor}`} aria-label="Pila de recuerdos">{alert}
@@ -611,7 +619,7 @@ export function ManoApp() {
   const recoverReview=useCallback((id:string)=>{setState(s=>restore(s,id));setSpoken('Elemento recuperado');},[]);
   // Long press never opens the system menu or loupe; text fields keep theirs.
   const blockMenu=(e:MouseEvent)=>{if(!(e.target as HTMLElement).closest('input,textarea'))e.preventDefault();};
-  return <div ref={root} className={`mano-app ${isNative?'on-device':''} ${session?'in-session':'on-screen'}`} onContextMenu={blockMenu}>
+  return <PeopleProtection.Provider value={{person:filter.person,mode:filter.breakup,revision:people.revision}}><div onPointerDownCapture={people.interact} ref={root} className={`mano-app ${isNative?'on-device':''} ${session?'in-session':'on-screen'}`} onContextMenu={blockMenu}>
     {screen}
     <p className="sr-only" role="status" aria-live="polite">{spoken}</p>
     {splash&&<Splash done={()=>setSplash(false)}/>}
@@ -620,7 +628,7 @@ export function ManoApp() {
     <Sheet open={sheet==='filters'} close={()=>setSheet(null)} title="Filtros y ajustes" description={sheetTab==='filters'?'Elige qué fotos entran en la pila.':'Elige cómo se ven tus recuerdos.'} error={error} returnTo="filter-trigger">
       <div className="sheet-tabs" role="group" aria-label="Sección"><button aria-pressed={sheetTab==='filters'} onClick={()=>{haptic('selection');setSheetTab('filters');}}>Filtros</button><button aria-pressed={sheetTab==='settings'} onClick={()=>{haptic('selection');setSheetTab('settings');}}>Ajustes</button></div>
       <div hidden={sheetTab!=='filters'}>
-        <Filters filter={filter} assets={assets} state={state} preview={draft=>prewarm(eligible(assets,state,draft,Date.now(),seed.current))} index={{sized:index.sized,total:rawAssets.length,analyzed:index.analyzed,photos:index.photos,measuring:index.measuring,analyzing:index.analyzing}} apply={value=>{resumeContext.current=undefined;setFilter(f=>({...value,geek:f.geek}));setSelected([]);setLock(NO_HAND);setSheet(null);haptic('light');setSpoken('Filtros aplicados');}}/>
+        <Filters people={(draft,change)=><PeoplePanel status={people.status} error={people.error} assets={assets} draft={draft} change={change} action={people.action} call={people.call} revision={people.revision}/>} filter={filter} assets={assets} state={state} preview={draft=>prewarm(eligible(assets,state,draft,Date.now(),seed.current))} index={{sized:index.sized,total:rawAssets.length,analyzed:index.analyzed,photos:index.photos,measuring:index.measuring,analyzing:index.analyzing}} apply={value=>{resumeContext.current=undefined;setFilter(f=>({...value,geek:f.geek}));setSelected([]);setLock(NO_HAND);setSheet(null);haptic('light');setSpoken('Filtros aplicados');}}/>
         {demo&&<button className="sheet-action secondary" onClick={()=>{setState(initialState());setStats(EMPTY_STATS);setSessionOpen(false);setSession(false);setShowDone(false);setLock(NO_HAND);setFilter(initialFilter);setSelected([]);setSheet(null);setSpoken('Demostración reiniciada');}}>Reiniciar demostración</button>}
       </div>
       <div hidden={sheetTab!=='settings'}><DisplaySettingsPanel display={display} change={setDisplay} geek={!!filter.geek} setGeek={value=>setFilter(f=>({...f,geek:value}))} library={libraryActions} replayIntro={()=>{setSheet(null);setOnboarded(false);haptic('selection');}}/></div>
@@ -630,5 +638,5 @@ export function ManoApp() {
       {reviewAssets.length>0&&<><ReviewGrid assets={reviewAssets} open={sheet==='review'} recover={recoverReview}/>
         <div className="review-primary"><button className="sheet-action secondary recover-all" disabled={busy} onClick={recoverAll}><ArrowCounterClockwiseIcon size={20}/>{reviewAssets.length===1?'Recuperar':`Recuperar todo (${reviewAssets.length})`}</button><button className="sheet-action danger" onClick={commitDelete} disabled={busy} aria-busy={busy}><TrashIcon size={20}/>{busy?'Esperando a Fotos…':`Eliminar ${reviewAssets.length}${freeLabel&&!reviewBytes.partial?` · ${freeLabel}`:''}`}</button><p className="sheet-fine">Fotos te pedirá confirmación; lo eliminado queda 30 días en «Eliminado recientemente», también en iCloud.</p></div></>}
     </Sheet>
-  </div>;
+  </div></PeopleProtection.Provider>;
 }

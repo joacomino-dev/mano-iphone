@@ -96,21 +96,21 @@ test('custom end uses next local midnight across spring and fall DST changes',()
   }finally{if(previous===undefined)delete process.env.TZ;else process.env.TZ=previous;}
 });
 
-test('history retains ten whole decisions with cloned hand context for exact undo restoration',()=>{
+test('history retains thirty whole decisions with cloned hand context for exact undo restoration',()=>{
   let state=initialState(); const context={handIds:['b','a'],rotated:['a'],selected:['b'],group:'x',filter:{...initialFilter,media:'video'}};
-  for(let i=0;i<12;i++)state=decide(state,[`a${i}`],'keep',i,context);
-  assert.equal(state.history.length,10); assert.equal(state.history[0].at,2);
+  for(let i=0;i<32;i++)state=decide(state,[`a${i}`],'keep',i,context);
+  assert.equal(state.history.length,30); assert.equal(state.history[0].at,2);
   context.handIds.reverse();context.rotated.push('b');context.filter.media='photo';
   const last=state.history.at(-1);assert.deepEqual(last.context.handIds,['b','a']);assert.deepEqual(last.context.rotated,['a']);assert.equal(last.context.filter.media,'video');
-  state=undo(state);assert.equal(state.marks.a11,undefined);assert.equal(state.history.length,9);
-  for(let i=0;i<9;i++)state=undo(state);
+  state=undo(state);assert.equal(state.marks.a31,undefined);assert.equal(state.history.length,29);
+  for(let i=0;i<29;i++)state=undo(state);
   assert.ok(state.marks.a0);assert.ok(state.marks.a1);assert.equal(state.history.length,0);
 });
 
 test('legacy record validation trims history without mutating original or losing decisions',()=>{
   let state=initialState();for(let i=0;i<12;i++)state=decide(state,[`a${i}`],'keep',i);
   const legacy={...state,history:[...state.history,...state.history]};
-  const result=validateRecordState(legacy);assert.equal(result.history.length,10);assert.equal(Object.keys(result.marks).length,12);assert.equal(legacy.history.length,20);
+  const result=validateRecordState(legacy);assert.equal(result.history.length,24);assert.equal(Object.keys(result.marks).length,12);assert.equal(legacy.history.length,24);
   assert.equal(validateRecordState({...state,marks:null}),null);
   assert.equal(validateRecordState({...state,favorites:{}}),null);
   assert.equal(validateRecordState({...state,marks:{bad:{level:99,due:1,keptAt:0}}}),null);

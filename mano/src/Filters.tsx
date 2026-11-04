@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { HeartIcon, CalendarBlankIcon, ImagesIcon, StampIcon, ArrowCounterClockwiseIcon, BroomIcon, SortAscendingIcon, ClockCountdownIcon, DeviceMobileIcon, ImageBrokenIcon, ReceiptIcon, SparkleIcon } from '@phosphor-icons/react';
 import { initialFilter, pileCount, favoritesTotal, LEVELS, type Asset, type Filter, type Order, type RecordState, type Smart } from './domain';
 import { AnimatedNumber } from './Loader';
@@ -37,13 +37,14 @@ const number = (n: number) => n.toLocaleString('es');
 /** What enters the pile. Grouped from the quickest decision to the finest:
  * clean-up shortcut → content → dates → order → seals. Changes are a draft
  * until «Aplicar filtros»; every shortcut shows how many files it holds now. */
-export function Filters({filter,assets,state,apply,index,preview}: {filter:Filter;assets:Asset[];state:RecordState;apply:(f:Filter)=>void;index:IndexProgress;preview?:(draft:Filter)=>void}) {
+export function Filters({filter,assets,state,apply,index,preview,people}: {filter:Filter;assets:Asset[];state:RecordState;apply:(f:Filter)=>void;index:IndexProgress;preview?:(draft:Filter)=>void;people?:(draft:Filter,update:(f:Partial<Filter>)=>void)=>ReactNode}) {
  const [draft,setDraft]=useState<Filter>({...initialFilter,...filter});
  // While choosing, the first cards of the draft warm up in the background, so
  // «Aplicar» opens on ready previews.
- useEffect(()=>{if(!preview)return;const t=setTimeout(()=>preview(draft),350);return()=>clearTimeout(t);},[JSON.stringify(draft)]);
+ useEffect(()=>{if(!preview)return;const t=setTimeout(()=>!personPending&&preview(draft),350);return()=>clearTimeout(t);},[JSON.stringify(draft)]);
  const update=(change:Partial<Filter>)=>{haptic('selection');setDraft(d=>({...d,...change}));};
  const invalid=draft.dateRange==='custom'&&(!draft.from||!draft.to||draft.from>draft.to);
+ const personPending=!!draft.person&&draft.person!==filter.person;
  const count=pileCount(assets,state,draft);
  const smart=draft.smart??'all';
  // «Favoritas» shows how many favourites there are (as in Photos), not how many are left to review.
@@ -56,6 +57,7 @@ export function Filters({filter,assets,state,apply,index,preview}: {filter:Filte
    <div className="smart-chips" role="group" aria-label="Limpieza rápida">{SMART.map(({value,label,icon:Icon})=><button key={value} aria-pressed={smart===value} onClick={()=>update({smart:value})}><Icon size={20} weight={smart===value?'fill':'regular'}/><span>{label}</span><span className="chip-count" aria-label={`${counts[value]} en la pila`}>{number(counts[value])}</span></button>)}</div>
    <p className="setting-note" role="status">{SMART.find(s=>s.value===smart)!.hint}{visionPending&&<small>Memo revisa tu fototeca en el iPhone: {number(index.analyzed)} de {number(index.photos)}. Irán apareciendo más.</small>}</p>
   </fieldset>
+  {people?.(draft,update)}
   <fieldset><legend><ImagesIcon size={18}/>Contenido</legend><div className="filter-chips">{([['all','Todo'],['photo','Fotos'],['video','Vídeos'],['live','Live Photos']] as const).map(([value,label])=><button key={value} aria-pressed={draft.media===value} onClick={()=>update({media:value})}>{label}</button>)}</div></fieldset>
   <fieldset><legend><CalendarBlankIcon size={18}/>Fecha</legend><div className="filter-chips">{([['all','Cualquier fecha'],['24h','Últimas 24 h'],['7d','Últimos 7 días'],['30d','Últimos 30 días'],['custom','Elegir fechas']] as const).map(([value,label])=><button key={value} aria-pressed={(draft.dateRange??'all')===value} onClick={()=>update({dateRange:value})}>{label}</button>)}</div>
    {draft.dateRange==='custom'&&<><DateCalendar from={draft.from} to={draft.to} change={update}/>{invalid&&<small className="date-error" role="status">Elige una fecha inicial y una final válidas.</small>}</>}
@@ -71,6 +73,6 @@ export function Filters({filter,assets,state,apply,index,preview}: {filter:Filte
    </div>
    <ul className="seal-levels" aria-label="Niveles de sello">{[1, 2, 3, 8].map(level => <li key={level}><strong>{ROMAN[level - 1]}</strong>{sealRest(level)}</li>)}</ul>
    <label className="field">Mostrar<select value={draft.seal} onChange={e=>update({seal:['all','none'].includes(e.target.value)?e.target.value as 'all'|'none':Number(e.target.value)})}><option value="all">Todos los niveles</option><option value="none">Sin sello · pendientes de descubrir</option>{LEVELS.map((l,i)=><option key={l} value={i+1}>Sello {ROMAN[i]} · {sealRest(i+1)}</option>)}</select></label><label className="switch-field"><span>Incluir las que descansan<small>Las conservadas vuelven con menor frecuencia.</small></span><input type="checkbox" role="switch" checked={draft.includeWaiting} onChange={e=>update({includeWaiting:e.target.checked})}/></label></fieldset>
-  <div className="filter-apply"><span>{invalid?(!draft.from||!draft.to?'Elige desde y hasta para aplicar':'La fecha inicial debe ir antes de la final'):<><AnimatedNumber value={count}/> {count===1?'archivo':'archivos'} en la pila con estos filtros</>}</span><button className="sheet-action" disabled={invalid} onClick={()=>apply({...draft,v:2})}>Aplicar filtros</button></div>
+  <div className="filter-apply"><span>{invalid?(!draft.from||!draft.to?'Elige desde y hasta para aplicar':'La fecha inicial debe ir antes de la final'):personPending?'Listo para revisar el grupo seleccionado':<><AnimatedNumber value={count}/> {count===1?'archivo':'archivos'} en la pila con estos filtros</>}</span><button className="sheet-action" disabled={invalid} onClick={()=>apply({...draft,v:2})}>Aplicar filtros</button></div>
  </div>;
 }

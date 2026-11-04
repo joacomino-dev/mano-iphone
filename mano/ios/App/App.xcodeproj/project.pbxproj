@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A10000000000000000000009 /* PeopleGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000010 /* PeopleGeometry.swift */; };
+		A10000000000000000000007 /* People.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000008 /* People.swift */; };
 		A10000000000000000000005 /* SignatureIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000006 /* SignatureIndex.swift */; };
 		B20000000000000000000001 /* PhotosSmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000002 /* PhotosSmokeTests.swift */; };
 		A10000000000000000000003 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000004 /* PrivacyInfo.xcprivacy */; };
@@ -33,6 +35,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		A10000000000000000000010 /* PeopleGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeopleGeometry.swift; sourceTree = "<group>"; };
+		A10000000000000000000008 /* People.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = People.swift; sourceTree = "<group>"; };
 		A10000000000000000000006 /* SignatureIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignatureIndex.swift; sourceTree = "<group>"; };
 		B20000000000000000000002 /* PhotosSmokeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotosSmokeTests.swift; sourceTree = "<group>"; };
 		B20000000000000000000003 /* ManoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ManoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -102,6 +106,8 @@
 				504EC3071FED79650016851F /* AppDelegate.swift */,
 				A10000000000000000000002 /* PhotoLibrary.swift */,
 				A10000000000000000000006 /* SignatureIndex.swift */,
+				A10000000000000000000008 /* People.swift */,
+				A10000000000000000000010 /* PeopleGeometry.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
 				504EC30E1FED79650016851F /* Assets.xcassets */,
 				504EC3101FED79650016851F /* LaunchScreen.storyboard */,
@@ -230,6 +236,8 @@
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				A10000000000000000000001 /* PhotoLibrary.swift in Sources */,
 				A10000000000000000000005 /* SignatureIndex.swift in Sources */,
+				A10000000000000000000007 /* People.swift in Sources */,
+				A10000000000000000000009 /* PeopleGeometry.swift in Sources */,
 				9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -407,14 +415,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 19;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.9.7;
+				MARKETING_VERSION = 9.7.1;
 				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" \"-DDEBUG\"";
 				PRODUCT_BUNDLE_IDENTIFIER = work.joaquin.mano;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -429,14 +437,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 19;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.9.7;
+				MARKETING_VERSION = 9.7.1;
 				PRODUCT_BUNDLE_IDENTIFIER = work.joaquin.mano;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";

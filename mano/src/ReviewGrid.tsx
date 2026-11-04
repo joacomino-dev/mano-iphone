@@ -1,3 +1,4 @@
+import { PeopleImage, usePeopleProtection } from './PeopleMedia';
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { ArrowCounterClockwiseIcon, CloudIcon, ImageBrokenIcon } from '@phosphor-icons/react';
 import { Carousel } from './mobile';
@@ -8,7 +9,10 @@ import { thumbPixels, previewPolicyKey, subscribePreviewPolicy } from './preview
 import { CocoLoader, Deferred } from './Loader';
 import { ReviewLoader, reviewRows, reviewHeight } from './review';
 
-function ReviewPhoto({ asset, loader, open }: { asset: Asset; loader: ReviewLoader<Thumb>; open: boolean }) {
+function ReviewPhoto(props: { asset: Asset; loader: ReviewLoader<Thumb>; open: boolean }) {
+  return usePeopleProtection() ? <PeopleImage asset={props.asset}/> : <UnprotectedReviewPhoto {...props}/>;
+}
+function UnprotectedReviewPhoto({ asset, loader, open }: { asset: Asset; loader: ReviewLoader<Thumb>; open: boolean }) {
   const policy = useSyncExternalStore(subscribePreviewPolicy, previewPolicyKey);
   const [thumb, setThumb] = useState<Thumb>();
   const [error, setError] = useState(false), [cloud, setCloud] = useState(false), [retry, setRetry] = useState(0);

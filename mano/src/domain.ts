@@ -1,3 +1,4 @@
+import { personFilter, type BreakupMode } from './people.ts';
 export type MediaKind = 'photo' | 'video' | 'live';
 /** `bytes`: what deleting it frees (all its resources), when measured.
  * `screenshot`: screenshots and screen recordings (PhotoKit subtype).
@@ -8,7 +9,7 @@ export type MediaKind = 'photo' | 'video' | 'live';
  * `favorite`: Photos says it is a favourite (native enumeration, read by
  * reconcileLibrary; the record's `favorites` is what the pile uses). */
 export type Asset = { id: string; kind: MediaKind; date: number; width: number; height: number; duration: number; modified?: number; group?: string; hasLocation?: boolean; demo?: boolean;
-  bytes?: number; screenshot?: boolean; low?: boolean; text?: number; quality?: number; cloud?: boolean; favorite?: boolean };
+  bytes?: number; screenshot?: boolean; low?: boolean; text?: number; quality?: number; cloud?: boolean; favorite?: boolean; people?: string[] };
 export type Mark = { level: number; due: number; keptAt: number };
 /** What was on the table when a decision was made, to put it back exactly on
  * undo: `handIds` in display order (front first, already rotated), the
@@ -20,6 +21,7 @@ export type DecisionContext = { handIds: string[]; rotated: string[]; selected: 
  * `unfavorite` only exists inside the «Favoritas» set: it takes the item out of
  * Favorites and back to the general pile (undo puts it back). */
 export type Action = 'keep' | 'discard' | 'favorite' | 'later' | 'unfavorite';
+export const UNDO_LIMIT = 30;
 export const ACTIONS: Action[] = ['keep', 'discard', 'favorite', 'later', 'unfavorite'];
 /** `laterAt`: where each postponed item stood in `later` before this decision,
  * so undo puts it back in exactly that place (not at the end). */
@@ -29,7 +31,7 @@ export type Order = 'oldest' | 'newest' | 'largest' | 'smallest' | 'random';
 /** Quick sets, combinable with every other filter. «favorites» is the only
  * one that shows favourites: everywhere else they stay out of the pile. */
 export type Smart = 'all' | 'later' | 'screenshots' | 'lowQuality' | 'text' | 'favorites';
-export type Filter = { seal: number | 'all' | 'none'; order: Order; media: 'all' | MediaKind; includeWaiting: boolean; dateRange?: 'all' | '24h' | '7d' | '30d' | 'custom'; from?: string; to?: string; geek?: boolean; smart?: Smart; v?: 2 };
+export type Filter = { seal: number | 'all' | 'none'; order: Order; media: 'all' | MediaKind; includeWaiting: boolean; dateRange?: 'all' | '24h' | '7d' | '30d' | 'custom'; from?: string; to?: string; geek?: boolean; smart?: Smart; person?: string; breakup?: BreakupMode; v?: 2 };
 export const ORDERS: Order[] = ['oldest', 'newest', 'largest', 'smallest', 'random'];
 export const SMARTS: Smart[] = ['all', 'later', 'screenshots', 'lowQuality', 'text', 'favorites'];
 export const LEVELS = ['Blanco', 'Rojo', 'Verde', 'Negro', 'Azul', 'Morado', 'Naranja', 'Dorado'];
@@ -51,6 +53,7 @@ export function normalizeFilter(value: unknown): Filter {
     ...(typeof input.to === 'string' ? { to: input.to } : {}),
     geek: input.geek === true,
     smart: SMARTS.includes(input.smart as Smart) ? input.smart as Smart : 'all',
+    ...personFilter(input),
     v: 2,
   };
 }
@@ -108,7 +111,7 @@ export function decide(state: RecordState, ids: string[], action: Action, now = 
     favorites: action === 'favorite' ? [...state.favorites, ...unique] : action === 'unfavorite' ? state.favorites.filter(id => !unique.includes(id)) : state.favorites,
     // Postponing again moves it to the very end; any other decision settles it.
     later: action === 'later' ? [...rest, ...unique] : rest,
-    history: [...state.history, { ids: unique, action, previous, at: now, ...(wasLater.length ? { wasLater, laterAt } : {}), ...(context ? { context: normalizeDecisionContext(context) } : {}) }].slice(-10) };
+    history: [...state.history, { ids: unique, action, previous, at: now, ...(wasLater.length ? { wasLater, laterAt } : {}), ...(context ? { context: normalizeDecisionContext(context) } : {}) }].slice(-UNDO_LIMIT) };
 }
 export function undo(state: RecordState): RecordState {
   const last = state.history.at(-1); if (!last) return state; const marks = { ...state.marks };
@@ -130,6 +133,7 @@ function hash(id: string, seed: number) { let n = seed | 0; for (const c of id) 
 /** Quick clean-up set membership (screenshots/recordings, low quality, text,
  * postponed). Vision signals arrive progressively; unanalysed items stay out. */
 export function smartMatch(asset: Asset, filter: Filter, later: ReadonlySet<string>, favorites: ReadonlySet<string> = new Set()) {
+  if (filter.person && !asset.people?.includes(filter.person)) return false;
   switch (filter.smart ?? 'all') {
     case 'later': return later.has(asset.id);
     case 'screenshots': return !!asset.screenshot;
@@ -260,7 +264,7 @@ export function validateRecordState(value: unknown): RecordState | null {
   if (input.favorites !== undefined && !strings(input.favorites) || input.removed !== undefined && !strings(input.removed)) return null;
   if (input.later !== undefined && !strings(input.later)) return null;
   const history: Decision[] = [];
-  for (const raw of Array.isArray(input.history) ? input.history.slice(-10) : []) {
+  for (const raw of Array.isArray(input.history) ? input.history.slice(-UNDO_LIMIT) : []) {
     if (!object(raw) || !strings(raw.ids) || !ACTIONS.includes(raw.action as Action) || typeof raw.at !== 'number' || !Number.isFinite(raw.at) || !object(raw.previous)) continue;
     if (!Object.values(raw.previous).every(v => v === null || mark(v))) continue;
     const previous: Decision['previous'] = {};

@@ -825,7 +825,7 @@
 /* The cloud inside its ring: the arc is the real download progress; it turns
    only while PhotoKit has not reported any yet. */
 .cloud-ring{position:relative;display:inline-grid;place-items:center;flex-shrink:0}
-.cloud-ring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.cloud-ring>.cloud-progress-ring{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
 .cloud-ring-track{fill:none;stroke:currentColor;stroke-opacity:.28;stroke-width:2}
 .cloud-ring-arc{fill:none;stroke:var(--cw-turquoise-light);stroke-width:2;stroke-linecap:round;transition:stroke-dasharray var(--cw-base) linear}
 .cloud-ring-spin{transform-origin:50% 50%}
@@ -881,3 +881,26 @@
 .inline-media>canvas.inspection-still{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:var(--cw-tape-edge)}
 /* Tap on a video card: a short play/pause glyph in the middle. */
 .video-glyph{position:absolute;inset:0;margin:auto;z-index:4;width:64px;height:64px;display:grid;place-items:center;border-radius:50%;background:rgba(11,16,16,.55);color:var(--cw-osd);pointer-events:none}
+
+/* 9.7.1: brand is inert; notifications keep their existing Motion transition. */
+.header-brand,.brand-status{-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;pointer-events:none}
+.empty-finish-message{position:fixed;z-index:220;left:50%;top:50%;transform:translate(-50%,-50%);max-width:85%;padding:18px 22px;border-radius:var(--cw-radius-lg);background:var(--cw-cream);color:var(--cw-ink);box-shadow:var(--cw-sticker);text-align:center;font:600 1rem/1.4 var(--cw-font);pointer-events:none}
+
+/* Personas extends existing paper/filter controls, never the protected runtime. */
+.people-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-block:16px}
+.people-groups>button{display:grid;justify-items:center;gap:8px;padding:12px;border:1.5px solid var(--cw-line);border-radius:var(--cw-radius-lg);background:var(--cw-cream);color:var(--cw-ink);min-width:0}
+.people-groups>button[aria-pressed=true]{border-color:var(--cw-accent);box-shadow:0 0 0 1px var(--cw-accent)}
+.people-groups strong{overflow-wrap:anywhere}.people-groups small{color:var(--cw-ink-soft)}
+.person-portrait{width:100%;aspect-ratio:1;position:relative;overflow:hidden;border-radius:var(--cw-radius-md);display:grid;place-items:center;font-size:12px}
+.person-portrait>img{width:100%;height:100%;object-fit:cover}
+.people-confirm{margin-block:16px;padding:12px;border:1px solid var(--cw-line);border-radius:var(--cw-radius-md)}
+.people-confirm button,.people-panel details>button{min-height:44px;padding:8px 12px;border-radius:var(--cw-radius-md);border:1px solid var(--cw-line);background:var(--cw-cream);color:var(--cw-ink)}
+.people-panel details{margin-top:16px}.people-panel summary{cursor:pointer;min-height:44px;padding:10px 0;font-weight:600}
+.people-corrections{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-block:12px}
+.person-photo{position:relative;width:100%;overflow:hidden;background:var(--cw-cream)}
+.person-photo>img{width:100%;height:auto;display:block}.person-photo .photo-loading{min-height:160px}
+.person-face-box{position:absolute;border:2px solid var(--cw-accent);color:white;background:color-mix(in srgb,var(--cw-accent) 24%,transparent);font:700 12px var(--cw-font);pointer-events:none}
+.people-correction>label{display:flex;gap:8px;align-items:center;min-height:44px}
+.people-covered{position:relative!important;inset:auto!important;width:100%;height:100%;min-height:100%;background:var(--cw-cream);color:var(--cw-ink);display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;padding:12px;text-align:center}
+.people-covered button{min-height:44px;padding:8px 12px;border-radius:var(--cw-radius-md);border:1px solid var(--cw-line);background:var(--cw-cream);color:var(--cw-ink)}
+.inspection-protected{width:100%;height:100%;transform-origin:center;overflow:hidden}.inspection-protected>img{width:100%;height:100%;object-fit:contain}

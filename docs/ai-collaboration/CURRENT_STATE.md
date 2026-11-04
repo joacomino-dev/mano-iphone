@@ -2,6 +2,17 @@
 
 Actualizado: 2026-11-04, America/Bogota. Codex trabaja solo por indicación del usuario.
 
+## Desarrollo autorizado: 9.7.1 / build 19 (sin publicar)
+
+Codex es el único escritor en `C:/Users/Joaco/Developer/CocoWash-stage1`, rama
+`cocowash/9.7.1`, base estable exacta `a3dba60051b4705cd403cae2f9ee6988aede7ea1`.
+Alcance del documento del usuario: Personas local/incremental, Breakup Mode,
+Terminar, logo, nube y undo 30. Usuario confirma iOS 27. API oficial elegida:
+Media Intelligence / FaceGroupAnalyzer, iOS 27+, gate de inicialización real.
+Se conservan iOS 17+ para el resto y todos los contratos de PhotoKit.
+No modificar main, publicar app ni distribuir una entrega definitiva.
+Los cambios aparentes del runtime son el estado CRLF previo; no tocarlos.
+
 ## Versión aprobada: 0.9.7 / build 18
 
 El usuario confirma pruebas en iPhone y una experiencia fluida; autoriza que esta

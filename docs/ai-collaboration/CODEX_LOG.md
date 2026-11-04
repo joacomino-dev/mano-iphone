@@ -168,3 +168,20 @@ Impacto para Claude: usar main y estado vigente; bitácora Claude intacta.
 Pendientes: registrar PR/SHA de integración; timeout de automatización continúa abierto.
 
 Cierre CW-CX-013: **integrada** mediante [PR #3](https://github.com/joacomino-dev/mano-iphone/pull/3), merge `a536c8b9617adf418b897bb4ecf90ff76783d09b` desde df00d52. Merge normal conserva etapas y rama. Main local actualizado por fast-forward en checkout Developer; OneDrive original intacto. Fuentes de aplicación de main idénticas a ed47909 (IPA probado); runtime28 PASS y enlaces documentales PASS. README/estado reflejan 0.9.7/18 y aceptación física declarada por usuario; sin métricas inventadas ni cambios funcionales adicionales. La incidencia de XCTest sigue abierta y separada. Solo registros cambiados después del merge; no repetir build del mismo código.
+
+### CW-CX-014 — Desarrollo único 9.7.1: Personas y Breakup Mode
+Fecha: 2026-11-04, America/Bogota.
+Agente: Codex; único escritor, por autorización del usuario.
+Estado: en curso, no publicada ni integrada en main.
+Base Git: `cocowash/9.7.1` desde estable a3dba60 (0.9.7/18 aceptada).
+Alcance: bridge Media Intelligence/FaceGroupAnalyzer (iOS27, inicialización real),
+checkpoint SQLite del sistema, consentimiento/correcciones locales; filtro Personas,
+Breakup protegido antes de mostrar imagen, Terminar vacío, logo inerte, nube y undo30.
+Decisión: mantener iOS17 para el resto. Versión solicitada 9.7.1/19 (tres números,
+no `0.9.7.1`, incompatible con CFBundleShortVersionString). Sin modelo externo ni
+nuevas dependencias. Usuario confirma iOS27. Workflow de desarrollo aislado, gratuito,
+sin despliegue ni App Store; artefacto exclusivamente de prueba.
+Validaciones locales iniciales: 110 tests, TypeScript, runtime28, web/native-web,
+Sites4 PASS. Swift/API, exactitud/privacidad y rendimiento físicos pendientes.
+Impacto para Claude: no requerido; contratos de borrado/favoritas permanecen.
+Pendientes: compilar Swift27 y probar UI/errores/cancelación antes de entregar.
