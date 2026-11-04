@@ -58,8 +58,9 @@ export class ReviewLoader<T> {
         if (job.controller.signal.aborted) return;
         this.cache.set(job.key, value);
         while (this.cache.size > 60) this.cache.delete(this.cache.keys().next().value!);
+        if (this.jobs.get(job.key) === job) this.jobs.delete(job.key);
         for (const w of job.waiters) w.resolve(value);
-      }).catch(error => { for (const w of job.waiters) w.reject(error); }).finally(() => {
+      }).catch(error => { if (this.jobs.get(job.key) === job) this.jobs.delete(job.key); for (const w of job.waiters) w.reject(error); }).finally(() => {
         for (const w of job.waiters) w.detach(); job.waiters.clear();
         if (this.jobs.get(job.key) === job) this.jobs.delete(job.key);
         this.active.delete(job); this.pump();

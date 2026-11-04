@@ -156,6 +156,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
     private var thumbnailJobs: [String: PreparedThumbnailJob] = [:]
     /// Writes since launch; the preview cache is pruned on the first and then every 16th.
     private var thumbnailWrites = 0
+    private var thumbnailBudget: Int64 = 0
     private let metadataQueue = DispatchQueue(label: "work.joaquin.mano.metadata", qos: .utility)
     private var metadataJobs: [String: LocalMetadataJob] = [:]
     private var exifCache: [String: CachedAssetExif] = [:]
@@ -312,7 +313,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         // Preview only (card or anchored view, per the quality profile); never the original.
         let size = min(3072, max(200, call.getInt("size") ?? 900))
         // LRU bound for this cache, chosen by the profile (0 = leave as is).
-        let cacheLimit = Int64(min(max(call.getInt("cacheBytes") ?? 0, 0), 600 * 1024 * 1024))
+        let cacheLimit = Int64(min(max(call.getInt("cacheBytes") ?? (300 * 1024 * 1024), 1), 600 * 1024 * 1024))
         // «Ahorrar iCloud» (network false): only what is already on the iPhone. When
         // just a smaller local version exists it is returned marked `cloud` and cached
         // apart, so a later download at full preview size is never shadowed by it.
@@ -328,6 +329,10 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
             for (file, lite) in [(path, false), (litePath, true)] where !lite || !network {
                 if let bytes = self.videoSize(file), bytes > 0 {
                     try? FileManager.default.setAttributes([.modificationDate: Date()], ofItemAtPath: file.path)
+                    if self.thumbnailBudget != cacheLimit {
+                        self.thumbnailBudget = cacheLimit
+                        self.pruneThumbnails(folder, limit: cacheLimit)
+                    }
                     call.resolve(["path": file.path, "cloud": lite]); return
                 }
             }
@@ -378,7 +383,10 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                                     // Measurement signal for the quality profiles: no ids, names or paths.
                                     NSLog("COCOWASH_PREVIEW size=%ld bytes=%ld ms=%ld lite=%d", size, data.count, Int(Date().timeIntervalSince(started) * 1000), lite ? 1 : 0)
                                     self.thumbnailWrites += 1
-                                    if cacheLimit > 0, self.thumbnailWrites % 16 == 1 { self.pruneThumbnails(folder, limit: cacheLimit) }
+                                    if self.thumbnailBudget != cacheLimit || self.thumbnailWrites % 16 == 1 {
+                                        self.thumbnailBudget = cacheLimit
+                                        self.pruneThumbnails(folder, limit: cacheLimit)
+                                    }
                                 } catch {
                                     self.stopThumbnail(token, job: job, message: "No se pudo guardar la vista previa. Libera espacio y reintenta.", code: "CACHE_WRITE_FAILED")
                                 }

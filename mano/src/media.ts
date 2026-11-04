@@ -1,7 +1,7 @@
 import { Capacitor } from '@capacitor/core';
 import type { Asset } from './domain';
 import { Library, isNative, thumbnailInfo, inCloudError } from './library';
-import { cacheBytes, cardPixels, cloudDownloads, previewQuality, zoomPixels } from './preview';
+import { cardPixels, cloudDownloads, zoomPixels } from './preview';
 
 /** Poster only. Videos prepare separately (VideoStore) so a slow or failed
  * video download can never take its poster down with it, and vice versa.
@@ -49,19 +49,7 @@ export async function prepareReviewAsset(asset: Asset, signal: AbortSignal): Pro
  * on abort, its file path converted for the WebView. `network` false stays on
  * the iPhone; `onProgress` follows an iCloud download (0–1). */
 async function nativeThumbnail(asset: Asset, size: number, prefix: string, signal: AbortSignal, network: boolean, track?: (cancel: () => void) => void, onProgress?: (value: number) => void) {
-  const requestId = `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  const cancel = () => { void Library.cancelThumbnailPreparation({ requestId }).catch(() => {}); };
-  track?.(cancel);
-  signal.addEventListener('abort', cancel, { once: true });
-  const listener = onProgress ? Library.addListener('mediaPreparationProgress', event => { if (event.requestId === requestId) onProgress(event.progress); }) : undefined;
-  try {
-    const image = await Library.thumbnail({ id: asset.id, size, requestId, cacheBytes: cacheBytes(previewQuality()), network });
-    if (signal.aborted) throw aborted();
-    return { src: Capacitor.convertFileSrc(image.path), cloud: !!image.cloud };
-  } catch (error) {
-    cancel();
-    throw error;
-  } finally { signal.removeEventListener('abort', cancel); void listener?.then(l => l.remove()).catch(() => {}); }
+  return thumbnailInfo(asset, size, false, network, signal, onProgress, prefix === 'zoom' || prefix === 'review');
 }
 /** Demonstration only: an iCloud download that takes a moment, with progress. */
 function simulateDownload(signal: AbortSignal, onProgress?: (value: number) => void, ms = 1400) {
@@ -91,7 +79,6 @@ function keepSharp(asset: Asset, src: string) {
   // Only anchored items, but still bounded for very long sessions.
   while (sharp.size > 80) sharp.delete(sharp.keys().next().value!);
   for (const listener of sharpListeners) listener();
-  if (!asset.demo && isNative) void thumbnailInfo(asset, cardPixels(asset), false, true).catch(() => {});
 }
 /** Warm the previews the person is about to see (e.g. while choosing filters):
  * the native disk cache then answers the stack at once. Same network rule as
@@ -102,7 +89,10 @@ export function prewarm(assets: Asset[]) {
   if (warming) return;
   const batch = assets.slice(0, cloudDownloads() ? 2 : 6);
   warming = batch.length;
-  for (const asset of batch) void thumbnailInfo(asset, cardPixels(asset)).catch(() => {}).finally(() => { warming--; });
+  for (const asset of batch) void (async () => {
+    const local = await thumbnailInfo(asset, cardPixels(asset), false, false);
+    if (local.cloud && cloudDownloads()) await cloudPreviews.fetch(asset, 'card');
+  })().catch(error => { if (inCloudError(error) && cloudDownloads()) void cloudPreviews.fetch(asset, 'card').catch(() => {}); }).finally(() => { warming--; });
 }
 
 /* ---------- iCloud previews: one tracked download per item ---------- */
