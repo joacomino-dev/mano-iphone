@@ -110,3 +110,16 @@ Pendientes: comprobar CI y descargar IPA verificado; QA física aparte.
 Actualización CW-CX-009: pool ARM macos-26 permaneció 10 minutos sin máquina; run 41872183811 cancelado antes de ejecutar pasos iOS. Incidencia Actions/Pages confirmada en estado oficial. Se prueba pool gratuito macos-15-intel/Xcode 26.3 existente, soportado por inventario oficial runner-images, conservando smoke obligatorio y fuentes de aplicación. No se interpreta cola como error del código.
 
 Segundo fallback: 41873983543/macos-15-intel volvió a fallar sin adquirir máquina. Se usa macos-15 ARM estándar con el mismo Xcode 26.3, inventario oficial verificado. Sin alterar app ni gates.
+
+### CW-CX-010 — IPA de etapa 1 entregado mediante binario nativo idéntico
+Fecha: 2026-11-04, America/Bogota.
+Agente: Codex.
+Tarea: entregar IPA autorizado sin depender de asignación macOS.
+Estado: paquete local disponible; instalación/QA física pendientes.
+Base Git / commit: web 143a1d8; nativo CI verde 41530807373/1586a37.
+Archivos modificados: registros; herramientas/IPA fuera del repo.
+Cambios realizados: recompilar TypeScript/Vite nativo; sustituir web assets en IPA nativo inalterado; versiones actuales 0.9.6/17.
+Decisiones relevantes: Git demuestra Swift/recursos/dependencias iguales; no nueva compilación Swift. No usar este método si cambian fuentes nativas.
+Validaciones: hash artefacto GitHub, CRC, arm64, identidad, textura, 28 recursos nativos y 64 web byte a byte PASS. [Entrega](../ai-handoff/STAGE_1_REVIEW.md) y recibo JSON en Descargas.
+Impacto para Claude: no necesario.
+Pendientes: firma AltStore/QA física; full CI 41885957816 aparte. Main intacto.

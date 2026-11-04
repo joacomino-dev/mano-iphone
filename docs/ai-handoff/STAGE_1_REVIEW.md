@@ -8,6 +8,28 @@ Actualización de distribución: usuario autorizó publicar esta etapa en rama i
 El IPA debe verificarse contra el SHA compilado y guardarse en Descargas para AltStore.
 Compilación y descarga pendientes al preparar este commit; no confundir con QA física.
 
+## IPA disponible — actualización de distribución
+
+`C:/Users/Joaco/Downloads/CocoWash-0.9.6-etapa1-143a1d84-web.ipa`
+(5.546.336 bytes), recibo JSON en el mismo directorio.
+
+Método de contingencia tras fallos de asignación de runner: Vite nativo y TypeScript
+compilados de nuevo desde 143a1d8; assets web empaquetados sobre el binario arm64
+del CI verde 41530807373, SHA 1586a37056ef25a22eb4a4e836f0cbd4a24946ca,
+artefacto 13183800067. Fuente Swift, recursos nativos y dependencias son idénticos
+en ambos SHA. Las diferencias nativas se limitan a versión 0.9.5/16→0.9.6/17,
+incluido configure-ios; package.json añade únicamente un test. No se recompiló Swift.
+
+Verificación: hash del ZIP de origen coincide con GitHub; CRC ZIP/IPA, binario arm64,
+identidad, configuración Capacitor sin servidor remoto, 28 recursos nativos byte a byte,
+64 archivos web byte a byte, referencias HTML, código etapa 1 y textura intacta.
+SHA256 del IPA: `a415a8832f54dca34ae48bedc6cbf5f91cb16faffc020dad24420eea39d5f1a9`.
+Script reproducible y recibo: carpeta externa de evidencia, `package-web-update.py`
+e `ipa-receipt-web.json`. Sin certificados ni firma: instalar con AltStore.
+Este método solo vale mientras el código nativo y dependencias coincidan; no sirve
+para futuras etapas que modifiquen Swift. Full CI 41885957816 continúa aparte.
+Instalación y checklist iPhone siguen pendientes.
+
 ## Cambio y alcance
 
 El grid anterior montaba todos los descartes y cada Photo solicitaba su miniatura.

@@ -4,6 +4,8 @@ Actualizado: 2026-11-04, America/Bogota. Codex trabaja solo por indicación del 
 
 ## Etapa 1 completada local — Codex
 
+**IPA entregado en Descargas:** `C:/Users/Joaco/Downloads/CocoWash-0.9.6-etapa1-143a1d84-web.ipa` (5.546.336 bytes), recibo JSON adyacente. Se compilaron los assets web de 143a1d8 y se empaquetaron sobre el binario arm64 del CI verde 41530807373 (1586a37). Comparación Git confirma Swift, recursos nativos, configuración y dependencias idénticos; solo versiones 0.9.5/16→0.9.6/17 y script de tests cambian. SHA256 IPA `a415a8832f54dca34ae48bedc6cbf5f91cb16faffc020dad24420eea39d5f1a9`. 28 recursos nativos preservados y 64 archivos web verificados, CRC y textura PASS. **No es una nueva compilación Swift ni QA física.** AltStore debe firmarlo. Script/recibo en carpeta externa de evidencia. Full CI 41885957816 sigue aparte; no confundir sus resultados con este paquete. Main intacto, etapa 2 no iniciada.
+
 Fallback vigente de CI: `macos-15` ARM y Xcode 26.3. El run 41873983543 con macos-15-intel falló sin adquirir máquina; se conserva evidencia y no se cambia código de aplicación.
 
 Fallback de compilación: macOS 26 ARM también permaneció sin runner durante 10 minutos y se canceló antes de arrancar (41872183811). GitHub declaró incidencia Actions/Pages ese día. Se prueba `macos-15-intel`, estándar gratuito con Xcode 26.3 preinstalado, conservando todos los gates y checkout SHA. La app requiere iOS 17 y no usa APIs nuevas de iOS 26.6 en PhotoLibrary. Sin cambiar fuentes de app ni main.
