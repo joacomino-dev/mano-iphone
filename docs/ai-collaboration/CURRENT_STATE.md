@@ -4,6 +4,8 @@ Actualizado: 2026-11-04, America/Bogota. Codex trabaja solo por indicación del 
 
 ## Etapa 1 completada local — Codex
 
+Fallback vigente de CI: `macos-15` ARM y Xcode 26.3. El run 41873983543 con macos-15-intel falló sin adquirir máquina; se conserva evidencia y no se cambia código de aplicación.
+
 Fallback de compilación: macOS 26 ARM también permaneció sin runner durante 10 minutos y se canceló antes de arrancar (41872183811). GitHub declaró incidencia Actions/Pages ese día. Se prueba `macos-15-intel`, estándar gratuito con Xcode 26.3 preinstalado, conservando todos los gates y checkout SHA. La app requiere iOS 17 y no usa APIs nuevas de iOS 26.6 en PhotoLibrary. Sin cambiar fuentes de app ni main.
 
 Corrección de distribución autorizada tras dos fallos de asignación Intel: Codex modifica únicamente workflow y documentación en la rama de etapa 1. Runner estándar gratuito `macos-26` ARM, Xcode 26.6 preinstalado, checkout fijado a github.sha. Se conservan smoke y condiciones del IPA. No integrar main ni avanzar etapa 2. Evidencia de imagen: https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md . Compilación nueva pendiente al preparar esta corrección.

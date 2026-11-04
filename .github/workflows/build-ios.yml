@@ -34,9 +34,9 @@ jobs:
   ios:
     needs: prepare
     if: github.event.repository.private == false
-    # Use the standard macOS 15 Intel pool: macOS 26 pools did not acquire jobs.
+    # Use the standard macOS 15 ARM pool: Intel pools did not acquire jobs.
     # Xcode 26.3 is preinstalled; no toolchain/runtime download or paid runner.
-    runs-on: macos-15-intel
+    runs-on: macos-15
     # Includes bounded cold-start readiness; this remains the standard free runner.
     # 62: a smoke test that fails slowly (up to its own 45 min) still leaves time
     # to keep diagnostics and, on manual request, build the IPA; a job cancelled
