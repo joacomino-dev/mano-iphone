@@ -41,3 +41,16 @@ Decisiones relevantes: Favoritos es comando, no toggle; Motion global requiere r
 Validaciones: 656 archivos SHA256, ZIP restaurado, git fsck/HEAD/refs/stage/status equivalentes; detalles/recibo en CODEX_REVIEW. Sin builds nuevos.
 Impacto para Claude: CW-HO-002 preparado, semántica/movimiento/contratos reservados para Codex.
 Pendientes: aprobación general antes del piloto; revisión diff y QA posterior.
+
+### CW-CX-005 — Auditoría 0.9.6 e integración autorizada en main
+Fecha: 2026-11-04, America/Bogota.
+Agente: Codex (solo; usuario sin cupo de Claude).
+Tarea: reconstruir proyecto, auditar rendimiento y actualizar GitHub con la última versión, autorizado durante la auditoría.
+Estado: integrada la fuente; auditoría entregada en chat; optimizaciones propuestas, no implementadas. CW-HO-005 recibido técnicamente; aceptación física pendiente.
+Base Git / commit: remoto dddccbb (0.9.6/17), merge 769ef54 en [PR #2](https://github.com/joacomino-dev/mano-iphone/pull/2); árboles idénticos. Local Windows 76744e2 dirty preservado, sin fetch/checkout/escrituras. CW-CX-004 sigue solo en documentos locales previos, no se incorpora a ciegas.
+Archivos modificados: integración de 32 commits existentes; después CURRENT_STATE y esta bitácora, solo documentación.
+Cambios realizados: main pasó de 0.7 a 0.9.6; PR #1 también figura integrado. Sin publicar herramientas locales ni fusionar la sonda ci-probe-flat-paper.
+Decisiones relevantes: conservar mano fija, MotionValue y contratos de Fotos. Priorizar revisión por visibilidad/cola global, cachés coherentes e índice por edición; medir Vision cuadrático antes de cambiar el algoritmo.
+Validaciones: 84/84 tests del SHA remoto en memoria; 1.000 solicitudes de miniaturas simultáneas y duplicación prewarm/cloud reproducidas con puente simulado; IN_CLOUD no reintenta al cambiar preferencia; índice JS por ID reutiliza señales antiguas. Banco Node de derivaciones: 0,05/0,26/3,11/18,10 ms para 100/1.000/10.000/50.000 assets (medianas, 20 % pendientes, orden aleatorio, sin UI/PhotoKit). No son tiempos de iPhone. CI [41837796389](https://github.com/joacomino-dev/mano-iphone/actions/runs/41837796389): tests/runtime/build y sync verdes; smoke en curso al registrar.
+Impacto para Claude: no se requiere su intervención; continuar desde main remoto y el estado actualizado.
+Pendientes: resultado completo del CI, Instruments/iPhone, actualizar checkout local con base recuperable sin perder cambios. No implementar optimizaciones sin autorización.
