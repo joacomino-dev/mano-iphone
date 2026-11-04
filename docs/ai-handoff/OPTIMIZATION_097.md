@@ -1,5 +1,17 @@
 # CocoWash 0.9.7 / 18 — etapas 2–7
 
+**IPA disponible:** `C:/Users/Joaco/Downloads/CocoWash-0.9.7-completa-ed47909f.ipa`,
+5.553.746 bytes, recibo JSON adyacente. [Compilación de dispositivo 41899040312](https://github.com/joacomino-dev/mano-iphone/actions/runs/41899040312)
+verde sobre ed47909fdcd343f4a0c6e5a592894ef7f89d71de (fuentes de app idénticas a fce0deb).
+Tests/runtime, oráculo Swift y Release iPhone PASS. CRC, versión 0.9.7/18,
+bundle original, textura, marcador Swift nuevo y binario arm64 verificados.
+SHA256 IPA: `1db4dc6a25c79aedc05573c0fb740b557f5f8485dbc6493f4df304d2b7e4d68c`.
+No se reutilizó binario anterior; firma personal mediante AltStore.
+**Smoke UI 41893615114 aún en curso y aceptación física pendientes.** El verde
+del job de paquete acredita sus pasos, no esas validaciones. La comparación UI
+demo adicional confirma que calidad/iCloud no cambian mano ni orden al recargar
+(`policy-qa.mjs/json` en evidencia).
+
 2026-11-04. Usuario aceptó etapa 1 y autorizó las restantes juntas, en
 `codex/stage1-review`. Main y el checkout anterior siguen intactos.
 

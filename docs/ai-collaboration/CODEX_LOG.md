@@ -138,3 +138,16 @@ Impacto para Claude: no requerido; main intacto.
 Pendientes: compilación/IPA nuevo y aceptación física; no atribuir FPS ni rendimiento iPhone a escritorio.
 
 Actualización CW-CX-011: oráculo Swift de CI 41893615114 PASS; compilación simulador pasa antes de fixtures/boot. Tras espera prolongada en CoreSimulator, se separa job de IPA personal, conservando smoke original. Nuevo job repite tests/runtime/oráculo y exige Release iPhone real antes de subir IPA; no se declara aceptación del smoke pendiente. Solo workflow/documentación, sin cambiar fuente funcional de fce0deb.
+
+### CW-CX-012 — IPA completo 0.9.7/18 entregado
+Fecha: 2026-11-04, America/Bogota.
+Agente: Codex.
+Tarea: entregar etapas 2–7 sobre etapa 1 aceptada.
+Estado: implementación y paquete completados; smoke UI y aceptación física pendientes.
+Base Git / commit: fuentes fce0deb; CI ed47909, misma app.
+Archivos modificados: registros de entrega; IPA/recibo externos en Descargas.
+Cambios realizados: [IPA y procedencia](../ai-handoff/OPTIMIZATION_097.md) de compilación Release nueva, sin reempaquetar nativo anterior.
+Decisiones relevantes: separar artefacto personal de disponibilidad de CoreSimulator; mantener smoke original.
+Validaciones: CI paquete 41899040312 success (106 tests/runtime/oráculo/Release). Hash GitHub, CRC, versión, identidad, arm64, textura y marcador nativo nuevo PASS. QA demo de preferencias conserva mano/orden tras recarga. 366 fuentes originales intactas; main intacto.
+Impacto para Claude: entrega autosuficiente, no requiere intervención.
+Pendientes: full smoke 41893615114 en curso y pruebas físicas; ninguna medición de FPS/RAM de iPhone atribuida a escritorio.
