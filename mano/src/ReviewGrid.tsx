@@ -10,7 +10,7 @@ import { CocoLoader, Deferred } from './Loader';
 import { ReviewLoader, reviewRows, reviewHeight } from './review';
 
 function ReviewPhoto(props: { asset: Asset; loader: ReviewLoader<Thumb>; open: boolean }) {
-  return usePeopleProtection() ? <PeopleImage asset={props.asset}/> : <UnprotectedReviewPhoto {...props}/>;
+  return usePeopleProtection() ? <PeopleImage asset={props.asset} size={thumbPixels()}/> : <UnprotectedReviewPhoto {...props}/>;
 }
 function UnprotectedReviewPhoto({ asset, loader, open }: { asset: Asset; loader: ReviewLoader<Thumb>; open: boolean }) {
   const policy = useSyncExternalStore(subscribePreviewPolicy, previewPolicyKey);

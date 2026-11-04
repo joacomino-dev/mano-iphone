@@ -21,16 +21,14 @@ enum CocoMediaPressure {
 public class PeoplePlugin: CAPPlugin, CAPBridgedPlugin, PHPhotoLibraryChangeObserver {
     public let identifier = "PeoplePlugin"
     public let jsName = "People"
-    public let pluginMethods = [CAPPluginMethod(name: "command", returnType: CAPPluginReturnPromise)]
+    public let pluginMethods: [CAPPluginMethod] = [CAPPluginMethod(name: "command", returnType: CAPPluginReturnPromise)]
     public override func load() { PHPhotoLibrary.shared().register(self) }
     deinit { PHPhotoLibrary.shared().unregisterChangeObserver(self) }
     public func photoLibraryDidChange(_ changeInstance: PHChange) {
         #if canImport(MediaIntelligence) && !targetEnvironment(simulator)
         if #available(iOS 27.0, *) {
-            Task {
-                if await PeopleIndex.shared.libraryChanged() {
-                    DispatchQueue.main.async { self.notifyListeners("libraryChanged", data: [:]) }
-                }
+            Task { @MainActor [weak self] in
+                if await PeopleIndex.shared.libraryChanged() { self?.notifyListeners("libraryChanged", data: [:]) }
             }
         }
         #endif
@@ -269,14 +267,14 @@ private actor PeopleIndex {
         if pending.isEmpty { running = false }
         try save()
     }
-    private func redact(id: String, person: String) async throws -> [String: Any] {
+    private func redact(id: String, person: String, size: Int) async throws -> [String: Any] {
         guard store.consent, permission(), let entry = store.entries[id] else { throw Failure.stale }
         let fetched = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil)
         guard let asset = fetched.firstObject, !asset.isHidden, signature(asset) == entry.signature else { throw Failure.stale }
         let faces = entry.faces.filter { group($0) == person }
         guard !faces.isEmpty else { throw Failure.stale }
         let token = generation
-        guard let source = await image(asset, size: 1400), token == generation else { throw Failure.stale }
+        guard let source = await image(asset, size: size), token == generation else { throw Failure.stale }
         guard permission(), let current = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil).firstObject,
               !current.isHidden, signature(current) == entry.signature else { throw Failure.stale }
         let up = upright(source); guard let cg = up.cgImage else { throw Failure.invalid }
@@ -296,11 +294,15 @@ private actor PeopleIndex {
         guard token == generation, let data = output.jpegData(compressionQuality: 0.88) else { throw Failure.stale }
         let cache = folder.appendingPathComponent("Redacted", isDirectory: true)
         try FileManager.default.createDirectory(at: cache, withIntermediateDirectories: true, attributes: [.protectionKey: FileProtectionType.complete])
-        let key = SHA256.hash(data: Data("\(id):\(entry.signature):\(person):\(generation)".utf8)).map { String(format: "%02x", $0) }.joined()
+        let key = SHA256.hash(data: Data("\(id):\(entry.signature):\(person):\(generation):\(size)".utf8)).map { String(format: "%02x", $0) }.joined()
         let file = cache.appendingPathComponent(key + ".jpg")
         try data.write(to: file, options: [.atomic, .completeFileProtection])
         let files = try FileManager.default.contentsOfDirectory(at: cache, includingPropertiesForKeys: [.contentModificationDateKey]).sorted { ((try? $0.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate ?? .distantPast) > ((try? $1.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate ?? .distantPast) }
-        for stale in files.dropFirst(24) { try? FileManager.default.removeItem(at: stale) }
+        var bytes = 0
+        for (index, cached) in files.enumerated() {
+            bytes += (try? cached.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+            if index >= 24 || bytes > 32 * 1024 * 1024 { if cached != file { try? FileManager.default.removeItem(at: cached) } }
+        }
         return ["path": file.path]
     }
     func command(_ call: CAPPluginCall) async throws -> [String: Any] {
@@ -327,7 +329,7 @@ private actor PeopleIndex {
             defer { work = nil }
             do { try await task.value } catch { if running && !task.isCancelled { throw error } }
         }
-        if action == "redact" { return try await redact(id: call.getString("id") ?? "", person: call.getString("person") ?? "") }
+        if action == "redact" { return try await redact(id: call.getString("id") ?? "", person: call.getString("person") ?? "", size: min(3072,max(256,call.getInt("size") ?? 1400))) }
         if action == "person" {
             let person = call.getString("person") ?? ""
             let entries = store.entries.filter { $0.value.faces.contains { group($0) == person } }

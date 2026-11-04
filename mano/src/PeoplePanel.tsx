@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { UsersIcon } from '@phosphor-icons/react';
 import { KeyboardInput } from './mobile';
-import { thumbnailInfo } from './library';
+import { thumbnailInfo, isNative } from './library';
 import type { Asset, Filter } from './domain';
 import { PeopleImage, usePeopleProtection } from './PeopleMedia';
 import type { PersonItems, PeopleStatus } from './people';
@@ -17,7 +17,7 @@ function PersonPreview({ asset }: { asset?: Asset }) {
     void thumbnailInfo(asset, 320, false, false, controller.signal).then(t => { if (!controller.signal.aborted) setImage({ key, src: t.src }); }).catch(() => {});
     return () => controller.abort();
   }, [key, protectedPhoto]);
-  if (protectedPhoto) return <PeopleImage asset={hiddenAsset} allowReveal={false}/>;
+  if (protectedPhoto) return <PeopleImage asset={hiddenAsset} allowReveal={false} size={320}/>;
   return image?.key === key ? <img src={image.src} alt="Fotografía representativa" draggable={false}/> : <span>Vista local no disponible</span>;
 }
 
@@ -66,11 +66,11 @@ export function PeoplePanel({ status, error, assets, draft, change, action, call
         </div>
         <p className="setting-note">Breakup Mode protege también la revisión y el zoom. Si no hay una coincidencia vigente o no está disponible la vista local, se mantiene oculta. No cambia el original.</p>
         <details><summary>Corregir este grupo</summary>
-          <label className="field">Nombre opcional<KeyboardInput value={name} maxLength={60} onChange={e => setName(e.target.value)}/></label>
+          <label className="field">Nombre opcional{isNative ? <input value={name} maxLength={60} onChange={e => setName(e.target.value)}/> : <KeyboardInput value={name} maxLength={60} onChange={e => setName(e.target.value)}/>}</label>
           <button disabled={working || !name.trim()} onClick={() => void run('correct', { operation: 'rename', person: selected.id, name: name.trim() })}>Guardar nombre</button>
           <label className="field">Unificar con<select value={target} onChange={e => setTarget(e.target.value)}><option value="">Elegir otro grupo</option>{status.groups.filter(g => g.id !== selected.id).map(g => <option key={g.id} value={g.id}>{g.name}</option>)}</select></label>
           <button disabled={working || !target} onClick={async () => { if (await run('correct', { operation: 'merge', person: selected.id, target })) change({ person: target }); }}>Unificar grupos</button>
-          <p className="setting-note">Selecciona los rostros asociados por error para excluirlos o separarlos. Las coordenadas indican qué rostro se está corrigiendo.</p>
+          <p className="setting-note">Selecciona los rostros asociados por error para excluirlos o separarlos. Cada número señala un rostro de esta foto.</p>
           <div className="people-corrections">{items.map(item => <div key={item.id} className="people-correction">
             <div className="person-photo" style={{aspectRatio: byId.has(item.id)?`${byId.get(item.id)!.width}/${byId.get(item.id)!.height}`:undefined}}><PersonPreview asset={byId.get(item.id)}/>{item.faces.map((face, i) => <span key={face.id} className="person-face-box" style={{ left: `${face.box[0] * 100}%`, top: `${face.box[1] * 100}%`, width: `${face.box[2] * 100}%`, height: `${face.box[3] * 100}%` }}>{i + 1}</span>)}</div>
             {item.faces.map((face, i) => <label key={face.id}><input type="checkbox" checked={picked.includes(face.id)} onChange={e => setPicked(p => e.target.checked ? [...p, face.id] : p.filter(id => id !== face.id))}/>Rostro {i + 1}</label>)}

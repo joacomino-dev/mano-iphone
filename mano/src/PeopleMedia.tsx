@@ -3,6 +3,8 @@ import { Capacitor, registerPlugin } from '@capacitor/core';
 import { thumbnail } from './library';
 import type { Asset } from './domain';
 import { RequestQueue } from './requests';
+import { cardPixels, previewPolicyKey, subscribePreviewPolicy } from './preview';
+import { useSyncExternalStore } from 'react';
 import { protectedMode, type BreakupMode } from './people';
 
 export const PeopleBridge = registerPlugin<{
@@ -17,29 +19,32 @@ const redactions = new RequestQueue<string>(1,16);
  * cannot cross an asset/person/mode/index boundary, even for a single render. */
 export function usePeopleProtection() { const { person, mode } = useContext(PeopleProtection); return protectedMode(person, mode); }
 
-export function usePeopleImage(asset: Asset) {
+export function usePeopleImage(asset: Asset, size = cardPixels(asset)) {
   const { person, mode, revision } = useContext(PeopleProtection);
   const protectedPhoto = protectedMode(person, mode);
-  const key = `${asset.id}:${asset.modified ?? 0}:${person}:${mode}:${revision}`;
+  const policy = useSyncExternalStore(subscribePreviewPolicy, previewPolicyKey);
+  const [attempt, setAttempt] = useState(0);
+  const key = `${asset.id}:${asset.modified ?? 0}:${person}:${mode}:${revision}:${size}:${policy}:${attempt}`;
   const [result, setResult] = useState<{ key: string; src: string }>();
   useEffect(() => {
     if (!protectedPhoto || mode !== 'face') return;
     const controller = new AbortController();
     void redactions.request(key, async () => {
-      const value = await PeopleBridge.command({ action: 'redact', id: asset.id, person });
+      const value = await PeopleBridge.command({ action: 'redact', id: asset.id, person, size });
       const path = (value as { path?: unknown }).path;
       if (typeof path !== 'string') throw new Error('Protected preview unavailable');
-      return Capacitor.convertFileSrc(path);
+      const url = Capacitor.convertFileSrc(path);
+      return `${url}${url.includes('?')?'&':'?'}redacted=${attempt}`;
     }, controller.signal).then(src => {
       if (!controller.signal.aborted) setResult({ key, src });
     }).catch(() => { /* fail closed: never fall back to an original */ });
     return () => { controller.abort(); };
   }, [key, protectedPhoto]);
-  return { protectedPhoto, src: result?.key === key ? result.src : undefined, key };
+  return { protectedPhoto, src: result?.key === key ? result.src : undefined, key, retry:()=>setAttempt(n=>n+1) };
 }
 
-export function PeopleImage({ asset, allowReveal = true }: { asset: Asset; allowReveal?: boolean }) {
-  const { protectedPhoto, src, key } = usePeopleImage(asset);
+export function PeopleImage({ asset, allowReveal = true, size }: { asset: Asset; allowReveal?: boolean; size?: number }) {
+  const { protectedPhoto, src, key, retry } = usePeopleImage(asset,size);
   const [reveal, setReveal] = useState<{ key: string; src: string }>();
   const [failed, setFailed] = useState('');
   const revealEpoch = useRef(0), revealRequest = useRef<AbortController | null>(null);
@@ -60,5 +65,5 @@ export function PeopleImage({ asset, allowReveal = true }: { asset: Asset; allow
   const shown = reveal?.key === key ? reveal.src : src;
   if (!protectedPhoto) return null;
   if (shown && failed !== shown) return <img src={shown} alt={reveal?.key === key ? 'Foto revelada temporalmente' : 'Rostro censurado'} draggable={false} decoding="async" onError={() => setFailed(shown)}/>;
-  return <div className="photo-loading people-covered"><span>Fotografía oculta</span>{allowReveal && <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); void show(); }}>Revelar durante 3 segundos</button>}</div>;
+  return <div className="photo-loading people-covered"><span>Fotografía oculta</span>{failed&&<button onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();retry();}}>Reintentar censura</button>}{allowReveal && <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); void show(); }}>Revelar durante 3 segundos</button>}</div>;
 }
