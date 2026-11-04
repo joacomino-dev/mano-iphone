@@ -4,7 +4,13 @@ Actualizado: 2026-11-04, America/Bogota. Codex trabaja solo por indicación del 
 
 ## Etapa 1 completada local — Codex
 
+Corrección de distribución autorizada tras dos fallos de asignación Intel: Codex modifica únicamente workflow y documentación en la rama de etapa 1. Runner estándar gratuito `macos-26` ARM, Xcode 26.6 preinstalado, checkout fijado a github.sha. Se conservan smoke y condiciones del IPA. No integrar main ni avanzar etapa 2. Evidencia de imagen: https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md . Compilación nueva pendiente al preparar esta corrección.
+
+Actualización CI: intento 1 de 41859212044 falló antes de obtener runner (`The job was not acquired by Runner of type hosted even after multiple attempts`); sin steps ni logs de compilación. Usuario pidió revisar/corregir. Reintento solo del job iOS aceptado, intento 2 en cola, nuevo job 126699082386. Sin cambios de aplicación ni workflow, main intacto. Descarga automática reactivada; IPA todavía pendiente. Error anterior preservado con sufijo attempt1.
+
 Usuario autorizó el 2026-11-04 publicar únicamente la etapa 1 en rama `codex/stage1-review` y ejecutar el workflow macOS gratuito, sin fusionar main. Preparando compilación; IPA aún pendiente. Destino solicitado: Descargas. No generar IPA si falla el smoke test.
+
+Publicada en `d9da8aaf3a342f000ade4bbfaa18a37a674f05ed`; [CI 41859212044](https://github.com/joacomino-dev/mano-iphone/actions/runs/41859212044) confirmado en cola. Main remoto permanece en `3cc28d2`. Tarea local oculta `C:/Users/Joaco/Developer/CocoWash-stage1-evidence/finish-ipa.ps1` espera hasta 90 minutos y descarga únicamente si el run termina success. Verifica código etapa 1, textura, estructura IPA y hash de copia; recibo `ipa-receipt.json` o error `ipa-download-error.json` en esa carpeta. Archivo previsto en Descargas: `CocoWash-0.9.6-etapa1-d9da8aaf.ipa`, sin firma para AltStore. Descarga todavía no acreditada al registrar. Este párrafo queda local para no cambiar el SHA seleccionado por CI.
 
 Autorizada por el usuario el 2026-11-04. Trabajo aislado en `C:/Users/Joaco/Developer/CocoWash-stage1`, base `3cc28d2` (0.9.6/17), sin commit. Revisión por filas visibles, cola de dos miniaturas y cancelación. 90/90 pruebas, runtime28, TypeScript, builds web/assets nativos, Sites4 y QA demo en Edge pasan. [Entrega y pruebas físicas pendientes](../ai-handoff/STAGE_1_REVIEW.md), bitácora CW-CX-006. Sin publicación, merges ni cambios en el checkout anterior. Respaldo de 1.457 archivos y .git verificado en `C:/Users/Joaco/CocoWash-Backups/20261104-stage1-current`. Dependencias existentes copiadas, sin instalación. No iniciar etapa 2 sin autorización.
 

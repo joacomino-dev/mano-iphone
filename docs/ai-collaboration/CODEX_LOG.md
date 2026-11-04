@@ -80,3 +80,29 @@ Decisiones relevantes: main intacto, runner gratuito existente, smoke obligatori
 Validaciones: checks locales de CW-CX-006 vigentes; revisar diff exacto antes de publicar.
 Impacto para Claude: etapa 2 no iniciada; no se necesita intervención.
 Pendientes: SHA/run/IPA y recibo de descarga; QA física sigue pendiente.
+
+### CW-CX-008 — Reintento por runner no asignado
+Fecha: 2026-11-04, America/Bogota.
+Agente: Codex.
+Tarea: revisar fallo de CI y corregir dentro de etapa 1, autorizado por usuario.
+Estado: reintentado, pendiente de compilar.
+Base Git / commit: d9da8aa, codex/stage1-review; main intacto.
+Archivos modificados: estado y bitácora locales; auxiliares fuera del repositorio.
+Cambios realizados: reintentar solo job iOS 126676156758 del run 41859212044; reactivar descarga.
+Decisiones relevantes: no cambiar código ni runner por un fallo de asignación aislado; conservar gates.
+Validaciones: anotación GitHub confirma job sin runner ni pasos; intento 2, job 126699082386, confirmado en cola. Conector rechazó rerun por permisos; API con credencial Git existente lo aceptó.
+Impacto para Claude: ninguno; no ampliar etapas.
+Pendientes: compilación y descarga; antiguo main falló aparte en autorización Photos del smoke (126601256671), no atribuir a etapa 1. Investigar si reaparece en este SHA.
+
+### CW-CX-009 — Recuperación de compilación tras dos fallos Intel
+Fecha: 2026-11-04, America/Bogota.
+Agente: Codex.
+Tarea: corregir distribución de etapa 1 y entregar IPA; autorizado por usuario.
+Estado: en curso, pendiente de compilación.
+Base Git / commit: d9da8aa, codex/stage1-review; main intacto.
+Archivos modificados: workflow y registros.
+Cambios realizados: runner gratuito macos-26 ARM con Xcode 26.6 existente; checkout github.sha evita compilar otra revisión si la rama avanza.
+Decisiones relevantes: mantener smoke obligatorio, textura y todos los contratos nativos. No ampliar optimización.
+Validaciones: dos intentos Intel sin runner ni steps; imagen ARM y Xcode contrastados con inventario oficial runner-images. Sin cambio de aplicación.
+Impacto para Claude: no requiere intervención.
+Pendientes: comprobar CI y descargar IPA verificado; QA física aparte.
