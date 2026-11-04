@@ -2,6 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import type { Asset } from './domain';
 import { Library, isNative, thumbnailInfo, inCloudError, clearThumbnailReferences } from './library';
 import { cardPixels, cloudDownloads, zoomPixels } from './preview';
+import { videoWindow } from './video-plan';
 
 /** Poster only. Videos prepare separately (VideoStore) so a slow or failed
  * video download can never take its poster down with it, and vice versa.
@@ -296,6 +297,10 @@ export class VideoStore {
   private allowed = new Set<string>();
   private progressListener?: Promise<{ remove(): Promise<void> }>;
   private disposed = false;
+  private measured = new Map<string, number>();
+  private candidates: Asset[] = [];
+  private visible?: Asset;
+  private retryTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private network = cloudDownloads();
   reconcilePolicy() {
     const network = cloudDownloads(); if (network === this.network) return;
@@ -303,10 +308,10 @@ export class VideoStore {
     for (const asset of this.wanted.values()) {
       const key = videoKey(asset), state = this.get(asset);
       if (network && state.status === 'error' && state.failure === 'cloud') {
-        this.set(key, idle); this.enqueue(asset, false);
+        this.set(key, idle); this.enqueue(asset, this.visible?.id === asset.id);
       } else if (!network && !this.allowed.has(key) && state.status !== 'ready') {
         this.cancel(key); this.queue = this.queue.filter(q => videoKey(q.asset) !== key);
-        this.set(key, idle); this.enqueue(asset, false);
+        this.set(key, idle); this.enqueue(asset, this.visible?.id === asset.id);
       }
     }
     this.pump();
@@ -323,9 +328,10 @@ export class VideoStore {
   }
 
   /** The rolling review window. Videos leaving it are cancelled and unpinned. */
-  want(assets: Asset[]) {
+  want(assets: Asset[], visible?: Asset) {
     if (this.disposed) return;
-    const next = new Map(assets.filter(a => a.kind === 'video').map(a => [videoKey(a), a] as const));
+    this.candidates = assets; this.visible = visible;
+    const next = new Map(videoWindow(assets, visible, this.measured).map(a => [videoKey(a), a] as const));
     const released: string[] = [];
     for (const [key, asset] of this.wanted) if (!next.has(key)) {
       this.cancel(key);
@@ -333,7 +339,8 @@ export class VideoStore {
       // Unpin whatever left, ready or not: a preparation cancelled here may still
       // have been committed (and pinned) natively before the cancel arrived.
       released.push(asset.id);
-      this.states.delete(key); this.retries.delete(key);
+      this.states.delete(key); this.retries.delete(key); this.allowed.delete(key);
+      clearTimeout(this.retryTimers.get(key)); this.retryTimers.delete(key);
     }
     this.wanted = next;
     for (const asset of next.values()) if (this.get(asset).status === 'idle') this.enqueue(asset, false);
@@ -344,6 +351,7 @@ export class VideoStore {
   /** Visible card: jump the queue. */
   ensure(asset: Asset) {
     if (this.disposed || asset.kind !== 'video') return;
+    this.visible = asset;
     const state = this.get(asset);
     if (state.status === 'ready' || state.status === 'loading') return;
     if (state.status === 'error') return;
@@ -371,6 +379,8 @@ export class VideoStore {
     this.disposed = true;
     for (const key of [...this.active.keys()]) this.cancel(key);
     this.queue = []; this.listeners.clear();
+    for (const timer of this.retryTimers.values()) clearTimeout(timer);
+    this.retryTimers.clear(); this.states.clear(); this.allowed.clear(); this.measured.clear();
     void this.progressListener?.then(l => l.remove()).catch(() => {});
     const ids = [...this.wanted.values()].filter(a => !a.demo).map(a => a.id);
     if (ids.length) void Library.releasePreparedVideos({ ids }).catch(() => {});
@@ -378,7 +388,7 @@ export class VideoStore {
 
   private enqueue(asset: Asset, priority: boolean) {
     const key = videoKey(asset);
-    if (this.active.has(key)) return;
+    if ((this.active.has(key) && !this.active.get(key)!.cancelled) || this.queue.some(q => videoKey(q.asset) === key)) return;
     this.set(key, { status: 'queued', progress: 0 });
     if (priority) this.queue.unshift({ asset, priority }); else this.queue.push({ asset, priority });
   }
@@ -391,7 +401,7 @@ export class VideoStore {
   private cancel(key: string) {
     const job = this.active.get(key);
     if (!job) return;
-    job.cancelled = true; this.active.delete(key); this.byRequest.delete(job.requestId);
+    job.cancelled = true; this.byRequest.delete(job.requestId);
     if (!job.asset.demo) void Library.cancelVideoPreparation({ requestId: job.requestId }).catch(() => {});
   }
 
@@ -399,7 +409,7 @@ export class VideoStore {
     if (this.disposed) return;
     while (this.queue.length && this.active.size < 2) {
       const reserved = this.active.size > 0; // keep one slot for the visible card
-      const index = this.queue.findIndex(q => q.priority || !reserved);
+      const index = this.queue.findIndex(q => !this.active.has(videoKey(q.asset)) && (q.priority || !reserved));
       if (index < 0) break;
       const [{ asset }] = this.queue.splice(index, 1);
       void this.start(asset);
@@ -436,10 +446,15 @@ export class VideoStore {
       } else {
         this.listen();
         const result = await Library.prepareVideo({ id: asset.id, requestId: job.requestId, network });
+        if (!job.cancelled && !this.disposed && Number.isFinite(result.bytes) && result.bytes > 0) {
+          this.measured.delete(key); this.measured.set(key, result.bytes);
+          while (this.measured.size > 64) this.measured.delete(this.measured.keys().next().value!);
+        }
         url = result.url ?? Capacitor.convertFileSrc(result.path);
       }
       if (job.cancelled || this.disposed) return;
       this.set(key, { status: 'ready', progress: 1, url });
+      this.want(this.candidates, this.visible);
     } catch (error) {
       if (job.cancelled || this.disposed) return;
       const failure = failureFor(error);
@@ -447,7 +462,11 @@ export class VideoStore {
       if (failure === 'busy' && attempts <= 20) {
         this.retries.set(key, attempts);
         this.set(key, { status: 'queued', progress: 0 });
-        setTimeout(() => { if (!this.disposed && (this.wanted.has(key) || this.listeners.has(key)) && this.get(asset).status === 'queued') { this.queue.unshift({ asset, priority: true }); this.pump(); } }, 400 + attempts * 200);
+        clearTimeout(this.retryTimers.get(key));
+        this.retryTimers.set(key, setTimeout(() => {
+          this.retryTimers.delete(key);
+          if (!this.disposed && (this.wanted.has(key) || this.listeners.has(key)) && this.get(asset).status === 'queued') { this.enqueue(asset, true); this.pump(); }
+        }, 400 + attempts * 200));
       } else if (failure !== 'cancelled') {
         this.set(key, { status: 'error', progress: 0, failure: failure === 'busy' ? 'prepare' : failure });
       }

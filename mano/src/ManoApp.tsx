@@ -266,7 +266,7 @@ export function ManoApp() {
   const warmWait=useRef<(()=>void)|null>(null);
   const getPreloader=()=>preloader.current??(preloader.current=new AssetPreloader(prepareReviewAsset));
   const prepareWindow=(items:Asset[],sessionKey:string,videoItems?:Asset[])=>{
-    getPreloader().update(items,sessionKey);getVideos().want(videoItems??items);
+    getPreloader().update(items,sessionKey);getVideos().want(videoItems??items,items[0]);
     preloadWindow.current=items;
     // iCloud downloads live only while their card is in this window (warm-up
     // included) or anchored; leaving the session ([]) cancels them all natively.
