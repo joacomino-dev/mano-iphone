@@ -112,6 +112,16 @@ export class AssetPreloader<T> {
     this.pump(); this.emit();
   }
 
+  /** Revalidate after a preview policy change, retaining the old decoded poster
+   * until its replacement is ready. The hand and its order are unaffected. */
+  invalidate() {
+    if (this.disposed) return;
+    this.cache.clear();
+    for (const task of this.active.values()) task.controller.abort();
+    for (const entry of this.entries.values()) { entry.status = 'queued'; delete entry.error; }
+    this.pump(); this.emit();
+  }
+
   dispose() {
     this.disposed = true;
     for (const task of this.active.values()) task.controller.abort();

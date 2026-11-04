@@ -2,18 +2,19 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { AnimatePresence, motion, useReducedMotion, useMotionValue, useTransform, animate, type MotionValue } from 'motion/react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { FolderOpenIcon, FolderSimplePlusIcon, CaretRightIcon, ArrowCounterClockwiseIcon, ArrowUUpLeftIcon, StackIcon, TrashIcon, CheckIcon, XIcon, PlayIcon, SlidersHorizontalIcon, ArrowClockwiseIcon, ImageBrokenIcon, PlusIcon, PushPinIcon, InfoIcon, CloudIcon, CloudArrowDownIcon, SparkleIcon } from '@phosphor-icons/react';
-import { BottomSheet, Carousel, KeyboardInput, useKeyboard } from './mobile';
+import { BottomSheet, KeyboardInput, useKeyboard } from './mobile';
+import { ReviewGrid } from './ReviewGrid';
 import { decide, undo, restore, eligible, eligibleFrom, orderAssets, readState, reconcileLibrary, libraryFingerprint, filterScope, LEVELS, initialFilter, initialState, type Action, type Asset, type Decision, type Filter, type RecordState } from './domain';
 import { NO_HAND, playable, lockedHand, dealHand, afterDecision, cycleHand, restoreHand, upcomingFrom, type HandLock } from './sequence';
 import { Library, isNative, demoAssets, thumbnailInfo, inCloudError, type Album, type PhotoPermission } from './library';
 import { useLibraryIndex, enrich } from './indexer';
 import { AssetPreloader } from './preload';
-import { prepareReviewAsset, VideoStore, prewarm, sharpPreview, subscribeSharp, cloudPreviews, type PreparedMedia, type VideoState } from './media';
+import { prepareReviewAsset, VideoStore, prewarm, sharpPreview, subscribeSharp, cloudPreviews, resetPreviewPolicy, type PreparedMedia, type VideoState } from './media';
 import { CloudBadge, CloudPlaceholder, useCloud } from './Cloud';
 import { InlineVideo, type VideoControl } from './InlineVideo';
 import { Filters } from './Filters';
 import { Inspector, type InspectOrigin } from './Inspector';
-import { readSession, saveSession, DEMO_SESSION_KEY, LIBRARY_SESSION_KEY, type ActiveSession } from './session';
+import { readSession, SessionWriter, DEMO_SESSION_KEY, LIBRARY_SESSION_KEY, type ActiveSession } from './session';
 import { readDisplay, saveDisplay, polaroidCaption, formatBytes, ONBOARDING_KEY, type DisplaySettings, type PhotoMeta } from './meta';
 import { usePlace, prefetchPlaces } from './place';
 import { haptic, setHapticsEnabled } from './haptics';
@@ -29,7 +30,7 @@ import { DecisionBar } from './DecisionBar';
 import { Wordmark, PileProgress } from './Chrome';
 import { Character } from './Characters';
 import { assignToAlbum, afterAlbum } from './album';
-import { cardBox, cardPixels, thumbPixels, setPreviewSizing, cloudDownloads } from './preview';
+import { cardBox, cardPixels, thumbPixels, setPreviewSizing, cloudDownloads, previewPolicyKey, subscribePreviewPolicy } from './preview';
 import '@fontsource/ibm-plex-mono/latin-500.css';
 import '@fontsource/ibm-plex-sans/latin-400.css';
 import '@fontsource/ibm-plex-sans/latin-500.css';
@@ -64,25 +65,26 @@ function savedGroups(items: Asset[]) {
  * `quiet`: the owner (a video card) shows the one error state; this only
  * renders the poster or a neutral placeholder, so messages never stack. */
 function Photo({ asset, small=false, pool, quiet=false }: { asset: Asset; small?: boolean; pool?: AssetPreloader<PreparedMedia>|null; quiet?: boolean }) {
+  const policy = useSyncExternalStore(subscribePreviewPolicy, previewPolicyKey);
   const [own, setOwn] = useState<{src:string;cloud:boolean;missing:boolean}|null>(null); const [error, setError] = useState(false); const [retry, setRetry] = useState(0);
   useSyncExternalStore(useCallback((listener:()=>void)=>pool?pool.subscribeItem(asset,listener):()=>{},[pool,asset.id,asset.modified]), ()=>pool?.version(asset)??'');
   const entry = retry===0 ? pool?.peek(asset) : undefined;
   const waiting = entry?.status==='queued'||entry?.status==='loading';
-  const ready = entry?.status==='ready' ? entry.value : undefined;
+  const ready = entry?.value;
   const cloud = useCloud(small ? undefined : asset);
   // Anchored once and downloaded: that sharper version stays on the card.
   const upgraded = useSyncExternalStore(subscribeSharp, () => sharpPreview(asset));
   const needOwn = !ready && !waiting;
-  useEffect(() => { if (!needOwn) return; let alive = true; setError(false); setOwn(null);
-    thumbnailInfo(asset, small?thumbPixels():cardPixels(asset), retry>0, false)
+  useEffect(() => { if (!needOwn) return; let alive = true; const controller=new AbortController(); setError(false);
+    thumbnailInfo(asset, small?thumbPixels():cardPixels(asset), retry>0, false, controller.signal, undefined, true)
       .then(t => { if (!alive) return; setOwn({src:t.src,cloud:t.cloud,missing:false}); if (t.cloud&&!small&&cloudDownloads()) void cloudPreviews.fetch(asset,'card').catch(()=>{}); })
       .catch(e => { if (!alive) return; if (inCloudError(e)) { setOwn({src:'',cloud:true,missing:true}); if (!small&&cloudDownloads()) void cloudPreviews.fetch(asset,'card').catch(()=>{}); } else setError(true); });
-    return () => { alive = false; }; }, [asset.id, asset.modified, retry, small, needOwn]);
+    return () => { alive = false; controller.abort(); }; }, [asset.id, asset.modified, retry, small, needOwn, policy]);
   const local = ready ?? (own ? { poster: own.src, cloud: own.cloud, missing: own.missing } : undefined);
   // «Descargar siempre»: a lite card whose download job was dropped (e.g. back
   // through undo) asks again; the full preview is already on the iPhone by then.
-  useEffect(() => { if (!small && local?.cloud && !cloud && cloudDownloads()) void cloudPreviews.fetch(asset,'card').catch(()=>{}); }, [small, !!local?.cloud, !!cloud, asset.id]);
-  const src = upgraded ?? (cloud?.src||undefined) ?? (local?.poster||undefined);
+  useEffect(() => { if (!small && local?.cloud && !cloud && cloudDownloads()) void cloudPreviews.fetch(asset,'card').catch(()=>{}); }, [small, !!local?.cloud, !!cloud, asset.id, policy]);
+  const src = (retry===0 ? upgraded ?? (cloud?.src||undefined) : undefined) ?? (local?.poster||undefined);
   const alt = asset.kind === 'video' ? 'Vista previa de vídeo' : 'Foto del carrete';
   const download = () => { haptic('light'); void cloudPreviews.fetch(asset,'card',true).catch(()=>{}); };
   const retryCloud = () => { haptic('light'); void cloudPreviews.retry(asset).catch(()=>{}); };
@@ -264,7 +266,7 @@ export function ManoApp() {
   const warmWait=useRef<(()=>void)|null>(null);
   const getPreloader=()=>preloader.current??(preloader.current=new AssetPreloader(prepareReviewAsset));
   const prepareWindow=(items:Asset[],sessionKey:string,videoItems?:Asset[])=>{
-    getPreloader().update(items,sessionKey);getVideos().want(videoItems??items);
+    getPreloader().update(items,sessionKey);getVideos().want(videoItems??items,items[0]);
     preloadWindow.current=items;
     // iCloud downloads live only while their card is in this window (warm-up
     // included) or anchored; leaving the session ([]) cancels them all natively.
@@ -287,7 +289,9 @@ export function ManoApp() {
   });
   const cancelWarmup=()=>{sessionNumber.current++;warmingNow.current=false;prepareWindow([],String(sessionNumber.current));warmWait.current?.();setWarming(false);setLoading(false);const groups=deferredGroups.current;if(groups){deferredGroups.current=null;setAssets(prev=>prev.map(a=>({...a,group:groups.get(a.id)})));}};
   useEffect(()=>{document.title='CocoWash · Lo que importa, se queda';installErrorReporting();},[]);
-  useEffect(()=>{saveDisplay(display);setHapticsEnabled(display.haptics);setPreviewSizing({quality:display.quality,cloud:display.cloud,scale:typeof window!=='undefined'?window.devicePixelRatio||2:2});},[display]);
+  const appliedPolicy=useRef('');
+  useEffect(()=>{saveDisplay(display);setHapticsEnabled(display.haptics);setPreviewSizing({quality:display.quality,cloud:display.cloud,scale:typeof window!=='undefined'?window.devicePixelRatio||2:2});
+    const key=previewPolicyKey();if(appliedPolicy.current&&appliedPolicy.current!==key){resetPreviewPolicy();preloader.current?.invalidate();videos.current?.reconcilePolicy();}appliedPolicy.current=key;},[display]);
   useEffect(()=>{try{localStorage.setItem('cocowash-round-v1',JSON.stringify(stats));}catch{/* summary is optional */}},[stats]);
   // Long enough to read once, never lingering: 2.5–4.5 s by length.
   useEffect(()=>{if(!notice)return;const t=setTimeout(()=>setNoticeState(null),Math.min(4500,Math.max(2500,1600+notice.text.length*45)));return()=>clearTimeout(t);},[notice]);
@@ -344,15 +348,16 @@ export function ManoApp() {
   const context={handIds:hand.map(a=>a.id),rotated:[] as string[],selected:[...selected],group:bundleKey??undefined,filter,...(best?{best}:{})};
   const envelope:ActiveSession={version:1,active:sessionOpen,seed:seed.current,filter,context:session?context:resumeContext.current??context,updatedAt:Date.now(),record:state};
   const latest=useRef(envelope);latest.current=envelope;
+  const [writer]=useState(()=>new SessionWriter());
   // Saving: the record and the session envelope are written together, at most
   // once every 350 ms while the person sorts (not once per swipe: each write
   // serialises the whole record), and at once when the app is hidden or closed.
   const dirty=useRef(false);const flushTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
-  const flush=useCallback(()=>{if(flushTimer.current){clearTimeout(flushTimer.current);flushTimer.current=null;}if(!dirty.current)return;dirty.current=false;
-    try{localStorage.setItem(key,JSON.stringify(latest.current.record));}catch{setError('No hay espacio para guardar la sesión. Libera espacio antes de continuar.');return;}
-    if(!saveSession(sessionKey,latest.current))setError('No se pudo guardar el progreso. Libera espacio antes de continuar.');},[key,sessionKey]);
+  const flush=useCallback((checkpoint=false)=>{if(flushTimer.current){clearTimeout(flushTimer.current);flushTimer.current=null;}if(!dirty.current)return;
+    if(writer.save(sessionKey,latest.current,undefined,checkpoint?key:undefined))dirty.current=false;
+    else setError('No se pudo guardar el progreso. Libera espacio antes de continuar.');},[key,sessionKey,writer]);
   useEffect(()=>{dirty.current=true;if(!flushTimer.current)flushTimer.current=setTimeout(flush,350);},[state,sessionOpen,filterKey,windowHandKey,selected,session]);
-  useEffect(()=>{const persist=()=>{dirty.current=true;flush();};document.addEventListener('visibilitychange',persist);window.addEventListener('pagehide',persist);return()=>{persist();document.removeEventListener('visibilitychange',persist);window.removeEventListener('pagehide',persist);};},[flush]);
+  useEffect(()=>{const persist=()=>{dirty.current=true;flush(true);};document.addEventListener('visibilitychange',persist);window.addEventListener('pagehide',persist);return()=>{persist();document.removeEventListener('visibilitychange',persist);window.removeEventListener('pagehide',persist);};},[flush]);
   const openFilters=()=>{setError('');setSheet('filters');};
   const active=hand[0]; const targetIds=selected.filter(id=>hand.some(a=>a.id===id)); const targets=targetIds.length?targetIds:active?[active.id]:[];
   // «Elegir las demás»: everything but the best shot, ready for «Eliminar».
@@ -603,6 +608,7 @@ export function ManoApp() {
     <p className="sheet-fine">Todo se analiza en tu iPhone. Las fotos de iCloud pueden necesitar conexión.</p>
   </>;
   const recoverAll=()=>{setState(s=>({...s,pending:[],history:s.history.filter(d=>d.action!=='discard')}));setSpoken('Todo recuperado');haptic('soft');};
+  const recoverReview=useCallback((id:string)=>{setState(s=>restore(s,id));setSpoken('Elemento recuperado');},[]);
   // Long press never opens the system menu or loupe; text fields keep theirs.
   const blockMenu=(e:MouseEvent)=>{if(!(e.target as HTMLElement).closest('input,textarea'))e.preventDefault();};
   return <div ref={root} className={`mano-app ${isNative?'on-device':''} ${session?'in-session':'on-screen'}`} onContextMenu={blockMenu}>
@@ -621,7 +627,7 @@ export function ManoApp() {
     </Sheet>
     <Sheet open={sheet==='albums'} close={()=>setSheet(null)} title="Guardar en un álbum" description="Se conserva y pasa a la siguiente. También sigue en tu carrete." error={error} returnTo="album-trigger"><p className="sheet-intro"><strong>{targets.length}</strong> seleccionada{targets.length>1?'s':''}</p><button className="album-row album-new" onClick={()=>setCreatingAlbum(v=>!v)} disabled={busy}><span className="row-icon"><PlusIcon size={20} weight="bold"/></span>Crear álbum nuevo</button>{creatingAlbum&&<div className="new-album"><label className="field">Nombre del álbum<AlbumInput value={newAlbum} change={setNewAlbum}/></label><button className="sheet-action" onClick={createAlbum} disabled={busy||!newAlbum.trim()}>Crear y añadir {targets.length} elemento{targets.length===1?'':'s'}</button></div>}{albums.map(a=><button className="album-row" key={a.id} onClick={()=>addAlbum(a)} disabled={busy}><span className="row-icon"><FolderOpenIcon size={20}/></span>{a.title}<CaretRightIcon size={16} weight="bold"/></button>)}</Sheet>
     <Sheet open={sheet==='review'} close={()=>setSheet(null)} title="Una última mirada" description="Recupera lo que quieras conservar antes de eliminar." error={error} returnTo={session?'review-trigger':'filter-trigger'}><p className="sheet-intro">{reviewAssets.length?<><strong>{reviewAssets.length} para eliminar</strong>{freeLabel&&<> · liberarías {reviewBytes.partial?'al menos ':''}<strong>{freeLabel}</strong></>}. Aún no se ha borrado nada.</>:'No hay nada marcado para eliminar.'}</p>
-      {reviewAssets.length>0&&<><Carousel ariaLabel="Revisar lo marcado para eliminar" draggingEnabled={false} className="review-carousel"><div className="review-grid">{reviewAssets.map(a=><article key={a.id} className="review-card paper"><div className="review-photo"><Photo asset={a} small/></div><button className="recover-button" onPointerDown={e=>e.stopPropagation()} onClick={()=>{setState(s=>restore(s,a.id));setSpoken('Elemento recuperado');}}><ArrowCounterClockwiseIcon size={16}/>Recuperar</button></article>)}</div></Carousel>
+      {reviewAssets.length>0&&<><ReviewGrid assets={reviewAssets} open={sheet==='review'} recover={recoverReview}/>
         <div className="review-primary"><button className="sheet-action secondary recover-all" disabled={busy} onClick={recoverAll}><ArrowCounterClockwiseIcon size={20}/>{reviewAssets.length===1?'Recuperar':`Recuperar todo (${reviewAssets.length})`}</button><button className="sheet-action danger" onClick={commitDelete} disabled={busy} aria-busy={busy}><TrashIcon size={20}/>{busy?'Esperando a Fotos…':`Eliminar ${reviewAssets.length}${freeLabel&&!reviewBytes.partial?` · ${freeLabel}`:''}`}</button><p className="sheet-fine">Fotos te pedirá confirmación; lo eliminado queda 30 días en «Eliminado recientemente», también en iCloud.</p></div></>}
     </Sheet>
   </div>;

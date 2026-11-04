@@ -1,5 +1,7 @@
 # CocoWash — recuerdos que se quedan
 
+**Versión aprobada: 0.9.7 / 18**, probada y aceptada por el usuario en iPhone el 2026-11-04. Estado canónico en [CURRENT_STATE](../docs/ai-collaboration/CURRENT_STATE.md); cambios y validación en [OPTIMIZATION_097](../docs/ai-handoff/OPTIMIZATION_097.md).
+
 Una app de iPhone para revisar Fotos mediante una mano de cartas. Interfaz verde petróleo, papel y sellos de tinta; sin cuenta propia, anuncios, suscripciones ni API de reconocimiento de pago.
 
 La bienvenida muestra fotos flotantes y «Iniciar sesión». Cada sesión mezcla al azar fotos, vídeos y Live Photos; cuando un elemento pertenece a un grupo visual analizado, aparece automáticamente un bundle de polaroids. La foto principal queda centrada y recta; tocarla o pulsar Siguiente la pasa al final. Puedes seleccionar varias girando la pila o elegir todas. Los filtros permiten cambiar el orden.

@@ -1,0 +1,62 @@
+name: Build CocoWash personal IPA
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/stage1-review]
+    paths: ['mano/**', '.github/workflows/build-ios-package.yml']
+permissions:
+  contents: read
+concurrency:
+  group: cocowash-package-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  package:
+    if: github.event.repository.private == false
+    # Standard free runner. Device compilation never starts CoreSimulator.
+    runs-on: macos-26-intel
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+    defaults:
+      run:
+        working-directory: mano
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+        timeout-minutes: 10
+      - name: Verify logic and protected runtime
+        run: npm test && npm run check:runtime
+      - name: Verify exact Swift candidates
+        run: |
+          mkdir -p build
+          swiftc ios/App/App/SignatureIndex.swift tests/swift/main.swift -o build/signature-tests
+          build/signature-tests
+      - name: Build and sync native assets
+        run: npm run sync:ios
+      - name: Compile device Release with original texture
+        run: |
+          grep -q -e '--cw-paper-texture:url(' ios/App/App/public/assets/*.css
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/ios CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' build
+      - name: Package for personal AltStore signing
+        run: |
+          mkdir -p build/package/Payload
+          cp -R build/ios/Build/Products/Release-iphoneos/App.app build/package/Payload/Mano.app
+          cd build/package
+          ditto -c -k --keepParent Payload Mano-unsigned.ipa
+      - name: Record verification boundary
+        run: |
+          printf '%s\n' 'Personal IPA: device Release compiled; logic/runtime/Swift oracle checked.' 'Simulator UI smoke is tracked separately; no physical iPhone acceptance claimed.' > build/package/VALIDATION.txt
+          printf 'Source SHA: %s\n' "$GITHUB_SHA" >> build/package/VALIDATION.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Mano-AltStore
+          path: |
+            mano/build/package/Mano-unsigned.ipa
+            mano/build/package/VALIDATION.txt
+          retention-days: 14
+          if-no-files-found: error

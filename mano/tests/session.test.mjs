@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { initialState, initialFilter, decide } from '../src/domain.ts';
-import { DEMO_SESSION_KEY, LIBRARY_SESSION_KEY, validateSession, readSession, saveSession } from '../src/session.ts';
+import { DEMO_SESSION_KEY, LIBRARY_SESSION_KEY, validateSession, readSession, saveSession, SessionWriter } from '../src/session.ts';
 const sample=()=>({version:1,active:true,seed:987,filter:{...initialFilter,dateRange:'7d',geek:true},context:{handIds:['b','a'],rotated:['a'],selected:['b'],group:'g'},updatedAt:123,record:decide(initialState(),['b'],'discard',10)});
 function memory(){const map=new Map();return {map,getItem:key=>map.get(key)??null,setItem:(key,value)=>map.set(key,value)};}
 
@@ -39,4 +39,36 @@ test('malformed JSON and unavailable/quota-limited storage fail gracefully',()=>
   const unavailable={getItem(){throw new Error('blocked');},setItem(){throw new Error('quota');}};
   assert.equal(readSession(LIBRARY_SESSION_KEY,unavailable),null);assert.equal(saveSession(LIBRARY_SESSION_KEY,sample(),unavailable),false);
   assert.equal(saveSession(LIBRARY_SESSION_KEY,{...sample(),seed:NaN},storage),false);
+});
+
+test('writer: one authoritative write per save; checkpoint mirrors only after success',()=>{
+  const writer=new SessionWriter(), storage=memory(); const writes=[];
+  const set=storage.setItem;storage.setItem=(key,value)=>{writes.push(key);set(key,value);};
+  const session=sample();
+  assert.equal(writer.save(LIBRARY_SESSION_KEY,session,storage),true);
+  assert.deepEqual(writes,[LIBRARY_SESSION_KEY]);assert.equal(storage.getItem('mano-library-v1'),null);
+  assert.deepEqual(readSession(LIBRARY_SESSION_KEY,storage).record.pending,['b']);
+  assert.equal(writer.save(LIBRARY_SESSION_KEY,{...session,context:{...session.context,selected:[]}},storage,'mano-library-v1'),true);
+  assert.deepEqual(writes.slice(-2),[LIBRARY_SESSION_KEY,'mano-library-v1']);
+  assert.deepEqual(JSON.parse(storage.getItem('mano-library-v1')).pending,['b']);
+});
+test('writer: canonical failure preserves both old copies; retry stores exact latest decisions',()=>{
+  const writer=new SessionWriter(), storage=memory(), first=sample(); writer.save(LIBRARY_SESSION_KEY,first,storage,'legacy');
+  const before=new Map(storage.map); const set=storage.setItem;
+  storage.setItem=()=>{throw Error('quota');};
+  const next={...first,record:decide(first.record,['c'],'keep',20)};
+  assert.equal(writer.save(LIBRARY_SESSION_KEY,next,storage,'legacy'),false);assert.deepEqual(storage.map,before);
+  storage.setItem=set; assert.equal(writer.save(LIBRARY_SESSION_KEY,next,storage,'legacy'),true);
+  assert.deepEqual(readSession(LIBRARY_SESSION_KEY,storage).record,next.record);
+  storage.setItem=(key,value)=>{if(key==='legacy')throw Error('quota');set(key,value);};
+  assert.equal(writer.save(LIBRARY_SESSION_KEY,first,storage,'legacy'),true);
+  assert.deepEqual(readSession(LIBRARY_SESSION_KEY,storage).record,first.record);
+});
+
+test('large authoritative record retains 50,000 marks and exact session context',()=>{
+ const record=initialState();for(let i=0;i<50000;i++)record.marks['id-'+i]={level:1,due:100,keptAt:50};
+ record.pending=['p1','p2'];const storage=memory(), writer=new SessionWriter();
+ const session={...sample(),record};assert.equal(writer.save(LIBRARY_SESSION_KEY,session,storage),true);
+ const restored=readSession(LIBRARY_SESSION_KEY,storage);assert.equal(Object.keys(restored.record.marks).length,50000);
+ assert.deepEqual(restored.record,record);assert.deepEqual(restored.context.handIds,['b','a']);
 });

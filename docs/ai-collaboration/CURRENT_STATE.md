@@ -1,72 +1,41 @@
-# CocoWash — estado operativo conocido
+# CocoWash — estado vigente
 
 Actualizado: 2026-11-04, America/Bogota. Codex trabaja solo por indicación del usuario.
 
-## Base vigente
+## Versión aprobada: 0.9.7 / build 18
 
-- **main contiene CocoWash 0.9.6, build 17**. [PR #2](https://github.com/joacomino-dev/mano-iphone/pull/2) fusionado en `769ef54f29bf4e3bef16be2d57273cd37e2025d7`; fuente `dddccbb36a7e78f06f6673e4de28866283f66917` de `claude/perf-stability-cotton`. Los árboles de fuente y merge son idénticos. Los commits posteriores solo actualizan esta documentación y CODEX_LOG.
-- El usuario autorizó actualizar GitHub durante la auditoría. Se incorporaron 32 commits existentes; no se implementaron optimizaciones nuevas. PR #1 también figura integrado. Ramas conservadas; no integrar `claude/ci-probe-flat-paper`.
-- **Windows permanece en `76744e2`, con fuentes 0.7 y documentos locales previos modificados.** Checkout, índice, herramientas sin publicar y cambios previos preservados; no hubo fetch, checkout, reset, stash ni commit local. Preparar una base recuperable antes de actualizar el checkout.
+El usuario confirma pruebas en iPhone y una experiencia fluida; autoriza que esta
+sea la versión actual del repositorio. **Aceptación física recibida.** No equivale
+a mediciones de FPS/RAM ni a resolver la incidencia de XCTest.
 
-## Validación y aceptación
+Integración autorizada en curso: `codex/stage1-review` → `main`, conservando commits
+por etapa. Base main `3cc28d2`; rama recibida `842ab93`; fuentes compiladas `ed47909`
+(idénticas a fce0deb en la app). El cierre y SHA de integración se registran en
+[CODEX_LOG, CW-CX-013](CODEX_LOG.md).
 
-- Codex ejecutó **84/84 pruebas de lógica** del SHA 0.9.6 en memoria, sin instalar dependencias ni sobrescribir fuentes. No equivale a QA física.
-- CI 0.9.5/16 confirmado verde: [41530807373](https://github.com/joacomino-dev/mano-iphone/actions/runs/41530807373), SHA `1586a37`.
-- CI de la integración 0.9.6: [41837796389](https://github.com/joacomino-dev/mano-iphone/actions/runs/41837796389). Tests/runtime/build y sync:ios pasaron; **smoke en curso al registrar**. Verificar resultado y SHA antes de entregar IPA. El simulador usa papel plano y el IPA restaura la textura.
-- **CW-HO-005 recibido técnicamente por CW-CX-005; aceptación física pendiente.** Sin acciones sobre iPhone ni confirmación de borrados. Pendientes: Instruments, iCloud/HEVC/slow-motion, continuidad de vídeo, VoiceOver y Dynamic Type.
+## Implementación y evidencia
 
-## Auditoría — propuestas, no implementadas
+- Etapas 1–7 implementadas; [detalle y límites](../ai-handoff/OPTIMIZATION_097.md).
+- 106 pruebas Node, runtime28, TypeScript, builds, Sites4 y QA demo PASS.
+- Oráculo Swift exacto y Release para iPhone: [CI 41899040312](https://github.com/joacomino-dev/mano-iphone/actions/runs/41899040312), success.
+- IPA aceptado: `C:/Users/Joaco/Downloads/CocoWash-0.9.7-completa-ed47909f.ipa`, 5.553.746 bytes.
+- SHA256: `1db4dc6a25c79aedc05573c0fb740b557f5f8485dbc6493f4df304d2b7e4d68c`.
+- CW-HO-006: Codex → usuario, **aceptada**; 0.9.7 es la nueva base funcional.
 
-Conservar mano fija (`sequence.ts`), MotionValue, historial exacto, cachés de referencias acotadas, póster independiente del vídeo y contratos de Fotos. Priorizar:
+## Incidencias y límites conservados
 
-1. Revisión por visibilidad, cola global y cancelación: el grid monta todos los descartes; reproducidas 1.000 solicitudes simultáneas con puente simulado.
-2. Cachés e invalidación: thumbnailInfo omite cacheBytes; prewarm evita el coordinador iCloud (dos solicitudes del mismo ID/tamaño reproducidas); sizes/flags JS se indexan por ID y conservan resultados tras una edición.
-3. Política de vídeo y presupuesto: IN_CLOUD no reintenta al cambiar a Descargar siempre; diez vídeos protegidos pueden agotar la caché.
-4. Medir Vision: caché de huellas y selección lineal por foto existentes, pero recorrido total cuadrático en el peor caso.
+- [Smoke 41893615114](https://github.com/joacomino-dev/mano-iphone/actions/runs/41893615114): failure por timeout de snapshot de accesibilidad de SpringBoard tras permiso Fotos. No errores JS registrados; causa raíz no acreditada. Mantener separado de la aceptación física y del CI de paquete.
+- Vision conserva peor caso cuadrático; buckets temporales acotados y prioridad multimedia mejorados. Instrumentar antes de sustituir agrupación.
+- No hay autorización para nuevas funcionalidades o refactorizaciones fuera del alcance entregado.
 
-Las optimizaciones esperan autorización expresa. Detalle y banco Node en [CODEX_LOG, CW-CX-005](CODEX_LOG.md); informe completo en la conversación de auditoría del 2026-11-04. Mapas de octubre son históricos: contrastar con el SHA vigente.
+## Continuidad y recuperación
 
-Referencias: [PROTOCOL](PROTOCOL.md), [CLAUDE_LOG](CLAUDE_LOG.md), [rendimiento 0.9.3](../ai-handoff/CLAUDE_PERF_CW-CL-027.md), [PROJECT_MAP](../ai-handoff/PROJECT_MAP.md), [UI_ARCHITECTURE](../ai-handoff/UI_ARCHITECTURE.md), [UI_BASELINE](../ai-handoff/UI_BASELINE.md).
+Checkout de trabajo: `C:/Users/Joaco/Developer/CocoWash-stage1`. El checkout anterior
+en OneDrive, HEAD 76744e2 y sus cambios previos permanecen intactos. Respaldo de
+1.457 archivos/.git verificado en `C:/Users/Joaco/CocoWash-Backups/20261104-stage1-current`;
+366 fuentes originales revalidadas tras la implementación.
 
-## Historial conservado — snapshots anteriores, no estado vigente
-
-
-- Próximo: usuario revisa resultado del run 41124449495. Codex confirmó `in_progress`
-  en CW-CX-004 y se detuvo sin polling. No hizo push: el único commit local añade
-  adaptador/herramientas Windows, no cambia la app que ya se está compilando.
-
-## CW-HO-004 — compilación lista para lanzar, Claude → Codex
-
-**Recibida por CW-CX-004; compilación existente confirmada en curso.** main local = origin/main + 1 commit local (mano/CLAUDE.md, mano/tools/
-de Codex). Para compilar: comprobar que el run 41124449495 terminó (o aceptar cancelarlo), luego
-`git push origin main` desde la raíz: el workflow «Build Mano for AltStore» arranca solo por tocar
-`mano/**`. Alternativa sin push: *Run workflow* (workflow_dispatch) en Actions. El IPA sale como
-artefacto `Mano-AltStore`; publicar release solo tras verificar el run (ver CURRENT.md).
-
-## CW-HO-003 — rediseño entregado, Claude → Codex
-
-**Lista, no recibida ni integrada.** Base: main 0a6d32d dirty + cambios CW-CL-002 sin stage.
-Revisar §Para Codex de [CLAUDE_REDESIGN](../ai-handoff/CLAUDE_REDESIGN_CW-CL-002.md):
-literales de aviso en act/closeSession/undoLast, salida de cartas con AnimatePresence
-(solo lee history), prop description de Sheet, revisión reordenada con los mismos
-handlers. Decidir MotionConfig, Dynamic Type y aria-describedby nativo. Aceptación:
-diff revisado, checks repetidos y QA nativa no destructiva.
-
-## CW-HO-001 — cerrado como entrega de auditoría
-
-Codex → Claude → Codex: recibida y respondida por CW-CL-001, recibida formalmente
-en CW-CX-003. Informe [CLAUDE_AUDIT](../ai-handoff/CLAUDE_AUDIT_CW-HO-001.md);
-recepción técnica [CODEX_REVIEW](../ai-handoff/CODEX_REVIEW_CW-HO-001.md).
-Cierre documental no significa aprobación artística ni integración de rediseño.
-Los registros antiguos de «Claude no ejecutado» describen la preparación anterior.
-
-## CW-HO-002 — recibida y ejecutada por CW-CL-002 (texto original abajo)
-
-Codex → Claude. Base: este checkout dirty protegido. Leer CODEX_REVIEW y decisión
-de revisión en [UI_BASELINE](../ai-handoff/UI_BASELINE.md). Propuesto: tokens/CSS,
-JSX sesión y BrandStatus acotado. No implementar toggle Favoritos ni provider
-global de Motion; escalar semántica/foco/lógica a Codex. Aceptación: revisión diff,
-checks, capturas demo comparables y límites nativos explícitos. El receptor aún
-no ha confirmado esta nueva entrega. Protocolo en [PROTOCOL](PROTOCOL.md);
-historial anterior en CURRENT.md solo bajo demanda.
-
+Leer [PROTOCOL](PROTOCOL.md) y [CODEX_LOG](CODEX_LOG.md) antes de intervenir.
+La bitácora de Claude se conserva en [CLAUDE_LOG](CLAUDE_LOG.md). Los mapas de octubre
+son históricos: contrastar con código y esta entrega. El estado anterior y handoffs
+históricos se conservan íntegros en [Git, snapshot 842ab93](https://github.com/joacomino-dev/mano-iphone/blob/842ab93a07e017bb47a04daea9d43d7b3056b63e/docs/ai-collaboration/CURRENT_STATE.md).

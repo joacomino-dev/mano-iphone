@@ -18,7 +18,7 @@ export function validateSession(value: unknown): ActiveSession | null {
     ...(record ? { record } : {}) };
 }
 
-/** Separate key: never reads or writes the decisions/marks/favorites record. */
+/** Atomic envelope is authoritative; legacy decisions are a recovery fallback. */
 export function readSession(key: string, storage?: SessionStorage): ActiveSession | null {
   try { return validateSession(JSON.parse((storage ?? localStorage).getItem(key) || 'null')); }
   catch { return null; }
@@ -31,4 +31,28 @@ export function saveSession(key: string, session: ActiveSession, storage?: Sessi
     if (!valid) return false;
     (storage ?? localStorage).setItem(key, JSON.stringify(valid)); return true;
   } catch { return false; }
+}
+
+/** React records are immutable. Validate each record identity once, serialize
+ * only the authoritative envelope during interaction. Mirror the legacy key
+ * only at lifecycle checkpoints, after the atomic write succeeds. */
+export class SessionWriter {
+  private records = new WeakMap<RecordState, RecordState>();
+  save(key: string, session: ActiveSession, storage?: SessionStorage, legacyKey?: string): boolean {
+    try {
+      const target = storage ?? localStorage;
+      const envelope = validateSession({ ...session, record: undefined });
+      if (!envelope || !session.record) return false;
+      let record = this.records.get(session.record);
+      if (!record) {
+        record = validateRecordState(session.record) ?? undefined;
+        if (!record) return false;
+        this.records.set(session.record, record);
+      }
+      target.setItem(key, JSON.stringify({ ...envelope, record }));
+      // A legacy mirror failure cannot invalidate a successful authoritative save.
+      if (legacyKey) try { target.setItem(legacyKey, JSON.stringify(record)); } catch { /* canonical saved */ }
+      return true;
+    } catch { return false; }
+  }
 }

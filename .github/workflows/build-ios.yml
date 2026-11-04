@@ -17,11 +17,16 @@ concurrency:
 jobs:
   prepare:
     if: github.event.repository.private == false
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
+      - name: Verify exact Swift signature candidates against exhaustive search
+        run: |
+          mkdir -p mano/build
+          swiftc mano/ios/App/App/SignatureIndex.swift mano/tests/swift/main.swift -o mano/build/signature-tests
+          mano/build/signature-tests
       - name: Expand initial browser upload, when present
         run: |
           if [ -f mano-source.zip ]; then
@@ -34,7 +39,8 @@ jobs:
   ios:
     needs: prepare
     if: github.event.repository.private == false
-    # Standard free Intel runner: avoids current hosted ARM capacity failures. Never use -large/-xlarge.
+    # Return to the last successful free pool after the Actions incident.
+    # No paid or large runners; Xcode 26.6 is already installed.
     runs-on: macos-26-intel
     # Includes bounded cold-start readiness; this remains the standard free runner.
     # 62: a smoke test that fails slowly (up to its own 45 min) still leaves time
@@ -49,7 +55,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.sha }}
       # No npm cache: run 41199551358 hung 50 min restoring it from the Actions
       # cache service (past the 45 min job limit). npm ci takes ~20 s uncached.
       - uses: actions/setup-node@v4

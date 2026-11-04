@@ -1,7 +1,8 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import type { Asset } from './domain';
 import type { Insight } from './insights';
-import { cloudDownloads } from './preview';
+import { cacheBytes, cloudDownloads, previewQuality } from './preview';
+import { RequestQueue } from './requests';
 export type Album = { id: string; title: string };
 export type AssetMetadata = {
   id: string; kind: Asset['kind']; filename?: string; uniformTypeIdentifier?: string;
@@ -55,21 +56,35 @@ export type Thumb = { src: string; cloud: boolean };
  * caller. Bounded, least recently used first: one entry per item seen, so an
  * unbounded map grew with every card of a long session. The files themselves
  * live in the native, size-bounded preview cache. */
-const cache = new Map<string, Promise<Thumb>>();
-const CACHE_LIMIT = 240;
+const thumbnails = new RequestQueue<Thumb>();
+let thumbnailRequest = 0;
+export const clearThumbnailReferences = () => thumbnails.clear();
 /** `network` defaults to the iCloud preference; true downloads if needed. */
-export function thumbnailInfo(asset: Asset, size = 900, refresh = false, network = cloudDownloads()): Promise<Thumb> {
+export function thumbnailInfo(asset: Asset, size = 900, refresh = false, network = cloudDownloads(), signal?: AbortSignal, progress?: (value: number) => void, priority = false): Promise<Thumb> {
   if (asset.demo) return Promise.resolve({ src: demoPostcard(asset), cloud: !!asset.cloud && !network });
-  const key = `${asset.id}:${asset.modified??0}:${size}:${network ? 'net' : 'local'}`;
-  if (refresh) cache.delete(key);
-  const hit = cache.get(key);
-  if (hit) { cache.delete(key); cache.set(key, hit); return hit; }
-  const request = Library.thumbnail({ id: asset.id, size, network }).then(r => ({ src: Capacitor.convertFileSrc(r.path), cloud: !!r.cloud })).catch(e => { if (cache.get(key) === request) cache.delete(key); throw e; });
-  cache.set(key, request);
-  while (cache.size > CACHE_LIMIT) cache.delete(cache.keys().next().value!);
-  return request;
+  const budget = cacheBytes(previewQuality());
+  const key = `${asset.id}:${asset.modified??0}:${size}:${network ? 'net' : 'local'}:${budget}`;
+  if (refresh) thumbnails.forget(key);
+  return thumbnails.request(key, async (owned, report) => {
+    const requestId = `preview-${Date.now()}-${++thumbnailRequest}`;
+    const cancel = () => { void Library.cancelThumbnailPreparation({ requestId }).catch(() => {}); };
+    owned.addEventListener('abort', cancel, { once: true });
+    const listener = network ? Library.addListener('mediaPreparationProgress', e => { if (e.requestId === requestId) report(e.progress); }) : undefined;
+    try {
+      const result = await Library.thumbnail({ id: asset.id, size, network, requestId, cacheBytes: budget });
+      if (owned.aborted) throw new DOMException('Solicitud cancelada', 'AbortError');
+      const src = Capacitor.convertFileSrc(result.path);
+      return { src: refresh ? `${src}${src.includes('?') ? '&' : '?'}cw=${requestId}` : src, cloud: !!result.cloud };
+    } finally { owned.removeEventListener('abort', cancel); void listener?.then(l => l.remove()).catch(() => {}); }
+  }, signal, priority, progress);
 }
-export const thumbnail = (asset: Asset, size = 900, refresh = false, network?: boolean) => thumbnailInfo(asset, size, refresh, network).then(t => t.src);
+export const thumbnail = (asset: Asset, size = 900, refresh = false, network?: boolean, signal?: AbortSignal) => thumbnailInfo(asset, size, refresh, network, signal).then(t => t.src);
+/** Owned by the review loader, independently cancellable from the main pile.
+ * Local-only, as the previous review thumbnails; no original or iCloud fetch. */
+export async function reviewThumbnail(asset: Asset, size: number, signal: AbortSignal, refresh = false): Promise<Thumb> {
+  if (signal.aborted) throw new DOMException('Revisión cancelada', 'AbortError');
+  return thumbnailInfo(asset, size, refresh, false, signal);
+}
 export const inCloudError = (error: unknown) => (error as { code?: string })?.code === 'IN_CLOUD';
 // Demo media spans several days so date filters and the counter can be tried;
 // only some carry a (demonstration) place, to show the layouts without one.

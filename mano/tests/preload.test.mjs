@@ -106,3 +106,11 @@ test('forget evicted native references forces reprepare when an asset reenters t
   assert.equal(preloader.snapshot().items[0].status, 'loading');
   c.calls[2].resolve('native-pinned-v3'); await flush(); preloader.dispose();
 });
+
+test('policy revalidation retains the previous poster until its replacement is ready',async()=>{
+ const c=controlled(), pool=new AssetPreloader(c.prepare), asset=photo('a');
+ pool.update([asset]);await flush();c.calls[0].resolve({poster:'old'});await flush();
+ pool.invalidate();assert.equal(pool.peek(asset).value.poster,'old');await flush();
+ assert.equal(c.calls.length,2);c.calls[1].resolve({poster:'new'});await flush();
+ assert.equal(pool.peek(asset).value.poster,'new');pool.dispose();
+});

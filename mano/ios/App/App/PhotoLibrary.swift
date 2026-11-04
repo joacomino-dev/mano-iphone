@@ -156,6 +156,18 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
     private var thumbnailJobs: [String: PreparedThumbnailJob] = [:]
     /// Writes since launch; the preview cache is pruned on the first and then every 16th.
     private var thumbnailWrites = 0
+    private var thumbnailBudget: Int64 = 0
+    /// Background analysis yields between assets while visible media prepares.
+    /// Separate condition avoids reading job dictionaries across their queues.
+    private let mediaCondition = NSCondition()
+    private var mediaWork = 0
+    private func beginMediaWork() { mediaCondition.lock(); mediaWork += 1; mediaCondition.unlock() }
+    private func endMediaWork() { mediaCondition.lock(); mediaWork = max(0, mediaWork - 1); mediaCondition.broadcast(); mediaCondition.unlock() }
+    private func waitForMedia(cancelled: () -> Bool = { false }) -> Bool {
+        mediaCondition.lock(); defer { mediaCondition.unlock() }
+        while mediaWork > 0 && !cancelled() { _ = mediaCondition.wait(until: Date().addingTimeInterval(0.1)) }
+        return !cancelled()
+    }
     private let metadataQueue = DispatchQueue(label: "work.joaquin.mano.metadata", qos: .utility)
     private var metadataJobs: [String: LocalMetadataJob] = [:]
     private var exifCache: [String: CachedAssetExif] = [:]
@@ -312,7 +324,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         // Preview only (card or anchored view, per the quality profile); never the original.
         let size = min(3072, max(200, call.getInt("size") ?? 900))
         // LRU bound for this cache, chosen by the profile (0 = leave as is).
-        let cacheLimit = Int64(min(max(call.getInt("cacheBytes") ?? 0, 0), 600 * 1024 * 1024))
+        let cacheLimit = Int64(min(max(call.getInt("cacheBytes") ?? (300 * 1024 * 1024), 1), 600 * 1024 * 1024))
         // «Ahorrar iCloud» (network false): only what is already on the iPhone. When
         // just a smaller local version exists it is returned marked `cloud` and cached
         // apart, so a later download at full preview size is never shadowed by it.
@@ -328,11 +340,16 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
             for (file, lite) in [(path, false), (litePath, true)] where !lite || !network {
                 if let bytes = self.videoSize(file), bytes > 0 {
                     try? FileManager.default.setAttributes([.modificationDate: Date()], ofItemAtPath: file.path)
+                    if self.thumbnailBudget != cacheLimit {
+                        self.thumbnailBudget = cacheLimit
+                        self.pruneThumbnails(folder, limit: cacheLimit)
+                    }
                     call.resolve(["path": file.path, "cloud": lite]); return
                 }
             }
             let job = PreparedThumbnailJob(call: call)
             self.thumbnailJobs[token] = job
+            self.beginMediaWork()
             self.armThumbnailTimeout(token, job: job)
             // requestImage produces a video's poster without requesting/exporting
             // its full AVAsset. One final result settles this promise exactly once.
@@ -373,12 +390,15 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                                 do {
                                     try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
                                     try data.write(to: file, options: .atomic)
-                                    job.timeout?.cancel(); self.thumbnailJobs.removeValue(forKey: token)
+                                    job.timeout?.cancel(); self.thumbnailJobs.removeValue(forKey: token); self.endMediaWork()
                                     call.resolve(["path": file.path, "cloud": lite])
                                     // Measurement signal for the quality profiles: no ids, names or paths.
                                     NSLog("COCOWASH_PREVIEW size=%ld bytes=%ld ms=%ld lite=%d", size, data.count, Int(Date().timeIntervalSince(started) * 1000), lite ? 1 : 0)
                                     self.thumbnailWrites += 1
-                                    if cacheLimit > 0, self.thumbnailWrites % 16 == 1 { self.pruneThumbnails(folder, limit: cacheLimit) }
+                                    if self.thumbnailBudget != cacheLimit || self.thumbnailWrites % 16 == 1 {
+                                        self.thumbnailBudget = cacheLimit
+                                        self.pruneThumbnails(folder, limit: cacheLimit)
+                                    }
                                 } catch {
                                     self.stopThumbnail(token, job: job, message: "No se pudo guardar la vista previa. Libera espacio y reintenta.", code: "CACHE_WRITE_FAILED")
                                 }
@@ -431,7 +451,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
     }
     private func stopThumbnail(_ token: String, job: PreparedThumbnailJob, message: String, code: String) {
         guard thumbnailJobs[token] === job else { return }
-        thumbnailJobs.removeValue(forKey: token); job.timeout?.cancel()
+        thumbnailJobs.removeValue(forKey: token); job.timeout?.cancel(); endMediaWork()
         if job.photoRequest != PHInvalidImageRequestID { imageManager.cancelImageRequest(job.photoRequest) }
         job.call.reject(message, code)
     }
@@ -688,6 +708,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
             }
             let job = PreparedVideoJob(token: token, key: key, assetID: item.localIdentifier, call: call)
             self.videoJobs[token] = job
+            self.beginMediaWork()
             // Inactivity watchdog, not a fixed deadline: a large iCloud download that
             // keeps progressing is never killed; a stalled one fails clearly.
             self.armVideoWatchdog(job)
@@ -796,6 +817,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         job.cancel()
         job.timeout?.cancel()
         videoJobs.removeValue(forKey: job.token)
+        endMediaWork()
         if job.photoRequest != PHInvalidImageRequestID { imageManager.cancelImageRequest(job.photoRequest) }
         job.exporter?.cancelExport()
         job.source = nil
@@ -912,6 +934,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
             pinnedVideos[job.key] = job.assetID
             job.timeout?.cancel()
             videoJobs.removeValue(forKey: job.token)
+            endMediaWork()
             NSLog("MEMSWIPE_VIDEO_PREPARED_OK bytes=%lld cached=0", bytes)
             job.source = nil
             job.call.resolve(["path": file.path, "url": streamURL(file), "mimeType": videoMime(ext), "cached": false, "bytes": bytes])
@@ -928,7 +951,9 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                 let fetched = PHAsset.fetchAssets(withLocalIdentifiers: ids, options: nil)
                 var items: [PHAsset] = []; fetched.enumerateObjects { item, _, _ in items.append(item) }
                 items.sort { ($0.creationDate ?? .distantPast) < ($1.creationDate ?? .distantPast) }
-                var prints: [(index: Int, hash: UInt64, feature: VNFeaturePrintObservation)] = []; var skipped = 0
+                var prints: [(index: Int, feature: VNFeaturePrintObservation)] = []; var skipped = 0
+                var signatures = SignatureIndex()
+                var signatureVisits = 0
                 var parent = Array(0..<items.count)
                 func root(_ n: Int) -> Int { var k = n; while parent[k] != k { k = parent[k] }; return k }
                 // Feature prints persist per item (identifier + edit date) in Caches, so a
@@ -939,7 +964,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                 try? FileManager.default.createDirectory(at: printFolder, withIntermediateDirectories: true)
                 var livePrints = Set<String>()
                 for (index, item) in items.enumerated() {
-                    if self.cancelled() { break }
+                    if self.cancelled() || !self.waitForMedia(cancelled: { self.cancelled() }) { break }
                     autoreleasepool {
                         let key = item.localIdentifier + "-\(item.modificationDate?.timeIntervalSince1970 ?? 0)"
                         let name = SHA256.hash(data: Data(key.utf8)).map { String(format: "%02x", $0) }.joined() + ".print"
@@ -973,14 +998,9 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                         let (signature, print) = entry
                         do {
                             // Bound expensive Vision comparisons to 64 per image, rather than all prints.
-                            // The 64 closest signatures by Hamming distance (0…64), in one pass
-                            // into distance buckets instead of sorting every print per image
-                            // (that sort made the whole search grow as n² log n).
-                            var buckets = [[Int]](repeating: [], count: 65)
-                            for i in prints.indices { buckets[(prints[i].hash ^ signature).nonzeroBitCount].append(i) }
-                            var candidates: [Int] = []
-                            candidates.reserveCapacity(64)
-                            for bucket in buckets where candidates.count < 64 { candidates.append(contentsOf: bucket.prefix(64 - candidates.count)) }
+                            // Exact candidates and ties, with bounded reusable distance buckets.
+                            let candidates = signatures.nearest(signature)
+                            signatureVisits += signatures.visitedNodes
                             var nearest: (Int, Float)?
                             for i in candidates {
                                 if self.cancelled() { break }
@@ -989,7 +1009,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                                 if distance < threshold && (nearest == nil || distance < nearest!.1) { nearest = (i, distance) }
                             }
                             if let nearest { parent[index] = root(prints[nearest.0].index) }
-                            else { prints.append((index, signature, print)) }
+                            else { signatures.insert(signature, index: prints.count); prints.append((index, print)) }
                         } catch { skipped += 1 }
                     }
                     if index % 10 == 0 || index == items.count - 1 { self.notifyListeners("analysisProgress", data: ["done": index + 1, "total": items.count]) }
@@ -1000,6 +1020,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                     for file in files where !livePrints.contains(file) { try? FileManager.default.removeItem(at: printFolder.appendingPathComponent(file)) }
                 }
                 var groups: [Int: [String]] = [:]
+                NSLog("COCOWASH_VISION_CANDIDATES representatives=%ld visits=%ld", prints.count, signatureVisits)
                 for i in items.indices { groups[root(i), default: []].append(items[i].localIdentifier) }
                 call.resolve(["groups": groups.values.filter { $0.count > 1 }, "skipped": skipped, "cancelled": self.cancelled()])
             }
@@ -1018,6 +1039,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
             let fetched = PHAsset.fetchAssets(withLocalIdentifiers: Array(ids.prefix(400)), options: nil)
             var result: [String: Int] = [:]
             fetched.enumerateObjects { item, _, _ in
+                _ = self.waitForMedia()
                 let key = item.localIdentifier + "-\(item.modificationDate?.timeIntervalSince1970 ?? 0)"
                 if let cached = cache[key] as? Int { result[item.localIdentifier] = cached; return }
                 guard let bytes = self.localFileSize(item), bytes > 0 else { return }
@@ -1067,7 +1089,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
             let fetched = PHAsset.fetchAssets(withLocalIdentifiers: Array(ids.prefix(400)), options: nil)
             var results: [String: Any] = [:]; var skipped = 0
             fetched.enumerateObjects { item, _, stop in
-                if self.classifyStopped() { stop.pointee = true; return }
+                if self.classifyStopped() || !self.waitForMedia(cancelled: { self.classifyStopped() }) { stop.pointee = true; return }
                 guard item.mediaType == .image else { return }
                 let key = item.localIdentifier + "-\(item.modificationDate?.timeIntervalSince1970 ?? 0)"
                 if let cached = cache[key] { results[item.localIdentifier] = cached; return }
