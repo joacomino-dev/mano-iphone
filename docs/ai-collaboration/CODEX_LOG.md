@@ -153,3 +153,16 @@ Impacto para Claude: entrega autosuficiente, no requiere intervención.
 Pendientes: full smoke 41893615114 en curso y pruebas físicas; ninguna medición de FPS/RAM de iPhone atribuida a escritorio.
 
 Actualización CW-CX-012: full smoke terminó failure: XCTest quedó solicitando snapshot de accesibilidad de SpringBoard después del permiso Fotos (840 s y watchdog 1.320 s); cero errores JS registrados. Diagnósticos 13357503774 descargados: captura posterior de SpringBoard y bootstrap tardío PhotosTCCNotificationExtension. Probable entorno de automatización, causa raíz no acreditada; no marcar QA funcional nativa completa. Recibo/estado actualizados; IPA Release 41899040312 y sus verificaciones permanecen válidos. Sin cambiar código ni repetir una ejecución idéntica.
+
+### CW-CX-013 — Aceptación física e integración de 0.9.7/18
+Fecha: 2026-11-04, America/Bogota.
+Agente: Codex.
+Tarea: registrar aceptación del usuario y establecer 0.9.7 como versión actual en main.
+Estado: aceptación recibida; integración autorizada en curso.
+Base Git / commit: rama codex/stage1-review 842ab93; main 3cc28d2; app compilada ed47909.
+Archivos modificados: README raíz/móvil, CURRENT_STATE y entrega; esta bitácora.
+Cambios realizados: CW-HO-006 aceptada por usuario tras probar en iPhone y confirmar fluidez; preparación de merge conservando etapas y respaldo.
+Decisiones relevantes: no cambia código validado; no confundir aceptación física con smoke XCTest verde ni mediciones instrumentadas.
+Validaciones: checks de CW-CX-012 vigentes; comprobar igualdad de fuentes contra IPA y de main tras integrar. Sin repetir builds por documentación.
+Impacto para Claude: usar main y estado vigente; bitácora Claude intacta.
+Pendientes: registrar PR/SHA de integración; timeout de automatización continúa abierto.
