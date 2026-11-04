@@ -14,6 +14,7 @@ export const PeopleBridge = registerPlugin<{
 export const PeopleProtection = createContext<{ person?: string; mode?: BreakupMode; revision: number }>({ revision: 0 });
 
 const redactions = new RequestQueue<string>(1,16);
+export const clearPeoplePreviews = () => redactions.clear();
 
 /** The unredacted URL never enters the DOM in protected mode. A stale result
  * cannot cross an asset/person/mode/index boundary, even for a single render. */

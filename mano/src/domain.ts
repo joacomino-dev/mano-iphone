@@ -39,6 +39,11 @@ export const DAYS = [7, 14, 30, 60, 120, 240, 365, Infinity];
 export const initialState = (): RecordState => ({ marks: {}, pending: [], favorites: [], removed: [], history: [], later: [] });
 /** Chronological by default (0.6): the person knows where they are in their roll. */
 export const initialFilter: Filter = { seal: 'all', order: 'oldest', media: 'all', includeWaiting: false, smart: 'all', v: 2 };
+export function withoutPeople(filter: Filter): Filter { const { person: _person, breakup: _breakup, ...rest } = filter; return rest; }
+/** Forget derived person associations while retaining every decision and hand. */
+export function forgetPeople(state: RecordState): RecordState {
+  return { ...state, history: state.history.map(d => d.context?.filter?.person ? { ...d, context: { ...d.context, filter: withoutPeople(d.context.filter) } } : d) };
+}
 export function normalizeFilter(value: unknown): Filter {
   const input = value && typeof value === 'object' ? value as Record<string, unknown> : {};
   return {

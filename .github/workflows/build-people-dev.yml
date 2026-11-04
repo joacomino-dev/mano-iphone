@@ -38,6 +38,8 @@ jobs:
           build/signature-tests
           swiftc ios/App/App/PeopleGeometry.swift tests/swift-people/main.swift -o build/people-tests
           build/people-tests
+          swiftc ios/App/App/PeopleCheckpoint.swift tests/swift-checkpoint/main.swift -o build/checkpoint-tests
+          build/checkpoint-tests
       - name: Require real public face grouping API in this SDK
         run: |
           printf '%s\n' 'import Foundation' 'import MediaIntelligence' '@available(iOS 27.0, *) func probe(_ url: URL) throws { _ = try FaceGroupAnalyzer(workingDirectory: url) }' > build/people-api.swift

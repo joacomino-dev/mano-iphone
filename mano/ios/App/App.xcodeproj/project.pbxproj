@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A10000000000000000000011 /* PeopleCheckpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000012 /* PeopleCheckpoint.swift */; };
 		A10000000000000000000009 /* PeopleGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000010 /* PeopleGeometry.swift */; };
 		A10000000000000000000007 /* People.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000008 /* People.swift */; };
 		A10000000000000000000005 /* SignatureIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000006 /* SignatureIndex.swift */; };
@@ -35,6 +36,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		A10000000000000000000012 /* PeopleCheckpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeopleCheckpoint.swift; sourceTree = "<group>"; };
 		A10000000000000000000010 /* PeopleGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeopleGeometry.swift; sourceTree = "<group>"; };
 		A10000000000000000000008 /* People.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = People.swift; sourceTree = "<group>"; };
 		A10000000000000000000006 /* SignatureIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignatureIndex.swift; sourceTree = "<group>"; };
@@ -108,6 +110,7 @@
 				A10000000000000000000006 /* SignatureIndex.swift */,
 				A10000000000000000000008 /* People.swift */,
 				A10000000000000000000010 /* PeopleGeometry.swift */,
+				A10000000000000000000012 /* PeopleCheckpoint.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
 				504EC30E1FED79650016851F /* Assets.xcassets */,
 				504EC3101FED79650016851F /* LaunchScreen.storyboard */,
@@ -238,6 +241,7 @@
 				A10000000000000000000005 /* SignatureIndex.swift in Sources */,
 				A10000000000000000000007 /* People.swift in Sources */,
 				A10000000000000000000009 /* PeopleGeometry.swift in Sources */,
+				A10000000000000000000011 /* PeopleCheckpoint.swift in Sources */,
 				9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

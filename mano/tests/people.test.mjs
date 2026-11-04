@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { EmptyFinishPresses } from '../src/finish.ts';
 import { personFilter, protectedMode } from '../src/people.ts';
-import { initialFilter, initialState, normalizeFilter, decide, eligible, undo, UNDO_LIMIT } from '../src/domain.ts';
+import { initialFilter, initialState, normalizeFilter, decide, eligible, undo, UNDO_LIMIT, forgetPeople } from '../src/domain.ts';
 import { validateSession } from '../src/session.ts';
 import { restoreHand } from '../src/sequence.ts';
 const photo=id=>({id,kind:'photo',date:0,width:200,height:300,duration:0});
@@ -31,4 +31,13 @@ test('thirty mixed decisions survive save/reload and undo restores exact hands, 
  assert.equal(session.record.history.length,30);assert.equal(session.filter.breakup,'face');s=session.record;
  for(let i=29;i>=0;i--){const last=s.history.at(-1);assert.deepEqual(restoreHand(last.context,last.ids).ids,[`p${i}`]);assert.equal(last.context.filter.person,'person');s=undo(s);}
  assert.deepEqual(s,initialState());
+});
+
+test('deleting the facial index forgets person associations without losing decisions, order or undo',()=>{
+ const filter={...initialFilter,person:'private-person',breakup:'face'};
+ const state=decide(initialState(),['a'],'discard',1,{handIds:['a','b'],rotated:[],selected:['a'],filter});
+ const forgotten=forgetPeople(state);
+ assert.equal(forgotten.history[0].context.filter.person,undefined);assert.equal(forgotten.history[0].context.filter.breakup,undefined);
+ assert.equal(state.history[0].context.filter.person,'private-person');
+ assert.deepEqual(forgotten.pending,state.pending);assert.deepEqual(forgotten.history[0].context.handIds,['a','b']);assert.deepEqual(undo(forgotten),initialState());
 });
