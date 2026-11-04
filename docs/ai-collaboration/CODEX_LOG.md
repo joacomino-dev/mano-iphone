@@ -106,3 +106,5 @@ Decisiones relevantes: mantener smoke obligatorio, textura y todos los contratos
 Validaciones: dos intentos Intel sin runner ni steps; imagen ARM y Xcode contrastados con inventario oficial runner-images. Sin cambio de aplicación.
 Impacto para Claude: no requiere intervención.
 Pendientes: comprobar CI y descargar IPA verificado; QA física aparte.
+
+Actualización CW-CX-009: pool ARM macos-26 permaneció 10 minutos sin máquina; run 41872183811 cancelado antes de ejecutar pasos iOS. Incidencia Actions/Pages confirmada en estado oficial. Se prueba pool gratuito macos-15-intel/Xcode 26.3 existente, soportado por inventario oficial runner-images, conservando smoke obligatorio y fuentes de aplicación. No se interpreta cola como error del código.

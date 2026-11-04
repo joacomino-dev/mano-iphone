@@ -34,16 +34,16 @@ jobs:
   ios:
     needs: prepare
     if: github.event.repository.private == false
-    # Standard free ARM runner; Intel failed allocation twice without starting.
-    # Xcode 26.6 is preinstalled on this image. Never use -large/-xlarge.
-    runs-on: macos-26
+    # Use the standard macOS 15 Intel pool: macOS 26 pools did not acquire jobs.
+    # Xcode 26.3 is preinstalled; no toolchain/runtime download or paid runner.
+    runs-on: macos-15-intel
     # Includes bounded cold-start readiness; this remains the standard free runner.
     # 62: a smoke test that fails slowly (up to its own 45 min) still leaves time
     # to keep diagnostics and, on manual request, build the IPA; a job cancelled
     # at its cap loses its log (run 41482349450).
     timeout-minutes: 62
     env:
-      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
     defaults:
       run:
         working-directory: mano
