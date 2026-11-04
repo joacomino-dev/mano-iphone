@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A10000000000000000000005 /* SignatureIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000006 /* SignatureIndex.swift */; };
 		B20000000000000000000001 /* PhotosSmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000002 /* PhotosSmokeTests.swift */; };
 		A10000000000000000000003 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000004 /* PrivacyInfo.xcprivacy */; };
 		A10000000000000000000001 /* PhotoLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000002 /* PhotoLibrary.swift */; };
@@ -32,6 +33,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		A10000000000000000000006 /* SignatureIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignatureIndex.swift; sourceTree = "<group>"; };
 		B20000000000000000000002 /* PhotosSmokeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotosSmokeTests.swift; sourceTree = "<group>"; };
 		B20000000000000000000003 /* ManoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ManoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000004 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -99,6 +101,7 @@
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
 				A10000000000000000000002 /* PhotoLibrary.swift */,
+				A10000000000000000000006 /* SignatureIndex.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
 				504EC30E1FED79650016851F /* Assets.xcassets */,
 				504EC3101FED79650016851F /* LaunchScreen.storyboard */,
@@ -226,6 +229,7 @@
 			files = (
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				A10000000000000000000001 /* PhotoLibrary.swift in Sources */,
+				A10000000000000000000005 /* SignatureIndex.swift in Sources */,
 				9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
