@@ -166,3 +166,5 @@ Decisiones relevantes: no cambia código validado; no confundir aceptación fís
 Validaciones: checks de CW-CX-012 vigentes; comprobar igualdad de fuentes contra IPA y de main tras integrar. Sin repetir builds por documentación.
 Impacto para Claude: usar main y estado vigente; bitácora Claude intacta.
 Pendientes: registrar PR/SHA de integración; timeout de automatización continúa abierto.
+
+Cierre CW-CX-013: **integrada** mediante [PR #3](https://github.com/joacomino-dev/mano-iphone/pull/3), merge `a536c8b9617adf418b897bb4ecf90ff76783d09b` desde df00d52. Merge normal conserva etapas y rama. Main local actualizado por fast-forward en checkout Developer; OneDrive original intacto. Fuentes de aplicación de main idénticas a ed47909 (IPA probado); runtime28 PASS y enlaces documentales PASS. README/estado reflejan 0.9.7/18 y aceptación física declarada por usuario; sin métricas inventadas ni cambios funcionales adicionales. La incidencia de XCTest sigue abierta y separada. Solo registros cambiados después del merge; no repetir build del mismo código.

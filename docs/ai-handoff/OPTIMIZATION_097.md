@@ -7,7 +7,9 @@ fluida y autoriza convertirla en la versión actual del repositorio. Se cierra
 CW-HO-006 (Codex → usuario) como aceptada. Es aceptación funcional declarada por
 el usuario, sin atribuir FPS, RAM ni mediciones de Instruments. La incidencia
 de XCTest/SpringBoard del CI conserva su estado fallido y queda separada de esta
-aceptación. Integración en main autorizada; ver CW-CX-013 para su cierre.
+aceptación. Integrada en main mediante [PR #3](https://github.com/joacomino-dev/mano-iphone/pull/3),
+merge a536c8b9617adf418b897bb4ecf90ff76783d09b; fuentes iguales al IPA aceptado.
+CW-CX-013 registra el cierre y los commits por etapa se conservan.
 
 **IPA disponible:** `C:/Users/Joaco/Downloads/CocoWash-0.9.7-completa-ed47909f.ipa`,
 5.553.746 bytes, recibo JSON adyacente. [Compilación de dispositivo 41899040312](https://github.com/joacomino-dev/mano-iphone/actions/runs/41899040312)

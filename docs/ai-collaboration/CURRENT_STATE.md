@@ -8,10 +8,11 @@ El usuario confirma pruebas en iPhone y una experiencia fluida; autoriza que est
 sea la versión actual del repositorio. **Aceptación física recibida.** No equivale
 a mediciones de FPS/RAM ni a resolver la incidencia de XCTest.
 
-Integración autorizada en curso: `codex/stage1-review` → `main`, conservando commits
-por etapa. Base main `3cc28d2`; rama recibida `842ab93`; fuentes compiladas `ed47909`
-(idénticas a fce0deb en la app). El cierre y SHA de integración se registran en
-[CODEX_LOG, CW-CX-013](CODEX_LOG.md).
+**Integrada en main** mediante [PR #3](https://github.com/joacomino-dev/mano-iphone/pull/3),
+merge `a536c8b9617adf418b897bb4ecf90ff76783d09b`, origen `df00d52`.
+Se conservan los commits por etapa y la rama de desarrollo. Las fuentes de app
+coinciden con `ed47909`, el IPA probado (también fce0deb). Estado y README se
+actualizan después con un commit solo documental. Cierre: [CW-CX-013](CODEX_LOG.md).
 
 ## Implementación y evidencia
 
@@ -30,7 +31,7 @@ por etapa. Base main `3cc28d2`; rama recibida `842ab93`; fuentes compiladas `ed4
 
 ## Continuidad y recuperación
 
-Checkout de trabajo: `C:/Users/Joaco/Developer/CocoWash-stage1`. El checkout anterior
+Checkout de trabajo actualizado en rama `main`: `C:/Users/Joaco/Developer/CocoWash-stage1`. El checkout anterior
 en OneDrive, HEAD 76744e2 y sus cambios previos permanecen intactos. Respaldo de
 1.457 archivos/.git verificado en `C:/Users/Joaco/CocoWash-Backups/20261104-stage1-current`;
 366 fuentes originales revalidadas tras la implementación.
