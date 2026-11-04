@@ -14,7 +14,7 @@ import { CloudBadge, CloudPlaceholder, useCloud } from './Cloud';
 import { InlineVideo, type VideoControl } from './InlineVideo';
 import { Filters } from './Filters';
 import { Inspector, type InspectOrigin } from './Inspector';
-import { readSession, saveSession, DEMO_SESSION_KEY, LIBRARY_SESSION_KEY, type ActiveSession } from './session';
+import { readSession, SessionWriter, DEMO_SESSION_KEY, LIBRARY_SESSION_KEY, type ActiveSession } from './session';
 import { readDisplay, saveDisplay, polaroidCaption, formatBytes, ONBOARDING_KEY, type DisplaySettings, type PhotoMeta } from './meta';
 import { usePlace, prefetchPlaces } from './place';
 import { haptic, setHapticsEnabled } from './haptics';
@@ -345,15 +345,16 @@ export function ManoApp() {
   const context={handIds:hand.map(a=>a.id),rotated:[] as string[],selected:[...selected],group:bundleKey??undefined,filter,...(best?{best}:{})};
   const envelope:ActiveSession={version:1,active:sessionOpen,seed:seed.current,filter,context:session?context:resumeContext.current??context,updatedAt:Date.now(),record:state};
   const latest=useRef(envelope);latest.current=envelope;
+  const [writer]=useState(()=>new SessionWriter());
   // Saving: the record and the session envelope are written together, at most
   // once every 350 ms while the person sorts (not once per swipe: each write
   // serialises the whole record), and at once when the app is hidden or closed.
   const dirty=useRef(false);const flushTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
-  const flush=useCallback(()=>{if(flushTimer.current){clearTimeout(flushTimer.current);flushTimer.current=null;}if(!dirty.current)return;dirty.current=false;
-    try{localStorage.setItem(key,JSON.stringify(latest.current.record));}catch{setError('No hay espacio para guardar la sesión. Libera espacio antes de continuar.');return;}
-    if(!saveSession(sessionKey,latest.current))setError('No se pudo guardar el progreso. Libera espacio antes de continuar.');},[key,sessionKey]);
+  const flush=useCallback((checkpoint=false)=>{if(flushTimer.current){clearTimeout(flushTimer.current);flushTimer.current=null;}if(!dirty.current)return;
+    if(writer.save(sessionKey,latest.current,localStorage,checkpoint?key:undefined))dirty.current=false;
+    else setError('No se pudo guardar el progreso. Libera espacio antes de continuar.');},[key,sessionKey,writer]);
   useEffect(()=>{dirty.current=true;if(!flushTimer.current)flushTimer.current=setTimeout(flush,350);},[state,sessionOpen,filterKey,windowHandKey,selected,session]);
-  useEffect(()=>{const persist=()=>{dirty.current=true;flush();};document.addEventListener('visibilitychange',persist);window.addEventListener('pagehide',persist);return()=>{persist();document.removeEventListener('visibilitychange',persist);window.removeEventListener('pagehide',persist);};},[flush]);
+  useEffect(()=>{const persist=()=>{dirty.current=true;flush(true);};document.addEventListener('visibilitychange',persist);window.addEventListener('pagehide',persist);return()=>{persist();document.removeEventListener('visibilitychange',persist);window.removeEventListener('pagehide',persist);};},[flush]);
   const openFilters=()=>{setError('');setSheet('filters');};
   const active=hand[0]; const targetIds=selected.filter(id=>hand.some(a=>a.id===id)); const targets=targetIds.length?targetIds:active?[active.id]:[];
   // «Elegir las demás»: everything but the best shot, ready for «Eliminar».
