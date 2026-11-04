@@ -1,11 +1,14 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { thumbnail } from './library';
 import type { Asset } from './domain';
 import { RequestQueue } from './requests';
 import { protectedMode, type BreakupMode } from './people';
 
-export const PeopleBridge = registerPlugin<{ command(options: Record<string, unknown>): Promise<unknown> }>('People');
+export const PeopleBridge = registerPlugin<{
+  command(options: Record<string, unknown>): Promise<unknown>;
+  addListener(event: 'libraryChanged', callback: () => void): Promise<{ remove(): Promise<void> }>;
+}>('People');
 export const PeopleProtection = createContext<{ person?: string; mode?: BreakupMode; revision: number }>({ revision: 0 });
 
 const redactions = new RequestQueue<string>(1,16);
@@ -39,13 +42,20 @@ export function PeopleImage({ asset, allowReveal = true }: { asset: Asset; allow
   const { protectedPhoto, src, key } = usePeopleImage(asset);
   const [reveal, setReveal] = useState<{ key: string; src: string }>();
   const [failed, setFailed] = useState('');
-  useEffect(() => { if (!reveal) return; const timer = setTimeout(() => setReveal(undefined), 3000); const hide = () => setReveal(undefined);
+  const revealEpoch = useRef(0), revealRequest = useRef<AbortController | null>(null);
+  useEffect(() => {
+    const hide = () => { revealEpoch.current++; revealRequest.current?.abort(); setReveal(undefined); };
     document.addEventListener('visibilitychange', hide); window.addEventListener('blur', hide);
-    return () => { clearTimeout(timer); document.removeEventListener('visibilitychange', hide); window.removeEventListener('blur', hide); };
-  }, [reveal]);
+    return () => { hide(); document.removeEventListener('visibilitychange', hide); window.removeEventListener('blur', hide); };
+  }, [key]);
+  useEffect(() => { if (!reveal) return; const timer = setTimeout(() => setReveal(undefined), 3000); return () => clearTimeout(timer); }, [reveal]);
   // Explicit temporary reveal is the only path that asks for an ordinary URL.
   const show = async () => {
-    try { const url = await thumbnail(asset, 1000, false, false); setReveal({ key, src: url }); } catch { /* remain covered */ }
+    const epoch = ++revealEpoch.current; revealRequest.current?.abort();
+    const controller = new AbortController(); revealRequest.current = controller;
+    try { const url = await thumbnail(asset, 1000, false, false, controller.signal);
+      if (!controller.signal.aborted && epoch === revealEpoch.current && !document.hidden) setReveal({ key, src: url });
+    } catch { /* remain covered */ }
   };
   const shown = reveal?.key === key ? reveal.src : src;
   if (!protectedPhoto) return null;

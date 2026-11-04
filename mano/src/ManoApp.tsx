@@ -318,6 +318,11 @@ export function ManoApp() {
     if(previous&&previous.list.length===rawAssets.length&&previous.list.every((a,i)=>a.id===rawAssets[i].id&&a.modified===rawAssets[i].modified)){fingerprintOf.current={list:rawAssets,value:previous.value};return previous.value;}
     const value=libraryFingerprint(rawAssets);fingerprintOf.current={list:rawAssets,value};return value;},[rawAssets]);
   const people=usePeople(fingerprint,analyzing||warming||loading||!!inspect,filter.person);
+  useEffect(()=>{
+    if(demo||!people.libraryChanges)return;let alive=true;
+    const timer=setTimeout(()=>{void Library.assets().then(result=>{if(!alive)return;setAssets(result.assets);setState(s=>reconcileLibrary(s,result.assets));}).catch(()=>{});},750);
+    return()=>{alive=false;clearTimeout(timer);};
+  },[people.libraryChanges]);
   const index=useLibraryIndex(rawAssets,fingerprint,!demo&&connected,analyzing||warming||loading||people.status.running);
   const assets=useMemo(()=>enrich(rawAssets,index).map(a=>filter.person?{...a,people:people.members?.has(a.id)?[filter.person]:[]}:a),[rawAssets,index.version,filter.person,people.members]);
   /** «Favoritas» set: the heart takes items out of Favorites; they cannot be queued for deletion. */
@@ -619,7 +624,7 @@ export function ManoApp() {
   const recoverReview=useCallback((id:string)=>{setState(s=>restore(s,id));setSpoken('Elemento recuperado');},[]);
   // Long press never opens the system menu or loupe; text fields keep theirs.
   const blockMenu=(e:MouseEvent)=>{if(!(e.target as HTMLElement).closest('input,textarea'))e.preventDefault();};
-  return <PeopleProtection.Provider value={{person:filter.person,mode:filter.breakup,revision:people.revision}}><div onPointerDownCapture={people.interact} ref={root} className={`mano-app ${isNative?'on-device':''} ${session?'in-session':'on-screen'}`} onContextMenu={blockMenu}>
+  return <PeopleProtection.Provider value={{person:filter.person,mode:filter.breakup,revision:people.status.protectionRevision??0}}><div onPointerDownCapture={people.interact} ref={root} className={`mano-app ${isNative?'on-device':''} ${session?'in-session':'on-screen'}`} onContextMenu={blockMenu}>
     {screen}
     <p className="sr-only" role="status" aria-live="polite">{spoken}</p>
     {splash&&<Splash done={()=>setSplash(false)}/>}

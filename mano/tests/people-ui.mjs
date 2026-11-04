@@ -31,10 +31,15 @@ try {
   await page.waitForTimeout(650);assert.match(await page.locator('#protected img').getAttribute('src'),/protected=second/);
   await page.locator('#hidden-mode').click();assert.equal(await page.locator('#protected img').count(),0);
   const requests=await page.evaluate(()=>window.fixtureCalls.length);await page.waitForTimeout(150);assert.equal(await page.evaluate(()=>window.fixtureCalls.length),requests);
+  await page.getByRole('button',{name:'Revelar durante 3 segundos'}).click();await page.locator('#protected img').waitFor();
+  await page.evaluate(()=>window.dispatchEvent(new Event('blur')));assert.equal(await page.locator('#protected img').count(),0);
+  // Cancel a reveal before its async thumbnail result can commit.
+  await page.evaluate(()=>{document.querySelector('#protected button').click();window.dispatchEvent(new Event('blur'));});
+  await page.waitForTimeout(100);assert.equal(await page.locator('#protected img').count(),0);
   await page.locator('#face-mode').click();await page.locator('#unknown').click();await page.waitForTimeout(200);assert.equal(await page.locator('#protected img').count(),0);
   const transforms=await page.locator('.cloud-ring').evaluate(el=>[...el.children].map(svg=>({ring:svg.classList.contains('cloud-progress-ring'),transform:getComputedStyle(svg).transform})));
   assert.equal(transforms.find(t=>!t.ring).transform,'none');assert.notEqual(transforms.find(t=>t.ring).transform,'none');
-  assert.deepEqual(errors,[]);result.checks.push({reducedMotion:reduced,emptyFinish:true,positiveFinish:true,staleRedactionRejected:true,hiddenWithoutRequests:true,uncertaintyCovered:true,cloudIconUpright:true,errors});
+  assert.deepEqual(errors,[]);result.checks.push({reducedMotion:reduced,emptyFinish:true,positiveFinish:true,staleRedactionRejected:true,hiddenWithoutRequests:true,revealCancelledOnInterruption:true,uncertaintyCovered:true,cloudIconUpright:true,errors});
   await page.close();
  }
  console.log(JSON.stringify(result));

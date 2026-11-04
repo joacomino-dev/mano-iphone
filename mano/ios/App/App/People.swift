@@ -18,10 +18,23 @@ enum CocoMediaPressure {
 }
 
 @objc(PeoplePlugin)
-public class PeoplePlugin: CAPPlugin, CAPBridgedPlugin {
+public class PeoplePlugin: CAPPlugin, CAPBridgedPlugin, PHPhotoLibraryChangeObserver {
     public let identifier = "PeoplePlugin"
     public let jsName = "People"
     public let pluginMethods = [CAPPluginMethod(name: "command", returnType: CAPPluginReturnPromise)]
+    public override func load() { PHPhotoLibrary.shared().register(self) }
+    deinit { PHPhotoLibrary.shared().unregisterChangeObserver(self) }
+    public func photoLibraryDidChange(_ changeInstance: PHChange) {
+        #if canImport(MediaIntelligence) && !targetEnvironment(simulator)
+        if #available(iOS 27.0, *) {
+            Task {
+                if await PeopleIndex.shared.libraryChanged() {
+                    DispatchQueue.main.async { self.notifyListeners("libraryChanged", data: [:]) }
+                }
+            }
+        }
+        #endif
+    }
     @objc func command(_ call: CAPPluginCall) {
         #if canImport(MediaIntelligence) && !targetEnvironment(simulator)
         if #available(iOS 27.0, *) {
@@ -117,6 +130,8 @@ private actor PeopleIndex {
     private var sinceGrouping = 0
     private var refreshing = false
     private var total = 0
+    private var blocked = ""
+    private var protectionRevision = 0, needsRefresh = false
     private var activeImage: PHImageRequestID?
     private let manager = PHImageManager()
     private let ci = CIContext(options: [.cacheIntermediates: false])
@@ -144,6 +159,11 @@ private actor PeopleIndex {
         loaded = true
     }
     private func memoryWarning() { memoryPauseUntil = Date().addingTimeInterval(30); generation += 1; ci.clearCaches() }
+    func libraryChanged() -> Bool {
+        guard loaded, store.consent else { return false }
+        needsRefresh = true; generation += 1; work?.cancel()
+        return true
+    }
     private func save() throws {
         var meta = store; meta.entries = [:]
         let rows = try dirtyEntries.map { id -> (String, Data?) in (id, try store.entries[id].map { try JSONEncoder().encode($0) }) }
@@ -168,6 +188,7 @@ private actor PeopleIndex {
         let faces = Set(store.entries.values.flatMap { $0.faces.map(\.id) })
         store.excluded.formIntersection(faces); store.overrides = store.overrides.filter { faces.contains($0.key) }
         try save()
+        needsRefresh = false
     }
     private func snapshot() -> [String: Any] {
         var grouped: [String: Set<String>] = [:]
@@ -177,7 +198,7 @@ private actor PeopleIndex {
             return ["id": id, "name": store.names[id] ?? "Persona", "count": ids.count, "representative": ids[0]]
         }
         return ["available": true, "consent": store.consent, "running": running, "processed": store.entries.count, "total": total,
-                "waiting": deferred.count, "remaining": pending.count, "groups": groups]
+                "waiting": deferred.count, "remaining": pending.count, "blocked": blocked, "protectionRevision": protectionRevision, "groups": groups]
     }
     private func image(_ asset: PHAsset, size: Int, tracked: Bool = false) async -> UIImage? {
         defer { if tracked { activeImage = nil } }
@@ -198,8 +219,9 @@ private actor PeopleIndex {
     private func scan() async throws {
         guard running, store.consent, !scanning, !refreshing, let analyzer else { return }
         let active = await MainActor.run { UIApplication.shared.applicationState == .active }
-        guard active, permission(), !CocoMediaPressure.busy, Date() >= memoryPauseUntil,
-              ProcessInfo.processInfo.thermalState == .nominal || ProcessInfo.processInfo.thermalState == .fair else { return }
+        blocked = !active ? "foreground" : !permission() ? "permission" : CocoMediaPressure.busy ? "media" : Date() < memoryPauseUntil ? "memory" :
+            (ProcessInfo.processInfo.thermalState == .nominal || ProcessInfo.processInfo.thermalState == .fair) ? "" : "thermal"
+        guard blocked.isEmpty else { return }
         scanning = true; defer { scanning = false }
         let token = generation
         // One in-flight image; batches of four bound work and checkpoint latency.
@@ -212,7 +234,7 @@ private actor PeopleIndex {
             guard running, token == generation else { pending.append(id); break }
             let file = folder.appendingPathComponent("input-\(UUID().uuidString).jpg")
             defer { try? FileManager.default.removeItem(at: file) }
-            guard let data = autoreleasepool(invoking: { upright(source).jpegData(compressionQuality: .9) }) else { deferred.insert(id); continue }
+            guard let data = autoreleasepool(invoking: { upright(source).jpegData(compressionQuality: 0.9) }) else { deferred.insert(id); continue }
             try data.write(to: file, options: [.atomic, .completeFileProtection])
             let results = try await analyzer.insertOrUpdateAssets([MediaIntelligenceImageAsset(id: .init(id), kind: .url(file))])
             for try await _ in results { }
@@ -238,7 +260,10 @@ private actor PeopleIndex {
         }
         for id in Array(store.entries.keys) {
             let faces = (facesByAsset[id] ?? []).sorted { $0.id < $1.id }
-            if store.entries[id]?.faces != faces { store.entries[id]?.faces = faces; dirtyEntries.insert(id) }
+            if store.entries[id]?.faces != faces {
+                if !(store.entries[id]?.faces.isEmpty ?? true) { protectionRevision += 1 }
+                store.entries[id]?.faces = faces; dirtyEntries.insert(id)
+            }
         }
         sinceGrouping = 0
         if pending.isEmpty { running = false }
@@ -252,6 +277,8 @@ private actor PeopleIndex {
         guard !faces.isEmpty else { throw Failure.stale }
         let token = generation
         guard let source = await image(asset, size: 1400), token == generation else { throw Failure.stale }
+        guard permission(), let current = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil).firstObject,
+              !current.isHidden, signature(current) == entry.signature else { throw Failure.stale }
         let up = upright(source); guard let cg = up.cgImage else { throw Failure.invalid }
         let input = CIImage(cgImage: cg)
         let blurred = input.clampedToExtent().applyingFilter("CIGaussianBlur", parameters: [kCIInputRadiusKey: max(24, max(up.size.width,up.size.height) * 0.045)])
@@ -266,7 +293,7 @@ private actor PeopleIndex {
                 ctx.cgContext.saveGState(); ctx.cgContext.clip(to: box); blur.draw(in: full); ctx.cgContext.restoreGState()
             }
         }
-        guard token == generation, let data = output.jpegData(compressionQuality: .88) else { throw Failure.stale }
+        guard token == generation, let data = output.jpegData(compressionQuality: 0.88) else { throw Failure.stale }
         let cache = folder.appendingPathComponent("Redacted", isDirectory: true)
         try FileManager.default.createDirectory(at: cache, withIntermediateDirectories: true, attributes: [.protectionKey: FileProtectionType.complete])
         let key = SHA256.hash(data: Data("\(id):\(entry.signature):\(person):\(generation)".utf8)).map { String(format: "%02x", $0) }.joined()
@@ -279,6 +306,7 @@ private actor PeopleIndex {
     func command(_ call: CAPPluginCall) async throws -> [String: Any] {
         let action = call.getString("action") ?? "status"
         try open()
+        if needsRefresh && !scanning && !refreshing && ["scan", "person", "redact"].contains(action) { try await refresh() }
         if action == "yield" { generation += 1; work?.cancel(); if let request = activeImage { manager.cancelImageRequest(request) }; return ["available": true] }
         if action == "pause" { running = false; generation += 1; work?.cancel(); if let request = activeImage { manager.cancelImageRequest(request) }; try save(); return snapshot() }
         if action == "reset" {
@@ -322,6 +350,7 @@ private actor PeopleIndex {
             if operation == "merge", let target = call.getString("target"), target != person, store.names[target] != nil {
                 for entry in store.entries.values { for face in entry.faces where group(face) == person { store.overrides[face.id] = target } }
             }
+            if ["exclude", "split", "merge"].contains(operation) { protectionRevision += 1 }
             try save()
         }
         return snapshot()
