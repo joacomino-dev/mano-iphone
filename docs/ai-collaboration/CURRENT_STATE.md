@@ -2,6 +2,18 @@
 
 Actualizado: 2026-11-04, America/Bogota. Codex trabaja solo por indicación del usuario.
 
+## Desarrollo autorizado: 9.7.2 / build 20 (no publicar)
+
+Codex único escritor; rama `cocowash/9.7.2` desde **última entrega** d6d6f21,
+no una revisión anterior de 9.7.1. Usuario confirma reconocimiento y correcciones
+9.7.1 en iPhone; fragmentación y geometría motivan esta actualización.
+Cambios locales previos: 24 archivos CRLF protegidos, sin diff de contenido;
+respaldo de bytes + bundle Git verificados en
+`C:/Users/Joaco/CocoWash-Backups/20261105T003938Z-pre-972`.
+Alcance reservado: motor/identidades/publicación/migración/miniaturas/máscaras,
+Personas en submenú y ajustes funcionales. Claude recibe refinamiento visual después.
+Sin merge a main, Release ni App Store. Se conserva el IPA estable anterior.
+
 ## Desarrollo autorizado: 9.7.1 / build 19 (sin publicar)
 
 Codex es el único escritor en `C:/Users/Joaco/Developer/CocoWash-stage1`, rama
