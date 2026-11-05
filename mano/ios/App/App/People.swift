@@ -179,7 +179,13 @@ private actor PeopleIndex {
                 if !corrected.isEmpty { store.pendingCorrections[id]=Array(Set((store.pendingCorrections[id] ?? [])+corrected)) }
             } else { store.pendingCorrections.removeValue(forKey:id) }
         }
-        if !obsolete.isEmpty { try await primary().deleteAssets(obsolete.map { MediaIntelligenceImageAsset.ID($0) }); for id in obsolete { store.entries.removeValue(forKey: id); dirtyEntries.insert(id) } }
+        // A process may have stopped after SDK insertion but before our checkpoint.
+        // Prune those orphan model assets too, including revoked limited access.
+        let engine = try primary()
+        var removed = Set(obsolete)
+        for try await id in engine.allAssetIDs { if current[id.rawValue] == nil { removed.insert(id.rawValue) } }
+        if !removed.isEmpty { try await engine.deleteAssets(removed.map { MediaIntelligenceImageAsset.ID($0) }) }
+        for id in obsolete { store.entries.removeValue(forKey: id); dirtyEntries.insert(id) }
         assets = current; total = current.count; deferred = []
         pending = current.keys.filter { store.entries[$0] == nil }.sorted(by: >)
         store.pendingCorrections = store.pendingCorrections.filter { current[$0.key] != nil }
@@ -203,7 +209,7 @@ private actor PeopleIndex {
     private func snapshot(includeGroups: Bool = true) -> [String:Any] {
         let groups: [[String:Any]] = includeGroups && store.publicReady ? publication.filter { PeoplePolicy.visible($0.photos.count) }.map { p in
             ["id":p.id,"name":p.name,"count":p.photos.count,"representative":p.portraits.first?.id ?? "",
-             "portraits":p.portraits.map { ["id":$0.id,"face":$0.face] }]
+             "portraits":p.portraits.map { ["id":$0.id,"face":$0.face,"version":$0.version ?? ""] }]
         } : []
         var result: [String:Any] = ["available":true,"consent":store.consent,"running":running,"phase":running ? phase : (phase == "ready" ? "ready" : "paused"),
                 "hasPublication":store.publicReady,"revision":store.revision,"protectionRevision":store.protectionRevision,
