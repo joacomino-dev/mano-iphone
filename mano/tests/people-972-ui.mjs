@@ -47,7 +47,7 @@ try {
  assert.equal(await page.locator('.people-groups').count(),0);
  await page.locator('#people-entry').click();await page.locator('#people-view').waitFor();
  assert.equal(await page.locator('.people-groups>button').count(),0);
- assert.match(await page.locator('.people-analysis').textContent(),/Buscando caras conocidas|Análisis en espera/);
+ assert.match(await page.locator('.people-analysis').textContent(),/Buscando rostros en tus fotos|Análisis en espera/);
  await page.waitForFunction(()=>Number(document.querySelector('.people-analysis progress')?.value)>0);
  await page.screenshot({path:'../work/qa-972/people-progress.png'});
  await page.getByRole('button',{name:'Volver a filtros',exact:false}).click();await page.getByRole('button',{name:'Cerrar',exact:true}).click();

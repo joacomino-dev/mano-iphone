@@ -32,7 +32,7 @@ export function PeoplePanel({ status, error, assets, draft, change, action, call
   action: (name: string, options?: Record<string, unknown>) => Promise<unknown>;
   call: (name: string, options?: Record<string, unknown>) => Promise<unknown>; revision: number;review?:(f:Filter)=>void;settings?:()=>void;
 }) {
-  const [consenting, setConsenting] = useState(false), [deleting, setDeleting] = useState(false), [working, setWorking] = useState(false);
+  const [deleting, setDeleting] = useState(false), [working, setWorking] = useState(false);
   const [diagnostic, setDiagnostic] = useState('');
   const [items, setItems] = useState<PersonItems['items']>([]), [page, setPage] = useState(0), [picked, setPicked] = useState<string[]>([]);
   const [name, setName] = useState(''), [target, setTarget] = useState('');
@@ -54,9 +54,8 @@ export function PeoplePanel({ status, error, assets, draft, change, action, call
   if (!status.available) return null;
   return <fieldset className="people-panel"><legend><UsersIcon size={18}/>Personas</legend>
     {!status.consent ? <>
-      <p className="setting-note">Encuentra fotografías de una misma persona. El análisis facial y sus datos se quedan en este iPhone, sin subidas ni nombres automáticos. Los grupos pueden equivocarse y puedes corregirlos o borrar el índice.</p>
-      <label className="switch-field"><span>Permitir el análisis facial local<small>Solo fotos accesibles. No se descargan originales de iCloud ni se analizan vídeos.</small></span><input type="checkbox" checked={consenting} onChange={e => setConsenting(e.target.checked)}/></label>
-      <button className="sheet-action secondary" disabled={!consenting || working} onClick={() => void run('consent')}>Activar Personas</button>
+      <p className="setting-note">Personas está apagada. Al activarla, CocoWash busca rostros y agrupa a las personas de tus fotos. Todo ocurre en este iPhone: nada se sube.</p>
+      <button className="sheet-action secondary" disabled={working} onClick={() => void run('consent')}>Activar Personas</button>
     </> : <>
       <div className="people-analysis">
         <Character className="people-mascot" pose="coqui-photos" height={56} motion="still"/>
@@ -65,8 +64,8 @@ export function PeoplePanel({ status, error, assets, draft, change, action, call
             status.phase === 'ready' ? 'Personas está actualizada' :
             !status.running ? 'Análisis pausado' :
             status.blocked ? 'Análisis en espera' :
-            status.phase === 'reconciling' ? 'Organizando los grupos…' : 'Buscando caras conocidas'}</strong></p>
-          {status.running && <p>Puedes seguir organizando tus fotos mientras tanto.</p>}
+            status.phase === 'reconciling' ? 'Agrupando a las personas…' : 'Buscando rostros en tus fotos'}</strong></p>
+          {status.running && <p>Todo ocurre en este iPhone. Puedes seguir decidiendo mientras tanto; si sales de CocoWash, se pausa y sigue al volver.</p>}
           {status.running && !status.total && status.phase !== 'reconciling' && <progress aria-label="Preparando el análisis"/>}
           {status.total > 0 && <>
             <progress aria-label="Fotos revisadas" value={status.processed} max={status.total}/>
@@ -81,7 +80,7 @@ export function PeoplePanel({ status, error, assets, draft, change, action, call
         <button disabled={working} onClick={()=>{setDiagnostic('');void call('shareDiagnostics').catch(()=>setDiagnostic('No se pudo abrir la hoja para compartir el diagnóstico.'));}}>Compartir diagnóstico</button></div>
       {diagnostic&&<p className="setting-note" role="alert">{diagnostic}</p>}
       {!initial&&!groups.length&&<p className="setting-note">Todavía no hay grupos con al menos {status.minimumPhotos??'varias'} fotos distintas. Los grupos pequeños se conservan para futuras coincidencias. Las fotos sin vista local no detienen el análisis.</p>}
-      {deleting && <div className="people-confirm"><p>Se borrarán agrupaciones, nombres y datos faciales de CocoWash, y se desactivará Breakup Mode. Tus fotografías y decisiones no se borran.</p><button disabled={working} onClick={async () => { if (await run('reset')) { change({ person: undefined, breakup: undefined }); setDeleting(false); setConsenting(false); } }}>Borrar índice facial</button><button onClick={() => setDeleting(false)}>Cancelar</button></div>}
+      {deleting && <div className="people-confirm"><p>Se borrarán agrupaciones, nombres y datos faciales de CocoWash, y Personas quedará apagada hasta que la actives. Breakup Mode se desactiva. Tus fotografías y decisiones no se borran.</p><button disabled={working} onClick={async () => { if (await run('reset')) { change({ person: undefined, breakup: undefined }); setDeleting(false); } }}>Borrar índice facial</button><button onClick={() => setDeleting(false)}>Cancelar</button></div>}
       <div className="people-groups" role="group" aria-label="Grupos de personas">
         {groups.slice(groupPage*20,groupPage*20+20).map(g => <button key={g.id} aria-pressed={draft.person === g.id} onClick={() => change({ person: g.id, breakup: draft.breakup??'normal', censorStyle:draft.censorStyle??'oval', smart: 'all', media: 'all', seal: 'all', includeWaiting: true })}>
           <PersonMosaic group={g} revision={revision}/><strong>{g.name}</strong><small>{g.count} fotografías</small>

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { EmptyFinishPresses } from '../src/finish.ts';
-import { personFilter, protectedMode, canonicalPerson, interruptionNote } from '../src/people.ts';
+import { personFilter, protectedMode, canonicalPerson, interruptionNote, shouldAutoStart } from '../src/people.ts';
 import { initialFilter, initialState, normalizeFilter, decide, eligible, undo, UNDO_LIMIT, forgetPeople } from '../src/domain.ts';
 import { validateSession } from '../src/session.ts';
 import { restoreHand } from '../src/sequence.ts';
@@ -63,4 +63,10 @@ test('an abrupt close names the phase in plain words, keeps progress and asks fo
  assert.equal(interruptionNote({blocked:'interrupted',interruptedPhase:'unknown-phase'}).startsWith('CocoWash se cerró durante el análisis.'),true);
  for(const phase of ['open','refresh','batch','prune','model-load','insert','group','read','reconcile-prepare','reconcile-insert','reconcile-group','publish','portrait','redact'])
   assert.doesNotMatch(interruptionNote({blocked:'interrupted',interruptedPhase:phase}),/durante el análisis/,phase);
+});
+test('People starts by itself without a consent question, and stays off only after an explicit turn-off',()=>{
+ assert.equal(shouldAutoStart({available:true,consent:false},false),true);
+ assert.equal(shouldAutoStart({available:true,consent:false},true),false);
+ assert.equal(shouldAutoStart({available:true,consent:true},false),false);
+ assert.equal(shouldAutoStart({available:false,consent:false},false),false);
 });

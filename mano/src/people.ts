@@ -25,6 +25,14 @@ const PHASES: Record<string,string> = {
   'reconcile-prepare':'preparaba la organización', 'reconcile-insert':'comparaba rostros', 'reconcile-group':'organizaba los grupos',
   publish:'publicaba los grupos', portrait:'preparaba las miniaturas', redact:'preparaba una foto censurada',
 };
+/** People starts by itself on the first launch: face grouping runs only on
+ * this iPhone. It stays off only after the user turns it off explicitly. */
+export const PEOPLE_OFF_KEY = 'cocowash-people-off-v1';
+export function shouldAutoStart(status: Pick<PeopleStatus,'available'|'consent'>, turnedOff: boolean): boolean {
+  return status.available && !status.consent && !turnedOff;
+}
+export function peopleTurnedOff(): boolean { try { return localStorage.getItem(PEOPLE_OFF_KEY) === '1'; } catch { return false; } }
+export function setPeopleTurnedOff(value: boolean) { try { if (value) localStorage.setItem(PEOPLE_OFF_KEY, '1'); else localStorage.removeItem(PEOPLE_OFF_KEY); } catch { /* preference only */ } }
 /** Plain-language note for an analysis that the app could not finish because it closed. */
 export function interruptionNote(status: Pick<PeopleStatus,'blocked'|'interruptedPhase'|'guarded'>): string {
   if (status.blocked !== 'interrupted') return '';

@@ -1,4 +1,4 @@
-name: Verify CocoWash 9.7.2.4 development
+name: Verify CocoWash 9.7.2.5 development
 on:
   workflow_dispatch:
   push:
@@ -56,22 +56,22 @@ jobs:
         run: |
           grep -q -e '--cw-paper-texture:url(' ios/App/App/public/assets/*.css
           xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/ios CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' build
-          # Build 24 keeps existing CocoWash data and the facial index: the
+          # Build 25 keeps existing CocoWash data and the facial index: the
           # index that failed on the phone is the evidence to diagnose.
           if /usr/libexec/PlistBuddy -c 'Print :CocoWashDevelopmentReset' build/ios/Build/Products/Release-iphoneos/App.app/Info.plist; then echo 'Unexpected development reset flag'; exit 1; fi
           mkdir -p build/development/Payload
           cp -R build/ios/Build/Products/Release-iphoneos/App.app build/development/Payload/Mano.app
           cd build/development
-          ditto -c -k --keepParent Payload CocoWash-9.7.2.4-development-unsigned.ipa
+          ditto -c -k --keepParent Payload CocoWash-9.7.2.5-development-unsigned.ipa
       - name: Record verification boundary
         run: |
-          printf '%s\n' 'DEVELOPMENT ONLY. Not a published or accepted release.' 'No development reset: installing over build 23 keeps CocoWash data and the facial index.' 'No facial matching accuracy, physical privacy transitions, heat, or memory measurements claimed.' 'FaceGroupAnalyzer requires a supported physical iOS 27 device; Simulator does not validate recognition.' > build/development/VALIDATION.txt
+          printf '%s\n' 'DEVELOPMENT ONLY. Not a published or accepted release.' 'No development reset: installing over build 24 keeps CocoWash data and the facial index.' 'No facial matching accuracy, physical privacy transitions, heat, or memory measurements claimed.' 'FaceGroupAnalyzer requires a supported physical iOS 27 device; Simulator does not validate recognition.' > build/development/VALIDATION.txt
           printf 'Source SHA: %s\n' "$GITHUB_SHA" >> build/development/VALIDATION.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: CocoWash-9.7.2.4-development
+          name: CocoWash-9.7.2.5-development
           path: |
-            mano/build/development/CocoWash-9.7.2.4-development-unsigned.ipa
+            mano/build/development/CocoWash-9.7.2.5-development-unsigned.ipa
             mano/build/development/VALIDATION.txt
           retention-days: 7
           if-no-files-found: error
@@ -83,7 +83,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: CocoWash-9.7.2.4-startup-evidence
+          name: CocoWash-9.7.2.5-startup-evidence
           path: |
             mano/build/startup-safety/*.png
             mano/build/startup-safety/*.log

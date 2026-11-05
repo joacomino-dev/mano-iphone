@@ -569,7 +569,13 @@ private actor PeopleIndex {
             let results = try await reconciler.insertOrUpdateAssets([MediaIntelligenceImageAsset(id:.init(id),kind:.url(file))])
             for try await _ in results { }
             guard token == generation, running, PeopleActivityGate.shared.active else { return }
-            if let location = locations[id] { store.entries[photo]?.faces[location.index].sampleStamp = stamp(refined,photo:photo); dirtyEntries.insert(photo) }
+            // Compute before writing: `store.entries[...]?.… = stamp(…)` opens a
+            // modify access on `store` before the right side runs, and stamp()
+            // reads `store` → Swift exclusivity trap (SIGABRT, build 20–24).
+            let sampled = stamp(refined,photo:photo)
+            if let location = locations[id], store.entries[photo]?.faces.indices.contains(location.index) == true {
+                store.entries[photo]?.faces[location.index].sampleStamp = sampled; dirtyEntries.insert(photo)
+            }
             completed = true
         }
         try save()

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { isNative } from './library';
 import { PeopleBridge } from './PeopleMedia';
-import { NO_PEOPLE, type PeopleStatus, type PersonItems } from './people';
+import { NO_PEOPLE, peopleTurnedOff, setPeopleTurnedOff, shouldAutoStart, type PeopleStatus, type PersonItems } from './people';
 
 export function usePeople(fingerprint: string, paused: boolean, person?: string) {
   const [status, setStatus] = useState<PeopleStatus>(NO_PEOPLE), [error, setError] = useState('');
@@ -32,7 +32,11 @@ export function usePeople(fingerprint: string, paused: boolean, person?: string)
     while(busy.current){if(performance.now()>=until)throw new Error('Analysis still draining');await new Promise(resolve=>setTimeout(resolve,50));}
   };
   useEffect(() => { if (!isNative) return; let alive = true;
-    void call('status').then(value => { if (alive) { refreshed.current = fingerprint; adopt(value); } }).catch(() => { if (alive) fail('No se pudo abrir Personas. Reintenta el análisis o borra únicamente su índice local.'); });
+    void call('status').then(async value => {
+      if (!alive) return; refreshed.current = fingerprint; adopt(value);
+      // No question first: grouping starts by itself, on this iPhone only.
+      if (shouldAutoStart(value as PeopleStatus, peopleTurnedOff())) { const next = await call('consent'); if (alive) { adopt(next); setRevision(v => v + 1); } }
+    }).catch(() => { if (alive) fail('No se pudo abrir Personas. Reintenta el análisis o borra únicamente su índice local.'); });
     return () => { alive = false; enabled.current = false; void call('pause',{reason:'suspend'}).catch(() => {}); };
   }, []);
   useEffect(() => {
@@ -98,7 +102,9 @@ export function usePeople(fingerprint: string, paused: boolean, person?: string)
       if(name==='reset'){try{await call('pause',{reason:'suspend'});}catch{/* A corrupt index must not prevent deleting that index. */}}
       else await call('pause',{reason:'suspend'});
       await idle();
-      const value = await call(name, options); if (name === 'consent' || name === 'resume' || name === 'reconcile') refreshed.current = fingerprint; adopt(value); setRevision(v => v + 1); return value;
+      const value = await call(name, options); if (name === 'consent' || name === 'resume' || name === 'reconcile') refreshed.current = fingerprint;
+      if (name === 'consent') setPeopleTurnedOff(false); if (name === 'reset') setPeopleTurnedOff(true);
+      adopt(value); setRevision(v => v + 1); return value;
     } catch { fail('No se pudo completar. El análisis está pausado; tus fotos siguen intactas y puedes reintentar.'); return undefined; }
   };
   return { status:paused&&status.running?{...status,blocked:status.blocked||'media'}:status, error, revision, libraryChanges, action, call, members: members && members.person === person ? members.ids : undefined,
