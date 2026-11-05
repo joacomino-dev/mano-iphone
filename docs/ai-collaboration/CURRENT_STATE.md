@@ -40,3 +40,12 @@ Leer [PROTOCOL](PROTOCOL.md) y [CODEX_LOG](CODEX_LOG.md) antes de intervenir.
 La bitácora de Claude se conserva en [CLAUDE_LOG](CLAUDE_LOG.md). Los mapas de octubre
 son históricos: contrastar con código y esta entrega. El estado anterior y handoffs
 históricos se conservan íntegros en [Git, snapshot 842ab93](https://github.com/joacomino-dev/mano-iphone/blob/842ab93a07e017bb47a04daea9d43d7b3056b63e/docs/ai-collaboration/CURRENT_STATE.md).
+
+## Monetización iOS — en rama separada
+
+CW-CX-018-monetization, rama codex/cocowash-monetization-ios desde a3dba60. Pendiente de validar en iOS e integrar. Personas sigue en su propia rama.
+
+- Compras en Ajustes. Para probar localmente, seleccionar mano/ios/App/CocoWash.storekit en Run > Options > StoreKit Configuration del esquema App. En sandbox se usan los tres productos de App Store Connect con los IDs del archivo y precios localizados.
+- Publicidad Debug usa una unidad de demostración. Para validar específicamente vídeo, indicar ca-app-pub-3940256099942544/2521693316 como COCO_ADMOB_NATIVE_UNIT_ID en Debug. Probar dos arrastres horizontales en el asa, Saltar con VoiceOver, toque deliberado, reanudación y Terminar con descartes.
+- Release requiere COCO_ADMOB_APP_ID y COCO_ADMOB_NATIVE_UNIT_ID de producción. Configurar mensajes regionales e IDFA en AdMob, validar AdChoices y revisar privacidad y clasificación antes de envío.
+- Probar compra, cancelación, restauración y vencimiento con biblioteca de prueba. La publicidad del resumen aparece fuera de la revisión y de la confirmación de Fotos.

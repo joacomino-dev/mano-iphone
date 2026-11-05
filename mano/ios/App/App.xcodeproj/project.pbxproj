@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C0C000000000000000000002 /* CocoMonetization.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0C000000000000000000001 /* CocoMonetization.swift */; };
+		C0C000000000000000000005 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = C0C000000000000000000004 /* GoogleMobileAds */; };
 		A10000000000000000000005 /* SignatureIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000006 /* SignatureIndex.swift */; };
 		B20000000000000000000001 /* PhotosSmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000002 /* PhotosSmokeTests.swift */; };
 		A10000000000000000000003 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000004 /* PrivacyInfo.xcprivacy */; };
@@ -33,6 +35,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		C0C000000000000000000001 /* CocoMonetization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoMonetization.swift; sourceTree = "<group>"; };
 		A10000000000000000000006 /* SignatureIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignatureIndex.swift; sourceTree = "<group>"; };
 		B20000000000000000000002 /* PhotosSmokeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotosSmokeTests.swift; sourceTree = "<group>"; };
 		B20000000000000000000003 /* ManoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ManoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -63,6 +66,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4D22ABE92AF431CB00220026 /* CapApp-SPM in Frameworks */,
+				C0C000000000000000000005 /* GoogleMobileAds in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -100,6 +104,7 @@
 				9582B6822FE993A50072D4E8 /* SceneDelegate.swift */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
+				C0C000000000000000000001 /* CocoMonetization.swift */,
 				A10000000000000000000002 /* PhotoLibrary.swift */,
 				A10000000000000000000006 /* SignatureIndex.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
@@ -146,6 +151,7 @@
 			name = App;
 			packageProductDependencies = (
 				4D22ABE82AF431CB00220026 /* CapApp-SPM */,
+				C0C000000000000000000004 /* GoogleMobileAds */,
 			);
 			productName = App;
 			productReference = 504EC3041FED79650016851F /* App.app */;
@@ -182,6 +188,7 @@
 			mainGroup = 504EC2FB1FED79650016851F;
 			packageReferences = (
 				D4C12C0A2AAA248700AAC8A2 /* XCLocalSwiftPackageReference "CapApp-SPM" */,
+				C0C000000000000000000003 /* XCRemoteSwiftPackageReference "GoogleMobileAds" */,
 			);
 			productRefGroup = 504EC3051FED79650016851F /* Products */;
 			projectDirPath = "";
@@ -228,6 +235,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
+				C0C000000000000000000002 /* CocoMonetization.swift in Sources */,
 				A10000000000000000000001 /* PhotoLibrary.swift in Sources */,
 				A10000000000000000000005 /* SignatureIndex.swift in Sources */,
 				9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */,
@@ -416,6 +424,8 @@
 				);
 				MARKETING_VERSION = 0.9.7;
 				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" \"-DDEBUG\"";
+				COCO_ADMOB_APP_ID = "ca-app-pub-3940256099942544~1458002511";
+				COCO_ADMOB_NATIVE_UNIT_ID = "";
 				PRODUCT_BUNDLE_IDENTIFIER = work.joaquin.mano;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
@@ -437,6 +447,8 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 0.9.7;
+				COCO_ADMOB_APP_ID = "ca-app-pub-3940256099942544~1458002511";
+				COCO_ADMOB_NATIVE_UNIT_ID = "";
 				PRODUCT_BUNDLE_IDENTIFIER = work.joaquin.mano;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
@@ -481,7 +493,20 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		C0C000000000000000000003 /* XCRemoteSwiftPackageReference "GoogleMobileAds" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads.git";
+			requirement = { kind = exactVersion; version = 13.12.0; };
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
+		C0C000000000000000000004 /* GoogleMobileAds */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C0C000000000000000000003 /* XCRemoteSwiftPackageReference "GoogleMobileAds" */;
+			productName = GoogleMobileAds;
+		};
 		4D22ABE82AF431CB00220026 /* CapApp-SPM */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = D4C12C0A2AAA248700AAC8A2 /* XCLocalSwiftPackageReference "CapApp-SPM" */;

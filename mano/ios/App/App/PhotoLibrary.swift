@@ -28,6 +28,7 @@ class ManoBridgeController: CAPBridgeViewController {
     override func capacitorDidLoad() {
         super.capacitorDidLoad()
         bridge?.registerPluginInstance(PhotoLibraryPlugin())
+        bridge?.registerPluginInstance(CocoMonetizationPlugin())
         NSLog("MEMSWIPE_BRIDGE_READY")
     }
     // Coco Cream (0.9): dark status bar text on the light cream frame.

@@ -1,0 +1,9 @@
+.cw-purchases { display: grid; gap: 12px; text-align: start; padding: 16px 0; }
+.cw-purchases h3, .cw-purchases p { margin: 0; }
+.cw-offer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 10px; border-top: 1px solid #82756750; }
+.cw-offer small { display: block; margin-top: 4px; }
+.cw-purchases button { min-height: 44px; padding-inline: 12px; border: 1px solid currentColor; border-radius: 10px; }
+.cw-purchases button:disabled { opacity: .55; }
+.cw-ad-slot { width: min(100%, 340px); flex: none; }
+.cw-ad-deck { height: min(315px, 100cqh); margin: auto; position: absolute; inset: 0; }
+.cw-ad-finish { height: 280px; margin-inline: auto; }
