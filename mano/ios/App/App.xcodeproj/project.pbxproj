@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		A10000000000000000000017 /* DevelopmentSafety.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000018 /* DevelopmentSafety.swift */; };
 		A10000000000000000000015 /* PeopleProcessing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000016 /* PeopleProcessing.swift */; };
+		A10000000000000000000019 /* PeopleTrace.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001A /* PeopleTrace.swift */; };
 		A10000000000000000000013 /* PeopleIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000014 /* PeopleIdentity.swift */; };
 		A10000000000000000000011 /* PeopleCheckpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000012 /* PeopleCheckpoint.swift */; };
 		A10000000000000000000009 /* PeopleGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000010 /* PeopleGeometry.swift */; };
@@ -41,6 +42,7 @@
 /* Begin PBXFileReference section */
 		A10000000000000000000018 /* DevelopmentSafety.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevelopmentSafety.swift; sourceTree = "<group>"; };
 		A10000000000000000000016 /* PeopleProcessing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeopleProcessing.swift; sourceTree = "<group>"; };
+		A1000000000000000000001A /* PeopleTrace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeopleTrace.swift; sourceTree = "<group>"; };
 		A10000000000000000000014 /* PeopleIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeopleIdentity.swift; sourceTree = "<group>"; };
 		A10000000000000000000012 /* PeopleCheckpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeopleCheckpoint.swift; sourceTree = "<group>"; };
 		A10000000000000000000010 /* PeopleGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeopleGeometry.swift; sourceTree = "<group>"; };
@@ -119,6 +121,7 @@
 				A10000000000000000000010 /* PeopleGeometry.swift */,
 				A10000000000000000000012 /* PeopleCheckpoint.swift */,
 				A10000000000000000000016 /* PeopleProcessing.swift */,
+				A1000000000000000000001A /* PeopleTrace.swift */,
 				A10000000000000000000014 /* PeopleIdentity.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
 				504EC30E1FED79650016851F /* Assets.xcassets */,
@@ -253,6 +256,7 @@
 				A10000000000000000000009 /* PeopleGeometry.swift in Sources */,
 				A10000000000000000000011 /* PeopleCheckpoint.swift in Sources */,
 				A10000000000000000000015 /* PeopleProcessing.swift in Sources */,
+				A10000000000000000000019 /* PeopleTrace.swift in Sources */,
 				A10000000000000000000013 /* PeopleIdentity.swift in Sources */,
 				9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */,
 			);
@@ -431,7 +435,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 24;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -453,7 +457,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 24;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (

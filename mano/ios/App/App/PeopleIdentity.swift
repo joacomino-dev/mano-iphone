@@ -8,7 +8,21 @@ enum PeoplePolicy {
     static let mergeAgreement = 0.75
     static let indexPixels = 1536
     static let geometryVersion = 1
+    /// Abrupt process ends while one photo was in flight before it is skipped.
+    static let quarantineStrikes = 2
+    /// Free memory (MB, os_proc_available_memory) required before loading a
+    /// model or grouping, and before decoding one more photo. Below it the
+    /// batch pauses and releases models instead of risking a jetsam kill.
+    static let modelHeadroomMB = 300
+    static let insertHeadroomMB = 150
     static func visible(_ count: Int) -> Bool { count >= minimumPhotos }
+    /// Samples that can affect reconciliation. `reconcile` needs at least
+    /// `minimumMergeEvidence` distinct photos per identity, so identities with
+    /// fewer can never move; their crops are not decoded or inserted.
+    static func reconcilable(_ samples: [IdentitySample]) -> [IdentitySample] {
+        let photos = Dictionary(grouping:samples,by:{ $0.person }).mapValues { Set($0.map(\.photo)).count }
+        return samples.filter { (photos[$0.person] ?? 0) >= minimumMergeEvidence }
+    }
     static func cycle(available: Set<String>, scope: Set<String>?) -> (ids:Set<String>, hasNext:Bool) {
         guard let scope else { return (available,false) }
         return (scope.intersection(available),!available.subtracting(scope).isEmpty)
@@ -128,6 +142,9 @@ struct PeopleState: Codable {
     var needsReconciliation = true
     var cycleActive = false
     var pendingCorrections: [String:[String]] = [:]
+    /// Photo ID -> abrupt ends while it was being read/inserted, for one build.
+    var strikes: [String:Int] = [:]
+    var strikesBuild = ""
     /// Defaults migrate v1 metadata without resetting IDs, names or corrections.
     static func decode(_ data: Data) throws -> PeopleState {
         guard var defaults = try JSONSerialization.jsonObject(with: JSONEncoder().encode(PeopleState())) as? [String:Any],

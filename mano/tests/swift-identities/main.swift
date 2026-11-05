@@ -60,4 +60,18 @@ for angle in [-0.7,0,0.7] {
   check(pow(px/oval.radii.width,2)+pow(py/oval.radii.height,2)<=1,"Oval covers safety rectangle at every tested tilt")
  } }
 }
+// Single-photo identities never reach minimumMergeEvidence: skipping their crops
+// cannot change a reconciliation decision for the same assignments.
+let lone = samples("lone",1), pair = samples("pair",2), fragment = samples("fragment",4)
+let mixed = a+fragment+lone+pair
+check(Set(PeoplePolicy.reconcilable(mixed).map(\.person)) == ["a","fragment","pair"],"Only identities with two or more distinct photos are sampled")
+var mixedPhotos = Dictionary(grouping:mixed,by:{ $0.person }).mapValues { Set($0.map(\.photo)) }
+for assignment in [assigned(mixed), Dictionary(uniqueKeysWithValues:mixed.map { ($0.face, $0.person == "pair" ? "other" : "same") })] {
+ var full = PeopleIdentityGraph(), reduced = PeopleIdentityGraph()
+ let x = full.reconcile(samples:mixed,assignments:assignment,photos:mixedPhotos,names:[:])
+ let y = reduced.reconcile(samples:PeoplePolicy.reconcilable(mixed),assignments:assignment,photos:mixedPhotos,names:[:])
+ check(x == y && full == reduced,"Dropping single-photo samples leaves merges and aliases identical")
+}
+mixedPhotos["lone"] = ["lone-photo-0"]
+check(PeoplePolicy.reconcilable(lone).isEmpty && PeoplePolicy.quarantineStrikes == 2,"Lone identities alone produce no reconciliation work")
 print("PEOPLE_IDENTITIES_OK: conservative global evidence, cannot-links, stable IDs, migration and tilted masks; no biometric accuracy claim")

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { EmptyFinishPresses } from '../src/finish.ts';
-import { personFilter, protectedMode, canonicalPerson } from '../src/people.ts';
+import { personFilter, protectedMode, canonicalPerson, interruptionNote } from '../src/people.ts';
 import { initialFilter, initialState, normalizeFilter, decide, eligible, undo, UNDO_LIMIT, forgetPeople } from '../src/domain.ts';
 import { validateSession } from '../src/session.ts';
 import { restoreHand } from '../src/sequence.ts';
@@ -53,4 +53,14 @@ test('logical identity aliases keep saved person filters usable without rewritin
  const filter={...initialFilter,person:'old',breakup:'face',censorStyle:'eyes'};
  const session=validateSession(JSON.parse(JSON.stringify({version:1,active:true,seed:1,filter,context:{handIds:['a'],rotated:[],selected:[],filter},record:initialState()})));
  assert.equal(canonicalPerson(session.filter.person,{old:'canonical'}),'canonical');assert.deepEqual(session.context.handIds,['a']);assert.equal(session.filter.censorStyle,'eyes');
+});
+test('an abrupt close names the phase in plain words, keeps progress and asks for an explicit retry after two',()=>{
+ assert.equal(interruptionNote({blocked:'media'}),'');
+ assert.equal(interruptionNote({blocked:'interrupted'}),'CocoWash se cerró durante el análisis. El progreso guardado se conserva. Puedes reanudar el análisis.');
+ assert.match(interruptionNote({blocked:'interrupted',interruptedPhase:'group',guarded:[]}),/mientras agrupaba caras\. .*Puedes reanudar/);
+ const repeated=interruptionNote({blocked:'interrupted',interruptedPhase:'reconcile-group',guarded:['reconcile-group']});
+ assert.match(repeated,/organizaba los grupos/);assert.match(repeated,/dos veces seguidas/);
+ assert.equal(interruptionNote({blocked:'interrupted',interruptedPhase:'unknown-phase'}).startsWith('CocoWash se cerró durante el análisis.'),true);
+ for(const phase of ['open','refresh','batch','prune','model-load','insert','group','read','reconcile-prepare','reconcile-insert','reconcile-group','publish','portrait','redact'])
+  assert.doesNotMatch(interruptionNote({blocked:'interrupted',interruptedPhase:phase}),/durante el análisis/,phase);
 });

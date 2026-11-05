@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { UsersIcon } from '@phosphor-icons/react';
 import { Character } from './Characters';
 import { PersonMosaic } from './PersonMosaic';
-import { canonicalPerson } from './people';
+import { canonicalPerson, interruptionNote } from './people';
 import { KeyboardInput, useKeyboard } from './mobile';
 import { thumbnailInfo, isNative } from './library';
 import type { Asset, Filter } from './domain';
@@ -33,6 +33,7 @@ export function PeoplePanel({ status, error, assets, draft, change, action, call
   call: (name: string, options?: Record<string, unknown>) => Promise<unknown>; revision: number;review?:(f:Filter)=>void;settings?:()=>void;
 }) {
   const [consenting, setConsenting] = useState(false), [deleting, setDeleting] = useState(false), [working, setWorking] = useState(false);
+  const [diagnostic, setDiagnostic] = useState('');
   const [items, setItems] = useState<PersonItems['items']>([]), [page, setPage] = useState(0), [picked, setPicked] = useState<string[]>([]);
   const [name, setName] = useState(''), [target, setTarget] = useState('');
   const byId = useMemo(()=>new Map(assets.map(a=>[a.id,a])),[assets]);
@@ -72,10 +73,13 @@ export function PeoplePanel({ status, error, assets, draft, change, action, call
             <p>{status.processed.toLocaleString('es-EC')} de {status.total.toLocaleString('es-EC')} fotos revisadas</p>
           </>}
           {status.waiting > 0 && <p className="setting-note">{status.waiting} sin vista local</p>}
-          {!!status.blocked && <p className="setting-note">{status.blocked === 'interrupted' ? 'El progreso guardado se conserva. Puedes reanudar el análisis.' : status.blocked === 'thermal' ? 'Esperando a que el iPhone se enfríe.' : status.blocked === 'permission' ? 'CocoWash necesita acceso a Fotos.' : 'El análisis seguirá cuando haya recursos disponibles.'}</p>}
+          {!!status.skipped && <p className="setting-note">{status.skipped === 1 ? '1 foto apartada' : `${status.skipped} fotos apartadas`} porque la app se cerró dos veces al revisarla. Siguen en Fotos y en CocoWash.</p>}
+          {!!status.blocked && <p className="setting-note">{status.blocked === 'interrupted' ? interruptionNote(status) : status.blocked === 'thermal' ? 'Esperando a que el iPhone se enfríe.' : status.blocked === 'permission' ? 'CocoWash necesita acceso a Fotos.' : 'El análisis seguirá cuando haya recursos disponibles.'}</p>}
         </div>
       </div>
-      <div className="filter-chips"><button disabled={working} onClick={()=>void run(status.running?'pause':status.phase==='ready'?'reconcile':'resume')}>{status.running?'Pausar análisis':status.phase==='ready'?'Revisar agrupaciones':'Reanudar análisis'}</button><button onClick={()=>setDeleting(true)}>Desactivar y borrar índice</button></div>
+      <div className="filter-chips"><button disabled={working} onClick={()=>void run(status.running?'pause':status.phase==='ready'?'reconcile':'resume')}>{status.running?'Pausar análisis':status.phase==='ready'?'Revisar agrupaciones':'Reanudar análisis'}</button><button onClick={()=>setDeleting(true)}>Desactivar y borrar índice</button>
+        <button disabled={working} onClick={()=>{setDiagnostic('');void call('shareDiagnostics').catch(()=>setDiagnostic('No se pudo abrir la hoja para compartir el diagnóstico.'));}}>Compartir diagnóstico</button></div>
+      {diagnostic&&<p className="setting-note" role="alert">{diagnostic}</p>}
       {!initial&&!groups.length&&<p className="setting-note">Todavía no hay grupos con al menos {status.minimumPhotos??'varias'} fotos distintas. Los grupos pequeños se conservan para futuras coincidencias. Las fotos sin vista local no detienen el análisis.</p>}
       {deleting && <div className="people-confirm"><p>Se borrarán agrupaciones, nombres y datos faciales de CocoWash, y se desactivará Breakup Mode. Tus fotografías y decisiones no se borran.</p><button disabled={working} onClick={async () => { if (await run('reset')) { change({ person: undefined, breakup: undefined }); setDeleting(false); setConsenting(false); } }}>Borrar índice facial</button><button onClick={() => setDeleting(false)}>Cancelar</button></div>}
       <div className="people-groups" role="group" aria-label="Grupos de personas">
