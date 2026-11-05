@@ -173,11 +173,11 @@ Cierre CW-CX-013: **integrada** mediante [PR #3](https://github.com/joacomino-de
 Fecha: 2026-11-05, America/Bogota
 Agente: Codex
 Tarea: Monetización iOS separada de Personas.
-Estado: completada local, pendiente de validación nativa e integración.
-Base Git / commit: main aprobado a3dba60, rama codex/cocowash-monetization-ios.
+Estado: pendiente de integrar; compilación iOS verificada.
+Base Git / commit: main aprobado a3dba60, rama codex/cocowash-monetization-ios, código verificado 1209cec.
 Archivos modificados: módulos aislados Swift/React, proyecto Xcode, Ajustes y puntos de sesión, pruebas, CI de paquete.
 Cambios realizados: pases y café con StoreKit 2; anuncios nativos de imagen/vídeo con UMP y ATT, doble deslizamiento fuera de la creatividad y salida accesible.
 Decisiones relevantes: 30–40 revisiones únicas sin tope en la pila; gracia inicial de 3 minutos; hasta dos tarjetas de Terminar por día, con contador local.
-Validaciones: 109 pruebas Node, TypeScript, runtime 28, builds web y native-web, Sites 4.
+Validaciones: 109 pruebas Node, TypeScript, runtime 28, builds web y native-web, Sites 4; [CI Release arm64](https://github.com/joacomino-dev/mano-iphone/actions/runs/42099862512) verde.
 Impacto para Claude: checkouts separados. Al integrar, conservar registros de plugins y cambios de build del destino.
-Pendientes: CI macOS, validar gesto y compra en iPhone, alta de productos y unidades de producción.
+Pendientes: validar gesto, consentimiento y compras en iPhone, alta de productos y unidades de producción.
