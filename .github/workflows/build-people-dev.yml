@@ -71,3 +71,18 @@ jobs:
             mano/build/development/VALIDATION.txt
           retention-days: 7
           if-no-files-found: error
+
+      - name: Verify actual native development startup and same-build relaunch
+        timeout-minutes: 10
+        run: bash scripts/test-development-startup.sh
+      - name: Keep native startup evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CocoWash-9.7.2.1-startup-evidence
+          path: |
+            mano/build/startup-safety/*.png
+            mano/build/startup-safety/*.log
+            mano/build/startup-safety/result.txt
+          retention-days: 7
+          if-no-files-found: warn
