@@ -1,0 +1,48 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { AD_GAP_MS, INTRO_MS, AdCadence } from '../src/adCadence.ts';
+
+const ids = (offset, count) => Array.from({ length: count }, (_, i) => 'asset-' + (offset + i));
+
+test('deck respects the initial grace and counts distinct reviewed items', () => {
+  const cadence = new AdCadence(() => 0);
+  cadence.review(ids(0, 29));
+  cadence.review(ids(0, 29));
+  assert.equal(cadence.between(INTRO_MS), false);
+  cadence.review(ids(29, 1));
+  assert.equal(cadence.between(INTRO_MS - 1), false);
+  assert.equal(cadence.between(INTRO_MS), true);
+});
+
+test('long cleaning sessions can show more than two deck ads, 40 reviews apart', () => {
+  const cadence = new AdCadence(() => 0.99);
+  for (let i = 0; i < 5; i++) {
+    cadence.review(ids(i * 40, 39));
+    assert.equal(cadence.between(INTRO_MS), false);
+    cadence.review(ids(i * 40 + 39, 1));
+    assert.equal(cadence.between(INTRO_MS), true);
+    cadence.shown(INTRO_MS, 'deck');
+  }
+});
+
+test('first eligible finish retries when no ad renders; subsequent finishes are capped at two per day', () => {
+  const cadence = new AdCadence();
+  const day = '2026-11-05';
+  assert.equal(cadence.finish(INTRO_MS - 1, day), false);
+  cadence.shown(INTRO_MS, 'deck');
+  assert.equal(cadence.finish(INTRO_MS, day), true);
+  cadence.missedFinish();
+  assert.equal(cadence.finish(INTRO_MS, day), true);
+  cadence.shown(INTRO_MS, 'finish');
+  assert.equal(cadence.finish(INTRO_MS + AD_GAP_MS - 1, day), false);
+  const later = INTRO_MS + AD_GAP_MS;
+  assert.equal(cadence.finish(later, day), false);
+  assert.equal(cadence.finish(later, day), false);
+  assert.equal(cadence.finish(later, day), true);
+  cadence.shown(later, 'finish');
+  const reopened = new AdCadence(Math.random, cadence.finishSnapshot());
+  assert.equal(reopened.finish(later + AD_GAP_MS, day), false);
+  assert.equal(reopened.finish(later + AD_GAP_MS, '2026-11-06'), false);
+  assert.equal(reopened.finish(later + AD_GAP_MS, '2026-11-06'), false);
+  assert.equal(reopened.finish(later + AD_GAP_MS, '2026-11-06'), true);
+});

@@ -1,0 +1,61 @@
+{
+  "identifier": "10000000-0000-4000-8000-000000000000",
+  "nonRenewingSubscriptions": [
+    {
+      "displayPrice": "3.99",
+      "familyShareable": false,
+      "internalID": "10000000-0000-4000-8000-000000000001",
+      "localizations": [
+        {
+          "description": "Un año sin anuncios. No se renueva.",
+          "displayName": "Pase anual sin anuncios",
+          "locale": "es_ES"
+        }
+      ],
+      "productID": "work.joaquin.mano.noads.year",
+      "referenceName": "Pase anual sin anuncios",
+      "type": "NonRenewingSubscription"
+    }
+  ],
+  "products": [
+    {
+      "displayPrice": "10.00",
+      "familyShareable": false,
+      "internalID": "10000000-0000-4000-8000-000000000002",
+      "localizations": [
+        {
+          "description": "Sin anuncios de por vida.",
+          "displayName": "Pase vitalicio sin anuncios",
+          "locale": "es_ES"
+        }
+      ],
+      "productID": "work.joaquin.mano.noads.lifetime",
+      "referenceName": "Pase vitalicio sin anuncios",
+      "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "1.50",
+      "familyShareable": false,
+      "internalID": "10000000-0000-4000-8000-000000000003",
+      "localizations": [
+        {
+          "description": "Apoyo al desarrollador sin desbloquear funciones.",
+          "displayName": "Cómprame un café",
+          "locale": "es_ES"
+        }
+      ],
+      "productID": "work.joaquin.mano.coffee",
+      "referenceName": "Cómprame un café",
+      "type": "Consumable"
+    }
+  ],
+  "settings": {
+    "_locale": "es_ES",
+    "_storefront": "USA"
+  },
+  "subscriptionGroups": [],
+  "version": {
+    "major": 3,
+    "minor": 0
+  }
+}

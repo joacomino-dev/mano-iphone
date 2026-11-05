@@ -2,6 +2,14 @@
 
 Actualizado: 2026-11-05, America/Bogota. Codex trabaja solo por indicación del usuario.
 
+## Corrección para pruebas: 9.7.2.5 / build 25 (Claude)
+
+CW-CL-035. Causa del cierre **confirmada** con la traza de build 24 en iPhone:
+trap de exclusividad de Swift en `stamp()` al empezar la reconciliación (no memoria).
+Corregido en `5917cb4`. Personas arranca sola sin consentimiento previo (decisión
+del usuario). Sin reset: conserva el índice de build 24. Prueba física pendiente.
+[Detalle](../ai-handoff/COCOWASH_9724.md#actualización-causa-confirmada-y-build-25-9725).
+
 ## Candidato de diagnóstico: 9.7.2.4 / build 24 (Claude)
 
 CW-CL-034, Claude → usuario. Rama `claude/people-crash-b24` desde `6346fa3`, worktree

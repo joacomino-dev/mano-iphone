@@ -120,3 +120,24 @@ apartadas y el botón Compartir diagnóstico.
   estabilizar el primer plano; no cambia la protección del índice.
 - Opción B (entrada 1024 px como build 19) solo con evidencia de `group`.
 - Propuestas visuales P1–P8 a la espera de revisión.
+
+## Actualización: causa confirmada y build 25 (9.7.2.5)
+
+Prueba del usuario con build 24 (iPhone14,5, iOS 27.0.1, 3 GB): índice borrado y
+nueva pasada; cierre en 1115/1208 al terminar la primera pasada, y otra vez al
+reanudar. Traza: fase `reconcile-insert`, primer plano, huella 33 MB y 2,3 GB
+libres (**no es memoria**). MetricKit: SIGABRT desde `libswiftCore`. La
+simbolización del binario sitúa el aborto en `PeopleIndex.stamp(_:photo:)`
+llamado desde `reconcileStep`:
+`store.entries[photo]?.faces[i].sampleStamp = stamp(...)`. La cadena opcional
+abre un acceso de modificación a `store` antes de evaluar el lado derecho y
+`stamp()` lee `store`: la comprobación de exclusividad de Swift aborta el
+proceso. Presente desde build 20; explica que siempre falle al pasar de
+«revisar» a «organizar». Las 93 fotos restantes son solo iCloud (sin vista local).
+
+Corrección `5917cb4`: calcular el sello antes de escribir. Además, decisión del
+usuario: Personas arranca sola al abrir, sin pantalla de consentimiento; queda
+apagada solo tras «Desactivar y borrar índice». Textos: «Buscando rostros en tus
+fotos» / «Agrupando a las personas…», «Todo ocurre en este iPhone… si sales de
+CocoWash, se pausa y sigue al volver». Build 25 sin reset: conserva el índice de
+build 24; pulsar Reanudar una vez (la fase quedó en pausa de seguridad).

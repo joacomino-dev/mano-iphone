@@ -30,6 +30,7 @@ class ManoBridgeController: CAPBridgeViewController {
     override func capacitorDidLoad() {
         super.capacitorDidLoad()
         bridge?.registerPluginInstance(PhotoLibraryPlugin())
+        bridge?.registerPluginInstance(CocoMonetizationPlugin())
         bridge?.registerPluginInstance(PeoplePlugin())
         NSLog("MEMSWIPE_BRIDGE_READY")
     }

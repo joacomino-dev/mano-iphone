@@ -1,0 +1,28 @@
+/* Monetization surfaces in the CocoWash paper language. The native ad card
+   (CocoMonetization.swift) draws over .cw-ad-slot with the same frame. */
+.cw-ad-slot { position: relative; width: min(100%, 340px); flex: none; }
+.cw-ad-deck { height: min(360px, 100cqh); margin: auto; position: absolute; inset: 0; }
+.cw-ad-finish { height: 300px; margin: var(--cw-space-5) auto 0; }
+.cw-ad-blank { position: absolute; inset: 0 14px 49px; border-radius: 18px; background: var(--cw-surface); box-shadow: 0 1px 0 var(--cw-paper-edge), 0 10px 24px rgba(37, 58, 58, .14); }
+.cw-ad-blank::after { content: ''; position: absolute; inset: 44px 12px 64px; border-radius: var(--cw-radius-md); background: linear-gradient(100deg, var(--cw-paper-light) 30%, var(--cw-paper) 50%, var(--cw-paper-light) 70%) 0 0 / 300% 100%; animation: cw-ad-wait 1.4s linear infinite; }
+.cw-ad-slot.is-covered .cw-ad-blank { visibility: hidden; }
+@keyframes cw-ad-wait { to { background-position: -100% 0; } }
+@media (prefers-reduced-motion: reduce) { .cw-ad-blank::after { animation: none; } }
+
+.cw-purchases { min-width: 0; margin: 0; padding: var(--cw-space-5) 0; border: 0; border-bottom: 1px solid var(--cw-line); }
+.cw-purchases legend { display: flex; align-items: center; gap: var(--cw-icon-gap); padding: 0; font-weight: 600; color: var(--cw-ink); }
+.cw-offers { display: grid; margin-block: var(--cw-space-2); }
+.cw-offer { display: flex; align-items: center; gap: var(--cw-space-3); width: 100%; min-height: 64px; padding: var(--cw-space-2) 0; border: 0; border-bottom: 1px solid var(--cw-line); background: none; color: var(--cw-ink); text-align: start; }
+.cw-offer:last-child { border-bottom: 0; }
+.cw-offer .row-icon { flex: none; }
+.cw-offer.is-coffee .row-icon { background: var(--cw-paper); color: var(--cw-coconut-deep); }
+.cw-offer-text { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.cw-offer-text strong { font-size: var(--cw-text-md); }
+.cw-offer-text small { color: var(--cw-ink-soft); font-size: var(--cw-text-sm); line-height: 1.35; }
+.cw-offer-price { flex: none; min-width: 72px; min-height: 36px; display: grid; place-items: center; padding: 0 var(--cw-space-3); border-radius: var(--cw-radius-pill); background: var(--cw-action-primary); color: var(--cw-on-action-primary); font-weight: 600; font-variant-numeric: tabular-nums; }
+.cw-offer:disabled { opacity: 1; }
+.cw-offer:disabled .cw-offer-price { background: var(--cw-track); color: var(--cw-ink-soft); }
+.cw-offer:not(:disabled):active { background: var(--cw-press); }
+.cw-purchases .filter-chips button { display: inline-flex; align-items: center; gap: 6px; }
+.finish-monetization { display: grid; justify-items: center; gap: var(--cw-space-2); width: 100%; margin-top: var(--cw-space-2); }
+.ad-stage { position: absolute; inset: 0; display: grid; place-items: center; container-type: size; }

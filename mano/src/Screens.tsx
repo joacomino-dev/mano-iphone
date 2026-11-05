@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { GearSixIcon, ArrowClockwiseIcon, CaretRightIcon, ImagesIcon, EyeIcon, ClockCountdownIcon } from '@phosphor-icons/react';
 import { AnimatedNumber, CocoLoader } from './Loader';
@@ -73,7 +73,7 @@ const plural = (n: number, one: string, many: string) => `${n.toLocaleString('es
  * next round; with any pending, «Una última mirada» leads, since deletion only
  * happens there (Fotos confirms). «Cerrar» in that review comes back here.
  * After «Eliminar N», the reward leads: how much space this round freed. */
-export function SessionDone({ stats, pending, pendingBytes, pendingPartial, lifetime, again, review }: { stats: RoundStats; pending: number; pendingBytes: number; pendingPartial: boolean; lifetime: number; again: () => void; review: () => void }) {
+export function SessionDone({ stats, pending, pendingBytes, pendingPartial, lifetime, again, review, monetization }: { stats: RoundStats; pending: number; pendingBytes: number; pendingPartial: boolean; lifetime: number; again: () => void; review: () => void; monetization?: ReactNode }) {
   const reduced = useReducedMotion();
   const total = stats.keep + stats.discard + stats.favorite + stats.later;
   const freed = stats.freedPhotos + stats.freedVideos > 0;
@@ -103,5 +103,6 @@ export function SessionDone({ stats, pending, pendingBytes, pendingPartial, life
       <button className={pending > 0 ? 'secondary-empty' : 'primary-empty'} onClick={again}>Seguir revisando<CaretRightIcon size={18} weight="bold"/></button>
       {pending > 0 && <p className="status-hint">{pendingLabel ? <>Si eliminas {pending === 1 ? 'lo marcado' : `las ${pending} marcadas`} liberas {pendingPartial ? 'al menos ' : ''}<strong>{pendingLabel}</strong>. Si no, se guardan para la próxima ronda.</> : <>Lo marcado para eliminar se guarda para la próxima ronda si no eliminas ahora.</>}</p>}
     </motion.div>
+    {monetization}
   </main>;
 }
