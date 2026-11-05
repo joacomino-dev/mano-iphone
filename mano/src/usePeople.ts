@@ -18,7 +18,7 @@ export function usePeople(fingerprint: string, paused: boolean, person?: string)
     if(result.revision!==undefined&&result.revision!==publicRevision.current){publicRevision.current=result.revision;setRevision(v=>v+1);}
     setStatus(previous=>{
       const next={...previous,...result};
-      const keys=['available','consent','running','phase','blocked','hasPublication','revision','protectionRevision'] as const;
+      const keys=['available','consent','running','phase','blocked','hasPublication','revision','protectionRevision','correctionsNeedReview'] as const;
       return keys.every(k=>previous[k]===next[k])&&!result.groups?previous:next;
     });
   };

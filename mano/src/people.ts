@@ -1,6 +1,6 @@
 export type BreakupMode = 'normal' | 'face';
 export type CensorStyle = 'oval' | 'eyes';
-export type PersonPortrait = { id: string; face: string };
+export type PersonPortrait = { id: string; face: string; version?:string };
 export type PersonGroup = { id: string; name: string; count: number; representative: string; portraits?: PersonPortrait[] };
 export type PeopleStatus = { available: boolean; consent: boolean; running: boolean; processed: number; total: number; remaining: number; waiting: number; blocked?: string; protectionRevision?: number; groups: PersonGroup[];
   phase?: 'idle'|'indexing'|'reconciling'|'ready'|'paused'; hasPublication?: boolean; revision?: number; minimumPhotos?: number; correctionsNeedReview?:boolean; aliases?: Record<string,string> };

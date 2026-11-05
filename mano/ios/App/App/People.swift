@@ -126,10 +126,15 @@ private actor PeopleIndex {
         }
         let global = folder.appendingPathComponent("Reconciler",isDirectory:true)
         try FileManager.default.createDirectory(at:global,withIntermediateDirectories:true,attributes:[.protectionKey:FileProtectionType.complete])
-        reconciler = try FaceGroupAnalyzer(workingDirectory:global)
         loaded = true
         phase = store.publicReady ? "ready" : "indexing"
         if legacy { try save() }
+    }
+    private func primary() throws -> FaceGroupAnalyzer {
+        if let analyzer { return analyzer }
+        reconciler = nil
+        let value = try FaceGroupAnalyzer(workingDirectory:folder.appendingPathComponent("Analyzer"))
+        analyzer = value; return value
     }
     private func memoryWarning() { memoryPauseUntil = Date().addingTimeInterval(30); generation += 1; ci.clearCaches() }
     func libraryChanged() -> Bool {
@@ -164,9 +169,10 @@ private actor PeopleIndex {
                 if !corrected.isEmpty { store.pendingCorrections[id]=Array(Set((store.pendingCorrections[id] ?? [])+corrected)) }
             } else { store.pendingCorrections.removeValue(forKey:id) }
         }
-        if !obsolete.isEmpty { try await analyzer?.deleteAssets(obsolete.map { MediaIntelligenceImageAsset.ID($0) }); for id in obsolete { store.entries.removeValue(forKey: id); dirtyEntries.insert(id) } }
+        if !obsolete.isEmpty { try await primary().deleteAssets(obsolete.map { MediaIntelligenceImageAsset.ID($0) }); for id in obsolete { store.entries.removeValue(forKey: id); dirtyEntries.insert(id) } }
         assets = current; total = current.count; deferred = []
         pending = current.keys.filter { store.entries[$0] == nil }.sorted(by: >)
+        store.pendingCorrections = store.pendingCorrections.filter { current[$0.key] != nil }
         let faces = Set(store.entries.values.flatMap { $0.faces.map(\.id) }+store.pendingCorrections.values.flatMap{$0})
         store.excluded.formIntersection(faces); store.overrides = store.overrides.filter { faces.contains($0.key) }
         rebuildLocations()
@@ -219,7 +225,7 @@ private actor PeopleIndex {
         return UIGraphicsImageRenderer(size: source.size, format: format).image { _ in source.draw(in: CGRect(origin: .zero, size: source.size)) }
     }
     private func scan() async throws {
-        guard running, store.consent, !scanning, !refreshing, let analyzer else { return }
+        guard running, store.consent, !scanning, !refreshing else { return }
         let active = await MainActor.run { UIApplication.shared.applicationState == .active }
         blocked = !active ? "foreground" : !permission() ? "permission" : CocoMediaPressure.busy ? "media" : Date() < memoryPauseUntil ? "memory" :
             (ProcessInfo.processInfo.thermalState == .nominal || ProcessInfo.processInfo.thermalState == .fair) ? "" : "thermal"
@@ -227,6 +233,7 @@ private actor PeopleIndex {
         scanning = true; defer { scanning = false }
         let token = generation
         if phase == "reconciling" { try await reconcileStep(token:token); return }
+        let analyzer = try primary()
         // One in-flight image; batches of four bound work and checkpoint latency.
         for _ in 0..<PeoplePolicy.batch {
             guard running, token == generation, !Task.isCancelled, !pending.isEmpty, !CocoMediaPressure.busy else { break }
@@ -301,7 +308,7 @@ private actor PeopleIndex {
                 }!
                 chosen.append(next); candidates.removeAll { $0 == next }
             }
-            result[person] = chosen.map { PeoplePortrait(id:$0,face:photos[$0]!.id) }
+            result[person] = chosen.map { PeoplePortrait(id:$0,face:photos[$0]!.id,version:store.entries[$0]?.signature) }
         }
         return result
     }
@@ -325,6 +332,9 @@ private actor PeopleIndex {
     private func prepareReconciliation() async throws {
         reconcileSamples = selections().flatMap { person,refs in refs.map { IdentitySample(face:$0.face,photo:$0.id,person:person) } }.sorted { $0.face < $1.face }
         let wanted = Set(reconcileSamples.map(\.face))
+        var obsoleteSamples: [MediaIntelligenceImageAsset.ID] = []
+        if let reconciler { for try await id in reconciler.allAssetIDs { if !wanted.contains(id.rawValue) { obsoleteSamples.append(id) } } }
+        if !obsoleteSamples.isEmpty { try await reconciler?.deleteAssets(obsoleteSamples) }
         let stale = store.entries.values.flatMap { $0.faces }.filter { $0.sampleStamp != nil && !wanted.contains($0.id) }
         if !stale.isEmpty {
             try await reconciler?.deleteAssets(stale.map { .init($0.id) })
@@ -335,11 +345,13 @@ private actor PeopleIndex {
         }.map(\.face).reversed())
     }
     private func reconcileStep(token: Int) async throws {
-        guard let reconciler else { throw Failure.unavailable }
         if reconcileSamples.isEmpty && reconcileQueue.isEmpty {
             if let analyzer, await analyzer.state == .stale { try await analyzer.update(); guard token == generation else { return }; try await readPrimary(token:token) }
-            try await prepareReconciliation()
         }
+        analyzer = nil // At most one retained identity-model context per phase.
+        if reconciler == nil { reconciler = try FaceGroupAnalyzer(workingDirectory:folder.appendingPathComponent("Reconciler")) }
+        guard let reconciler else { throw Failure.unavailable }
+        if reconcileSamples.isEmpty && reconcileQueue.isEmpty { try await prepareReconciliation() }
         for _ in 0..<PeoplePolicy.batch {
             guard running, token == generation, !Task.isCancelled, !CocoMediaPressure.busy else { try save(); return }
             guard let id = reconcileQueue.popLast() else { break }
@@ -393,7 +405,7 @@ private actor PeopleIndex {
             store.graph = previousGraph; store.revision = previousRevision; store.protectionRevision = previousProtection; store.publicReady = previousReady
             throw error
         }
-        phase = "ready"; running = false; reconcileSamples = []; reconcileQueue = []
+        phase = "ready"; running = false; reconcileSamples = []; reconcileQueue = []; self.reconciler = nil
     }
     private func publish(allowed: Set<String>? = nil) throws {
         metadataDirty = true
@@ -480,9 +492,9 @@ private actor PeopleIndex {
             if let observer = memoryObserver { NotificationCenter.default.removeObserver(observer); memoryObserver = nil }
             return ["available": true, "consent": false, "groups": [], "processed": 0, "total": 0, "remaining": 0, "waiting": 0, "running": false]
         }
-        if action == "status", store.consent { try await refresh(); running = store.wantsAnalysis && phase != "ready" }
+        if action == "status", store.consent { try await refresh(); running = store.wantsAnalysis && phase != "ready"; if phase == "ready" { analyzer = nil; reconciler = nil } }
         if action == "consent" { metadataDirty = true; store.consent = true; store.wantsAnalysis = true; try save(); try await refresh(); running = true }
-        if action == "refresh", store.consent { try await refresh(); running = store.wantsAnalysis && phase != "ready" }
+        if action == "refresh", store.consent { try await refresh(); running = store.wantsAnalysis && phase != "ready"; if phase == "ready" { analyzer = nil; reconciler = nil } }
         if ["resume","reconcile"].contains(action), store.consent {
             metadataDirty = true; store.wantsAnalysis = true; store.needsReconciliation = true; try await refresh(); phase = pending.isEmpty ? "reconciling" : "indexing"; running = true
         }
@@ -523,7 +535,7 @@ private actor PeopleIndex {
                 if !PeopleIdentityGraph.isNamed(target,names:store.names), PeopleIdentityGraph.isNamed(person,names:store.names) { store.names[target] = store.names[person] }
                 store.graph.merge(person,into:target); store.graph.compress()
             }
-            metadataDirty = true; store.protectionRevision += 1; reconcileSamples = []; reconcileQueue = []
+            metadataDirty = true; if operation != "rename" { store.protectionRevision += 1 }; reconcileSamples = []; reconcileQueue = []
             try publish(allowed:Set(publication.flatMap(\.photos))); committed = true
         }
         return snapshot(includeGroups:call.getInt("sinceRevision") != store.revision)

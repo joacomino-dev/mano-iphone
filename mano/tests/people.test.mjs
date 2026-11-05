@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { EmptyFinishPresses } from '../src/finish.ts';
-import { personFilter, protectedMode } from '../src/people.ts';
+import { personFilter, protectedMode, canonicalPerson } from '../src/people.ts';
 import { initialFilter, initialState, normalizeFilter, decide, eligible, undo, UNDO_LIMIT, forgetPeople } from '../src/domain.ts';
 import { validateSession } from '../src/session.ts';
 import { restoreHand } from '../src/sequence.ts';
@@ -45,4 +45,12 @@ test('deleting the facial index forgets person associations without losing decis
 test('9.7.1 hidden sessions migrate to censored and preserve eye style separately from the two modes',()=>{
  assert.deepEqual(personFilter({person:'a',breakup:'hidden'}),{person:'a',breakup:'face',censorStyle:'oval'});
  assert.deepEqual(personFilter({person:'a',breakup:'face',censorStyle:'eyes'}),{person:'a',breakup:'face',censorStyle:'eyes'});
+});
+
+test('logical identity aliases keep saved person filters usable without rewriting decision order',()=>{
+ assert.equal(canonicalPerson('old',{old:'middle',middle:'canonical'}),'canonical');
+ assert.equal(canonicalPerson(undefined,{old:'canonical'}),undefined);
+ const filter={...initialFilter,person:'old',breakup:'face',censorStyle:'eyes'};
+ const session=validateSession(JSON.parse(JSON.stringify({version:1,active:true,seed:1,filter,context:{handIds:['a'],rotated:[],selected:[],filter},record:initialState()})));
+ assert.equal(canonicalPerson(session.filter.person,{old:'canonical'}),'canonical');assert.deepEqual(session.context.handIds,['a']);assert.equal(session.filter.censorStyle,'eyes');
 });

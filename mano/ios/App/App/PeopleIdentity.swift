@@ -101,7 +101,7 @@ struct PeopleFace: Codable, Equatable {
     var sampleStamp: String?
 }
 struct PeopleEntry: Codable { var signature: String; var faces: [PeopleFace] }
-struct PeoplePortrait: Codable, Equatable { var id: String; var face: String }
+struct PeoplePortrait: Codable, Equatable { var id: String; var face: String; var version: String? }
 struct PublishedPerson: Codable, Equatable {
     var id: String; var name: String; var photos: [String]; var portraits: [PeoplePortrait]
 }
@@ -144,7 +144,24 @@ struct PeopleState: Codable {
     /// Preserve the same logical person when Apple's entity label changes.
     /// A previously corrected face always wins over any automatic entity label.
     mutating func assign(_ faces: [(photo:String, face:PeopleFace)]) {
-        let previous = Dictionary(entries.values.flatMap { $0.faces }.map { ($0.id,$0) }, uniquingKeysWith: { a,_ in a })
+        var previous = Dictionary(entries.values.flatMap { $0.faces }.map { ($0.id,$0) }, uniquingKeysWith: { a,_ in a })
+        // Same unchanged photo + unique near-identical box is a safe anchor if
+        // the framework replaces its opaque face ID. Never used across edits:
+        // changed signatures were removed by refresh before reaching this code.
+        for item in faces where previous[item.face.id] == nil {
+            let matches = (entries[item.photo]?.faces ?? []).filter { old in
+                let a = old.box, b = item.face.box
+                guard a.count == 4, b.count == 4 else { return false }
+                let w = max(0,min(a[0]+a[2],b[0]+b[2])-max(a[0],b[0]))
+                let h = max(0,min(a[1]+a[3],b[1]+b[3])-max(a[1],b[1]))
+                return w*h/max(0.000001,a[2]*a[3]+b[2]*b[3]-w*h) >= 0.8
+            }
+            if matches.count == 1, let old = matches.first {
+                previous[item.face.id] = old
+                if let corrected = overrides[old.id] { overrides[item.face.id] = corrected }
+                if excluded.contains(old.id) { excluded.insert(item.face.id) }
+            }
+        }
         let previousOwners = previous.mapValues { group($0) }
         var byEntity: [String:[(String,PeopleFace)]] = [:]
         for item in faces { byEntity[item.face.entity,default:[]].append((item.photo,item.face)) }

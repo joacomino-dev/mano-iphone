@@ -6,6 +6,10 @@ import CoreGraphics
 enum PeopleGeometry {
     struct Oval { var center: CGPoint; var radii: CGSize; var angle: CGFloat }
     struct Bar { var center: CGPoint; var width: CGFloat; var height: CGFloat; var angle: CGFloat }
+    static func landmark(_ point: CGPoint, face: CGRect, crop: CGRect, image: CGSize) -> [Double] {
+        [Double(crop.minX+(face.minX+point.x*face.width)*crop.width)/Double(image.width),
+         Double(crop.minY+(1-face.minY-point.y*face.height)*crop.height)/Double(image.height)]
+    }
     static func valid(_ b: [Double]) -> Bool {
         b.count == 4 && b.allSatisfy { $0.isFinite } && b[0] >= 0 && b[1] >= 0 && b[2] > 0 && b[3] > 0 && b[0]+b[2] <= 1.000001 && b[1]+b[3] <= 1.000001
     }

@@ -33,12 +33,19 @@ var state = PeopleState(); state.entities = ["old":"stable"]; state.names = ["st
 state.entries["p"] = PeopleEntry(signature:"v1",faces:[PeopleFace(id:"f",entity:"old",box:[0.1,0.1,0.2,0.3],person:"stable")])
 state.assign([(photo:"p",face:PeopleFace(id:"f",entity:"new-label",box:[0.1,0.1,0.2,0.3]))])
 check(state.entries["p"]!.faces[0].person == "stable" && state.names["stable"] == "My name","Framework relabel never invents a new logical person")
+state.overrides["f"] = "manual"; state.names["manual"] = "Corrected"
+state.assign([(photo:"p",face:PeopleFace(id:"replacement-id",entity:"another-label",box:[0.1,0.1,0.2,0.3]))])
+check(state.group(state.entries["p"]!.faces[0]) == "manual" && state.overrides["replacement-id"] == "manual","Unique unchanged-photo geometry anchors preserve corrections across opaque face IDs")
+graph = PeopleIdentityGraph(); graph.separate("a","b"); graph.merge("a",into:"c")
+check(graph.separated("c","b"),"Cannot-link survives aliases and transitive merge candidates")
 let legacy = Data(#"{"consent":true,"entries":{},"entities":{"e":"persistent"},"names":{"persistent":"Name"},"overrides":{"f":"manual"},"excluded":["excluded"],"ordinal":8}"#.utf8)
 let migrated = try PeopleState.decode(legacy)
 check(migrated.schema == 2 && migrated.names["persistent"] == "Name" && migrated.overrides["f"] == "manual" && migrated.excluded.contains("excluded"),"v1 migration retains corrections and IDs")
 do { _ = try PeopleState.decode(Data("[]".utf8)); fatalError("Malformed store accepted") } catch { }
 
 let bar = PeopleGeometry.eyeBar([[0.4,0.35],[0.6,0.45]],bounds:[0.25,0.2,0.5,0.6],width:1000,height:1000)!
+let landmark = PeopleGeometry.landmark(CGPoint(x:0.25,y:0.8),face:CGRect(x:0.2,y:0.2,width:0.6,height:0.5),crop:CGRect(x:100,y:200,width:400,height:500),image:CGSize(width:1000,height:1000))
+check(abs(landmark[0]-0.24)<0.000001 && abs(landmark[1]-0.4)<0.000001,"Vision landmarks flip Y once within face and crop, not in Media Intelligence coordinates")
 check(bar.angle > 0.4 && bar.angle < 0.5,"Eye bar follows measured tilt")
 check(PeopleGeometry.eyeBar(nil,bounds:[0.2,0.2,0.5,0.5],width:1000,height:1000) == nil,"No invented eye position")
 for angle in [-0.7,0,0.7] {

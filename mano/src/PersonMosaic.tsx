@@ -7,7 +7,7 @@ import type { PersonGroup, PersonPortrait } from './people';
 const portraits = new RequestQueue<string>(2,64);
 export const clearPortraits = () => portraits.clear();
 function Portrait({ person, face, revision }: { person:string;face:PersonPortrait;revision:number }) {
-  const key=`${person}:${face.face}:${revision}`;
+  const key=`${person}:${face.face}:${face.version??revision}`;
   const [image,setImage]=useState<{key:string;src:string}>(),[retry,setRetry]=useState(0),[failed,setFailed]=useState(false);
   useEffect(()=>{
     const controller=new AbortController();setFailed(false);

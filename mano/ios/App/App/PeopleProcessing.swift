@@ -49,7 +49,7 @@ enum PeopleProcessing {
             guard let points = region?.normalizedPoints, points.count >= 3 else { return nil }
             let x = points.reduce(CGFloat.zero) { $0+$1.x } / CGFloat(points.count)
             let y = points.reduce(CGFloat.zero) { $0+$1.y } / CGFloat(points.count)
-            return [Double(crop.minX+(b.minX+x*b.width)*crop.width)/Double(cg.width),Double(crop.minY+(1-b.minY-y*b.height)*crop.height)/Double(cg.height)]
+            return PeopleGeometry.landmark(CGPoint(x:x,y:y),face:b,crop:crop,image:CGSize(width:CGFloat(cg.width),height:CGFloat(cg.height)))
         }
         let eyes = [eye(observed.landmarks?.leftEye),eye(observed.landmarks?.rightEye)].compactMap { $0 }.sorted { $0[0] < $1[0] }
         let angle = eyes.count == 2 ? atan2((eyes[1][1]-eyes[0][1])*Double(cg.height),(eyes[1][0]-eyes[0][0])*Double(cg.width)) : 0
