@@ -7,7 +7,7 @@ try {
   const state={available:true,consent:false,running:false,processed:0,total:100,remaining:100,waiting:0,groups:[]};
   window.fixtureCalls=[];window.CapacitorCustomPlatform={name:'ios'};
   window.Capacitor={PluginHeaders:[{name:'People',methods:[{name:'command',rtype:'promise'},{name:'addListener',rtype:'callback'},{name:'removeListener',rtype:'promise'}]}],
-   nativeCallback:(_p,_m,_o,callback)=>{window.fixtureEmit=callback;return 'fixture-listener';},
+   nativeCallback:(_p,_m,o,callback)=>{if(o.eventName==='libraryChanged')window.fixtureEmit=callback;return 'fixture-listener';},
    nativePromise:async(_p,method,o)=>{
     if(method==='removeListener')return {};
     window.fixtureCalls.push(o.action);await new Promise(r=>setTimeout(r,30));

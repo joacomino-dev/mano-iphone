@@ -2,6 +2,14 @@
 
 Actualizado: 2026-11-04, America/Bogota. Codex trabaja solo por indicación del usuario.
 
+## Corrección en curso: 9.7.2.1 / build 21 (no publicar)
+
+Codex único escritor en `cocowash/9.7.2.1` desde 0f0b8ac. Usuario reporta fallo
+al iniciar Personas y cerrar/reabrir. Autoriza borrar datos derivados de CocoWash
+al estrenar cada build de desarrollo; nunca Fotos. Reserva: lifecycle nativo,
+arranque/reset, errores del hook, pruebas y workflow. Backup pre-9721 verificado.
+No atribuir causa del crash sin informe del dispositivo.
+
 ## Desarrollo autorizado: 9.7.2 / build 20 (no publicar)
 
 Codex único escritor; rama `cocowash/9.7.2` desde **última entrega** d6d6f21,

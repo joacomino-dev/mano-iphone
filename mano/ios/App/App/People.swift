@@ -22,8 +22,26 @@ public class PeoplePlugin: CAPPlugin, CAPBridgedPlugin, PHPhotoLibraryChangeObse
     public let identifier = "PeoplePlugin"
     public let jsName = "People"
     public let pluginMethods: [CAPPluginMethod] = [CAPPluginMethod(name: "command", returnType: CAPPluginReturnPromise)]
-    public override func load() { PHPhotoLibrary.shared().register(self) }
-    deinit { PHPhotoLibrary.shared().unregisterChangeObserver(self) }
+    private var lifecycleObservers: [NSObjectProtocol] = []
+    public override func load() {
+        PHPhotoLibrary.shared().register(self)
+        if UIApplication.shared.applicationState == .active { PeopleActivityGate.shared.activate() }
+        for name in [UIApplication.willResignActiveNotification, UIScene.willDeactivateNotification, UIApplication.protectedDataWillBecomeUnavailableNotification] {
+            lifecycleObservers.append(NotificationCenter.default.addObserver(forName:name,object:nil,queue:.main) { _ in
+                PeopleActivityGate.shared.suspend()
+                #if canImport(MediaIntelligence) && !targetEnvironment(simulator)
+                if #available(iOS 27.0, *) { Task { await PeopleIndex.shared.suspend() } }
+                #endif
+            })
+        }
+        for name in [UIApplication.didBecomeActiveNotification, UIScene.didActivateNotification] {
+            lifecycleObservers.append(NotificationCenter.default.addObserver(forName:name,object:nil,queue:.main) { [weak self] _ in
+                PeopleActivityGate.shared.activate()
+                self?.notifyListeners("stateChanged",data:[:])
+            })
+        }
+    }
+    deinit { PHPhotoLibrary.shared().unregisterChangeObserver(self); for token in lifecycleObservers { NotificationCenter.default.removeObserver(token) } }
     public func photoLibraryDidChange(_ changeInstance: PHChange) {
         #if canImport(MediaIntelligence) && !targetEnvironment(simulator)
         if #available(iOS 27.0, *) {
@@ -75,6 +93,7 @@ private actor PeopleIndex {
     private var total = 0
     private var blocked = ""
     private var needsRefresh = false
+    private var modelNeedsPrune = true
     private var activeImage: PHImageRequestID?
     private let manager = PHImageManager()
     private let ci = CIContext(options: [.cacheIntermediates: false])
@@ -122,7 +141,11 @@ private actor PeopleIndex {
         for file in try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil) where file.lastPathComponent.hasPrefix("input-") { try? FileManager.default.removeItem(at: file) }
         let work = folder.appendingPathComponent("Analyzer", isDirectory: true)
         try FileManager.default.createDirectory(at: work, withIntermediateDirectories: true, attributes: [.protectionKey: FileProtectionType.complete])
-        analyzer = try FaceGroupAnalyzer(workingDirectory: work)
+        // Loading the persistent ML model is reserved for an explicit scan.
+        // Status/launch must stay usable even after interrupted analysis.
+        if FileManager.default.fileExists(atPath:folder.appendingPathComponent("analysis-inflight").path) {
+            store.wantsAnalysis = false; metadataDirty = true; blocked = "interrupted"
+        }
         memoryObserver = NotificationCenter.default.addObserver(forName: UIApplication.didReceiveMemoryWarningNotification, object: nil, queue: nil) { _ in
             Task { await PeopleIndex.shared.memoryWarning() }
         }
@@ -130,8 +153,17 @@ private actor PeopleIndex {
         try FileManager.default.createDirectory(at:global,withIntermediateDirectories:true,attributes:[.protectionKey:FileProtectionType.complete])
         loaded = true
         phase = store.publicReady ? "ready" : "indexing"
-        if legacy { try save() }
+        if legacy || blocked == "interrupted" { try save() }
     }
+    func suspend() {
+        running = false; generation += 1; work?.cancel()
+        if let id=activeImage { manager.cancelImageRequest(id) }
+        if !scanning && !refreshing { analyzer = nil; reconciler = nil }
+        // A cleanly drained batch removes its marker. An interrupted one pauses
+        // on the next launch instead of entering an automatic crash loop.
+        try? save()
+    }
+    private func permitted(_ token: Int) -> Bool { PeopleActivityGate.shared.accepts(token) && !Task.isCancelled }
     private func primary() throws -> FaceGroupAnalyzer {
         if let analyzer { return analyzer }
         reconciler = nil
@@ -179,13 +211,10 @@ private actor PeopleIndex {
                 if !corrected.isEmpty { store.pendingCorrections[id]=Array(Set((store.pendingCorrections[id] ?? [])+corrected)) }
             } else { store.pendingCorrections.removeValue(forKey:id) }
         }
-        // A process may have stopped after SDK insertion but before our checkpoint.
-        // Prune those orphan model assets too, including revoked limited access.
-        let engine = try primary()
-        var removed = Set(obsolete)
-        for try await id in engine.allAssetIDs { if current[id.rawValue] == nil { removed.insert(id.rawValue) } }
-        if !removed.isEmpty { try await engine.deleteAssets(removed.map { MediaIntelligenceImageAsset.ID($0) }) }
-        for id in obsolete { store.entries.removeValue(forKey: id); dirtyEntries.insert(id) }
+        // SDK cleanup is deferred to the scanning task, never status/startup.
+        if !obsolete.isEmpty || !pending.isEmpty { modelNeedsPrune = true }
+        for id in obsolete { store.entries.removeValue(forKey:id); dirtyEntries.insert(id) }
+        modelNeedsPrune = true
         assets = current; total = current.count; deferred = []
         pending = current.keys.filter { store.entries[$0] == nil }.sorted(by: >)
         store.pendingCorrections = store.pendingCorrections.filter { current[$0.key] != nil }
@@ -211,7 +240,7 @@ private actor PeopleIndex {
             ["id":p.id,"name":p.name,"count":p.photos.count,"representative":p.portraits.first?.id ?? "",
              "portraits":p.portraits.map { ["id":$0.id,"face":$0.face,"version":$0.version ?? ""] }]
         } : []
-        var result: [String:Any] = ["available":true,"consent":store.consent,"running":running,"phase":running ? phase : (phase == "ready" ? "ready" : "paused"),
+        var result: [String:Any] = ["available":true,"consent":store.consent,"running":running && PeopleActivityGate.shared.active,"phase":running && PeopleActivityGate.shared.active ? phase : (phase == "ready" ? "ready" : "paused"),
                 "hasPublication":store.publicReady,"revision":store.revision,"protectionRevision":store.protectionRevision,
                 "minimumPhotos":PeoplePolicy.minimumPhotos,"blocked":blocked,"correctionsNeedReview": !store.pendingCorrections.isEmpty,
                 "processed":store.entries.count,"total":total,"remaining":pending.count,"waiting":deferred.count]
@@ -223,15 +252,19 @@ private actor PeopleIndex {
         for (id,entry) in store.entries { for i in entry.faces.indices { locations[entry.faces[i].id] = (id,i) } }
     }
     private func image(_ asset: PHAsset, size: Int, tracked: Bool = false) async -> UIImage? {
-        defer { if tracked { activeImage = nil } }
+        let fence=PeopleActivityGate.shared, epoch=fence.epoch, ticket=UUID()
+        guard fence.accepts(epoch) else { return nil }
+        defer { fence.remove(ticket); if tracked { activeImage = nil } }
         return await withCheckedContinuation { continuation in
             let delivery = PeopleImageDelivery(continuation)
             let options = PHImageRequestOptions(); options.isNetworkAccessAllowed = false; options.deliveryMode = .highQualityFormat; options.resizeMode = .exact
-            let request = manager.requestImage(for: asset, targetSize: CGSize(width: CGFloat(size), height: CGFloat(size)), contentMode: .aspectFit, options: options) { image, info in
+            let request = manager.requestImage(for:asset,targetSize:CGSize(width:CGFloat(size),height:CGFloat(size)),contentMode:.aspectFit,options:options) { image,info in
                 if (info?[PHImageResultIsDegradedKey] as? Bool) == true { return }
-                delivery.finish(image)
+                delivery.finish(fence.accepts(epoch) ? image : nil)
             }
             delivery.limit(manager:manager,request:request)
+            let manager=self.manager
+            fence.register(ticket,epoch:epoch) { manager.cancelImageRequest(request); delivery.finish(nil) }
             if tracked { activeImage = request }
         }
     }
@@ -241,33 +274,42 @@ private actor PeopleIndex {
         return UIGraphicsImageRenderer(size: source.size, format: format).image { _ in source.draw(in: CGRect(origin: .zero, size: source.size)) }
     }
     private func scan() async throws {
-        guard running, store.consent, !scanning, !refreshing else { return }
+        guard running, store.consent, !scanning, !refreshing, PeopleActivityGate.shared.active else { return }
         let active = await MainActor.run { UIApplication.shared.applicationState == .active }
         blocked = !active ? "foreground" : !permission() ? "permission" : CocoMediaPressure.busy ? "media" : Date() < memoryPauseUntil ? "memory" :
             (ProcessInfo.processInfo.thermalState == .nominal || ProcessInfo.processInfo.thermalState == .fair) ? "" : "thermal"
         guard blocked.isEmpty else { return }
-        scanning = true; defer { scanning = false }
+        scanning = true; defer { scanning = false; if !PeopleActivityGate.shared.active { analyzer = nil; reconciler = nil } }
         let token = generation
+        let lifecycle=PeopleActivityGate.shared.epoch
+        guard permitted(lifecycle) else { return }
+        if modelNeedsPrune {
+            let engine=try primary(); var removed: [MediaIntelligenceImageAsset.ID] = []
+            for try await id in engine.allAssetIDs { guard running,token == generation,permitted(lifecycle) else { return }; if assets[id.rawValue] == nil { removed.append(id) } }
+            guard running,token == generation,permitted(lifecycle) else { return }
+            if !removed.isEmpty { try await engine.deleteAssets(removed) }
+            guard running,token == generation,permitted(lifecycle) else { return }; modelNeedsPrune = false
+        }
         if phase == "reconciling" { try await reconcileStep(token:token); return }
         let analyzer = try primary()
         // One in-flight image; batches of four bound work and checkpoint latency.
         for _ in 0..<PeoplePolicy.batch {
-            guard running, token == generation, !Task.isCancelled, !pending.isEmpty, !CocoMediaPressure.busy else { break }
+            guard running, token == generation, permitted(lifecycle), !pending.isEmpty, !CocoMediaPressure.busy else { break }
             let id = pending.removeLast()
             defer { if store.entries[id] == nil && assets[id] != nil && !deferred.contains(id) && !pending.contains(id) { pending.append(id) } }
             guard let asset = assets[id] else { continue }
             guard accessible(id,signature:signature(asset)) != nil, let source = await image(asset, size: PeoplePolicy.indexPixels, tracked: true), accessible(id,signature:signature(asset)) != nil else { deferred.insert(id); continue }
-            guard running, token == generation else { pending.append(id); break }
+            guard running, token == generation, permitted(lifecycle) else { pending.append(id); break }
             let file = folder.appendingPathComponent("input-\(UUID().uuidString).jpg")
             defer { try? FileManager.default.removeItem(at: file) }
             guard let data = autoreleasepool(invoking: { upright(source).jpegData(compressionQuality: 0.9) }) else { deferred.insert(id); continue }
             try data.write(to: file, options: [.atomic, .completeFileProtection])
             let results = try await analyzer.insertOrUpdateAssets([MediaIntelligenceImageAsset(id: .init(id), kind: .url(file))])
             for try await _ in results { }
-            guard running, token == generation else { pending.append(id); break }
+            guard running, token == generation, permitted(lifecycle) else { pending.append(id); break }
             store.entries[id] = Entry(signature: signature(asset), faces: []); dirtyEntries.insert(id); sinceGrouping += 1; store.needsReconciliation = true
         }
-        guard running, token == generation, !Task.isCancelled, !CocoMediaPressure.busy else { try save(); return }
+        guard running, token == generation, PeopleActivityGate.shared.active, !Task.isCancelled, !CocoMediaPressure.busy else { try save(); return }
         if sinceGrouping < 64 && !pending.isEmpty && !store.entities.isEmpty { try save(); return }
         if await analyzer.state == .stale { try await analyzer.update() }
         guard running, token == generation else { return }
@@ -370,27 +412,27 @@ private actor PeopleIndex {
         guard let reconciler else { throw Failure.unavailable }
         if reconcileSamples.isEmpty && reconcileQueue.isEmpty { try await prepareReconciliation() }
         for _ in 0..<PeoplePolicy.batch {
-            guard running, token == generation, !Task.isCancelled, !CocoMediaPressure.busy else { try save(); return }
+            guard running, token == generation, PeopleActivityGate.shared.active, !Task.isCancelled, !CocoMediaPressure.busy else { try save(); return }
             guard let id = reconcileQueue.popLast() else { break }
             var completed = false
             defer { if !completed && !reconcileQueue.contains(id) { reconcileQueue.append(id) } }
             guard let (photo,original) = face(id), let asset = assets[photo] else { completed = true; continue }
             guard let source = await image(asset,size:PeoplePolicy.indexPixels,tracked:true) else { completed = true; continue }
-            guard token == generation, running else { return }
+            guard token == generation, running, PeopleActivityGate.shared.active else { return }
             let up = PeopleProcessing.upright(source), refined = refine(original,photo:photo,image:up)
             guard let crop = autoreleasepool(invoking:{PeopleProcessing.crop(refined,image:up,maxSize:512)}), let data = crop.jpegData(compressionQuality:0.92) else { completed = true; continue }
             let file = folder.appendingPathComponent("input-\(UUID().uuidString).jpg"); defer { try? FileManager.default.removeItem(at:file) }
             try data.write(to:file,options:[.atomic,.completeFileProtection])
             let results = try await reconciler.insertOrUpdateAssets([MediaIntelligenceImageAsset(id:.init(id),kind:.url(file))])
             for try await _ in results { }
-            guard token == generation, running else { return }
+            guard token == generation, running, PeopleActivityGate.shared.active else { return }
             if let location = locations[id] { store.entries[photo]?.faces[location.index].sampleStamp = stamp(refined,photo:photo); dirtyEntries.insert(photo) }
             completed = true
         }
         try save()
-        guard reconcileQueue.isEmpty, running, token == generation, !Task.isCancelled, !CocoMediaPressure.busy else { return }
+        guard reconcileQueue.isEmpty, running, token == generation, PeopleActivityGate.shared.active, !Task.isCancelled, !CocoMediaPressure.busy else { return }
         if await reconciler.state == .stale { try await reconciler.update() }
-        guard token == generation, running, !Task.isCancelled else { return }
+        guard token == generation, running, PeopleActivityGate.shared.active, !Task.isCancelled else { return }
         // Accept only the central face of each crop. Extra people near its edge
         // cannot vote for another identity just because they share the photo.
         var matches: [String:[(String,Double)]] = [:]
@@ -412,7 +454,7 @@ private actor PeopleIndex {
         }
         var graph = store.graph
         _ = graph.reconcile(samples:reconcileSamples,assignments:assignments,photos:store.membership(),names:store.names)
-        guard token == generation, running else { return }
+        guard token == generation, running, PeopleActivityGate.shared.active else { return }
         let previousGraph = store.graph, previousRevision = store.revision, previousProtection = store.protectionRevision, previousReady = store.publicReady
         if graph != store.graph { store.graph = graph; store.protectionRevision += 1 }
         let previousNeeds = store.needsReconciliation, previousCycle = store.cycleActive
@@ -461,12 +503,13 @@ private actor PeopleIndex {
         return asset
     }
     private func portrait(id: String, person: String) async throws -> [String:Any] {
+        let lifecycle=PeopleActivityGate.shared.epoch; guard permitted(lifecycle) else { throw Failure.stale }
         guard store.consent, let (photo,value) = face(id), group(value) == store.graph.canonical(person),
               let entry = store.entries[photo], let asset = accessible(photo,signature:entry.signature) else { throw Failure.stale }
         var file = try cacheFile("Portraits",key:"v1:\(stamp(value,photo:photo))")
         if FileManager.default.fileExists(atPath:file.path) { return ["path":file.path] }
         CocoMediaPressure.change(1); defer { CocoMediaPressure.change(-1) }
-        guard let source = await image(asset,size:PeoplePolicy.indexPixels), accessible(photo,signature:entry.signature) != nil,
+        guard let source = await image(asset,size:PeoplePolicy.indexPixels), permitted(lifecycle), accessible(photo,signature:entry.signature) != nil,
               let (_,current) = face(id), group(current) == store.graph.canonical(person) else { throw Failure.stale }
         let up = PeopleProcessing.upright(source), refined = refine(current,photo:photo,image:up)
         file = try cacheFile("Portraits",key:"v1:\(stamp(refined,photo:photo))")
@@ -476,6 +519,7 @@ private actor PeopleIndex {
         return ["path":file.path]
     }
     private func redact(id: String, person: String, size: Int, style: String, refresh: Bool) async throws -> [String:Any] {
+        let lifecycle=PeopleActivityGate.shared.epoch; guard permitted(lifecycle) else { throw Failure.stale }
         let person = store.graph.canonical(person)
         guard store.consent, let entry = store.entries[id], let asset = accessible(id,signature:entry.signature) else { throw Failure.stale }
         let selected = entry.faces.filter { group($0) == person }
@@ -491,13 +535,13 @@ private actor PeopleIndex {
         var file = try renderFile(selected)
         if !refresh && FileManager.default.fileExists(atPath:file.path) { return ["path":file.path] }
         CocoMediaPressure.change(1); defer { CocoMediaPressure.change(-1) }
-        guard let source = await image(asset,size:size), token == store.protectionRevision,
+        guard let source = await image(asset,size:size), permitted(lifecycle), token == store.protectionRevision,
               accessible(id,signature:entry.signature) != nil else { throw Failure.stale }
         let up = PeopleProcessing.upright(source)
         var refined: [Face] = []
         for value in selected { refined.append(refine(value,photo:id,image:up)) }
         guard let output = autoreleasepool(invoking:{PeopleProcessing.censor(up,faces:refined,style:style,context:ci)}),
-              token == store.protectionRevision, let data = output.jpegData(compressionQuality:0.9) else { throw Failure.invalid }
+              permitted(lifecycle), token == store.protectionRevision, let data = output.jpegData(compressionQuality:0.9) else { throw Failure.invalid }
         file = try renderFile(refined)
         try data.write(to:file,options:[.atomic,.completeFileProtection]); try save()
         try pruneCache(file,count:24,budget:32*1024*1024)
@@ -505,30 +549,31 @@ private actor PeopleIndex {
     }
     func command(_ call: CAPPluginCall) async throws -> [String: Any] {
         let action = call.getString("action") ?? "status"
+        if action == "reset" {
+            guard !scanning, !refreshing else { running = false; generation += 1; throw Failure.stale }
+            running = false; generation += 1; analyzer = nil; reconciler = nil; checkpoint = nil; dirtyEntries.removeAll()
+
+
+            if FileManager.default.fileExists(atPath:folder.path) { try FileManager.default.removeItem(at:folder) }; store = Store(); publication = []; cycleScope = []; loaded = false; phase = "indexing"
+            if let observer = memoryObserver { NotificationCenter.default.removeObserver(observer); memoryObserver = nil }
+            return ["available": true, "consent": false, "groups": [], "processed": 0, "total": 0, "remaining": 0, "waiting": 0, "running": false]
+        }
         try open()
         if needsRefresh && !scanning && !refreshing && ["scan", "person"].contains(action) { try await refresh() }
         if action == "yield" { generation += 1; work?.cancel(); if let request = activeImage { manager.cancelImageRequest(request) }; return ["available": true] }
         if action == "pause" { metadataDirty = true; running = false; if call.getString("reason") != "suspend" { store.wantsAnalysis = false }; generation += 1; work?.cancel(); if let request = activeImage { manager.cancelImageRequest(request) }; try save(); return snapshot() }
-        if action == "reset" {
-            guard !scanning, !refreshing else { running = false; generation += 1; throw Failure.stale }
-            running = false; generation += 1; analyzer = nil; reconciler = nil; checkpoint = nil; dirtyEntries.removeAll()
-            try await FaceGroupAnalyzer.purge(workingDirectory: folder.appendingPathComponent("Analyzer"))
-            try await FaceGroupAnalyzer.purge(workingDirectory: folder.appendingPathComponent("Reconciler"))
-            try FileManager.default.removeItem(at: folder); store = Store(); publication = []; cycleScope = []; loaded = false; phase = "indexing"
-            if let observer = memoryObserver { NotificationCenter.default.removeObserver(observer); memoryObserver = nil }
-            return ["available": true, "consent": false, "groups": [], "processed": 0, "total": 0, "remaining": 0, "waiting": 0, "running": false]
-        }
-        if action == "status", store.consent { try await refresh(); running = store.wantsAnalysis && phase != "ready"; if phase == "ready" { analyzer = nil; reconciler = nil } }
+        if action == "status", store.consent, !scanning, !refreshing, PeopleActivityGate.shared.active { try await refresh(); running = store.wantsAnalysis && phase != "ready"; if phase == "ready" { analyzer = nil; reconciler = nil } }
         if action == "consent" { metadataDirty = true; store.consent = true; store.wantsAnalysis = true; try save(); try await refresh(); running = true }
         if action == "refresh", store.consent { try await refresh(); running = store.wantsAnalysis && phase != "ready"; if phase == "ready" { analyzer = nil; reconciler = nil } }
         if ["resume","reconcile"].contains(action), store.consent {
             metadataDirty = true; store.wantsAnalysis = true; store.needsReconciliation = true; try await refresh(); phase = pending.isEmpty ? "reconciling" : "indexing"; running = true
         }
         if action == "scan" {
-            guard work == nil else { return snapshot() }
+            guard running,PeopleActivityGate.shared.active,work == nil else { return snapshot() }
+            try Data("pending".utf8).write(to:folder.appendingPathComponent("analysis-inflight"),options:[.atomic,.completeFileProtection])
             let task = Task(priority:.utility) { try await self.scan() }; work = task
-            defer { work = nil }
-            do { try await task.value } catch { if running && !task.isCancelled { throw error } }
+            defer { work = nil; try? FileManager.default.removeItem(at:folder.appendingPathComponent("analysis-inflight")) }
+            do { try await task.value } catch { if running && !task.isCancelled { running = false; store.wantsAnalysis = false; metadataDirty = true; try? save(); throw error } }
         }
         if action == "redact" { return try await redact(id: call.getString("id") ?? "", person: call.getString("person") ?? "", size: min(3072,max(256,call.getInt("size") ?? 1400)), style:call.getString("style") == "eyes" ? "eyes" : "oval",refresh:call.getBool("refresh") == true) }
         if action == "portrait" { return try await portrait(id:call.getString("face") ?? "",person:call.getString("person") ?? "") }

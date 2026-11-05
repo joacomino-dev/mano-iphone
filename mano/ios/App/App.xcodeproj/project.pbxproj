@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A10000000000000000000017 /* DevelopmentSafety.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000018 /* DevelopmentSafety.swift */; };
 		A10000000000000000000015 /* PeopleProcessing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000016 /* PeopleProcessing.swift */; };
 		A10000000000000000000013 /* PeopleIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000014 /* PeopleIdentity.swift */; };
 		A10000000000000000000011 /* PeopleCheckpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000012 /* PeopleCheckpoint.swift */; };
@@ -38,6 +39,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		A10000000000000000000018 /* DevelopmentSafety.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevelopmentSafety.swift; sourceTree = "<group>"; };
 		A10000000000000000000016 /* PeopleProcessing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeopleProcessing.swift; sourceTree = "<group>"; };
 		A10000000000000000000014 /* PeopleIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeopleIdentity.swift; sourceTree = "<group>"; };
 		A10000000000000000000012 /* PeopleCheckpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeopleCheckpoint.swift; sourceTree = "<group>"; };
@@ -110,6 +112,7 @@
 				9582B6822FE993A50072D4E8 /* SceneDelegate.swift */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
+				A10000000000000000000018 /* DevelopmentSafety.swift */,
 				A10000000000000000000002 /* PhotoLibrary.swift */,
 				A10000000000000000000006 /* SignatureIndex.swift */,
 				A10000000000000000000008 /* People.swift */,
@@ -243,6 +246,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
+				A10000000000000000000017 /* DevelopmentSafety.swift in Sources */,
 				A10000000000000000000001 /* PhotoLibrary.swift in Sources */,
 				A10000000000000000000005 /* SignatureIndex.swift in Sources */,
 				A10000000000000000000007 /* People.swift in Sources */,
@@ -427,7 +431,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20;
+				CURRENT_PROJECT_VERSION = 21;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -449,7 +453,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20;
+				CURRENT_PROJECT_VERSION = 21;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (

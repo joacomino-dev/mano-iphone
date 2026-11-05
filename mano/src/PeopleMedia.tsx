@@ -9,7 +9,7 @@ import { protectedMode, type BreakupMode, type CensorStyle } from './people';
 
 export const PeopleBridge = registerPlugin<{
   command(options: Record<string, unknown>): Promise<unknown>;
-  addListener(event: 'libraryChanged', callback: () => void): Promise<{ remove(): Promise<void> }>;
+  addListener(event: 'libraryChanged' | 'stateChanged', callback: () => void): Promise<{ remove(): Promise<void> }>;
 }>('People');
 export const PeopleProtection = createContext<{ person?: string; mode?: BreakupMode; style?: CensorStyle; revision: number }>({ revision: 0 });
 

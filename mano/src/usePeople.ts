@@ -22,8 +22,16 @@ export function usePeople(fingerprint: string, paused: boolean, person?: string)
       return keys.every(k=>previous[k]===next[k])&&!result.groups?previous:next;
     });
   };
+  const fail = (message:string) => {
+    enabled.current=false;serial.current++;setError(message);
+    setStatus(previous=>({...previous,available:true,consent:true,running:false,phase:'paused'}));
+  };
+  const idle = async () => {
+    const until=performance.now()+8000;
+    while(busy.current){if(performance.now()>=until)throw new Error('Analysis still draining');await new Promise(resolve=>setTimeout(resolve,50));}
+  };
   useEffect(() => { if (!isNative) return; let alive = true;
-    void call('status').then(value => { if (alive) { refreshed.current = fingerprint; adopt(value); } }).catch(() => { if (alive) setStatus(NO_PEOPLE); });
+    void call('status').then(value => { if (alive) { refreshed.current = fingerprint; adopt(value); } }).catch(() => { if (alive) fail('No se pudo abrir Personas. Reintenta el análisis o borra únicamente su índice local.'); });
     return () => { alive = false; enabled.current = false; void call('pause',{reason:'suspend'}).catch(() => {}); };
   }, []);
   useEffect(() => {
@@ -35,7 +43,7 @@ export function usePeople(fingerprint: string, paused: boolean, person?: string)
   useEffect(() => { if (!status.available || !status.consent || refreshed.current === fingerprint) return; let alive = true;
     if(enabled.current){refreshed.current=fingerprint;return;}
     enabled.current = false;
-    void (async () => { await call('pause',{reason:'suspend'}); while (busy.current) await new Promise(resolve => setTimeout(resolve, 100));
+    void (async () => { await call('pause',{reason:'suspend'}); await idle();
       const value = await call('refresh'); if (alive) { refreshed.current = fingerprint; adopt(value); setRevision(v => v + 1); }
     })().catch(() => { if (alive) setError('No se pudo actualizar Personas. El análisis sigue pausado.'); });
     return () => { alive = false; };
@@ -57,23 +65,33 @@ export function usePeople(fingerprint: string, paused: boolean, person?: string)
       if (enabled.current && !busy.current && !paused && !document.hidden && performance.now() >= quietUntil.current) {
         busy.current = true; const token = serial.current;
         try { const value = await call('scan',{sinceRevision:publicRevision.current}); if (!stopped && token === serial.current) { adopt(value); } }
-        catch { if (!stopped) { enabled.current = false; setError('Análisis pausado. Reintenta cuando el iPhone esté disponible.'); } }
+        catch { if (!stopped && token === serial.current) { fail('Análisis pausado por un error. Puedes reintentarlo; tus fotos siguen intactas.'); } }
         finally { busy.current = false; }
       }
       if (!stopped) timer = setTimeout(tick, 1200);
     };
     timer = setTimeout(tick, 1200);
-    const hide = () => { if (document.hidden) void call('pause',{reason:'suspend'}).then(adopt).catch(() => {}); else void call('status').then(adopt).catch(()=>{}); };
+    const recover = async () => {
+      enabled.current=false;const token=++serial.current;
+      try { await idle();const value=await call('status');if(!stopped&&token===serial.current&&!document.hidden){setError('');adopt(value);} }
+      catch { if(!stopped&&token===serial.current)fail('El análisis sigue pausado. Cierra y vuelve a abrir CocoWash si no responde.'); }
+    };
+    const hide = () => {
+      enabled.current=false;const token=++serial.current;
+      if(document.hidden){setStatus(previous=>({...previous,running:false,phase:previous.phase==='ready'?'ready':'paused'}));void call('pause',{reason:'suspend'}).then(value=>{if(!stopped&&token===serial.current&&document.hidden)adopt(value);}).catch(()=>{});}
+      else void recover();
+    };
+    const stateListener=PeopleBridge.addListener('stateChanged',()=>{if(!document.hidden)void recover();});
     document.addEventListener('visibilitychange', hide);
-    return () => { stopped = true; clearTimeout(timer); document.removeEventListener('visibilitychange', hide); };
+    return () => { stopped = true; clearTimeout(timer); document.removeEventListener('visibilitychange', hide);void stateListener.then(l=>l.remove()).catch(()=>{}); };
   }, [status.available, paused]);
   const action = async (name: string, options: Record<string, unknown> = {}) => {
     setError(''); enabled.current = false; serial.current++;
     try {
-      await call('pause',{reason:'suspend'}); while (busy.current) await new Promise(resolve => setTimeout(resolve, 100));
+      await call('pause',{reason:'suspend'}); await idle();
       const value = await call(name, options); if (name === 'consent' || name === 'resume' || name === 'reconcile') refreshed.current = fingerprint; adopt(value); setRevision(v => v + 1); return value;
-    } catch { setError('No se pudo completar. Tus fotos siguen intactas; puedes reintentar.'); return undefined; }
+    } catch { fail('No se pudo completar. El análisis está pausado; tus fotos siguen intactas y puedes reintentar.'); return undefined; }
   };
-  return { status, error, revision, libraryChanges, action, call, members: members && members.person === person ? members.ids : undefined,
+  return { status:paused&&status.running?{...status,blocked:status.blocked||'media'}:status, error, revision, libraryChanges, action, call, members: members && members.person === person ? members.ids : undefined,
     interact: () => { quietUntil.current = performance.now() + 1000; if (busy.current) void call('yield').catch(()=>{}); } };
 }

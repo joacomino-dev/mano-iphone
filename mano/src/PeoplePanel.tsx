@@ -61,7 +61,7 @@ export function PeoplePanel({ status, error, assets, draft, change, action, call
         {initial&&status.running&&<CocoLoader size={34}/>}
         <p>{status.running?(initial?<>Estamos analizando tus fotos.<br/>Esto puede tardar un poco.<br/>Mientras tanto, sigue organizando tus recuerdos.</>:'Actualizando Personas. Puedes seguir organizando tus recuerdos.'):
           status.phase==='ready'?'Personas está actualizada.':'Análisis pausado. Puedes reanudarlo cuando quieras.'}</p>
-        {!!status.blocked&&<p className="setting-note">{status.blocked==='thermal'?'Esperando a que el iPhone se enfríe.':'El análisis espera a que haya recursos disponibles.'}</p>}
+        {!!status.blocked&&<p className="setting-note">{status.blocked==='interrupted'?'El análisis anterior se interrumpió. Reanúdalo cuando quieras; el progreso guardado se conserva.':status.blocked==='thermal'?'Esperando a que el iPhone se enfríe.':'El análisis espera a que haya recursos disponibles.'}</p>}
       </div>
       <div className="filter-chips"><button disabled={working} onClick={()=>void run(status.running?'pause':status.phase==='ready'?'reconcile':'resume')}>{status.running?'Pausar análisis':status.phase==='ready'?'Revisar agrupaciones':'Reanudar análisis'}</button><button onClick={()=>setDeleting(true)}>Desactivar y borrar índice</button></div>
       {!initial&&!groups.length&&<p className="setting-note">Todavía no hay grupos con al menos {status.minimumPhotos??'varias'} fotos distintas. Los grupos pequeños se conservan para futuras coincidencias. Las fotos sin vista local no detienen el análisis.</p>}

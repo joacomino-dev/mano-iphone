@@ -1,8 +1,8 @@
-name: Verify CocoWash 9.7.2 development
+name: Verify CocoWash 9.7.2.1 development
 on:
   workflow_dispatch:
   push:
-    branches: [cocowash/9.7.2]
+    branches: [cocowash/9.7.2.1]
     paths: ['mano/**', '.github/workflows/build-people-dev.yml']
 permissions:
   contents: read
@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   development:
-    if: github.event.repository.private == false && github.ref == 'refs/heads/cocowash/9.7.2'
+    if: github.event.repository.private == false && github.ref == 'refs/heads/cocowash/9.7.2.1'
     # Standard public-repository runner; no large/paid runner, no deployment.
     runs-on: xcode-27
     timeout-minutes: 30
@@ -42,6 +42,8 @@ jobs:
           build/checkpoint-tests
           swiftc ios/App/App/PeopleIdentity.swift ios/App/App/PeopleGeometry.swift tests/swift-identities/main.swift -o build/identity-tests
           build/identity-tests
+          swiftc ios/App/App/DevelopmentSafety.swift tests/swift-safety/main.swift -o build/safety-tests
+          build/safety-tests
       - name: Require real public face grouping API in this SDK
         run: |
           printf '%s\n' 'import Foundation' 'import MediaIntelligence' '@available(iOS 27.0, *) func probe(_ url: URL) throws { _ = try FaceGroupAnalyzer(workingDirectory: url) }' > build/people-api.swift
@@ -52,19 +54,20 @@ jobs:
         run: |
           grep -q -e '--cw-paper-texture:url(' ios/App/App/public/assets/*.css
           xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/ios CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' build
+          /usr/libexec/PlistBuddy -c 'Add :CocoWashDevelopmentReset bool true' build/ios/Build/Products/Release-iphoneos/App.app/Info.plist
           mkdir -p build/development/Payload
           cp -R build/ios/Build/Products/Release-iphoneos/App.app build/development/Payload/Mano.app
           cd build/development
-          ditto -c -k --keepParent Payload CocoWash-9.7.2-development-unsigned.ipa
+          ditto -c -k --keepParent Payload CocoWash-9.7.2.1-development-unsigned.ipa
       - name: Record verification boundary
         run: |
           printf '%s\n' 'DEVELOPMENT ONLY. Not a published or accepted release.' 'No facial matching accuracy, physical privacy transitions, heat, or memory measurements claimed.' 'FaceGroupAnalyzer requires a supported physical iOS 27 device; Simulator does not validate recognition.' > build/development/VALIDATION.txt
           printf 'Source SHA: %s\n' "$GITHUB_SHA" >> build/development/VALIDATION.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: CocoWash-9.7.2-development
+          name: CocoWash-9.7.2.1-development
           path: |
-            mano/build/development/CocoWash-9.7.2-development-unsigned.ipa
+            mano/build/development/CocoWash-9.7.2.1-development-unsigned.ipa
             mano/build/development/VALIDATION.txt
           retention-days: 7
           if-no-files-found: error
