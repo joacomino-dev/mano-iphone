@@ -282,9 +282,9 @@ Fecha: 2026-11-05, America/Bogota
 Agente: Claude
 Tarea: prompt del usuario «build 23: diagnostica el cierre de Personas y audita las funciones nuevas».
 Estado: completada local, pendiente de prueba física e integración.
-Base Git / commit: worktree `CocoWash-b24`, rama `claude/people-crash-b24` desde `6346fa3`; entrega `016a917` (+ docs).
+Base Git / commit: worktree `CocoWash-b24`, rama `claude/people-crash-b24` desde `6346fa3`; entrega `3cd4fae` (`016a917` + número de build).
 Archivos modificados: `People.swift`, `PeopleIdentity.swift`, `PeopleTrace.swift` (nuevo), `project.pbxproj` (build 24), `PeoplePanel.tsx`, `people.ts`, `usePeople.ts`, pruebas Node/Swift, workflow, smoke de arranque.
 Cambios realizados: ver [COCOWASH_9724](../ai-handoff/COCOWASH_9724.md). Traza local por fase con memoria; MetricKit local; pausa tras cierre en cualquier fase; pausa de seguridad tras dos cierres; foto apartada tras dos cierres; freno por memoria; reconciliación sin identidades de una foto; poda acotada.
 Decisiones relevantes: causa del cierre **no confirmada** (sin `.ips`/traza). IPA sin reset de desarrollo para conservar el índice que falló. No se cambiaron resolución ni segundo plano. Propuestas visuales sin implementar.
-Validaciones: 115 Node, TypeScript, runtime 28, builds web/native-web, Sites 4; CI macOS en el informe; 22 capturas Edge con puente simulado. Pendiente: iPhone.
+Validaciones: 115 Node, TypeScript, runtime 28, builds web/native-web, Sites 4; [CI 42095345318](https://github.com/joacomino-dev/mano-iphone/actions/runs/42095345318) success (Swift, Release iPhone, smoke); IPA en Descargas; 22 capturas Edge con puente simulado. Pendiente: iPhone.
 Impacto para Codex: el motor y su ciclo de vida cambiaron dentro de la reserva de Codex por encargo directo del usuario; revisar antes de integrar.

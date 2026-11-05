@@ -12,6 +12,8 @@ diagnóstico», pausa tras cierre en cualquier fase, pausa de seguridad tras dos
 cierres, foto apartada tras dos cierres, freno por memoria y reconciliación
 sin identidades de una sola foto. IPA **sin reset** para conservar el índice que
 falló. Validación física pendiente. Propuestas visuales P1–P8 esperan revisión.
+Fuente del IPA `3cd4fae`, [CI 42095345318](https://github.com/joacomino-dev/mano-iphone/actions/runs/42095345318)
+success. IPA `C:/Users/Joaco/Downloads/CocoWash-9.7.2.4-build24-3cd4fae.ipa`.
 [Informe y recorrido](../ai-handoff/COCOWASH_9724.md). Sin merge ni Release.
 
 ## Desarrollo para pruebas: 9.7.2.3 / build 23

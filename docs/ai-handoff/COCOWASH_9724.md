@@ -36,7 +36,7 @@ Hipótesis en orden: (1) pico de memoria en `update()`/lectura de grupos con el
 sobredimensionada al terminar la pasada; (3) foto concreta que tumba la
 decodificación o el SDK. Build 24 está instrumentado para separarlas.
 
-## 2. Corrección (commit `016a917`)
+## 2. Corrección (commits `016a917`, `3cd4fae`)
 
 - `PeopleTrace.swift`: marcador de fases abiertas (archivo diminuto) + historial
   acotado (80 eventos, 12 cierres, 8 informes). Huella física y memoria libre
@@ -68,12 +68,22 @@ decodificación o el SDK. Build 24 está instrumentado para separarlas.
 | Ámbito | Resultado |
 |---|---|
 | Windows | 115 pruebas Node (+1), TypeScript, runtime 28, build web y native-web, Sites 4/4 |
-| CI macOS | ver run enlazado abajo: Swift puro (traza nueva, identidades con equivalencia), API pública, Release iPhone, smoke de arranque/reapertura |
+| CI macOS | [run 42095345318](https://github.com/joacomino-dev/mano-iphone/actions/runs/42095345318) **success**: Swift puro (traza nueva, identidades con equivalencia), API pública, Release iPhone, smoke de arranque/reapertura |
 | Edge, puente simulado | 22 capturas en `work/qa-b24/` (`mano/tests/qa-b24-capture.mjs`), 0 errores JS |
 | iPhone | **validación física pendiente** |
 
 Build 23 vs candidato en condiciones equivalentes solo es posible en iPhone: el
 simulador no ejecuta `FaceGroupAnalyzer`.
+
+## IPA
+
+Fuente `3cd4faeff82f6beec9360d66afcd635aa7a53bc3` (`016a917` + número de build:
+`configure-ios.mjs` fijaba 23; el primer run se canceló y se corrigió).
+`C:/Users/Joaco/Downloads/CocoWash-9.7.2.4-build24-3cd4fae.ipa`, 5.895.646 bytes,
+SHA-256 `91e7ca7eab2f1412688f03e425918e3eb41f35a1ef83f20f746df70104585bed`.
+Digest del artefacto de GitHub verificado. Bundle `work.joaquin.mano`, 9.7.2,
+build 24, mínimo iOS 17, arm64, **sin** `CocoWashDevelopmentReset`, marcadores
+de traza/MetricKit/diagnóstico y textura presentes. Sin firma.
 
 ## 4. Recorrido físico mínimo (usuario)
 
