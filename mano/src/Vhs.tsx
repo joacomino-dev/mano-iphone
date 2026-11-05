@@ -22,18 +22,19 @@ export function PixelText({ text, pixel, className }: { text: string; pixel: num
 export function VhsOverlay({ asset, place, settings, label = true }: { asset: Asset; place?: Place; settings: VideoMeta; label?: boolean }) {
   const host = useRef<HTMLDivElement>(null);
   const [box, setBox] = useState({ width: 280, height: 210 });
+  const layout = vhsLayout(asset, place, settings);
+  const visible = !layout.empty && settings.osd !== false;
   useLayoutEffect(() => {
     const element = host.current; if (!element) return;
     const resize = () => setBox(previous => previous.width === element.clientWidth && previous.height === element.clientHeight ? previous : { width: element.clientWidth, height: element.clientHeight });
     resize(); const observer = new ResizeObserver(resize); observer.observe(element); return () => observer.disconnect();
-  }, []);
-  const layout = vhsLayout(asset, place, settings);
+  }, [visible]);
   const placeLine = settings.location ? placeLabel(place, true, 22) : undefined;
   // Parents re-render on every drag frame; measure the type only when it changes.
   const linesKey = layout.lines.join('|'), rightKey = layout.right.join('|');
   const scale = OSD_SCALE[settings.osdSize] ?? OSD_SCALE.m;
   const fit = useMemo(() => fitOsd(layout.lines, layout.right, box, placeLine, scale), [linesKey, rightKey, box, placeLine, scale]);
-  if (layout.empty || settings.osd === false) return null;
+  if (!visible) return null;
   const spoken = [...layout.lines, layout.duration ? `duración ${layout.duration}` : '', layout.size ? `pesa ${layout.size.replace('KB', 'kilobytes').replace('MB', 'megabytes').replace('GB', 'gigabytes')}` : ''].filter(Boolean).join(', ');
   return <div ref={host} className="vhs-osd" style={{ '--px': `${fit.pixel}px`, '--vhs-pad': `${fit.pad}px` } as CSSProperties} role={label ? 'img' : undefined} aria-label={label ? spoken : undefined} aria-hidden={label ? undefined : true}>
     <div className="vhs-band">

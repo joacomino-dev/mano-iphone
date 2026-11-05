@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type CSSProperties, type MutableRefObject, type ReactNode, type SyntheticEvent } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type MutableRefObject, type ReactNode, type SyntheticEvent } from 'react';
+import { useIsPresent, AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { PlayIcon, PauseIcon, CornersOutIcon, ArrowClockwiseIcon, GearSixIcon, SpeakerHighIcon, SpeakerSlashIcon, CloudArrowDownIcon, EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
 import type { Asset } from './domain';
 import type { Place } from './library';
@@ -34,9 +34,8 @@ const useDocumentVisible = () => {
 
 /** One video, two modes.
  * - card: plays by itself, muted and looping, only while it is the card on top
- *   and nothing covers it. No timeline or controls: the card keeps every photo
- *   gesture (swipes, hold, tap). If iOS refuses to start, or Reduce Motion asks
- *   for no autoplay, one explicit «Reproducir» chip appears instead.
+ *   and nothing covers it. The card keeps its swipe, hold and tap gestures.
+ *   A real playback refusal offers a retry.
  * - full: the anchored view opened on purpose — sound, timeline and fullscreen.
  * - peek: the held (not yet anchored) view — plays on, muted like the card, with
  *   nothing over it; anchoring turns the same element into `full`, so it never
@@ -53,6 +52,7 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
 }) {
   const player = useRef<HTMLVideoElement>(null);
   const reduced = useReducedMotion();
+  const present = useIsPresent();
   const visible = useDocumentVisible();
   const full = mode === 'full', card = mode === 'card';
   const key = headKey(asset);
@@ -65,9 +65,8 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
   const [frame, setFrame] = useState(false);
   const [time, setTime] = useState(0);
   const [length, setLength] = useState(asset.duration || 0);
-  const [muted, setMuted] = useState(!(full && sound));
+  const [muted, setMuted] = useState(!sound);
   const [blocked, setBlocked] = useState(false);
-  const [chosen, setChosen] = useState(false);
   const [playError, setPlayError] = useState(false);
   const [fetching, setFetching] = useState(false);
   const url = state.status === 'ready' ? state.url : undefined;
@@ -75,8 +74,8 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
   // Release decoder/network resources when the card changes or unmounts. The
   // source is (re)assigned here too: a remount reuses the element whose src the
   // previous cleanup removed, and React would not set an unchanged prop again.
-  useEffect(() => {
-    setPlaying(false); setFrame(false); setTime(0); setPlayError(false); setBlocked(false); setChosen(false);
+  useLayoutEffect(() => {
+    setPlaying(false); setFrame(false); setTime(0); setPlayError(false); setBlocked(false);
     setUserPaused(playheads.get(key)?.paused ?? false);
     if (url) setFetching(false);
     const video = player.current;
@@ -84,34 +83,33 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
     return () => { if (video) { if (video.currentTime > 0) remember(key, video.currentTime, pausedRef.current); video.pause(); video.removeAttribute('src'); video.load(); } };
   }, [asset.id, url]);
 
+  const playAttempt = useRef(0);
   const start = (withSound: boolean) => {
-    const video = player.current; if (!video) return;
+    const video = player.current; if (!video || !active || !visible || !present) return;
+    const attempt = ++playAttempt.current;
     setPlayError(false);
     if (video.ended) video.currentTime = 0;
     video.muted = !withSound; setMuted(!withSound);
-    // A play() interrupted by a load, pause or seek (AbortError, frequent on iOS
-    // while the element is attached or re-sourced) is not a refusal: `canplay`
-    // tries again. Only a real refusal shows «Toca para reproducir» (0.9.4 showed
-    // it for interruptions too, so cards stopped playing by themselves).
-    void video.play().then(() => setBlocked(false)).catch((e: unknown) => {
-      if (interrupted(e)) return;
+    // Source changes can interrupt play(); canplay will retry the current resource.
+    void video.play().then(() => { if (attempt === playAttempt.current) setBlocked(false); }).catch((e: unknown) => {
+      if (attempt !== playAttempt.current || interrupted(e)) return;
       // Sound refused: retry silent once; silent refused: show the chip.
-      if (withSound) { video.muted = true; setMuted(true); void video.play().catch(err => { if (!interrupted(err)) setBlocked(true); }); }
+      if (withSound) { video.muted = true; setMuted(true); void video.play().catch(err => { if (attempt === playAttempt.current && !interrupted(err)) setBlocked(true); }); }
       else setBlocked(true);
     });
   };
-  // Card: play while on top and uncovered; Reduce Motion waits for a tap.
-  const wantsPlay = !!url && visible && active && !userPaused && (full || !reduced || chosen);
-  useEffect(() => {
+  // Only the visible surface owns playback, including during exit animations.
+  const wantsPlay = !!url && visible && active && present && !userPaused;
+  useLayoutEffect(() => {
     const video = player.current; if (!video || !url) return;
     if (wantsPlay) {
       // Coming back from another view of this video: continue where it was, and
       // keep a pause the person made there.
       const head = playheads.get(key);
-      if (head?.paused) { setUserPaused(true); return; }
       if (head && video.readyState >= 1 && Math.abs(video.currentTime - head.time) > .25 && head.time < (video.duration || Infinity) - .25) video.currentTime = head.time;
       start(sound);
-    } else if (!video.paused) video.pause();
+    } else { ++playAttempt.current; video.pause(); }
+    return () => { ++playAttempt.current; video.pause(); };
     // Sound follows the person's choice in every view: anchoring keeps it as it was.
   }, [wantsPlay, url, sound, full]);
   // Quick tap on the card: pause or play, with a short glyph and a tick.
@@ -120,14 +118,20 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
   const toggle = () => {
     const video = player.current; if (!video || !url) return;
     haptic('selection');
-    if (!video.paused) { video.pause(); setUserPaused(true); remember(key, video.currentTime, true); showGlyph('pause'); }
-    else { setUserPaused(false); setChosen(true); remember(key, video.currentTime, false); start(sound); showGlyph('play'); }
+    if (!video.paused) { pause(); showGlyph('pause'); }
+    else { choose(); showGlyph('play'); }
   };
   useEffect(() => { if (!control || !card) return; const own = { toggle }; control.current = own; return () => { if (control.current === own) control.current = null; }; });
 
-  const choose = () => { haptic('light'); setChosen(true); setUserPaused(false); start(sound); };
-  const pause = () => { player.current?.pause(); setUserPaused(true); haptic('soft'); };
-  const toggleSound = () => { const video = player.current; if (!video) return; video.muted = !video.muted; setMuted(video.muted); haptic('selection'); };
+  const choose = () => { const video = player.current; if (!video) return; haptic('light'); remember(key, video.currentTime, false); pausedRef.current = false; setUserPaused(false); start(sound); };
+  const pause = () => { const video = player.current; if (!video) return; ++playAttempt.current; remember(key, video.currentTime, true); pausedRef.current = true; video.pause(); setUserPaused(true); haptic('soft'); };
+  const toggleSound = () => {
+    const next = !sound;
+    if (url && !userPaused) start(next);
+    else setMuted(!next);
+    onSound?.();
+    haptic('selection');
+  };
   const enterFullscreen = () => {
     const video = player.current as (HTMLVideoElement & { webkitEnterFullscreen?: () => void; webkitSupportsFullscreen?: boolean }) | null;
     haptic('light');
@@ -146,7 +150,7 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
   const progress = state.status === 'loading' ? state.progress : 0;
   const percent = Math.round(progress * 100);
   const shown = playing || (frame && time > 0);
-  const chip = !failure && !loading && !playing && (blocked || (!full && reduced && !chosen));
+  const chip = !failure && !loading && !playing && blocked;
 
   return <div className={`inline-media ${shown ? 'is-started' : ''} ${playing ? 'is-playing' : ''} ${frame ? 'has-frame' : ''}`}>
     {children}
@@ -164,7 +168,7 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
     {card && (onSound || onOsd) && <div className="video-toggles">
       {/* The icon follows what really plays: iOS may refuse sound and fall back
           to silent. A tap asks for the opposite inside the gesture itself. */}
-      {onSound && <button onPointerDown={stop} onClick={e => { e.stopPropagation(); haptic('selection'); if (url) start(muted); if (muted !== sound) onSound(); }} aria-pressed={!muted} aria-label={muted ? 'Activar sonido' : 'Silenciar'}>{muted ? <SpeakerSlashIcon size={18} weight="bold"/> : <SpeakerHighIcon size={18} weight="bold"/>}</button>}
+      {onSound && <button onPointerDown={stop} onClick={e => { e.stopPropagation(); toggleSound(); }} aria-pressed={!muted} aria-label={muted ? 'Activar sonido' : 'Silenciar'}>{muted ? <SpeakerSlashIcon size={18} weight="bold"/> : <SpeakerHighIcon size={18} weight="bold"/>}</button>}
       {onOsd && <button onPointerDown={stop} onClick={e => { e.stopPropagation(); haptic('selection'); onOsd(); }} aria-pressed={meta?.osd !== false} aria-label={meta?.osd !== false ? 'Ocultar letras VHS' : 'Mostrar letras VHS'}>{meta?.osd !== false ? <EyeIcon size={18} weight="bold"/> : <EyeSlashIcon size={18} weight="bold"/>}</button>}
     </div>}
 
@@ -177,7 +181,7 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
         transition={{ type: 'spring', stiffness: 460, damping: 34 }}>
         {loading ? <Deferred><span className="video-preparing" role="status"><CocoLoader progress={progress} size={56} label={fetching ? `Descargando de iCloud, ${percent} %` : percent ? `Preparando vídeo, ${percent} %` : 'Preparando vídeo'}/>
           <span>{fetching ? `Descargando de iCloud… ${percent} %` : percent ? `Preparando… ${percent} %` : 'Preparando vídeo…'}</span></span></Deferred>
-          : <button className="video-chip" onClick={choose} aria-label={`${blocked ? 'Toca para reproducir' : 'Reproducir'} vídeo de ${clock(length)}`}><PlayIcon weight="fill" size={18}/>{blocked ? 'Toca para reproducir' : 'Reproducir'}</button>}
+          : <button className="video-chip" onClick={choose} aria-label={`Reintentar reproducción de vídeo de ${clock(length)}`}><PlayIcon weight="fill" size={18}/>Reintentar reproducción</button>}
       </motion.div>}
     </AnimatePresence>
 

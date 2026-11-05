@@ -312,7 +312,7 @@
 .geek-access>svg{position:relative}
 .photo-card:not(.front){pointer-events:none}
 /* Selected: a white frame (selection is neither a decision nor a favourite). */
-.photo-card.picked:before{content:"";position:absolute;inset:-6px;border:3px solid var(--cw-select);border-radius:7px;pointer-events:none}
+.photo-card.picked:before{content:"";position:absolute;inset:0;border:3px solid var(--cw-select);border-radius:inherit;z-index:5;pointer-events:none}
 .photo-window{width:100%;height:100%;min-height:0;overflow:hidden;display:flex;align-items:center;justify-content:center;background:transparent;border-radius:1px}
 .photo-window img{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none}
 .photo-loading{height:100%;width:100%;display:flex;gap:var(--cw-space-2);flex-direction:column;align-items:center;justify-content:center;background:var(--cw-track);color:var(--cw-on-bg-soft);font-size:var(--cw-text-sm)}
@@ -360,7 +360,7 @@
 .decision-stamp{position:absolute;z-index:35;inset:0;margin:auto;width:204px;height:fit-content;pointer-events:none;--stamp-fill:rgba(250,246,238,.94);filter:drop-shadow(0 4px 10px rgba(6,29,32,.3))}
 
 /* Group of similar photos */
-.bundle-arrival{position:absolute;top:0;left:0;right:0;margin-inline:auto;width:fit-content;z-index:40;display:flex;align-items:center;gap:var(--cw-icon-gap);height:28px;padding:0 var(--cw-space-3);white-space:nowrap;
+.bundle-arrival{position:absolute;top:0;left:0;right:0;margin-inline:auto;width:112px;justify-content:center;z-index:40;display:flex;align-items:center;gap:var(--cw-icon-gap);height:28px;padding:0 var(--cw-space-3);white-space:nowrap;
   color:var(--cw-ink);background:var(--cw-surface);border:1px solid var(--cw-line-on-bg);border-radius:var(--cw-radius-pill);font:600 .8125rem/1 var(--cw-font);pointer-events:none;transition:opacity var(--cw-base) var(--cw-ease)}
 .bundle-controls{display:flex;flex-shrink:0;justify-content:center;min-height:0}
 .bundle-controls:has(button){min-height:var(--cw-touch);margin-top:var(--cw-space-2)}
@@ -368,7 +368,6 @@
 .segmented button{display:flex;align-items:center;gap:6px;min-height:var(--cw-touch);padding:0 var(--cw-space-4);border:0;background:transparent;color:var(--cw-on-bg);font:600 .875rem/1 var(--cw-font)}
 .segmented button+button{border-left:1px solid var(--cw-line-on-bg)}
 .mano-app .segmented button:not(:disabled):active{transform:none;background:var(--cw-press)}
-.selection-caption{flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:var(--cw-space-1);min-height:var(--cw-space-6);font:600 var(--cw-text-sm)/1 var(--cw-font);color:var(--cw-on-bg)}
 /* With no card on the table, decisions have nothing to act on; keep the space, drop the noise. */
 .mano-app:has(.empty-state) :is(.decision-bar,.archive-tools button:disabled){visibility:hidden}
 
@@ -911,6 +910,11 @@
 .person-crop img{display:block;width:100%;height:100%;object-fit:cover}
 .person-crop-pending{display:block;width:100%;height:100%;background:var(--cw-line)}
 .person-crop-covered{grid-column:1/-1;grid-row:1/3;display:grid;place-items:center;background:var(--cw-cream);font-size:12px}
-.people-analysis{text-align:center;padding:16px 0}.people-analysis>svg{margin:auto}
+.people-analysis{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start;padding:16px 0}
+.people-mascot{object-fit:contain}
+.people-analysis progress{display:block;width:100%;accent-color:var(--cw-turquoise)}
+.card-share{position:absolute;bottom:var(--cw-caption);left:var(--cw-space-2);z-index:6;width:var(--cw-touch);height:var(--cw-touch);display:grid;place-items:center;border:0;border-radius:50%;background:rgba(15,38,39,.82);color:white}
+.photo-card.tape .card-share,.photo-card:has(.media-play) .card-share{top:var(--cw-space-2);bottom:auto}
+.card-share[aria-disabled=true]{opacity:.6}
 .breakup-mark{position:absolute;right:12px;top:12px;background:var(--cw-cream);border-radius:50%;display:grid;place-items:center;width:25px;height:25px;color:var(--cw-heart-deep);pointer-events:none;z-index:3}
 #people-view-heading{outline:none}

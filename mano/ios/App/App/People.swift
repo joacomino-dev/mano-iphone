@@ -55,7 +55,16 @@ public class PeoplePlugin: CAPPlugin, CAPBridgedPlugin, PHPhotoLibraryChangeObse
         #if canImport(MediaIntelligence) && !targetEnvironment(simulator)
         if #available(iOS 27.0, *) {
             Task(priority: call.getString("action") == "redact" || call.getString("action") == "portrait" ? .userInitiated : .utility) {
-                do { call.resolve(try await PeopleIndex.shared.command(call)) }
+                do {
+                    let result = try await PeopleIndex.shared.command(call)
+                    if call.getString("action") == "shareRedacted", let path = result["path"] as? String {
+                        let file = URL(fileURLWithPath: path)
+                        defer { try? FileManager.default.removeItem(at: file) }
+                        let controller = await MainActor.run { self.bridge?.viewController }
+                        try await PhotoLibraryPlugin.presentShare(file, from: controller)
+                        call.resolve()
+                    } else { call.resolve(result) }
+                }
                 catch { call.reject("No se pudo completar Personas. Puedes reintentar o eliminar el índice local.", "PEOPLE_UNAVAILABLE") }
             }
             return
@@ -214,7 +223,6 @@ private actor PeopleIndex {
         // SDK cleanup is deferred to the scanning task, never status/startup.
         if !obsolete.isEmpty || !pending.isEmpty { modelNeedsPrune = true }
         for id in obsolete { store.entries.removeValue(forKey:id); dirtyEntries.insert(id) }
-        modelNeedsPrune = true
         assets = current; total = current.count; deferred = []
         pending = current.keys.filter { store.entries[$0] == nil }.sorted(by: >)
         store.pendingCorrections = store.pendingCorrections.filter { current[$0.key] != nil }
@@ -281,16 +289,24 @@ private actor PeopleIndex {
         guard blocked.isEmpty else { return }
         scanning = true; defer { scanning = false; if !PeopleActivityGate.shared.active { analyzer = nil; reconciler = nil } }
         let token = generation
+        let started = ProcessInfo.processInfo.systemUptime
+        NSLog("COCOWASH_PEOPLE batch start phase=%@ generation=%d", phase, token)
+        defer { NSLog("COCOWASH_PEOPLE batch ended generation=%d seconds=%.2f cancelled=%@", token, ProcessInfo.processInfo.systemUptime - started, String(Task.isCancelled)) }
         let lifecycle=PeopleActivityGate.shared.epoch
         guard permitted(lifecycle) else { return }
         if modelNeedsPrune {
+            NSLog("COCOWASH_PEOPLE prune start generation=%d", token)
             let engine=try primary(); var removed: [MediaIntelligenceImageAsset.ID] = []
             for try await id in engine.allAssetIDs { guard running,token == generation,permitted(lifecycle) else { return }; if assets[id.rawValue] == nil { removed.append(id) } }
             guard running,token == generation,permitted(lifecycle) else { return }
             if !removed.isEmpty { try await engine.deleteAssets(removed) }
             guard running,token == generation,permitted(lifecycle) else { return }; modelNeedsPrune = false
         }
-        if phase == "reconciling" { try await reconcileStep(token:token); return }
+        if phase == "reconciling" {
+            NSLog("COCOWASH_PEOPLE reconcile start generation=%d", token)
+            try await reconcileStep(token:token); return
+        }
+        NSLog("COCOWASH_PEOPLE insert start generation=%d", token)
         let analyzer = try primary()
         // One in-flight image; batches of four bound work and checkpoint latency.
         for _ in 0..<PeoplePolicy.batch {
@@ -298,8 +314,10 @@ private actor PeopleIndex {
             let id = pending.removeLast()
             defer { if store.entries[id] == nil && assets[id] != nil && !deferred.contains(id) && !pending.contains(id) { pending.append(id) } }
             guard let asset = assets[id] else { continue }
-            guard accessible(id,signature:signature(asset)) != nil, let source = await image(asset, size: PeoplePolicy.indexPixels, tracked: true), accessible(id,signature:signature(asset)) != nil else { deferred.insert(id); continue }
-            guard running, token == generation, permitted(lifecycle) else { pending.append(id); break }
+            guard accessible(id, signature: signature(asset)) != nil else { deferred.insert(id); continue }
+            let source = await image(asset, size: PeoplePolicy.indexPixels, tracked: true)
+            guard running, token == generation, permitted(lifecycle) else { break }
+            guard let source, accessible(id, signature: signature(asset)) != nil else { deferred.insert(id); continue }
             let file = folder.appendingPathComponent("input-\(UUID().uuidString).jpg")
             defer { try? FileManager.default.removeItem(at: file) }
             guard let data = autoreleasepool(invoking: { upright(source).jpegData(compressionQuality: 0.9) }) else { deferred.insert(id); continue }
@@ -312,8 +330,10 @@ private actor PeopleIndex {
         }
         guard running, token == generation, PeopleActivityGate.shared.active, !Task.isCancelled, !CocoMediaPressure.busy else { try save(); return }
         if sinceGrouping < 64 && !pending.isEmpty && !store.entities.isEmpty { try save(); return }
+        NSLog("COCOWASH_PEOPLE group start generation=%d", token)
         if await analyzer.state == .stale { guard running,token == generation,PeopleActivityGate.shared.active,!Task.isCancelled else { return }; try await analyzer.update() }
         guard running, token == generation else { return }
+        NSLog("COCOWASH_PEOPLE read start generation=%d", token)
         try await readPrimary(token:token)
         if pending.isEmpty { phase = "reconciling"; reconcileSamples = []; reconcileQueue = [] }
         try save()
@@ -575,9 +595,25 @@ private actor PeopleIndex {
             try Data("pending".utf8).write(to:folder.appendingPathComponent("analysis-inflight"),options:[.atomic,.completeFileProtection])
             let task = Task(priority:.utility) { try await self.scan() }; work = task
             defer { work = nil; try? FileManager.default.removeItem(at:folder.appendingPathComponent("analysis-inflight")) }
-            do { try await task.value } catch { if running && !task.isCancelled { running = false; store.wantsAnalysis = false; metadataDirty = true; try? save(); throw error } }
+            do { try await task.value } catch {
+                NSLog("COCOWASH_PEOPLE batch failed generation=%d", generation)
+                if running && !task.isCancelled {
+                    running = false; store.wantsAnalysis = false; metadataDirty = true; try? save()
+                    throw error
+                }
+            }
         }
-        if action == "redact" { return try await redact(id: call.getString("id") ?? "", person: call.getString("person") ?? "", size: min(3072,max(256,call.getInt("size") ?? 1400)), style:call.getString("style") == "eyes" ? "eyes" : "oval",refresh:call.getBool("refresh") == true) }
+        if action == "redact" || action == "shareRedacted" {
+            let sharing = action == "shareRedacted"
+            let result = try await redact(id: call.getString("id") ?? "", person: call.getString("person") ?? "",
+                size: sharing ? 3072 : min(3072, max(256, call.getInt("size") ?? 1400)),
+                style: call.getString("style") == "eyes" ? "eyes" : "oval", refresh: call.getBool("refresh") == true)
+            guard sharing else { return result }
+            guard let path = result["path"] as? String else { throw Failure.stale }
+            let file = FileManager.default.temporaryDirectory.appendingPathComponent("CocoWash-\(UUID().uuidString).jpg")
+            try FileManager.default.copyItem(at: URL(fileURLWithPath: path), to: file)
+            return ["path": file.path]
+        }
         if action == "portrait" { return try await portrait(id:call.getString("face") ?? "",person:call.getString("person") ?? "") }
         if action == "person" {
             let person = store.graph.canonical(call.getString("person") ?? "")

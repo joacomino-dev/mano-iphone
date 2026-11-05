@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { UsersIcon } from '@phosphor-icons/react';
+import { Character } from './Characters';
 import { PersonMosaic } from './PersonMosaic';
-import { CocoLoader } from './Loader';
 import { canonicalPerson } from './people';
 import { KeyboardInput, useKeyboard } from './mobile';
 import { thumbnailInfo, isNative } from './library';
@@ -57,11 +57,23 @@ export function PeoplePanel({ status, error, assets, draft, change, action, call
       <label className="switch-field"><span>Permitir el análisis facial local<small>Solo fotos accesibles. No se descargan originales de iCloud ni se analizan vídeos.</small></span><input type="checkbox" checked={consenting} onChange={e => setConsenting(e.target.checked)}/></label>
       <button className="sheet-action secondary" disabled={!consenting || working} onClick={() => void run('consent')}>Activar Personas</button>
     </> : <>
-      <div className="people-analysis" role="status">
-        {initial&&status.running&&<CocoLoader size={34}/>}
-        <p>{status.running?(initial?<>Estamos analizando tus fotos.<br/>Esto puede tardar un poco.<br/>Mientras tanto, sigue organizando tus recuerdos.</>:'Actualizando Personas. Puedes seguir organizando tus recuerdos.'):
-          status.phase==='ready'?'Personas está actualizada.':'Análisis pausado. Puedes reanudarlo cuando quieras.'}</p>
-        {!!status.blocked&&<p className="setting-note">{status.blocked==='interrupted'?'El análisis anterior se interrumpió. Reanúdalo cuando quieras; el progreso guardado se conserva.':status.blocked==='thermal'?'Esperando a que el iPhone se enfríe.':'El análisis espera a que haya recursos disponibles.'}</p>}
+      <div className="people-analysis">
+        <Character className="people-mascot" pose="coqui-photos" height={56} motion="still"/>
+        <div>
+          <p role="status"><strong>{error ? 'El análisis necesita un nuevo intento' :
+            status.phase === 'ready' ? 'Personas está actualizada' :
+            !status.running ? 'Análisis pausado' :
+            status.blocked ? 'Análisis en espera' :
+            status.phase === 'reconciling' ? 'Organizando los grupos…' : 'Buscando caras conocidas'}</strong></p>
+          {status.running && <p>Puedes seguir organizando tus fotos mientras tanto.</p>}
+          {status.running && !status.total && status.phase !== 'reconciling' && <progress aria-label="Preparando el análisis"/>}
+          {status.total > 0 && <>
+            <progress aria-label="Fotos revisadas" value={status.processed} max={status.total}/>
+            <p>{status.processed.toLocaleString('es-EC')} de {status.total.toLocaleString('es-EC')} fotos revisadas</p>
+          </>}
+          {status.waiting > 0 && <p className="setting-note">{status.waiting} sin vista local</p>}
+          {!!status.blocked && <p className="setting-note">{status.blocked === 'interrupted' ? 'El progreso guardado se conserva. Puedes reanudar el análisis.' : status.blocked === 'thermal' ? 'Esperando a que el iPhone se enfríe.' : status.blocked === 'permission' ? 'CocoWash necesita acceso a Fotos.' : 'El análisis seguirá cuando haya recursos disponibles.'}</p>}
+        </div>
       </div>
       <div className="filter-chips"><button disabled={working} onClick={()=>void run(status.running?'pause':status.phase==='ready'?'reconcile':'resume')}>{status.running?'Pausar análisis':status.phase==='ready'?'Revisar agrupaciones':'Reanudar análisis'}</button><button onClick={()=>setDeleting(true)}>Desactivar y borrar índice</button></div>
       {!initial&&!groups.length&&<p className="setting-note">Todavía no hay grupos con al menos {status.minimumPhotos??'varias'} fotos distintas. Los grupos pequeños se conservan para futuras coincidencias. Las fotos sin vista local no detienen el análisis.</p>}

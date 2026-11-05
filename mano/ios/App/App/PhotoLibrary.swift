@@ -10,6 +10,7 @@ import WebKit
 import CryptoKit
 import ImageIO
 import CoreLocation
+import UniformTypeIdentifiers
 
 /// App-owned cache folder for prepared review videos (never Photos originals).
 let preparedVideoFolder = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
@@ -22,6 +23,7 @@ class ManoBridgeController: CAPBridgeViewController {
         let configuration = super.webViewConfiguration(for: instanceConfiguration)
         // Capacitor's file handler answers a <video> "bytes=0-" request by reading the
         // whole file into memory on the main thread. Prepared videos stream instead.
+        configuration.mediaTypesRequiringUserActionForPlayback = []
         configuration.setURLSchemeHandler(mediaStream, forURLScheme: PreparedVideoStreamHandler.scheme)
         return configuration
     }
@@ -127,6 +129,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "favorite", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "deleteAssets", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "preview", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "share", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "prepareVideo", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "cancelVideoPreparation", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "releasePreparedVideos", returnType: CAPPluginReturnPromise),
@@ -207,6 +210,52 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
     private func allowed(_ call: CAPPluginCall) -> Bool {
         guard ["authorized", "limited"].contains(status) else { call.reject("Permite acceso a Fotos en Ajustes."); return false }; return true
     }
+    @MainActor static func presentShare(_ file: URL, from controller: UIViewController?) async throws {
+        guard let controller, controller.viewIfLoaded?.window != nil,
+              controller.presentedViewController == nil,
+              UIApplication.shared.applicationState == .active else {
+            throw CocoaError(.userCancelled)
+        }
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            let sheet = UIActivityViewController(activityItems: [file], applicationActivities: nil)
+            sheet.popoverPresentationController?.sourceView = controller.view
+            sheet.popoverPresentationController?.sourceRect = CGRect(x: controller.view.bounds.midX, y: controller.view.bounds.midY, width: 1, height: 1)
+            sheet.completionWithItemsHandler = { _, _, _, error in
+                if let error { continuation.resume(throwing: error) }
+                else { continuation.resume() }
+            }
+            controller.present(sheet, animated: true)
+        }
+    }
+
+    @objc func share(_ call: CAPPluginCall) {
+        guard let item = asset(call) else { call.reject("La foto o el vídeo ya no está disponible."); return }
+        let resources = PHAssetResource.assetResources(for: item)
+        let kinds: [PHAssetResourceType] = item.mediaType == .video ? [.fullSizeVideo, .video] : [.fullSizePhoto, .photo]
+        guard let resource = kinds.lazy.compactMap({ kind in resources.first { $0.type == kind } }).first else {
+            call.reject("No se encontró un archivo para compartir."); return
+        }
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let ext = UTType(resource.uniformTypeIdentifier)?.preferredFilenameExtension ?? (item.mediaType == .video ? "mov" : "jpg")
+        let file = folder.appendingPathComponent("CocoWash").appendingPathExtension(ext)
+        do { try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true) }
+        catch { call.reject("No se pudo preparar el archivo."); return }
+        let options = PHAssetResourceRequestOptions()
+        options.isNetworkAccessAllowed = true
+        CocoMediaPressure.change(1)
+        PHAssetResourceManager.default().writeData(for: resource, toFile: file, options: options) { error in
+            CocoMediaPressure.change(-1)
+            Task { @MainActor in
+                defer { try? FileManager.default.removeItem(at: folder) }
+                do {
+                    if let error { throw error }
+                    try await Self.presentShare(file, from: self.bridge?.viewController)
+                    call.resolve()
+                } catch { call.reject("No se pudo compartir el archivo. Comprueba la conexión e inténtalo de nuevo.") }
+            }
+        }
+    }
+
     private func asset(_ call: CAPPluginCall) -> PHAsset? {
         guard let id = call.getString("id"), let item = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil).firstObject else { call.reject("Este elemento ya no está disponible en Fotos."); return nil }; return item
     }

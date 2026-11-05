@@ -26,6 +26,7 @@ type LibraryPlugin = {
   favorite(options: { ids: string[]; value: boolean; ignoreMissing?: boolean }): Promise<{ missing: string[] }>;
   deleteAssets(options: { ids: string[] }): Promise<{ deleted: string[] }>;
   preview(options: { id: string }): Promise<void>;
+  share(options: { id: string }): Promise<void>;
   prepareVideo(options: { id: string; requestId: string; network?: boolean }): Promise<{path:string; url?:string; mimeType:string; cached:boolean; bytes:number}>;
   cancelVideoPreparation(options: { requestId: string }): Promise<{cancelled:boolean}>;
   cancelThumbnailPreparation(options: { requestId: string }): Promise<{cancelled:boolean}>;

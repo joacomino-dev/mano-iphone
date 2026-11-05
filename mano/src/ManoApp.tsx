@@ -1,13 +1,14 @@
+import { protectedMode } from './people';
 import { usePeople } from './usePeople';
 import { BreakupSettings } from './BreakupSettings';
 import { clearPortraits } from './PersonMosaic';
 import { PeoplePanel } from './PeoplePanel';
-import { PeopleProtection, PeopleImage, usePeopleProtection, clearPeoplePreviews, prefetchCensored } from './PeopleMedia';
+import { PeopleProtection, PeopleImage, usePeopleImage, usePeopleProtection, clearPeoplePreviews, prefetchCensored } from './PeopleMedia';
 import { FinishButton } from './FinishButton';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type PointerEvent, type MouseEvent } from 'react';
 import { AnimatePresence, motion, useReducedMotion, useMotionValue, useTransform, animate, type MotionValue } from 'motion/react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { HeartBreakIcon, UsersIcon, FolderOpenIcon, FolderSimplePlusIcon, CaretRightIcon, ArrowCounterClockwiseIcon, ArrowUUpLeftIcon, StackIcon, TrashIcon, CheckIcon, XIcon, PlayIcon, SlidersHorizontalIcon, ArrowClockwiseIcon, ImageBrokenIcon, PlusIcon, PushPinIcon, InfoIcon, CloudIcon, CloudArrowDownIcon, SparkleIcon } from '@phosphor-icons/react';
+import { ExportIcon, HeartBreakIcon, UsersIcon, FolderOpenIcon, FolderSimplePlusIcon, CaretRightIcon, ArrowCounterClockwiseIcon, ArrowUUpLeftIcon, StackIcon, TrashIcon, CheckIcon, XIcon, PlayIcon, SlidersHorizontalIcon, ArrowClockwiseIcon, ImageBrokenIcon, PlusIcon, PushPinIcon, InfoIcon, CloudIcon, CloudArrowDownIcon, SparkleIcon } from '@phosphor-icons/react';
 import { BottomSheet, KeyboardInput, useKeyboard } from './mobile';
 import { ReviewGrid } from './ReviewGrid';
 import { decide, undo, restore, forgetPeople, withoutPeople, eligible, eligibleFrom, orderAssets, readState, reconcileLibrary, libraryFingerprint, filterScope, LEVELS, initialFilter, initialState, type Action, type Asset, type Decision, type Filter, type RecordState } from './domain';
@@ -117,6 +118,16 @@ function PolaroidCaption({ asset, settings, place, pending }: { asset: Asset; se
 /** Kept before: the turquoise seal carries its level (times kept) as a numeral.
  * Stamped across the card's lower-right edge, off the subject; a tap hides all
  * seals (Ajustes › Sellos brings them back). */
+function CardShare({ asset, sharing, share }: { asset: Asset; sharing: boolean; share: (asset: Asset) => Promise<void> }) {
+  const preview = usePeopleImage(asset);
+  const waiting = preview.protectedPhoto && !preview.src;
+  return <button className="card-share" aria-label={sharing ? 'Preparando archivo para compartir' : waiting ? 'Compartir cuando la foto esté censurada' : 'Compartir'}
+    aria-disabled={waiting || sharing} onPointerDown={e => e.stopPropagation()} onClick={e => {
+      e.stopPropagation();
+      if (!waiting && !sharing) void share(asset);
+    }}>{sharing ? <CocoLoader size={20}/> : <ExportIcon size={20} weight="bold"/>}</button>;
+}
+
 function Seal({ level, hide }: { level: number; hide: () => void }) {
   return <button className="seal" aria-label={`Conservada, sello ${ROMAN[level-1]} de ${LEVELS.length}. Ocultar los sellos`} onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();hide();}}><Stamp kind="keep" level={level}/></button>;
 }
@@ -401,7 +412,7 @@ export function ManoApp() {
     if(loading||warming)return;
     let available=connected?assets:await connect();if(available===false)return;available=enrich(available,index);
     const record=connected?state:reconcileLibrary(state,available);
-    const number=++sessionNumber.current;if(!sessionOpen){seed.current=Math.floor(Math.random()*100000);setSeedVersion(v=>v+1);setLock(NO_HAND);setSelected([]);setState(s=>({...s,history:[]}));setStats(EMPTY_STATS);}setShowDone(false);
+    const number=++sessionNumber.current;if(!sessionOpen){setVideoSound(false);seed.current=Math.floor(Math.random()*100000);setSeedVersion(v=>v+1);setLock(NO_HAND);setSelected([]);setState(s=>({...s,history:[]}));setStats(EMPTY_STATS);}setShowDone(false);
     warmingNow.current=true;setWarming(true);setError('');setNotice('');
     // The similar-photo search keeps running (utility priority natively): stopping
     // it here threw away its work and restarted it from zero after every warm-up.
@@ -424,6 +435,24 @@ export function ManoApp() {
    * undoable history entry, stats, and the move to the next card. */
   const SPOKEN={keep:'Conservada',discard:'Para eliminar; se borra solo al confirmar',favorite:'Favorita',later:'Para más tarde: vuelve al final',unfavorite:'Quitada de Favoritas: vuelve a la pila'} as const;
   const [videoSound,setVideoSound]=useState(false);
+  const shareBusy=useRef(false);
+  const [sharing,setSharing]=useState(false);
+  const shareActive=async (asset:Asset)=>{
+    if(shareBusy.current)return;
+    const {person,breakup,censorStyle}=filter;
+    shareBusy.current=true;setSharing(true);setSpoken('Preparando archivo para compartir');
+    try {
+      if(protectedMode(person,breakup)){
+        await people.call('shareRedacted',{id:asset.id,person,style:censorStyle});
+      } else {
+        await Library.share({id:asset.id});
+      }
+    } catch {
+      setNotice(protectedMode(person,breakup)
+        ? 'No se pudo preparar la foto censurada. Vuelve a intentarlo.'
+        : 'No se pudo compartir el archivo. Comprueba la conexión e inténtalo de nuevo.');
+    } finally { shareBusy.current=false;setSharing(false); }
+  };
   // The front video card: a quick tap pauses/plays it; holding it hands its frame to the held view.
   const videoControl=useRef<VideoControl|null>(null);const heldVideo=useRef<HTMLVideoElement|null>(null);
   const hideSeals=()=>{setDisplay(d=>({...d,photo:{...d.photo,seal:false}}));haptic('selection');setNotice('Sellos ocultos\nVuelven en Ajustes');};
@@ -592,7 +621,7 @@ export function ManoApp() {
     <div className="archive-progress">{limited&&<button className="access-indicator" onClick={()=>void manageLimited()}><InfoIcon size={14} weight="bold"/>Acceso limitado</button>}<PileProgress reviewed={scope.reviewed} total={scope.total} count={<><AnimatedNumber value={scope.reviewed}/><span className="pile-slash">/</span><AnimatedNumber value={scope.total} className="is-total"/></>}/></div>
     <section ref={stage} className={`hand-space ${currentColor}`} aria-label="Pila de recuerdos">{alert}
       {!connected?<div className="empty-state"><Character pose="coqui-wave" height={140} className="empty-character"/><h2>Tu carrete, en tus manos.</h2><p>Revisa, conserva y ordena tus recuerdos. Nada se borra sin tu confirmación.</p><button className="primary-empty" onClick={connect} disabled={loading}>{loading?'Abriendo Fotos…':'Abrir mi biblioteca'}</button><small>Todo se analiza en tu iPhone.</small></div>:!active?<div className="empty-state"><Character pose={scope.total?'memo-calm':'memo-wonder'} height={120} className="empty-character" motion="sway"/><h2>{favView&&!scope.total?'Aún no hay favoritas.':scope.total?'Todo en su sitio.':'Nada con estos filtros.'}</h2><p>{favView&&!scope.total?'Toca el corazón o desliza hacia arriba para guardar una.':pending?'Lo marcado para eliminar te espera al pulsar Terminar.':scope.total?'No quedan fotos pendientes con estos filtros.':'Prueba con otras fechas o con todo el contenido.'}</p><button className="primary-empty" onClick={()=>{setSheetTab('filters');setSheet('filters');}}>Cambiar filtros</button>{!demo&&<button className="text-button" onClick={connect}>Actualizar biblioteca</button>}</div>:<div className="polaroid-stack" data-testid="photo-hand">
-        <AnimatePresence>{bundleKey&&<motion.div className="bundle-arrival" key={bundleKey} initial={reduced?false:{opacity:0,scale:.94,y:-6}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{duration:.24,ease:[.2,.8,.2,1]}} role="status"><StackIcon size={15} weight="bold"/><span>{hand.length} parecidas{best?' · la mejor delante':''}</span></motion.div>}</AnimatePresence>
+        <AnimatePresence>{bundleKey&&<motion.div className="bundle-arrival" key={bundleKey} initial={reduced?false:{opacity:0,scale:.94,y:-6}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{duration:.24,ease:[.2,.8,.2,1]}} role="status"><StackIcon size={15} weight="bold"/><span aria-hidden="true">{targetIds.length ? `${targetIds.length} de ${hand.length}` : `${hand.length} fotos`}</span><span className="sr-only">{targetIds.length ? `${targetIds.length} de ${hand.length} fotos seleccionadas` : `${hand.length} fotos`}</span></motion.div>}</AnimatePresence>
         {bundleKey&&!reduced&&<motion.div key={`flash-${bundleKey}`} className="bundle-flash" initial={{opacity:0}} animate={{opacity:[0,.14,0]}} transition={{duration:.5}}/>}
         <AnimatePresence custom={lastDecision}>{[...hand].reverse().map(asset=>{const tape=asset.kind==='video';const {cardWidth,cardHeight}=cardBox(stageSize,asset);const index=hand.indexOf(asset),picked=targetIds.includes(asset.id);
           const kindLabel=asset.kind==='video'?'Vídeo':asset.kind==='live'?'Live Photo':'Foto';const lifting=index===0&&!!inspect&&inspect.id===asset.id;
@@ -602,10 +631,11 @@ export function ManoApp() {
             transition={reduced?{duration:0}:CARD_SPRING}
             onPointerDown={e=>start(e,asset)} onPointerMove={move} onPointerUp={end} onPointerCancel={cancel}
             tabIndex={index===0?0:-1} aria-hidden={index!==0} aria-label={`${kindLabel} ${index+1} de ${hand.length}${picked?', seleccionada':''}${tape?'. Toca o pulsa Intro para pausar o reproducir.':hand.length>1?'. Intro para ver la siguiente; espacio para seleccionar.':''}`} onKeyDown={e=>{if(e.target!==e.currentTarget)return;if(e.key===' '){e.preventDefault();select(asset.id);}if(e.key==='Enter'){e.preventDefault();index===0?(tape?videoControl.current?.toggle():cycle()):select(asset.id);}}}>
-            <div className="photo-window">{tape&&index===0?<InlineVideo key={asset.id} asset={asset} state={frontVideo} active={!inspect&&!sheet} retry={()=>getVideos().retry(asset)} download={()=>getVideos().download(asset)} fullscreen={()=>void play(asset)} openSettings={openSettings} meta={display.video} place={frontPlace} sound={videoSound} onSound={()=>setVideoSound(v=>!v)} onOsd={()=>setDisplay(d=>({...d,video:{...d.video,osd:!d.video.osd}}))} control={videoControl}><Photo asset={asset} quiet pool={preloader.current}/></InlineVideo>:<Photo asset={asset} quiet={tape} pool={preloader.current}/>}</div>
+            <div className="photo-window">{tape&&index===0?<InlineVideo key={asset.id} asset={asset} state={frontVideo} active={!inspect&&!sheet&&!sharing} retry={()=>getVideos().retry(asset)} download={()=>getVideos().download(asset)} fullscreen={()=>void play(asset)} openSettings={openSettings} meta={display.video} place={frontPlace} sound={videoSound} onSound={()=>setVideoSound(v=>!v)} onOsd={()=>setDisplay(d=>({...d,video:{...d.video,osd:!d.video.osd}}))} control={videoControl}><Photo asset={asset} quiet pool={preloader.current}/></InlineVideo>:<Photo asset={asset} quiet={tape} pool={preloader.current}/>}</div>
             {!tape&&filter.person&&filter.breakup!=='normal'&&<span className="breakup-mark" role="img" aria-label="Breakup Mode activo"><HeartBreakIcon size={18} weight="fill"/></span>}
             {index===0&&!tape&&<PolaroidCaption asset={asset} settings={display.photo} place={frontPlace} pending={display.photo.location&&!!asset.hasLocation&&frontPlace===undefined}/>}
             {hand.length>1&&<button tabIndex={index===0?0:-1} className={`pick-toggle ${picked?'selected':''}`} aria-label={`${picked?'Deseleccionar':'Seleccionar'} ${kindLabel.toLowerCase()} ${index+1}`} aria-pressed={picked} onPointerDown={e=>e.stopPropagation()} onClick={()=>{haptic('selection');select(asset.id);}}><CheckIcon size={16} weight="bold"/></button>}
+            {index===0&&isNative&&<CardShare asset={asset} sharing={sharing} share={shareActive}/>}
             {index===0&&<button className="zoom-access" onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();openPinned(asset,e.currentTarget.closest('article')!);}}><PushPinIcon size={16} weight="bold"/>Anclar</button>}
             {index===0&&filter.geek&&<button className="geek-access" aria-label="Ver datos del archivo" onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();openPinned(asset,e.currentTarget.closest('article')!);}}><InfoIcon size={18} weight="bold"/></button>}
             {index===0&&asset.id===best&&<span className="best-chip"><SparkleIcon size={13} weight="fill"/>Mejor toma</span>}
@@ -617,7 +647,6 @@ export function ManoApp() {
       </div>}
     </section>
     <div className="bundle-controls">{hand.length>1?<div className="segmented"><button onClick={()=>{haptic('selection');setSelected(allPicked?[]:others);}}>{allPicked?'Quitar selección':best?'Elegir las demás':'Elegir todas'}</button><button onClick={cycle} aria-label="Ver la siguiente foto del grupo"><ArrowClockwiseIcon size={16}/>Siguiente</button></div>:null}</div>
-    <AnimatePresence>{targetIds.length>0&&<motion.div className="selection-caption" initial={reduced?false:{opacity:0,y:-4}} animate={{opacity:1,y:0}} exit={{opacity:0}} transition={{duration:.16}}><CheckIcon size={14} weight="bold"/>{targetIds.length} seleccionada{targetIds.length===1?'':'s'}</motion.div>}</AnimatePresence>
     {/* Eliminar (←) · the heart, protagonist · Conservar (→): three buttons drawn
         as one set (DecisionBar). The piece on the side the card is dragged
         toward rises. In «Favoritas» the heart is on and takes items out. */}
@@ -645,7 +674,7 @@ export function ManoApp() {
     <p className="sr-only" role="status" aria-live="polite">{spoken}</p>
     {splash&&<Splash done={()=>setSplash(false)}/>}
     <AnimatePresence>{inspect&&<InspectorBoundary key={inspect.id} close={closeInspect}><Inspector asset={inspect} src={sharpPreview(inspect)??(preloader.current?.get(inspect)?.poster||undefined)} cloud={!!preloader.current?.peek(inspect)?.value?.cloud} pinned={pinnedInspect} origin={inspectOrigin.current} peek={{x:peekX,y:peekY}} anchor={anchor} armed={overHook} geek={!!filter.geek} close={closeInspect} pin={()=>{setPinnedInspect(true);haptic('rigid');}}
-      video={inspect.kind==='video'&&inspect.id===active?.id?{state:frontVideo,retry:()=>getVideos().retry(inspect),download:()=>getVideos().download(inspect),fullscreen:()=>void play(inspect),openSettings,sound:videoSound,freeze:heldVideo.current}:undefined}/></InspectorBoundary>}</AnimatePresence>
+      video={inspect.kind==='video'&&inspect.id===active?.id?{state:frontVideo,retry:()=>getVideos().retry(inspect),download:()=>getVideos().download(inspect),fullscreen:()=>void play(inspect),openSettings,sound:videoSound,onSound:()=>setVideoSound(v=>!v),freeze:heldVideo.current}:undefined}/></InspectorBoundary>}</AnimatePresence>
     <Sheet open={sheet==='filters'} close={()=>setSheet(null)} title={peopleView?'Personas':'Filtros y ajustes'} description={sheetTab==='filters'?'Elige qué fotos entran en la pila.':'Elige cómo se ven tus recuerdos.'} error={error} returnTo="filter-trigger">
       <div hidden={peopleView}>
       <div className="sheet-tabs" role="group" aria-label="Sección"><button aria-pressed={sheetTab==='filters'} onClick={()=>{haptic('selection');setSheetTab('filters');}}>Filtros</button><button aria-pressed={sheetTab==='settings'} onClick={()=>{haptic('selection');setSheetTab('settings');}}>Ajustes</button></div>

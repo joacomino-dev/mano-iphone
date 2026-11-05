@@ -34,6 +34,7 @@ try {
     if(o.action==='person')return {ids:assets.slice(0,6).map(a=>a.id),items:[]};
     if(o.action==='pause')state.running=false;
     if(o.action==='refresh')state.running=!complete;
+    if(o.action==='scan'&&!complete){state.processed+=4;state.remaining-=4;}
     if(o.action==='scan'&&complete){state.running=false;state.phase='ready';state.hasPublication=true;state.revision=1;}
     return {...state};
    }
@@ -45,8 +46,9 @@ try {
  assert.equal(await page.locator('.people-groups').count(),0);
  await page.locator('#people-entry').click();await page.locator('#people-view').waitFor();
  assert.equal(await page.locator('.people-groups>button').count(),0);
- assert.match(await page.locator('.people-analysis').textContent(),/Estamos analizando tus fotos/);
- assert.doesNotMatch(await page.locator('.people-analysis').textContent(),/\d|%/);
+ assert.match(await page.locator('.people-analysis').textContent(),/Buscando caras conocidas|Análisis en espera/);
+ await page.waitForFunction(()=>Number(document.querySelector('.people-analysis progress')?.value)>0);
+ await page.screenshot({path:'../work/qa-972/people-progress.png'});
  await page.getByRole('button',{name:'Volver a filtros',exact:false}).click();await page.getByRole('button',{name:'Cerrar',exact:true}).click();
  await page.getByRole('button',{name:'Dejar para más tarde',exact:true}).click();
  await page.locator('#filter-trigger').click();await page.locator('#people-entry').click();
@@ -74,6 +76,6 @@ try {
  await page.getByRole('group',{name:'Modo de Breakup',exact:true}).getByRole('button',{name:'Normal',exact:true}).click();
  await page.getByRole('button',{name:'Cerrar',exact:true}).click();assert.equal(await page.locator('.breakup-mark').count(),0);
  assert.deepEqual(errors,[]);
- const result={mockBridgeOnly:true,independentPeopleView:true,noProvisionalGroups:true,noProgressCounters:true,organizingDuringAnalysis:true,fourFaceSpecificRequests:true,twoModesTwoStyles:true,brokenHeartAutomatic:true,styleAndSessionRestored:true,portraitsCoveredInBreakup:true,errors};
+ const result={mockBridgeOnly:true,independentPeopleView:true,noProvisionalGroups:true,realProgressCounters:true,organizingDuringAnalysis:true,fourFaceSpecificRequests:true,twoModesTwoStyles:true,brokenHeartAutomatic:true,styleAndSessionRestored:true,portraitsCoveredInBreakup:true,errors};
  fs.writeFileSync('../work/qa-972/application-ui.json',JSON.stringify(result,null,2));await page.screenshot({path:'../work/qa-972/application-ui.png'});console.log(JSON.stringify(result));
 } finally {await browser.close();}
