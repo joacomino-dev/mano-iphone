@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { Capacitor, registerPlugin } from '@capacitor/core';
+import { HeartBreakIcon } from '@phosphor-icons/react';
 import { thumbnail } from './library';
 import type { Asset } from './domain';
 import { RequestQueue } from './requests';
@@ -80,5 +81,5 @@ export function PeopleImage({ asset, allowReveal = true, size }: { asset: Asset;
   const shown = reveal?.key === key ? reveal.src : src;
   if (!protectedPhoto) return null;
   if (shown && failed !== shown) return <img src={shown} alt={reveal?.key === key ? 'Foto revelada temporalmente' : 'Rostro censurado'} draggable={false} decoding="async" onError={() => setFailed(shown)}/>;
-  return <div className="photo-loading people-covered"><span>Fotografía oculta</span>{(failed||fault)&&<button onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();retry();}}>Reintentar censura</button>}{allowReveal && <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); void show(); }}>Revelar durante 3 segundos</button>}</div>;
+  return <div className="photo-loading people-covered"><span className="covered-seal" aria-hidden="true"><HeartBreakIcon size={30} weight="fill"/></span><strong>Foto protegida</strong><small>{failed||fault?'No se pudo preparar la versión censurada.':'Breakup Mode prepara la versión censurada.'}</small>{(failed||fault)&&<button onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();retry();}}>Reintentar censura</button>}{allowReveal && <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); void show(); }}>Revelar durante 3 segundos</button>}</div>;
 }

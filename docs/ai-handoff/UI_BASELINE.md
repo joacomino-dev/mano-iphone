@@ -135,3 +135,25 @@ contiene fecha, SHA base dirty, huella de fuentes, navegador, viewport, DPR,
 presets, reduced motion y medios demo. La revisión compara bytes de imágenes y
 fuentes de aplicación con el inventario inicial; instrucciones actualizadas no
 significan un nuevo render. No hubo nuevo recorrido ni prueba nativa en esta fase.
+
+## Revisión visual 9.7.2.6 (aprobada por el usuario, 2026-11-05)
+
+Aplicada por Claude con `/coco-mobile-ui`, `ui-ux-pro-max` (tacto 44 pt,
+progreso, estados vacíos), `styleseed` (heurísticas de auditoría; sin setup
+ni update) y `frontend-design` (antigenérico). No hay skill «anti-slop»
+instalada; su criterio se aplicó con `frontend-design`. Evidencia antes/después:
+`work/qa-b24/` y `work/qa-b26/` (Edge, puente simulado, 390×844 y 375×667,
+texto 130 %, movimiento normal y reducido).
+
+- Personas sin caja de navegador dentro de la hoja ni «Personas» triplicado;
+  estado con Coqui, línea «Todo ocurre en este iPhone», dos pasos reales
+  (Buscar rostros → Agrupar personas), una acción principal y extras
+  discretos (diagnóstico, borrar en color destructivo).
+- Mosaicos adaptables a 1–4 recortes; grupo elegido con contorno teal y
+  marca; «Revisar sus fotos» y Breakup Mode en barra fija.
+- Censura cubierta como Polaroid sellada (corazón roto en sello), no hueco.
+- Sello V con fila propia y cómo volver a verlo.
+- Pila: contador de ancho fijo sin solaparse con la selección (medido).
+- Monetización: tarjeta nativa en papel/Polaroid, gesto en toda la tarjeta
+  (primer deslizamiento con rebote, segundo la lanza), entrada 300 ms igual
+  que la web, compras con filas de Ajustes.

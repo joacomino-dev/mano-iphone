@@ -71,7 +71,9 @@ export function Filters({filter,assets,state,apply,index,preview,people}: {filte
     <span className="seal-sample" aria-hidden="true"><Stamp kind="keep" level={2}/></span>
     <p>Cuando conservas una foto, recibe un <strong>sello</strong> y descansa: no vuelve a aparecer en un tiempo. Si la conservas otra vez, el sello sube de nivel y descansa más, hasta quedarse para siempre. Así cada ronda trae lo que aún no has decidido.</p>
    </div>
-   <ul className="seal-levels" aria-label="Niveles de sello">{LEVELS.map((label, i) => <li key={label}><strong>{ROMAN[i]}</strong>{sealRest(i + 1)}</li>)}</ul>
+   <ul className="seal-levels" aria-label="Niveles de sello">{LEVELS.map((label, i) => i + 1 === LEVELS.length
+     ? <li key={label} className="is-forever"><strong>{ROMAN[i]}</strong><span>{sealRest(i + 1)}</span><small>Para volver a verlas, elige «Sello {ROMAN[i]}» en Mostrar.</small></li>
+     : <li key={label}><strong>{ROMAN[i]}</strong>{sealRest(i + 1)}</li>)}</ul>
    <label className="field">Mostrar<select value={draft.seal} onChange={e=>update({seal:['all','none'].includes(e.target.value)?e.target.value as 'all'|'none':Number(e.target.value)})}><option value="all">Todos los niveles</option><option value="none">Sin sello · pendientes de descubrir</option>{LEVELS.map((l,i)=><option key={l} value={i+1}>Sello {ROMAN[i]} · {sealRest(i+1)}</option>)}</select></label><label className="switch-field"><span>Incluir las que descansan<small>Las conservadas vuelven con menor frecuencia.</small></span><input type="checkbox" role="switch" checked={draft.includeWaiting} onChange={e=>update({includeWaiting:e.target.checked})}/></label></fieldset>
   <div className="filter-apply"><span>{invalid?(!draft.from||!draft.to?'Elige desde y hasta para aplicar':'La fecha inicial debe ir antes de la final'):personPending?'Listo para revisar el grupo seleccionado':<><AnimatedNumber value={count}/> {count===1?'archivo':'archivos'} en la pila con estos filtros</>}</span><button className="sheet-action" disabled={invalid} onClick={()=>apply({...draft,v:2})}>Aplicar filtros</button></div>
  </div>;

@@ -141,3 +141,16 @@ apagada solo tras «Desactivar y borrar índice». Textos: «Buscando rostros en
 fotos» / «Agrupando a las personas…», «Todo ocurre en este iPhone… si sales de
 CocoWash, se pausa y sigue al volver». Build 25 sin reset: conserva el índice de
 build 24; pulsar Reanudar una vez (la fase quedó en pausa de seguridad).
+
+## Build 26 (9.7.2.6): monetización integrada y revisión visual
+
+Encargo del usuario: integrar `codex/cocowash-monetization-ios` (base 0.9.7)
+sobre esta rama y completar la revisión gráfica. Monetización portada sin
+cambiar su lógica de frecuencia (30–40 revisadas, tarjeta al terminar, pases y
+café), adaptada al lenguaje de CocoWash; textos en español reparados (venían
+doblemente codificados). El IPA de desarrollo lleva `CocoWashTestAds`: muestra
+el bloque de prueba público de Google para probar gesto, consentimiento y
+diseño; una compilación App Store sigue exigiendo IDs reales de AdMob. Las
+compras StoreKit no funcionan en un IPA sin firma ni productos en App Store
+Connect. Pendiente en iPhone: gesto, consentimiento UMP/ATT, compras.
+Revisión visual: ver UI_BASELINE «Revisión visual 9.7.2.6».

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
+import { HeartBreakIcon } from '@phosphor-icons/react';
 import { PeopleBridge, usePeopleProtection } from './PeopleMedia';
 import { RequestQueue } from './requests';
 import type { PersonGroup, PersonPortrait } from './people';
@@ -26,8 +27,8 @@ function Portrait({ person, face, revision }: { person:string;face:PersonPortrai
 export function PersonMosaic({ group, revision }: { group:PersonGroup;revision:number }) {
   const protectedPhoto=usePeopleProtection();
   const faces=(group.portraits??[]).slice(0,4);
-  return <span className="person-mosaic" aria-label={protectedPhoto?'Miniaturas protegidas':`${faces.length} recortes faciales`}>
-    {protectedPhoto?<span className="person-crop-covered">Rostros protegidos</span>:faces.map(face=><span key={face.face} className="person-crop"><Portrait person={group.id} face={face} revision={revision}/></span>)}
-    {!protectedPhoto&&!faces.length&&<span>Vista local no disponible</span>}
+  return <span className={`person-mosaic count-${protectedPhoto?1:Math.max(1,faces.length)}`} aria-label={protectedPhoto?'Miniaturas protegidas':`${faces.length} recortes faciales`}>
+    {protectedPhoto?<span className="person-crop-covered"><HeartBreakIcon size={22} weight="fill" aria-hidden="true"/><span>Protegidos</span></span>:faces.map(face=><span key={face.face} className="person-crop"><Portrait person={group.id} face={face} revision={revision}/></span>)}
+    {!protectedPhoto&&!faces.length&&<span className="person-crop-covered"><span>Sin vista local</span></span>}
   </span>;
 }

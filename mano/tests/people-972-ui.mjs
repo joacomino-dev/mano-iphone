@@ -59,7 +59,7 @@ try {
  const portraitCalls=await page.evaluate(()=>window.fixtureCalls.filter(c=>c.action==='portrait'));
  assert.equal(new Set(portraitCalls.map(c=>c.face)).size,4);
  await page.getByRole('button',{name:/Persona 1/}).click();
- await page.getByRole('button',{name:'Ajustar Breakup Mode',exact:true}).click();
+ await page.getByRole('button',{name:'Breakup Mode',exact:true}).click();
  const modes=page.getByRole('group',{name:'Modo de Breakup',exact:true});assert.equal(await modes.getByRole('button').count(),2);
  await modes.getByRole('button',{name:'Rostro censurado',exact:true}).click();
  const styles=page.getByRole('group',{name:'Estilo de censura',exact:true});assert.equal(await styles.getByRole('button').count(),2);
@@ -78,7 +78,7 @@ try {
  assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('cocowash-library-session-v1')).context.handIds),before);
  await page.locator('#filter-trigger').click();await page.locator('#people-entry').click();
  assert.equal(await page.locator('.person-mosaic img').count(),0);
- await page.getByRole('button',{name:'Ajustar Breakup Mode',exact:true}).click();
+ await page.getByRole('button',{name:'Breakup Mode',exact:true}).click();
  await page.getByRole('group',{name:'Modo de Breakup',exact:true}).getByRole('button',{name:'Normal',exact:true}).click();
  await page.getByRole('button',{name:'Cerrar',exact:true}).click();assert.equal(await page.locator('.breakup-mark').count(),0);
  const normalCard=page.locator('article.front');

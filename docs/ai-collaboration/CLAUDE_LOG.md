@@ -297,3 +297,13 @@ Base Git / commit: `claude/people-crash-b24`, `5917cb4`.
 Cambios realizados: traza de build 24 + simbolización → trap de exclusividad de Swift en `stamp()` desde `reconcileStep` (no memoria). Sello calculado antes de escribir. Personas arranca sin consentimiento previo por decisión del usuario; apagado explícito persistente. Textos de estado.
 Validaciones: 116 Node, TypeScript, runtime 28, native-web; CI en el informe.
 Impacto para Codex: cambia el contrato de consentimiento explícito de 9.7.1 por decisión del usuario.
+
+### CW-CL-036 — Build 26: monetización integrada y revisión visual aprobada
+Fecha: 2026-11-05, America/Bogota
+Agente: Claude
+Estado: completada local, pendiente de prueba física e integración.
+Base Git / commit: `claude/people-crash-b24` sobre `5917cb4`; monetización `4d366db`, revisión visual en el commit siguiente.
+Archivos modificados: CocoMonetization.swift, Monetization.tsx, adCadence.ts, monetization.css, ManoApp.tsx, Screens.tsx, PeoplePanel.tsx, PersonMosaic.tsx, PeopleMedia.tsx, Filters.tsx, Stamp.tsx, prototype.css, Info.plist, project.pbxproj, workflow, pruebas.
+Decisiones relevantes: el usuario pidió ambas tareas sin pausa; la revisión visual P1–P8 queda aprobada por ese encargo.
+Validaciones: 119 Node, TypeScript, runtime 28, builds web/native-web, Sites 4; CI de monetización 42103776675 success; capturas `work/qa-b26/`.
+Impacto para Codex: la integración toca ManoApp/Screens de la rama de monetización y su tarjeta nativa; revisar antes de integrar en main.

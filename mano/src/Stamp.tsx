@@ -16,7 +16,7 @@ export const ROMAN = ['I', 'II', 'III', 'IV', 'V'];
 /** What a kept seal level means for the person: when the photo comes back. */
 export function sealRest(level: number) {
   const days = DAYS[Math.min(DAYS.length, Math.max(1, level)) - 1];
-  return Number.isFinite(days) ? `vuelve en ${days} días` : 'solo con el filtro de sello V';
+  return Number.isFinite(days) ? `vuelve en ${days} días` : 'se queda guardada hasta que la pidas';
 }
 
 function KeepSeal({ level }: { level?: number }) {

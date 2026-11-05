@@ -3,7 +3,7 @@
 import { chromium } from '@playwright/test';
 import fs from 'node:fs';
 const base = process.env.COCOWASH_QA_URL ?? 'http://127.0.0.1:4312';
-const out = '../work/qa-b24'; fs.mkdirSync(out, { recursive: true });
+const out = process.env.QA_OUT ?? '../work/qa-b24'; fs.mkdirSync(out, { recursive: true });
 const index = [], errors = [];
 const browser = await chromium.launch({ channel: 'msedge', headless: true });
 
@@ -17,8 +17,10 @@ function fixture(state) {
   const libraryMethods = ['permissionStatus', 'assets', 'sizes', 'classify', 'cancelClassify', 'analyze', 'cancelAnalysis', 'diagnostic', 'haptic', 'place', 'releasePreparedVideos', 'authorize', 'albums', 'share'];
   const headers = name => ({ name, methods: [...(name === 'People' ? ['command'] : libraryMethods).map(name => ({ name, rtype: 'promise' })), { name: 'addListener', rtype: 'callback' }, { name: 'removeListener', rtype: 'promise' }] });
   window.CapacitorCustomPlatform = { name: 'ios' };
-  window.Capacitor = { PluginHeaders: [headers('People'), headers('PhotoLibrary')], nativeCallback: () => 'fixture-listener', nativePromise: async (plugin, method, o = {}) => {
+  const storeHeaders = { name: 'CocoMonetization', methods: ['status','catalog','buy','restore','prepare','show','hide','privacy'].map(name => ({ name, rtype: 'promise' })).concat([{ name: 'addListener', rtype: 'callback' }, { name: 'removeListener', rtype: 'promise' }]) };
+  window.Capacitor = { PluginHeaders: [headers('People'), headers('PhotoLibrary'), storeHeaders], nativeCallback: () => 'fixture-listener', nativePromise: async (plugin, method, o = {}) => {
     if (method === 'removeListener') return {};
+    if (plugin === 'CocoMonetization') { if (method === 'catalog') return { adFree: false, products: [{ id: 'work.joaquin.mano.noads.year', price: 'US$3,99' }, { id: 'work.joaquin.mano.noads.lifetime', price: 'US$10,00' }, { id: 'work.joaquin.mano.coffee', price: 'US$1,50' }] }; if (method === 'prepare') return { ready: false }; if (method === 'show') return { shown: false }; return { adFree: false }; }
     if (plugin === 'PhotoLibrary') {
       if (method === 'permissionStatus' || method === 'authorize') return { status: 'authorized' };
       if (method === 'assets') return { status: 'authorized', assets };
@@ -62,11 +64,13 @@ await people('p05-interrupted-b24', { status: { running: false, phase: 'paused',
 await people('p06-error', { failScan: true, status: { running: true, phase: 'indexing', processed: 1040, total: 1530, remaining: 490 } }, 'Error recuperable', { after: async p => { await p.waitForSelector('.date-error', { timeout: 8000 }).catch(() => {}); } });
 await people('p07-reconciling', { status: { running: true, phase: 'reconciling', processed: 1530, total: 1530, remaining: 0 } }, 'Organizando los grupos');
 await people('p08-ready-groups', groups, 'Grupos publicados con mosaicos', { after: async p => { await p.locator('.people-groups').scrollIntoViewIfNeeded(); await p.waitForTimeout(500); } });
-await people('p09-group-selected', groups, 'Grupo seleccionado', { after: async p => { await p.locator('.people-groups>button').first().click(); await p.getByRole('button', { name: 'Revisar estas fotografías' }).scrollIntoViewIfNeeded(); await p.waitForTimeout(400); } });
+await people('p09-group-selected', groups, 'Grupo seleccionado', { after: async p => { await p.locator('.people-groups>button').first().click(); await p.getByRole('button', { name: /Revisar las fotos de/ }).scrollIntoViewIfNeeded(); await p.waitForTimeout(400); } });
 await people('p10-corrections', groups, 'Corregir grupo con recuadros', { after: async p => { await p.locator('.people-groups>button').first().click(); await p.locator('details summary').click(); await p.locator('.people-corrections').scrollIntoViewIfNeeded(); await p.waitForTimeout(600); } });
 await people('p11-interrupted-narrow-large', { status: { running: false, phase: 'paused', blocked: 'interrupted', interruptedPhase: 'reconcile-group', guarded: ['reconcile-group'], skipped: 1, processed: 1530, total: 1530, remaining: 0 } }, 'iPhone SE + texto 130 %', { viewport: { width: 375, height: 667 }, scale: 1.3 });
 await people('p12-groups-narrow-large', groups, 'Mosaicos iPhone SE + texto 130 %', { viewport: { width: 375, height: 667 }, scale: 1.3, after: async p => { await p.locator('.people-groups').scrollIntoViewIfNeeded(); await p.waitForTimeout(500); } });
 
+await people('p13-purchases', groups, 'Ajustes: anuncios y apoyo', { after: async p => { await p.getByRole('button', { name: 'Volver a filtros' }).click(); await p.getByRole('tab', { name: 'Ajustes' }).or(p.getByRole('button', { name: 'Ajustes', exact: true })).first().click(); await p.locator('.cw-purchases').scrollIntoViewIfNeeded(); await p.waitForTimeout(500); } });
+await people('p14-selected-sticky', groups, 'Grupo elegido con barra fija', { after: async p => { await p.locator('.people-groups>button').nth(1).click(); await p.locator('.people-groups').scrollIntoViewIfNeeded(); await p.waitForTimeout(500); } });
 // Censored review: broken heart, covered loading state, then derivative.
 {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
@@ -75,7 +79,7 @@ await people('p12-groups-narrow-large', groups, 'Mosaicos iPhone SE + texto 130 
   await page.goto(`${base}/tests/people-ui.html?application`); await page.locator('.hand-space article.front').waitFor(); await page.waitForTimeout(1000);
   await page.locator('#filter-trigger').click(); await page.locator('#people-entry').click();
   await page.locator('.people-groups>button').first().click();
-  await page.getByRole('button', { name: 'Ajustar Breakup Mode' }).click();
+  await page.getByRole('button', { name: 'Breakup Mode' }).click();
   await page.getByRole('group', { name: 'Modo de Breakup' }).getByRole('button', { name: 'Rostro censurado' }).click();
   await shot('c01-breakup-settings', page, 'Ajustes de Breakup Mode');
   await page.getByRole('button', { name: 'Cerrar', exact: true }).click();

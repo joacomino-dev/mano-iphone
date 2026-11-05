@@ -2,6 +2,13 @@
 
 Actualizado: 2026-11-05, America/Bogota. Codex trabaja solo por indicación del usuario.
 
+## Desarrollo para pruebas: 9.7.2.6 / build 26 (Claude)
+
+CW-CL-036. Build 25 + monetización de `codex/cocowash-monetization-ios` (anuncios nativos,
+pases y café; anuncios de prueba de Google en el IPA de desarrollo) + revisión visual
+aprobada (Personas, mosaicos, censura cubierta, sello V, compras). Pendiente en iPhone:
+gesto del anuncio, consentimiento y compras. Sin merge ni Release.
+
 ## Corrección para pruebas: 9.7.2.5 / build 25 (Claude)
 
 CW-CL-035. Causa del cierre **confirmada** con la traza de build 24 en iPhone:
