@@ -29,6 +29,7 @@ test('first eligible finish retries when no ad renders; subsequent finishes are 
   const cadence = new AdCadence();
   const day = '2026-11-05';
   assert.equal(cadence.finish(INTRO_MS - 1, day), false);
+  cadence.shown(INTRO_MS, 'deck');
   assert.equal(cadence.finish(INTRO_MS, day), true);
   cadence.missedFinish();
   assert.equal(cadence.finish(INTRO_MS, day), true);

@@ -9,7 +9,7 @@
         {
           "description": "Un año sin anuncios. No se renueva.",
           "displayName": "Pase anual sin anuncios",
-          "locale": "es"
+          "locale": "es_ES"
         }
       ],
       "productID": "work.joaquin.mano.noads.year",
@@ -26,7 +26,7 @@
         {
           "description": "Sin anuncios de por vida.",
           "displayName": "Pase vitalicio sin anuncios",
-          "locale": "es"
+          "locale": "es_ES"
         }
       ],
       "productID": "work.joaquin.mano.noads.lifetime",
@@ -41,7 +41,7 @@
         {
           "description": "Apoyo al desarrollador sin desbloquear funciones.",
           "displayName": "Cómprame un café",
-          "locale": "es"
+          "locale": "es_ES"
         }
       ],
       "productID": "work.joaquin.mano.coffee",

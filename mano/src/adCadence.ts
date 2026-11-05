@@ -31,10 +31,6 @@ export class AdCadence {
     }
   }
 
-  eligible(activeMs: number) {
-    return activeMs >= INTRO_MS && activeMs - this.lastShown >= AD_GAP_MS;
-  }
-
   between(activeMs: number) {
     return this.remaining <= 0 && activeMs >= INTRO_MS;
   }
@@ -44,7 +40,8 @@ export class AdCadence {
       this.finishDay = day;
       this.finishAds = 0;
     }
-    if (!this.eligible(activeMs) || this.finishAds >= 2) return false;
+    if (activeMs < INTRO_MS || this.finishAds >= 2) return false;
+    if (this.finishCount > 0 && activeMs - this.lastShown < AD_GAP_MS) return false;
     this.finishCount++;
     return this.finishCount % 3 === 1;
   }
