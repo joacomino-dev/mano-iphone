@@ -9,8 +9,8 @@ import UserMessagingPlatform
 final class CocoMonetizationPlugin: CAPPlugin, CAPBridgedPlugin, NativeAdLoaderDelegate {
     let identifier = "CocoMonetizationPlugin"
     let jsName = "CocoMonetization"
-    let pluginMethods = ["status", "catalog", "buy", "restore", "prepare", "show", "hide", "privacy"]
-        .map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
+    let pluginMethods: [CAPPluginMethod] = ["status", "catalog", "buy", "restore", "prepare", "show", "hide", "privacy"]
+        .compactMap { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
 
     private static let annual = "work.joaquin.mano.noads.year"
     private static let lifetime = "work.joaquin.mano.noads.lifetime"
@@ -175,7 +175,7 @@ final class CocoMonetizationPlugin: CAPPlugin, CAPBridgedPlugin, NativeAdLoaderD
                     call.resolve(["ready": false])
                     return
                 }
-                MobileAds.shared.start()
+                _ = await MobileAds.shared.start()
                 initialized = true
             }
             guard ConsentInformation.shared.canRequestAds, generation == requestGeneration else {
@@ -189,7 +189,7 @@ final class CocoMonetizationPlugin: CAPPlugin, CAPBridgedPlugin, NativeAdLoaderD
                 request.register(extras)
             }
             let video = VideoOptions()
-            video.startMuted = true
+            video.shouldStartMuted = true
             let loader = AdLoader(adUnitID: unitID, rootViewController: controller, adTypes: [.native], options: [video])
             loader.delegate = self
             self.loader = loader
