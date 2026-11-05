@@ -24,6 +24,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     private func prepareDevelopmentLaunch() {
         let bundle = Bundle.main, defaults = UserDefaults.standard
+        // Off the main thread: retired face data must not delay the first frame.
+        let legacySupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        DispatchQueue.global(qos: .utility).async { LegacyPeopleCleanup.run(support: legacySupport) }
         let build = "\(bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") ?? "")-\(bundle.object(forInfoDictionaryKey: "CFBundleVersion") ?? "")"
         guard DevelopmentReset.required(enabled:bundle.object(forInfoDictionaryKey:"CocoWashDevelopmentReset") as? Bool == true,current:build,previous:defaults.string(forKey:DevelopmentReset.key)) else {
             window?.rootViewController = ManoBridgeController(); return

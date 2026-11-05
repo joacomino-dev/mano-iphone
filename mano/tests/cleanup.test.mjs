@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { initialState, initialFilter, decide, undo, eligible, pileCount, normalizeFilter, validateRecordState, filterScope, nextSessionHand } from '../src/domain.ts';
+import { initialState, initialFilter as defaultFilter, decide, undo, eligible, pileCount, normalizeFilter, validateRecordState, filterScope, nextSessionHand } from '../src/domain.ts';
+// These suites check order-dependent behaviour on a chronological pile (9.8 starts random).
+const initialFilter = { ...defaultFilter, order: 'oldest' };
 import { upcomingSessionAssets } from '../src/preload.ts';
 import { categorize, qualityOf, bestShot } from '../src/insights.ts';
 import { formatBytes, vhsLayout, defaultDisplay, normalizeDisplay } from '../src/meta.ts';
@@ -42,8 +44,9 @@ test('size orders put the heaviest or lightest first and unmeasured files last',
   assert.deepEqual(eligible(assets, initialState(), { ...initialFilter, order: 'smallest' }).map(a => a.id), ['s', 'm', 'l', 'u']);
 });
 
-test('old filters migrate from the old random default; a random chosen in 0.6 is kept', () => {
-  assert.equal(normalizeFilter({ order: 'random' }).order, 'oldest');
+test('unversioned filters fall back to the 9.8 random default; a chosen order is kept', () => {
+  assert.equal(normalizeFilter({ order: 'random' }).order, 'random');
+  assert.equal(normalizeFilter({ order: 'nope' }).order, 'random');
   assert.equal(normalizeFilter({ order: 'random', v: 2 }).order, 'random');
   assert.equal(normalizeFilter({ order: 'newest' }).order, 'newest');
   assert.equal(normalizeFilter({ order: 'largest', smart: 'text' }).smart, 'text');

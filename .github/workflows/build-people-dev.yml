@@ -1,17 +1,17 @@
-name: Verify CocoWash 9.7.2.6 development
+name: Verify CocoWash 9.8 development
 on:
   workflow_dispatch:
   push:
-    branches: [codex/cocowash-people-recovery, claude/people-crash-b24]
+    branches: [claude/cocowash-9.8]
     paths: ['mano/**', '.github/workflows/build-people-dev.yml']
 permissions:
   contents: read
 concurrency:
-  group: cocowash-people-${{ github.ref }}
+  group: cocowash-dev-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   development:
-    if: github.event.repository.private == false && (github.ref == 'refs/heads/codex/cocowash-people-recovery' || github.ref == 'refs/heads/claude/people-crash-b24')
+    if: github.event.repository.private == false && github.ref == 'refs/heads/claude/cocowash-9.8'
     # Standard public-repository runner; no large/paid runner, no deployment.
     runs-on: xcode-27
     timeout-minutes: 30
@@ -36,44 +36,31 @@ jobs:
           mkdir -p build
           swiftc ios/App/App/SignatureIndex.swift tests/swift/main.swift -o build/signature-tests
           build/signature-tests
-          swiftc ios/App/App/PeopleGeometry.swift tests/swift-people/main.swift -o build/people-tests
-          build/people-tests
-          swiftc ios/App/App/PeopleCheckpoint.swift tests/swift-checkpoint/main.swift -o build/checkpoint-tests
-          build/checkpoint-tests
-          swiftc ios/App/App/PeopleIdentity.swift ios/App/App/PeopleGeometry.swift tests/swift-identities/main.swift -o build/identity-tests
-          build/identity-tests
           swiftc ios/App/App/DevelopmentSafety.swift tests/swift-safety/main.swift -o build/safety-tests
           build/safety-tests
-          swiftc ios/App/App/PeopleTrace.swift tests/swift-trace/main.swift -o build/trace-tests
-          build/trace-tests
-      - name: Require real public face grouping API in this SDK
-        run: |
-          printf '%s\n' 'import Foundation' 'import MediaIntelligence' '@available(iOS 27.0, *) func probe(_ url: URL) throws { _ = try FaceGroupAnalyzer(workingDirectory: url) }' > build/people-api.swift
-          xcrun --sdk iphoneos swiftc -typecheck -target arm64-apple-ios17.0 -sdk "$(xcrun --sdk iphoneos --show-sdk-path)" build/people-api.swift
       - name: Build and sync development sources
         run: npm run sync:ios
       - name: Compile development IPA for physical testing
         run: |
           grep -q -e '--cw-paper-texture:url(' ios/App/App/public/assets/*.css
           xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/ios CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' build
-          # Build 26 keeps existing CocoWash data and the facial index: the
-          # index that failed on the phone is the evidence to diagnose.
+          # 9.8 keeps CocoWash decisions and settings; only retired face data is removed by the app itself.
           if /usr/libexec/PlistBuddy -c 'Print :CocoWashDevelopmentReset' build/ios/Build/Products/Release-iphoneos/App.app/Info.plist; then echo 'Unexpected development reset flag'; exit 1; fi
-          # Development IPA: Google's public test ads so gesture and consent can be tried on the phone.
+          # Development IPA: Google's public test ads so the ad card can be tried on the phone.
           /usr/libexec/PlistBuddy -c 'Add :CocoWashTestAds bool true' build/ios/Build/Products/Release-iphoneos/App.app/Info.plist
           mkdir -p build/development/Payload
           cp -R build/ios/Build/Products/Release-iphoneos/App.app build/development/Payload/Mano.app
           cd build/development
-          ditto -c -k --keepParent Payload CocoWash-9.7.2.6-development-unsigned.ipa
+          ditto -c -k --keepParent Payload CocoWash-9.8-development-unsigned.ipa
       - name: Record verification boundary
         run: |
-          printf '%s\n' 'DEVELOPMENT ONLY. Not a published or accepted release.' 'No development reset: installing over build 25 keeps CocoWash data and the facial index.' 'Ads: Google public test ads only (CocoWashTestAds). StoreKit products need App Store Connect; not available in this unsigned IPA.' 'No facial matching accuracy, physical privacy transitions, heat, or memory measurements claimed.' 'FaceGroupAnalyzer requires a supported physical iOS 27 device; Simulator does not validate recognition.' > build/development/VALIDATION.txt
+          printf '%s\n' 'DEVELOPMENT ONLY. Not a published or accepted release.' 'No development reset: installing over 9.7.x keeps decisions and settings; People/Breakup data is deleted on launch.' 'Ads: Google public test ads only (CocoWashTestAds). StoreKit products need App Store Connect; not available in this unsigned IPA.' > build/development/VALIDATION.txt
           printf 'Source SHA: %s\n' "$GITHUB_SHA" >> build/development/VALIDATION.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: CocoWash-9.7.2.6-development
+          name: CocoWash-9.8-development
           path: |
-            mano/build/development/CocoWash-9.7.2.6-development-unsigned.ipa
+            mano/build/development/CocoWash-9.8-development-unsigned.ipa
             mano/build/development/VALIDATION.txt
           retention-days: 7
           if-no-files-found: error
@@ -85,7 +72,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: CocoWash-9.7.2.6-startup-evidence
+          name: CocoWash-9.8-startup-evidence
           path: |
             mano/build/startup-safety/*.png
             mano/build/startup-safety/*.log

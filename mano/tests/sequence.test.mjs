@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { initialState, initialFilter, decide, undo, eligible, eligibleFrom, orderAssets, handOf, validateRecordState } from '../src/domain.ts';
+import { initialState, initialFilter as defaultFilter, decide, undo, eligible, eligibleFrom, orderAssets, handOf, validateRecordState } from '../src/domain.ts';
+// These suites check order-dependent behaviour on a chronological pile (9.8 starts random).
+const initialFilter = { ...defaultFilter, order: 'oldest' };
 import { NO_HAND, playable, lockedHand, dealHand, afterDecision, cycleHand, restoreHand, upcomingFrom } from '../src/sequence.ts';
 import { saveSession, readSession } from '../src/session.ts';
 

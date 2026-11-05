@@ -1,17 +1,11 @@
-import { protectedMode } from './people';
-import { usePeople } from './usePeople';
-import { BreakupSettings } from './BreakupSettings';
-import { clearPortraits } from './PersonMosaic';
-import { PeoplePanel } from './PeoplePanel';
-import { PeopleProtection, PeopleImage, usePeopleImage, usePeopleProtection, clearPeoplePreviews, prefetchCensored } from './PeopleMedia';
 import { FinishButton } from './FinishButton';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type PointerEvent, type MouseEvent } from 'react';
 import { AnimatePresence, motion, useReducedMotion, useMotionValue, useTransform, animate, type MotionValue } from 'motion/react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { ExportIcon, HeartBreakIcon, UsersIcon, FolderOpenIcon, FolderSimplePlusIcon, CaretRightIcon, ArrowCounterClockwiseIcon, ArrowUUpLeftIcon, StackIcon, TrashIcon, CheckIcon, XIcon, PlayIcon, SlidersHorizontalIcon, ArrowClockwiseIcon, ImageBrokenIcon, PlusIcon, PushPinIcon, InfoIcon, CloudIcon, CloudArrowDownIcon, SparkleIcon } from '@phosphor-icons/react';
+import { ExportIcon, FolderOpenIcon, FolderSimplePlusIcon, CaretRightIcon, ArrowCounterClockwiseIcon, ArrowUUpLeftIcon, StackIcon, TrashIcon, CheckIcon, XIcon, PlayIcon, SlidersHorizontalIcon, ArrowClockwiseIcon, ImageBrokenIcon, PlusIcon, PushPinIcon, InfoIcon, CloudIcon, CloudArrowDownIcon, SparkleIcon } from '@phosphor-icons/react';
 import { BottomSheet, KeyboardInput, useKeyboard } from './mobile';
 import { ReviewGrid } from './ReviewGrid';
-import { decide, undo, restore, forgetPeople, withoutPeople, eligible, eligibleFrom, orderAssets, readState, reconcileLibrary, libraryFingerprint, filterScope, LEVELS, initialFilter, initialState, type Action, type Asset, type Decision, type Filter, type RecordState } from './domain';
+import { decide, undo, restore, eligible, eligibleFrom, orderAssets, readState, reconcileLibrary, libraryFingerprint, filterScope, LEVELS, initialFilter, initialState, type Action, type Asset, type Decision, type Filter, type RecordState } from './domain';
 import { NO_HAND, playable, lockedHand, dealHand, afterDecision, cycleHand, restoreHand, upcomingFrom, type HandLock } from './sequence';
 import { Library, isNative, demoAssets, thumbnailInfo, inCloudError, type Album, type PhotoPermission } from './library';
 import { useLibraryIndex, enrich } from './indexer';
@@ -73,7 +67,7 @@ function savedGroups(items: Asset[]) {
  * `quiet`: the owner (a video card) shows the one error state; this only
  * renders the poster or a neutral placeholder, so messages never stack. */
 function Photo(props: { asset: Asset; small?: boolean; pool?: AssetPreloader<PreparedMedia>|null; quiet?: boolean }) {
-  return usePeopleProtection() ? <PeopleImage asset={props.asset}/> : <UnprotectedPhoto {...props}/>;
+  return <UnprotectedPhoto {...props}/>;
 }
 function UnprotectedPhoto({ asset, small=false, pool, quiet=false }: { asset: Asset; small?: boolean; pool?: AssetPreloader<PreparedMedia>|null; quiet?: boolean }) {
   const policy = useSyncExternalStore(subscribePreviewPolicy, previewPolicyKey);
@@ -120,12 +114,10 @@ function PolaroidCaption({ asset, settings, place, pending }: { asset: Asset; se
  * Stamped across the card's lower-right edge, off the subject; a tap hides all
  * seals (Ajustes › Sellos brings them back). */
 function CardShare({ asset, sharing, share }: { asset: Asset; sharing: boolean; share: (asset: Asset) => Promise<void> }) {
-  const preview = usePeopleImage(asset);
-  const waiting = preview.protectedPhoto && !preview.src;
-  return <button className="card-share" aria-label={sharing ? 'Preparando archivo para compartir' : waiting ? 'Compartir cuando la foto esté censurada' : 'Compartir'}
-    aria-disabled={waiting || sharing} onPointerDown={e => e.stopPropagation()} onClick={e => {
+  return <button className="card-share" aria-label={sharing ? 'Preparando archivo para compartir' : 'Compartir'}
+    aria-disabled={sharing} onPointerDown={e => e.stopPropagation()} onClick={e => {
       e.stopPropagation();
-      if (!waiting && !sharing) void share(asset);
+      if (!sharing) void share(asset);
     }}>{sharing ? <CocoLoader size={20}/> : <ExportIcon size={20} weight="bold"/>}</button>;
 }
 
@@ -255,7 +247,7 @@ export function ManoApp() {
   const root=useCallback((element:HTMLElement|null)=>{rootObserver.current?.disconnect();rootObserver.current=null;if(!element||stageMeasured.current)return;const estimate=()=>setPreviewSizing({stage:{width:Math.max(200,element.clientWidth-32),height:Math.max(240,element.clientHeight-330)}});estimate();rootObserver.current=new ResizeObserver(estimate);rootObserver.current.observe(element);},[]);
   const [rawAssets,setAssets] = useState<Asset[]>(demo?demoAssets:[]);
   const [filter,setFilter] = useState<Filter>(saved?.filter??initialFilter);
-  const [peopleView,setPeopleView]=useState(false);const [peopleDraft,setPeopleDraft]=useState<Filter>(filter);
+
   const [session,setSession] = useState(false); const [selected,setSelected] = useState<string[]>(saved?.active?saved.context.selected:[]);
   const [sheet,setSheet] = useState<'filters'|'review'|'albums'|null>(null); const [albums,setAlbums] = useState<Album[]>([]);
   const [loading,setLoading] = useState(false); const [busy,setBusy] = useState(false); const [connected,setConnected] = useState(demo); const [limited,setLimited] = useState(false);
@@ -288,9 +280,6 @@ export function ManoApp() {
   const warmWait=useRef<(()=>void)|null>(null);
   const getPreloader=()=>preloader.current??(preloader.current=new AssetPreloader(prepareReviewAsset));
   const prepareWindow=(items:Asset[],sessionKey:string,videoItems?:Asset[])=>{
-    if(filter.person&&filter.breakup!=='normal'){
-      getPreloader().update([],sessionKey);getVideos().want([],undefined);preloadWindow.current=[];cloudPreviews.retain([]);return;
-    }
     getPreloader().update(items,sessionKey);getVideos().want(videoItems??items,items[0]);
     preloadWindow.current=items;
     // iCloud downloads live only while their card is in this window (warm-up
@@ -335,14 +324,8 @@ export function ManoApp() {
   const fingerprint=useMemo(()=>{const previous=fingerprintOf.current;
     if(previous&&previous.list.length===rawAssets.length&&previous.list.every((a,i)=>a.id===rawAssets[i].id&&a.modified===rawAssets[i].modified)){fingerprintOf.current={list:rawAssets,value:previous.value};return previous.value;}
     const value=libraryFingerprint(rawAssets);fingerprintOf.current={list:rawAssets,value};return value;},[rawAssets]);
-  const people=usePeople(fingerprint,analyzing||warming||loading||!!inspect,filter.person);
-  useEffect(()=>{
-    if(demo||!people.libraryChanges)return;let alive=true;
-    const timer=setTimeout(()=>{void Library.assets().then(result=>{if(!alive)return;setAssets(result.assets);setState(s=>reconcileLibrary(s,result.assets));}).catch(()=>{});},750);
-    return()=>{alive=false;clearTimeout(timer);};
-  },[people.libraryChanges]);
-  const index=useLibraryIndex(rawAssets,fingerprint,!demo&&connected,analyzing||warming||loading||people.status.running);
-  const assets=useMemo(()=>enrich(rawAssets,index).map(a=>filter.person?{...a,people:people.members?.has(a.id)?[filter.person]:[]}:a),[rawAssets,index.version,filter.person,people.members]);
+  const index=useLibraryIndex(rawAssets,fingerprint,!demo&&connected,analyzing||warming||loading);
+  const assets=useMemo(()=>enrich(rawAssets,index),[rawAssets,index.version]);
   /** «Favoritas» set: the heart takes items out of Favorites; they cannot be queued for deletion. */
   const favView=filter.smart==='favorites';
   // One canonical sequence: sorted once per library/order/seed; each decision
@@ -350,9 +333,9 @@ export function ManoApp() {
   const ordered=useMemo(()=>orderAssets(assets,filter.order,seed.current),[assets,filter.order,seedVersion]);
   const queue=useMemo(()=>eligibleFrom(ordered,state,filter,Date.now()),[ordered,state,filter]);
   // Geek is a display preference: toggling it must not reset bundles or anchors.
-  const filterKey=JSON.stringify({...filter,geek:undefined,breakup:undefined,censorStyle:undefined});
+  const filterKey=JSON.stringify({...filter,geek:undefined});
   const byId=useMemo(()=>new Map(assets.map(a=>[a.id,a] as const)),[assets]);
-  const isPlayable=useMemo(()=>{const allowed=playable(state,favView);return (a:Asset|undefined):a is Asset=>allowed(a)&&(!filter.person||!!a.people?.includes(filter.person));},[state,favView,filter.person,people.members]);
+  const isPlayable=useMemo(()=>{const allowed=playable(state,favView);return (a:Asset|undefined):a is Asset=>allowed(a);},[state,favView]);
   // The hand on the table stays put (sequence.ts): background work — similar
   // groups, weights, a preview finishing first, a library refresh — never swaps
   // it. When it is done, the next hand is dealt from the front of the pile and
@@ -371,14 +354,9 @@ export function ManoApp() {
   // Read-ahead: the hand on the table plus the next cards as they will be dealt.
   const upcoming=useMemo(()=>upcomingFrom(queue,hand,state.later,Math.max(PRELOAD_AHEAD,hand.length+2)),[queue,windowHandKey,state.later]);
   const upcomingKey=upcoming.map(a=>`${a.id}:${a.modified??0}`).join('|');
-  useEffect(()=>{
-    if(!session||warming||!filter.person||filter.breakup==='normal')return;
-    const controller=new AbortController();prefetchCensored(upcoming,filter.person,people.status.protectionRevision??0,filter.censorStyle??'oval',controller.signal);
-    return()=>controller.abort();
-  },[session,warming,upcomingKey,filter.person,filter.breakup,filter.censorStyle,people.status.protectionRevision]);
   const videoAhead=useMemo(()=>upcomingFrom(queue,hand,state.later,Math.max(VIDEO_AHEAD,hand.length+2)).filter(a=>a.kind==='video'),[queue,windowHandKey,state.later]);
   const videoKey=videoAhead.map(a=>`${a.id}:${a.modified??0}`).join('|');
-  useEffect(()=>{if(session&&!warming)prepareWindow(upcoming,String(sessionNumber.current),videoAhead);},[session,warming,upcomingKey,videoKey,filter.person,filter.breakup]);
+  useEffect(()=>{if(session&&!warming)prepareWindow(upcoming,String(sessionNumber.current),videoAhead);},[session,warming,upcomingKey,videoKey]);
   useEffect(()=>{inspected.current=inspect;cloudPreviews.retain(inspect?[...preloadWindow.current,inspect]:preloadWindow.current);},[inspect?.id]);
   // What a decision records to be undone exactly: the hand as shown, front first.
   const context={handIds:hand.map(a=>a.id),rotated:[] as string[],selected:[...selected],group:bundleKey??undefined,filter,...(best?{best}:{})};
@@ -394,7 +372,7 @@ export function ManoApp() {
     else setError('No se pudo guardar el progreso. Libera espacio antes de continuar.');},[key,sessionKey,writer]);
   useEffect(()=>{dirty.current=true;if(!flushTimer.current)flushTimer.current=setTimeout(flush,350);},[state,sessionOpen,filter,windowHandKey,selected,session]);
   useEffect(()=>{const persist=()=>{dirty.current=true;flush(true);};document.addEventListener('visibilitychange',persist);window.addEventListener('pagehide',persist);return()=>{persist();document.removeEventListener('visibilitychange',persist);window.removeEventListener('pagehide',persist);};},[flush]);
-  const openFilters=()=>{money.clear();setError('');setPeopleView(false);setSheet('filters');};
+  const openFilters=()=>{money.clear();setError('');setSheet('filters');};
   const active=hand[0]; const targetIds=selected.filter(id=>hand.some(a=>a.id===id)); const targets=targetIds.length?targetIds:active?[active.id]:[];
   // Ads (Monetization.tsx): only while cleaning, never over a sheet, the inspector or the splash.
   const money=useMonetization(!demo,session&&!!active&&!sheet&&!inspect&&!splash);
@@ -443,18 +421,11 @@ export function ManoApp() {
   const [sharing,setSharing]=useState(false);
   const shareActive=async (asset:Asset)=>{
     if(shareBusy.current)return;
-    const {person,breakup,censorStyle}=filter;
     shareBusy.current=true;setSharing(true);setSpoken('Preparando archivo para compartir');
     try {
-      if(protectedMode(person,breakup)){
-        await people.call('shareRedacted',{id:asset.id,person,style:censorStyle});
-      } else {
-        await Library.share({id:asset.id});
-      }
+      await Library.share({id:asset.id});
     } catch {
-      setNotice(protectedMode(person,breakup)
-        ? 'No se pudo preparar la foto censurada. Vuelve a intentarlo.'
-        : 'No se pudo compartir el archivo. Comprueba la conexión e inténtalo de nuevo.');
+      setNotice('No se pudo compartir el archivo. Comprueba la conexión e inténtalo de nuevo.');
     } finally { shareBusy.current=false;setSharing(false); }
   };
   // The front video card: a quick tap pauses/plays it; holding it hands its frame to the held view.
@@ -509,7 +480,7 @@ export function ManoApp() {
     if(!g.review&&g.element&&g.asset){springBack(g.followers);setZone('');heldVideo.current=g.element.querySelector('video');inspectOrigin.current=windowOf(g.element);resetPeek();setPinnedInspect(false);hookHover.current=false;setOverHook(false);setInspect(g.asset);
       // Holding a photo that lives in iCloud is a reason to fetch the larger
       // preview now: «Anclar» then joins this download instead of starting one.
-      if(!(filter.person&&filter.breakup!=='normal')&&g.asset.kind!=='video'&&preloader.current?.peek(g.asset)?.value?.cloud)void cloudPreviews.fetch(g.asset,'zoom').catch(()=>{});}};
+      if(g.asset.kind!=='video'&&preloader.current?.peek(g.asset)?.value?.cloud)void cloudPreviews.fetch(g.asset,'zoom').catch(()=>{});}};
   const start=(e:PointerEvent,asset:Asset,review=false)=>{if(busy||(e.target as HTMLElement).closest('button'))return;
     // A finger lifted while its card unmounted never reached end(): drop stale ids.
     if(!gesture.current)pointers.current.clear();
@@ -588,7 +559,7 @@ export function ManoApp() {
     setState(s=>({...s,pending:s.pending.filter(id=>!result.deleted.includes(id)),removed:[...new Set([...s.removed,...result.deleted])],history:[]}));
     money.finish();cancelWarmup();setLock(NO_HAND);setSessionOpen(false);setSheet(null);setSession(false);setShowDone(true);haptic('success');if(demo)setNotice('Borrado simulado\nTus fotos, intactas');else setSpoken(`${result.deleted.length} enviadas a Eliminado recientemente`);
   }catch(e){messageError(e);}finally{setBusy(false);}};
-  const play=async(asset:Asset)=>{if(filter.person&&filter.breakup!=='normal'){setSpoken('La reproducción completa está protegida en Breakup Mode');return;}if(demo){setNotice('Pantalla completa\nsolo en el iPhone');return;}try{await Library.preview({id:asset.id});}catch(e){messageError(e);}};
+  const play=async(asset:Asset)=>{if(demo){setNotice('Pantalla completa\nsolo en el iPhone');return;}try{await Library.preview({id:asset.id});}catch(e){messageError(e);}};
   const requestAccess=async():Promise<PhotoPermission>=>{if(demo)return 'authorized';try{const {status}=await Library.authorize();setPermission(status as PhotoPermission);if(['authorized','limited'].includes(status)){initialLibrary.current=null;loadLibrary();}return status as PhotoPermission;}catch{return 'denied';}};
   const finishOnboarding=(status:PhotoPermission)=>{try{localStorage.setItem(ONBOARDING_KEY,'done');}catch{/* shown again next launch */}setOnboarded(true);haptic(['authorized','limited'].includes(status)?'success':'warning');};
   const openSettings=()=>{void Library.openSettings().catch(()=>setError('Abre Ajustes › CocoWash › Fotos para permitir el acceso.'));};
@@ -636,7 +607,6 @@ export function ManoApp() {
             onPointerDown={e=>start(e,asset)} onPointerMove={move} onPointerUp={end} onPointerCancel={cancel}
             tabIndex={index===0?0:-1} aria-hidden={index!==0} aria-label={`${kindLabel} ${index+1} de ${hand.length}${picked?', seleccionada':''}${tape?'. Toca o pulsa Intro para pausar o reproducir.':hand.length>1?'. Intro para ver la siguiente; espacio para seleccionar.':''}`} onKeyDown={e=>{if(e.target!==e.currentTarget)return;if(e.key===' '){e.preventDefault();select(asset.id);}if(e.key==='Enter'){e.preventDefault();index===0?(tape?videoControl.current?.toggle():cycle()):select(asset.id);}}}>
             <div className="photo-window">{tape&&index===0?<InlineVideo key={asset.id} asset={asset} state={frontVideo} active={!inspect&&!sheet&&!sharing} retry={()=>getVideos().retry(asset)} download={()=>getVideos().download(asset)} fullscreen={()=>void play(asset)} openSettings={openSettings} meta={display.video} place={frontPlace} sound={videoSound} onSound={()=>setVideoSound(v=>!v)} onOsd={()=>setDisplay(d=>({...d,video:{...d.video,osd:!d.video.osd}}))} control={videoControl}><Photo asset={asset} quiet pool={preloader.current}/></InlineVideo>:<Photo asset={asset} quiet={tape} pool={preloader.current}/>}</div>
-            {!tape&&filter.person&&filter.breakup!=='normal'&&<span className="breakup-mark" role="img" aria-label="Breakup Mode activo"><HeartBreakIcon size={18} weight="fill"/></span>}
             {index===0&&!tape&&<PolaroidCaption asset={asset} settings={display.photo} place={frontPlace} pending={display.photo.location&&!!asset.hasLocation&&frontPlace===undefined}/>}
             {hand.length>1&&<button tabIndex={index===0?0:-1} className={`pick-toggle ${picked?'selected':''}`} aria-label={`${picked?'Deseleccionar':'Seleccionar'} ${kindLabel.toLowerCase()} ${index+1}`} aria-pressed={picked} onPointerDown={e=>e.stopPropagation()} onClick={()=>{haptic('selection');select(asset.id);}}><CheckIcon size={16} weight="bold"/></button>}
             {index===0&&isNative&&<CardShare asset={asset} sharing={sharing} share={shareActive}/>}
@@ -665,37 +635,28 @@ export function ManoApp() {
     {limited&&<button className="sheet-action secondary" onClick={()=>void manageLimited()}>Elegir más fotos</button>}
     <p className="sheet-fine">Todo se analiza en tu iPhone. Las fotos de iCloud pueden necesitar conexión.</p>
   </>;
-  const openPeople=(value:Filter=filter)=>{if(document.activeElement instanceof HTMLElement)document.activeElement.blur();setPeopleDraft(value);setPeopleView(true);};
-  const applyPeople=(value:Filter)=>{resumeContext.current=undefined;setFilter(f=>({...value,geek:f.geek}));setLock(NO_HAND);setSelected([]);setPeopleView(false);setSheet(null);haptic('light');};
-  const peopleAction=async(name:string,options?:Record<string,unknown>)=>{const result=await people.action(name,options);if(name==='reset'&&result){clearPeoplePreviews();clearPortraits();resumeContext.current=undefined;setState(forgetPeople);setFilter(withoutPeople);setPeopleDraft(withoutPeople);setLock(NO_HAND);setSelected([]);}return result;};
-  useEffect(()=>{if(sheet!=='filters')return;const frame=requestAnimationFrame(()=>{const body=document.querySelector<HTMLElement>('.mano-sheet-body');const owner=body?.closest<HTMLElement>('.sheet-content')??body?.closest<HTMLElement>('.native-sheet');if(owner)owner.scrollTop=0;if(peopleView)document.getElementById('people-view-heading')?.focus({preventScroll:true});});return()=>cancelAnimationFrame(frame);},[peopleView]);
   const recoverAll=()=>{setState(s=>({...s,pending:[],history:s.history.filter(d=>d.action!=='discard')}));setSpoken('Todo recuperado');haptic('soft');};
   const recoverReview=useCallback((id:string)=>{setState(s=>restore(s,id));setSpoken('Elemento recuperado');},[]);
   // Long press never opens the system menu or loupe; text fields keep theirs.
   const blockMenu=(e:MouseEvent)=>{if(!(e.target as HTMLElement).closest('input,textarea'))e.preventDefault();};
-  return <PeopleProtection.Provider value={{person:filter.person,mode:filter.breakup,style:filter.censorStyle,revision:people.status.protectionRevision??0}}><div onPointerDownCapture={people.interact} ref={root} className={`mano-app ${isNative?'on-device':''} ${session?'in-session':'on-screen'}`} onContextMenu={blockMenu}>
+  return <div ref={root} className={`mano-app ${isNative?'on-device':''} ${session?'in-session':'on-screen'}`} onContextMenu={blockMenu}>
     {screen}
     <p className="sr-only" role="status" aria-live="polite">{spoken}</p>
     {splash&&<Splash done={()=>setSplash(false)}/>}
     <AnimatePresence>{inspect&&<InspectorBoundary key={inspect.id} close={closeInspect}><Inspector asset={inspect} src={sharpPreview(inspect)??(preloader.current?.get(inspect)?.poster||undefined)} cloud={!!preloader.current?.peek(inspect)?.value?.cloud} pinned={pinnedInspect} origin={inspectOrigin.current} peek={{x:peekX,y:peekY}} anchor={anchor} armed={overHook} geek={!!filter.geek} close={closeInspect} pin={()=>{setPinnedInspect(true);haptic('rigid');}}
       video={inspect.kind==='video'&&inspect.id===active?.id?{state:frontVideo,retry:()=>getVideos().retry(inspect),download:()=>getVideos().download(inspect),fullscreen:()=>void play(inspect),openSettings,sound:videoSound,onSound:()=>setVideoSound(v=>!v),freeze:heldVideo.current}:undefined}/></InspectorBoundary>}</AnimatePresence>
-    <Sheet open={sheet==='filters'} close={()=>setSheet(null)} title={peopleView?'Personas':'Filtros y ajustes'} description={peopleView?'Rostros buscados y agrupados solo en este iPhone.':sheetTab==='filters'?'Elige qué fotos entran en la pila.':'Elige cómo se ven tus recuerdos.'} error={error} returnTo="filter-trigger">
-      <div hidden={peopleView}>
+    <Sheet open={sheet==='filters'} close={()=>setSheet(null)} title="Filtros y ajustes" description={sheetTab==='filters'?'Elige qué fotos entran en la pila.':'Elige cómo se ven tus recuerdos.'} error={error} returnTo="filter-trigger">
       <div className="sheet-tabs" role="group" aria-label="Sección"><button aria-pressed={sheetTab==='filters'} onClick={()=>{haptic('selection');setSheetTab('filters');}}>Filtros</button><button aria-pressed={sheetTab==='settings'} onClick={()=>{haptic('selection');setSheetTab('settings');}}>Ajustes</button></div>
       <div hidden={sheetTab!=='filters'}>
-        <Filters people={draft=>people.status.available?<fieldset><legend><UsersIcon size={18}/>Personas</legend><button id="people-entry" className="sheet-action secondary" onClick={()=>openPeople(draft)}>Ver grupos de personas</button></fieldset>:null} filter={filter} assets={assets} state={state} preview={draft=>prewarm(eligible(assets,state,draft,Date.now(),seed.current))} index={{sized:index.sized,total:rawAssets.length,analyzed:index.analyzed,photos:index.photos,measuring:index.measuring,analyzing:index.analyzing}} apply={value=>{resumeContext.current=undefined;setFilter(f=>({...value,geek:f.geek}));setSelected([]);setLock(NO_HAND);setSheet(null);haptic('light');setSpoken('Filtros aplicados');}}/>
+        <Filters filter={filter} assets={assets} state={state} preview={draft=>prewarm(eligible(assets,state,draft,Date.now(),seed.current))} index={{sized:index.sized,total:rawAssets.length,analyzed:index.analyzed,photos:index.photos,measuring:index.measuring,analyzing:index.analyzing}} apply={value=>{resumeContext.current=undefined;setFilter(f=>({...value,geek:f.geek}));setSelected([]);setLock(NO_HAND);setSheet(null);haptic('light');setSpoken('Filtros aplicados');}}/>
         {demo&&<button className="sheet-action secondary" onClick={()=>{setState(initialState());setStats(EMPTY_STATS);setSessionOpen(false);setSession(false);setShowDone(false);setLock(NO_HAND);setFilter(initialFilter);setSelected([]);setSheet(null);setSpoken('Demostración reiniciada');}}>Reiniciar demostración</button>}
       </div>
-      <div hidden={sheetTab!=='settings'}><DisplaySettingsPanel breakup={people.status.available?<BreakupSettings person={filter.person} mode={filter.breakup??(filter.person?'face':'normal')} style={filter.censorStyle} change={patch=>setFilter(f=>({...f,...patch}))} choose={()=>openPeople()}/>:undefined} display={display} change={setDisplay} geek={!!filter.geek} setGeek={value=>setFilter(f=>({...f,geek:value}))} library={libraryActions} replayIntro={()=>{setSheet(null);setOnboarded(false);haptic('selection');}}/>{money.available&&sheet==='filters'&&sheetTab==='settings'&&<PurchaseOptions money={money}/>}</div>
-      </div>
-      {peopleView&&<section id="people-view"><button className="text-button" onClick={()=>{if(document.activeElement instanceof HTMLElement)document.activeElement.blur();setPeopleView(false);requestAnimationFrame(()=>document.getElementById('people-entry')?.focus());}}>‹ Volver a filtros</button><h3 id="people-view-heading" className="sr-only" tabIndex={-1}>Grupos de personas</h3>
-        <PeoplePanel status={people.status} error={people.error} assets={assets} draft={peopleDraft} change={patch=>setPeopleDraft(f=>({...f,...patch}))} action={peopleAction} call={people.call} revision={people.revision} review={applyPeople} settings={()=>{resumeContext.current=undefined;setFilter(f=>({...peopleDraft,geek:f.geek}));setLock(NO_HAND);setSelected([]);setPeopleView(false);setSheetTab('settings');}}/>
-      </section>}
+      <div hidden={sheetTab!=='settings'}><DisplaySettingsPanel display={display} change={setDisplay} geek={!!filter.geek} setGeek={value=>setFilter(f=>({...f,geek:value}))} library={libraryActions} replayIntro={()=>{setSheet(null);setOnboarded(false);haptic('selection');}}/>{money.available&&sheet==='filters'&&sheetTab==='settings'&&<PurchaseOptions money={money}/>}</div>
     </Sheet>
     <Sheet open={sheet==='albums'} close={()=>setSheet(null)} title="Guardar en un álbum" description="Se conserva y pasa a la siguiente. También sigue en tu carrete." error={error} returnTo="album-trigger"><p className="sheet-intro"><strong>{targets.length}</strong> seleccionada{targets.length>1?'s':''}</p><button className="album-row album-new" onClick={()=>setCreatingAlbum(v=>!v)} disabled={busy}><span className="row-icon"><PlusIcon size={20} weight="bold"/></span>Crear álbum nuevo</button>{creatingAlbum&&<div className="new-album"><label className="field">Nombre del álbum<AlbumInput value={newAlbum} change={setNewAlbum}/></label><button className="sheet-action" onClick={createAlbum} disabled={busy||!newAlbum.trim()}>Crear y añadir {targets.length} elemento{targets.length===1?'':'s'}</button></div>}{albums.map(a=><button className="album-row" key={a.id} onClick={()=>addAlbum(a)} disabled={busy}><span className="row-icon"><FolderOpenIcon size={20}/></span>{a.title}<CaretRightIcon size={16} weight="bold"/></button>)}</Sheet>
     <Sheet open={sheet==='review'} close={()=>setSheet(null)} title="Una última mirada" description="Recupera lo que quieras conservar antes de eliminar." error={error} returnTo={session?'review-trigger':'filter-trigger'}><p className="sheet-intro">{reviewAssets.length?<><strong>{reviewAssets.length} para eliminar</strong>{freeLabel&&<> · liberarías {reviewBytes.partial?'al menos ':''}<strong>{freeLabel}</strong></>}. Aún no se ha borrado nada.</>:'No hay nada marcado para eliminar.'}</p>
       {reviewAssets.length>0&&<><ReviewGrid assets={reviewAssets} open={sheet==='review'} recover={recoverReview}/>
         <div className="review-primary"><button className="sheet-action secondary recover-all" disabled={busy} onClick={recoverAll}><ArrowCounterClockwiseIcon size={20}/>{reviewAssets.length===1?'Recuperar':`Recuperar todo (${reviewAssets.length})`}</button><button className="sheet-action danger" onClick={commitDelete} disabled={busy} aria-busy={busy}><TrashIcon size={20}/>{busy?'Esperando a Fotos…':`Eliminar ${reviewAssets.length}${freeLabel&&!reviewBytes.partial?` · ${freeLabel}`:''}`}</button><p className="sheet-fine">Fotos te pedirá confirmación; lo eliminado queda 30 días en «Eliminado recientemente», también en iCloud.</p></div></>}
     </Sheet>
-  </div></PeopleProtection.Provider>;
+  </div>;
 }

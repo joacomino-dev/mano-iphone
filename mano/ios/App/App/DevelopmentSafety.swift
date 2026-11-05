@@ -1,28 +1,21 @@
 import Foundation
 
-/// Process-local lifecycle fence, updated synchronously by native notifications.
-/// An epoch invalidates async media results even if JavaScript is suspended.
-final class PeopleActivityGate: @unchecked Sendable {
-    static let shared = PeopleActivityGate()
-    private let lock = NSLock()
-    private var foreground = false
-    private var generation = 0
-    private var cancellations: [UUID: () -> Void] = [:]
-    var epoch: Int { lock.lock(); defer { lock.unlock() }; return generation }
-    var active: Bool { lock.lock(); defer { lock.unlock() }; return foreground }
-    func accepts(_ epoch: Int) -> Bool { lock.lock(); defer { lock.unlock() }; return foreground && epoch == generation }
-    func activate() { lock.lock(); foreground = true; lock.unlock() }
-    func suspend() {
-        lock.lock(); foreground = false; generation += 1
-        let callbacks = Array(cancellations.values); cancellations.removeAll(); lock.unlock()
-        for cancel in callbacks { cancel() }
+/// 9.8 retired People and Breakup Mode. Any facial index, crops, censored
+/// derivatives or phase trace left by 9.7.x builds are deleted on launch:
+/// no face data stays on the phone once the feature is gone.
+enum LegacyPeopleCleanup {
+    static let names = ["CocoPeople", "CocoPeopleTrace"]
+    @discardableResult static func run(support: URL) -> Int {
+        let manager = FileManager.default
+        let parent = support.standardizedFileURL.resolvingSymlinksInPath()
+        var removed = 0
+        for name in names {
+            let target = parent.appendingPathComponent(name).standardizedFileURL
+            guard target.deletingLastPathComponent() == parent, manager.fileExists(atPath: target.path) else { continue }
+            if (try? manager.removeItem(at: target)) != nil { removed += 1 }
+        }
+        return removed
     }
-    func register(_ id: UUID, epoch: Int, cancel: @escaping () -> Void) {
-        lock.lock(); let accept = foreground && epoch == generation
-        if accept { cancellations[id] = cancel }; lock.unlock()
-        if !accept { cancel() }
-    }
-    func remove(_ id: UUID) { lock.lock(); cancellations.removeValue(forKey:id); lock.unlock() }
 }
 
 /// Explicit opt-in in development IPA only. Never touches the Photos library,

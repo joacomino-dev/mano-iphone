@@ -1,4 +1,3 @@
-import { personFilter, type BreakupMode, type CensorStyle } from './people.ts';
 export type MediaKind = 'photo' | 'video' | 'live';
 /** `bytes`: what deleting it frees (all its resources), when measured.
  * `screenshot`: screenshots and screen recordings (PhotoKit subtype).
@@ -9,7 +8,7 @@ export type MediaKind = 'photo' | 'video' | 'live';
  * `favorite`: Photos says it is a favourite (native enumeration, read by
  * reconcileLibrary; the record's `favorites` is what the pile uses). */
 export type Asset = { id: string; kind: MediaKind; date: number; width: number; height: number; duration: number; modified?: number; group?: string; hasLocation?: boolean; demo?: boolean;
-  bytes?: number; screenshot?: boolean; low?: boolean; text?: number; quality?: number; cloud?: boolean; favorite?: boolean; people?: string[] };
+  bytes?: number; screenshot?: boolean; low?: boolean; text?: number; quality?: number; cloud?: boolean; favorite?: boolean };
 export type Mark = { level: number; due: number; keptAt: number };
 /** What was on the table when a decision was made, to put it back exactly on
  * undo: `handIds` in display order (front first, already rotated), the
@@ -31,7 +30,7 @@ export type Order = 'oldest' | 'newest' | 'largest' | 'smallest' | 'random';
 /** Quick sets, combinable with every other filter. «favorites» is the only
  * one that shows favourites: everywhere else they stay out of the pile. */
 export type Smart = 'all' | 'later' | 'screenshots' | 'lowQuality' | 'text' | 'favorites';
-export type Filter = { seal: number | 'all' | 'none'; order: Order; media: 'all' | MediaKind; includeWaiting: boolean; dateRange?: 'all' | '24h' | '7d' | '30d' | 'custom'; from?: string; to?: string; geek?: boolean; smart?: Smart; person?: string; breakup?: BreakupMode; censorStyle?: CensorStyle; v?: 2 };
+export type Filter = { seal: number | 'all' | 'none'; order: Order; media: 'all' | MediaKind; includeWaiting: boolean; dateRange?: 'all' | '24h' | '7d' | '30d' | 'custom'; from?: string; to?: string; geek?: boolean; smart?: Smart; v?: 2 };
 export const ORDERS: Order[] = ['oldest', 'newest', 'largest', 'smallest', 'random'];
 export const SMARTS: Smart[] = ['all', 'later', 'screenshots', 'lowQuality', 'text', 'favorites'];
 export const LEVELS = ['Blanco', 'Rojo', 'Verde', 'Negro', 'Azul'];
@@ -40,13 +39,9 @@ const MAX_SEAL = DAYS.length;
 const sealLevel = (level: number) => Math.min(level, MAX_SEAL);
 const migrateMark = (mark: Mark): Mark => mark.level >= MAX_SEAL ? { ...mark, level: MAX_SEAL, due: Number.MAX_SAFE_INTEGER } : { ...mark };
 export const initialState = (): RecordState => ({ marks: {}, pending: [], favorites: [], removed: [], history: [], later: [] });
-/** Chronological by default (0.6): the person knows where they are in their roll. */
-export const initialFilter: Filter = { seal: 'all', order: 'oldest', media: 'all', includeWaiting: false, smart: 'all', v: 2 };
-export function withoutPeople(filter: Filter): Filter { const { person: _person, breakup: _breakup, censorStyle: _style, ...rest } = filter; return rest; }
-/** Forget derived person associations while retaining every decision and hand. */
-export function forgetPeople(state: RecordState): RecordState {
-  return { ...state, history: state.history.map(d => d.context?.filter?.person ? { ...d, context: { ...d.context, filter: withoutPeople(d.context.filter) } } : d) };
-}
+/** 9.8: the very first round is random, any date, every kind of item. From
+ * then on the filters the person applies are kept between sessions. */
+export const initialFilter: Filter = { seal: 'all', order: 'random', media: 'all', includeWaiting: false, dateRange: 'all', smart: 'all', v: 2 };
 export function normalizeFilter(value: unknown): Filter {
   const input = value && typeof value === 'object' ? value as Record<string, unknown> : {};
   return {
@@ -62,7 +57,7 @@ export function normalizeFilter(value: unknown): Filter {
     ...(typeof input.to === 'string' ? { to: input.to } : {}),
     geek: input.geek === true,
     smart: SMARTS.includes(input.smart as Smart) ? input.smart as Smart : 'all',
-    ...personFilter(input),
+    // 9.8 retired People/Breakup Mode: old person, breakup and censor fields are dropped here.
     v: 2,
   };
 }
@@ -142,7 +137,6 @@ function hash(id: string, seed: number) { let n = seed | 0; for (const c of id) 
 /** Quick clean-up set membership (screenshots/recordings, low quality, text,
  * postponed). Vision signals arrive progressively; unanalysed items stay out. */
 export function smartMatch(asset: Asset, filter: Filter, later: ReadonlySet<string>, favorites: ReadonlySet<string> = new Set()) {
-  if (filter.person && !asset.people?.includes(filter.person)) return false;
   switch (filter.smart ?? 'all') {
     case 'later': return later.has(asset.id);
     case 'screenshots': return !!asset.screenshot;

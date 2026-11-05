@@ -17,6 +17,14 @@ let preparedVideoFolder = FileManager.default.urls(for: .cachesDirectory, in: .u
     .appendingPathComponent("MemSwipeVideos", isDirectory: true)
 
 @objc(ManoBridgeController)
+/// Shared, non-blocking signal that visible media is being prepared.
+enum CocoMediaPressure {
+    private static let lock = NSLock()
+    private static var count = 0
+    static func change(_ delta: Int) { lock.lock(); count = max(0, count + delta); lock.unlock() }
+    static var busy: Bool { lock.lock(); defer { lock.unlock() }; return count > 0 }
+}
+
 class ManoBridgeController: CAPBridgeViewController {
     private let mediaStream = PreparedVideoStreamHandler()
     override func webViewConfiguration(for instanceConfiguration: InstanceConfiguration) -> WKWebViewConfiguration {
@@ -31,7 +39,6 @@ class ManoBridgeController: CAPBridgeViewController {
         super.capacitorDidLoad()
         bridge?.registerPluginInstance(PhotoLibraryPlugin())
         bridge?.registerPluginInstance(CocoMonetizationPlugin())
-        bridge?.registerPluginInstance(PeoplePlugin())
         NSLog("MEMSWIPE_BRIDGE_READY")
     }
     // Coco Cream (0.9): dark status bar text on the light cream frame.
