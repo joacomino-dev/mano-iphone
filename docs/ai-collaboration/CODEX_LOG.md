@@ -199,3 +199,22 @@ Tres fallos iniciales de compilación (CoreGraphics, literales Swift y tipo del
 bridge) corregidos sin debilitar checks. Historial por commits reversible.
 CW-HO-007 lista para usuario; precisión/censura real y rendimiento físico pendientes.
 No se atribuyen resultados de mocks o 50.000 filas a 50.000 fotografías.
+
+
+### CW-CX-015 — 9.7.2: identidades estables, reconciliación y geometría
+Fecha: 2026-11-04, America/Bogota.
+Agente: Codex, único escritor.
+Tarea: actualización técnica autorizada; preservar última 9.7.1 probada por usuario.
+Estado: completada en rama, pendiente de aceptación física; no publicada/integrada.
+Base Git / commit: d6d6f21 → `cocowash/9.7.2`, fuente 01f150b;
+24 CRLF previos respaldados/conservados. Commits de desarrollo reversibles.
+Archivos modificados: People nativo/persistencia/geometría, puente/hook/UI funcional,
+ManoApp/ajustes/CSS puntual, pruebas y workflow de desarrollo9.7.2/20.
+Cambios realizados: alias, reconciliación multiejemplo con barreras, mínimo5 visual,
+screenshots, recortes4, publicación finita/atómica, máscaras oval/ojos y protección.
+Decisiones relevantes: mismo framework, sin dependencias; no fusionar evidencia débil.
+Validaciones: 113 Node/runtime28/TypeScript/builds/Sites4/Edge; Swift/SQLite50.000
+metadatos y Release iPhone en [CI41949432356](https://github.com/joacomino-dev/mano-iphone/actions/runs/41949432356), PASS.
+IPA en Descargas, digest/CRC/identidad/enlace débil verificados.
+Impacto para Claude: CW-HO-008; refinar UI preservando contratos de protección.
+Pendientes: precisión, privacidad y recursos físicos; [informe/checklist](../ai-handoff/COCOWASH_972.md).

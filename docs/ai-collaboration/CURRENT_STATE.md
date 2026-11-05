@@ -14,6 +14,18 @@ Alcance reservado: motor/identidades/publicación/migración/miniaturas/máscara
 Personas en submenú y ajustes funcionales. Claude recibe refinamiento visual después.
 Sin merge a main, Release ni App Store. Se conserva el IPA estable anterior.
 
+**Completada en rama para prueba física**, fuente `01f150b`.
+[CI final 41949432356](https://github.com/joacomino-dev/mano-iphone/actions/runs/41949432356)
+success: Swift/API pública/Release iPhone; 113 Node, runtime28, TypeScript, builds,
+Sites4 y regresiones Edge PASS. Identidades lógicas/alias, reconciliación conservadora,
+publicación finita/estable, mínimo5, screenshots,4 recortes y censura refinada.
+IPA verificado: `C:/Users/Joaco/Downloads/CocoWash-9.7.2-desarrollo-01f150b8.ipa`,
+5.782.219 bytes, SHA256 `2500ced0224112b4277a550c56ea22f8d2c9868f3dc6e2f7f84fa087416bd086`.
+[Detalle, límites y checklist](../ai-handoff/COCOWASH_972.md).
+CW-HO-008 lista: usuario prueba → Claude refina UI; precisión/censura/RAM/FPS
+físicos pendientes, sin dataset etiquetado ni aprobación de publicación.
+Fuentes compiladas idénticas tras cierre documental; no resetear índice para probar.
+
 ## Desarrollo autorizado: 9.7.1 / build 19 (sin publicar)
 
 Codex es el único escritor en `C:/Users/Joaco/Developer/CocoWash-stage1`, rama
@@ -31,7 +43,8 @@ sync y Release iPhone. IPA de desarrollo verificado en Descargas:
 `729dfa41479f9757540c9412c026ba5a3b812db4a9e3e9f45d768eca56e32b7a`.
 Mach-O arm64 enlaza Media Intelligence **débilmente**, mínimo iOS17; fotos, textura,
 versión/build, CRC y digest de GitHub verificados. Sin instalación ni publicación de app.
-CW-HO-007: Codex → usuario, **lista para pruebas físicas**, no aceptada ni integrada.
+CW-HO-007: Codex → usuario, **aceptada físicamente según reporte del usuario** al
+solicitar 9.7.2; no integrada en main. La siguiente lista era pendiente al entregarse:
 Precisión, censura con fotos reales y memoria/calor físicos pendientes; no son métricas
 acreditadas por fixtures ni por la prueba de metadatos.
 No modificar main, publicar app ni distribuir una entrega definitiva.
@@ -66,7 +79,7 @@ actualizan después con un commit solo documental. Cierre: [CW-CX-013](CODEX_LOG
 
 ## Continuidad y recuperación
 
-Checkout de trabajo ahora en rama `cocowash/9.7.1`, con `main` estable preservada: `C:/Users/Joaco/Developer/CocoWash-stage1`. El checkout anterior
+Checkout de trabajo ahora en rama `cocowash/9.7.2`, con `main` estable preservada: `C:/Users/Joaco/Developer/CocoWash-stage1`. El checkout anterior
 en OneDrive, HEAD 76744e2 y sus cambios previos permanecen intactos. Respaldo de
 1.457 archivos/.git verificado en `C:/Users/Joaco/CocoWash-Backups/20261104-stage1-current`;
 366 fuentes originales revalidadas tras la implementación.
