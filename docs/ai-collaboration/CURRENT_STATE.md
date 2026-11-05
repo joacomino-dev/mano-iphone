@@ -8,6 +8,7 @@ CW-CL-036. Build 25 + monetización de `codex/cocowash-monetization-ios` (anunci
 pases y café; anuncios de prueba de Google en el IPA de desarrollo) + revisión visual
 aprobada (Personas, mosaicos, censura cubierta, sello V, compras). Pendiente en iPhone:
 gesto del anuncio, consentimiento y compras. Sin merge ni Release.
+IPA `C:/Users/Joaco/Downloads/CocoWash-9.7.2.6-build26-23380e3.ipa`, [CI 42105597788](https://github.com/joacomino-dev/mano-iphone/actions/runs/42105597788) success.
 
 ## Corrección para pruebas: 9.7.2.5 / build 25 (Claude)
 

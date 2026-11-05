@@ -154,3 +154,11 @@ diseño; una compilación App Store sigue exigiendo IDs reales de AdMob. Las
 compras StoreKit no funcionan en un IPA sin firma ni productos en App Store
 Connect. Pendiente en iPhone: gesto, consentimiento UMP/ATT, compras.
 Revisión visual: ver UI_BASELINE «Revisión visual 9.7.2.6».
+
+IPA build 26: fuente `23380e3`, [CI 42105597788](https://github.com/joacomino-dev/mano-iphone/actions/runs/42105597788)
+**success** (Swift con GoogleMobileAds 13.12.0, Release iPhone, smoke de arranque).
+`C:/Users/Joaco/Downloads/CocoWash-9.7.2.6-build26-23380e3.ipa`, 7.323.330 bytes,
+SHA-256 `801db3505cdc1674a91af29ad0f291ff2a49ca37722bb1d5ea572202e8e6a85e`.
+Bundle `work.joaquin.mano`, 9.7.2 build 26, sin reset, `CocoWashTestAds` activo.
+Build 25 previo (solo corrección del cierre): `CocoWash-9.7.2.5-build25-5917cb4.ipa`.
+
