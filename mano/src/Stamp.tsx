@@ -12,11 +12,11 @@ import { DAYS } from './domain';
  *  - favorite: pink heart;
  *  - later: coffee postmark with a clock, «Más tarde» (a letter to open later). */
 export type StampKind = 'keep' | 'discard' | 'favorite' | 'later';
-export const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
+export const ROMAN = ['I', 'II', 'III', 'IV', 'V'];
 /** What a kept seal level means for the person: when the photo comes back. */
 export function sealRest(level: number) {
   const days = DAYS[Math.min(DAYS.length, Math.max(1, level)) - 1];
-  return Number.isFinite(days) ? `vuelve en ${days} días` : 'se queda';
+  return Number.isFinite(days) ? `vuelve en ${days} días` : 'solo con el filtro de sello V';
 }
 
 function KeepSeal({ level }: { level?: number }) {

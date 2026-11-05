@@ -34,8 +34,11 @@ export type Smart = 'all' | 'later' | 'screenshots' | 'lowQuality' | 'text' | 'f
 export type Filter = { seal: number | 'all' | 'none'; order: Order; media: 'all' | MediaKind; includeWaiting: boolean; dateRange?: 'all' | '24h' | '7d' | '30d' | 'custom'; from?: string; to?: string; geek?: boolean; smart?: Smart; person?: string; breakup?: BreakupMode; censorStyle?: CensorStyle; v?: 2 };
 export const ORDERS: Order[] = ['oldest', 'newest', 'largest', 'smallest', 'random'];
 export const SMARTS: Smart[] = ['all', 'later', 'screenshots', 'lowQuality', 'text', 'favorites'];
-export const LEVELS = ['Blanco', 'Rojo', 'Verde', 'Negro', 'Azul', 'Morado', 'Naranja', 'Dorado'];
-export const DAYS = [7, 14, 30, 60, 120, 240, 365, Infinity];
+export const LEVELS = ['Blanco', 'Rojo', 'Verde', 'Negro', 'Azul'];
+export const DAYS = [7, 14, 30, 60, Infinity];
+const MAX_SEAL = DAYS.length;
+const sealLevel = (level: number) => Math.min(level, MAX_SEAL);
+const migrateMark = (mark: Mark): Mark => mark.level >= MAX_SEAL ? { ...mark, level: MAX_SEAL, due: Number.MAX_SAFE_INTEGER } : { ...mark };
 export const initialState = (): RecordState => ({ marks: {}, pending: [], favorites: [], removed: [], history: [], later: [] });
 /** Chronological by default (0.6): the person knows where they are in their roll. */
 export const initialFilter: Filter = { seal: 'all', order: 'oldest', media: 'all', includeWaiting: false, smart: 'all', v: 2 };
@@ -47,7 +50,8 @@ export function forgetPeople(state: RecordState): RecordState {
 export function normalizeFilter(value: unknown): Filter {
   const input = value && typeof value === 'object' ? value as Record<string, unknown> : {};
   return {
-    seal: input.seal === 'all' || input.seal === 'none' || (Number.isInteger(input.seal) && Number(input.seal) >= 1 && Number(input.seal) <= 8) ? input.seal as Filter['seal'] : initialFilter.seal,
+    seal: input.seal === 'all' || input.seal === 'none' ? input.seal :
+      Number.isInteger(input.seal) && Number(input.seal) >= 1 && Number(input.seal) <= 8 ? sealLevel(Number(input.seal)) : initialFilter.seal,
     // Before 0.6 «random» was the default nobody chose: those filters become
     // chronological once; a «random» picked in 0.6 (v: 2) is kept.
     order: ORDERS.includes(input.order as Order) && (input.v === 2 || input.order !== 'random') ? input.order as Order : initialFilter.order,
@@ -105,7 +109,7 @@ export function decide(state: RecordState, ids: string[], action: Action, now = 
   const marks = { ...state.marks }; const previous: Decision['previous'] = {};
   for (const id of unique) {
     previous[id] = marks[id] ? { ...marks[id] } : null;
-    if (action === 'keep') { const level = Math.min(8, (marks[id]?.level ?? 0) + 1);
+    if (action === 'keep') { const level = sealLevel((marks[id]?.level ?? 0) + 1);
       marks[id] = { level, keptAt: now, due: Number.isFinite(DAYS[level - 1]) ? now + DAYS[level - 1] * 86400000 : Number.MAX_SAFE_INTEGER }; }
   }
   const later = state.later ?? [];
@@ -150,6 +154,11 @@ export function smartMatch(asset: Asset, filter: Filter, later: ReadonlySet<stri
 }
 /** The pile's membership test, shared by eligible() and the filter counts.
  * Favourites only ever appear in the «Favoritas» set, which shows nothing else. */
+function matchesSeal(mark: Mark | undefined, seal: Filter['seal']) {
+  if (seal === 'none') return !mark;
+  const level = sealLevel(mark?.level ?? 0);
+  return seal === 'all' ? level < MAX_SEAL : level === seal;
+}
 function pileTest(state: RecordState, filter: Filter, now: number) {
   const favorites = new Set(state.favorites);
   const onlyFavorites = filter.smart === 'favorites';
@@ -159,7 +168,7 @@ function pileTest(state: RecordState, filter: Filter, now: number) {
     && (filter.media === 'all' || filter.media === a.kind)
     && matchesDate(a.date, filter, now)
     && smartMatch(a, filter, later, favorites)
-    && (filter.seal === 'all' || (filter.seal === 'none' ? !mark : mark?.level === filter.seal))
+    && matchesSeal(mark, filter.seal)
     && (filter.includeWaiting || filter.seal !== 'all' || !mark || mark.due <= now); };
 }
 /** «Favoritas» in the filter sheet: every favourite in the library (Photos'
@@ -273,13 +282,13 @@ export function validateRecordState(value: unknown): RecordState | null {
     if (!object(raw) || !strings(raw.ids) || !ACTIONS.includes(raw.action as Action) || typeof raw.at !== 'number' || !Number.isFinite(raw.at) || !object(raw.previous)) continue;
     if (!Object.values(raw.previous).every(v => v === null || mark(v))) continue;
     const previous: Decision['previous'] = {};
-    for (const id of raw.ids) { const old = raw.previous[id]; previous[id] = mark(old) ? { ...old } : null; }
+    for (const id of raw.ids) { const old = raw.previous[id]; previous[id] = mark(old) ? migrateMark(old) : null; }
     const laterAt = object(raw.laterAt) ? Object.fromEntries(Object.entries(raw.laterAt).filter(([, v]) => Number.isInteger(v) && Number(v) >= 0)) as Record<string, number> : undefined;
     history.push({ ids: [...new Set(raw.ids)], action: raw.action as Action, at: raw.at, previous,
       ...(strings(raw.wasLater) && raw.wasLater.length ? { wasLater: [...new Set(raw.wasLater)], ...(laterAt && Object.keys(laterAt).length ? { laterAt } : {}) } : {}),
       ...(raw.context ? { context: normalizeDecisionContext(raw.context) } : {}) });
   }
-  return { marks: Object.fromEntries(Object.entries(input.marks).map(([id, value]) => [id, { ...value as Mark }])), pending: [...new Set(input.pending)], favorites: [...new Set(input.favorites as string[] ?? [])], removed: [...new Set(input.removed as string[] ?? [])], history,
+  return { marks: Object.fromEntries(Object.entries(input.marks).map(([id, value]) => [id, migrateMark(value as Mark)])), pending: [...new Set(input.pending)], favorites: [...new Set(input.favorites as string[] ?? [])], removed: [...new Set(input.removed as string[] ?? [])], history,
     later: [...new Set(input.later as string[] ?? [])] };
 }
 export function readState(key: string): RecordState {
@@ -297,7 +306,7 @@ export function filterScope(assets: Asset[], state: RecordState, filter: Filter,
     && (filter.media === 'all' || filter.media === a.kind)
     && matchesDate(a.date, filter, now)
     && (decidedHere.has(a.id) || smartMatch(a, filter, later, favorites))
-    && (filter.seal === 'all' || decidedHere.has(a.id) || (filter.seal === 'none' ? !state.marks[a.id] : state.marks[a.id]?.level === filter.seal)));
+    && (decidedHere.has(a.id) || matchesSeal(state.marks[a.id], filter.seal)));
   const left = remaining ?? eligible(assets, state, filter, now).length;
   return { total: inScope.length, remaining: left, reviewed: Math.max(0, inScope.length - left) };
 }

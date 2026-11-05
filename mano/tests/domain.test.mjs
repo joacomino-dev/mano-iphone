@@ -1,13 +1,26 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { initialState, initialFilter, decide, undo, restore, eligible, nextHand, nextSessionHand, reviewedCount, reconcileLibrary, libraryFingerprint, matchesDate, validateRecordState, filterScope, pileCount } from '../src/domain.ts';
+import { initialState, initialFilter, decide, undo, restore, eligible, nextHand, nextSessionHand, reviewedCount, reconcileLibrary, libraryFingerprint, matchesDate, validateRecordState, normalizeFilter, filterScope, pileCount } from '../src/domain.ts';
 const photo=(id,date=0)=>({id,kind:'photo',date,width:100,height:150,duration:0});
 test('discard is only a reversible queue, not removal',()=>{const s=decide(initialState(),['a','b','a'],'discard',0);assert.deepEqual(s.pending,['a','b']);assert.deepEqual(s.removed,[]);assert.deepEqual(undo(s),initialState());});
 test('keep waits a week, then returns; second keep advances seal and undo restores it',()=>{const s=decide(initialState(),['a'],'keep',100);assert.equal(eligible([photo('a')],s,initialFilter,101).length,0);assert.equal(eligible([photo('a')],s,initialFilter,100+7*86400000).length,1);const twice=decide(s,['a'],'keep',200);assert.equal(twice.marks.a.level,2);assert.deepEqual(undo(twice),s);});
 test('unmarked photos precede high seals under every order',()=>{const s=decide(initialState(),['old'],'keep',0);for(const order of ['random','newest','oldest'])assert.equal(eligible([photo('old',100),photo('new')],s,{...initialFilter,order,includeWaiting:true})[0].id,'new');});
 test('explicit seal filter can inspect waiting assets; favorites always excluded',()=>{let s=decide(initialState(),['a','b'],'keep',0);s=decide(s,['b'],'favorite',1);assert.deepEqual(eligible([photo('a'),photo('b')],s,{...initialFilter,seal:1},2).map(x=>x.id),['a']);});
 test('recovered photo cannot be discarded again by undoing another decision',()=>{let s=decide(initialState(),['a','b'],'discard',0);s=restore(s,'a');assert.deepEqual(s.pending,['b']);s=decide(s,['c'],'keep',1);s=undo(s);assert.deepEqual(s.pending,['b']);assert.deepEqual(undo(s).pending,[]);});
-test('seal caps at gold and survives JSON without Infinity becoming null',()=>{let s=initialState();for(let i=0;i<12;i++)s=decide(s,['a'],'keep',i);assert.equal(s.marks.a.level,8);const saved=JSON.parse(JSON.stringify(s));assert.equal(saved.marks.a.due,Number.MAX_SAFE_INTEGER);assert.equal(eligible([photo('a')],saved,initialFilter).length,0);});
+test('seal caps at five and survives JSON without Infinity becoming null',()=>{let s=initialState();for(let i=0;i<12;i++)s=decide(s,['a'],'keep',i);assert.equal(s.marks.a.level,5);const saved=JSON.parse(JSON.stringify(s));assert.equal(saved.marks.a.due,Number.MAX_SAFE_INTEGER);assert.equal(eligible([photo('a')],saved,initialFilter).length,0);});
+test('legacy seals migrate in the record, undo, and explicit person filter', () => {
+  const record = initialState();
+  for (const level of [4, 5, 6, 7, 8]) record.marks[String(level)] = { level, keptAt: 0, due: 60 * 86400000 };
+  const state = validateRecordState(decide(record, ['8'], 'keep', 10));
+  const assets = Object.keys(record.marks).map(id => ({ ...photo(id), people: id === '7' ? ['other'] : ['one'] }));
+  const filter = normalizeFilter({ ...initialFilter, seal: 8, person: 'one', includeWaiting: true });
+  assert.deepEqual(eligible(assets, state, filter, 1).map(asset => asset.id), ['5', '6', '8']);
+  assert.deepEqual(eligible(assets, state, { ...initialFilter, includeWaiting: true }, 1).map(asset => asset.id), ['4']);
+  assert.equal(eligible(assets, state, initialFilter, 60 * 86400000 - 1).length, 0);
+  assert.equal(eligible(assets, state, initialFilter, 60 * 86400000).length, 1);
+  assert.equal(undo(state).marks['8'].level, 5);
+  assert.equal(undo(state).marks['8'].due, Number.MAX_SAFE_INTEGER);
+});
 test('hands only contain the first visual group and support individual mode',()=>{const q=[{...photo('a'),group:'x'},{...photo('b'),group:'y'},{...photo('c'),group:'x'}];assert.deepEqual(nextHand(q,true).map(x=>x.id),['a','c']);assert.equal(nextHand(q,false).length,1);});
 test('repeated seed gives stable random order; media filter applies',()=>{const a=Array.from({length:20},(_,i)=>photo(`asset-${i}`,i));assert.deepEqual(eligible(a,initialState(),{...initialFilter,order:'random'},0,98),eligible(a,initialState(),{...initialFilter,order:'random'},0,98));assert.equal(eligible(a,initialState(),{...initialFilter,media:'video'}).length,0);});
 test('progress counts every decided asset once, including kept images, and undo restores it',()=>{const a=[photo('a'),photo('b')];let s=decide(initialState(),['a'],'keep',0);assert.equal(reviewedCount(a,s),1);s=decide(s,['a'],'keep',1);assert.equal(reviewedCount(a,s),1);s=decide(s,['b'],'discard',2);assert.equal(reviewedCount(a,s),2);s=undo(s);assert.equal(reviewedCount(a,s),1);});
