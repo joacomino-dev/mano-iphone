@@ -13,7 +13,7 @@ try {
   window.fixtureCalls=[];
   const state={available:true,consent:true,running:!complete,phase:complete?'ready':'indexing',hasPublication:complete,revision:complete?1:0,minimumPhotos:5,protectionRevision:0,
    processed:0,total:100,remaining:100,waiting:0,aliases:{},groups:[{id:'one',name:'Persona 1',count:6,representative:'demo-1',portraits:assets.slice(0,4).map((a,i)=>({id:a.id,face:`face-${i}`}))}]};
-  const libraryMethods=['permissionStatus','assets','sizes','classify','cancelClassify','analyze','cancelAnalysis','diagnostic','haptic','place','releasePreparedVideos','authorize','albums'];
+  const libraryMethods=['permissionStatus','assets','sizes','classify','cancelClassify','analyze','cancelAnalysis','diagnostic','haptic','place','releasePreparedVideos','authorize','albums','share'];
   const headers=name=>({name,methods:[...(name==='People'?['command']:libraryMethods).map(name=>({name,rtype:'promise'})),{name:'addListener',rtype:'callback'},{name:'removeListener',rtype:'promise'}]});
   window.CapacitorCustomPlatform={name:'ios'};
   window.Capacitor={PluginHeaders:[headers('People'),headers('PhotoLibrary')],
@@ -29,6 +29,7 @@ try {
      if(method==='albums')return {albums:[]};
      return {};
     }
+    if(o.action==='shareRedacted')return {};
     if(o.action==='portrait'){await new Promise(r=>setTimeout(r,50));return {path:`/assets/demo/postcard-2.svg?portrait=${o.face}`};}
     if(o.action==='redact'){await new Promise(r=>setTimeout(r,100));return {path:`/assets/demo/postcard-3.svg?protected=${o.style}&id=${o.id}`};}
     if(o.action==='person')return {ids:assets.slice(0,6).map(a=>a.id),items:[]};
@@ -66,6 +67,11 @@ try {
  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('cocowash-library-session-v1')??'null')?.filter.censorStyle==='eyes');
  await page.getByRole('button',{name:'Cerrar',exact:true}).click();await page.locator('.breakup-mark').first().waitFor();
  await page.waitForFunction(()=>document.querySelector('.photo-window img')?.getAttribute('src')?.includes('protected=eyes'));
+ const protectedCard=page.locator('article.front');
+ const protectedId=(await protectedCard.getAttribute('data-testid')).replace(/^card-/,'');
+ await protectedCard.getByRole('button',{name:'Compartir',exact:true}).click();
+ await page.waitForFunction(id=>window.fixtureCalls.some(c=>c.action==='shareRedacted'&&c.id===id&&c.style==='eyes'),protectedId);
+ assert.equal(await page.evaluate(()=>window.fixtureCalls.filter(c=>c.plugin==='PhotoLibrary'&&c.method==='share').length),0);
  const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('cocowash-library-session-v1')).context.handIds);
  await page.reload();await page.locator('.breakup-mark').first().waitFor();
  await page.waitForFunction(()=>document.querySelector('.photo-window img')?.getAttribute('src')?.includes('protected=eyes'));
@@ -75,7 +81,11 @@ try {
  await page.getByRole('button',{name:'Ajustar Breakup Mode',exact:true}).click();
  await page.getByRole('group',{name:'Modo de Breakup',exact:true}).getByRole('button',{name:'Normal',exact:true}).click();
  await page.getByRole('button',{name:'Cerrar',exact:true}).click();assert.equal(await page.locator('.breakup-mark').count(),0);
+ const normalCard=page.locator('article.front');
+ const normalId=(await normalCard.getAttribute('data-testid')).replace(/^card-/,'');
+ await normalCard.getByRole('button',{name:'Compartir',exact:true}).click();
+ await page.waitForFunction(id=>window.fixtureCalls.some(c=>c.plugin==='PhotoLibrary'&&c.method==='share'&&c.id===id),normalId);
  assert.deepEqual(errors,[]);
- const result={mockBridgeOnly:true,independentPeopleView:true,noProvisionalGroups:true,realProgressCounters:true,organizingDuringAnalysis:true,fourFaceSpecificRequests:true,twoModesTwoStyles:true,brokenHeartAutomatic:true,styleAndSessionRestored:true,portraitsCoveredInBreakup:true,errors};
+ const result={mockBridgeOnly:true,independentPeopleView:true,noProvisionalGroups:true,realProgressCounters:true,organizingDuringAnalysis:true,fourFaceSpecificRequests:true,twoModesTwoStyles:true,brokenHeartAutomatic:true,styleAndSessionRestored:true,portraitsCoveredInBreakup:true,shareUsesProtectedCommandOnlyInBreakup:true,errors};
  fs.writeFileSync('../work/qa-972/application-ui.json',JSON.stringify(result,null,2));await page.screenshot({path:'../work/qa-972/application-ui.png'});console.log(JSON.stringify(result));
 } finally {await browser.close();}

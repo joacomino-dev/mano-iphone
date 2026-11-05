@@ -58,7 +58,6 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
   const key = headKey(asset);
   // The person's own pause, shared with the other views of this video.
   const [userPaused, setUserPaused] = useState(() => playheads.get(key)?.paused ?? false);
-  const pausedRef = useRef(userPaused); pausedRef.current = userPaused;
   const [glyph, setGlyph] = useState<{ kind: 'play' | 'pause'; n: number } | null>(null);
   const [playing, setPlaying] = useState(false);
   const [waiting, setWaiting] = useState(false);
@@ -80,7 +79,7 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
     if (url) setFetching(false);
     const video = player.current;
     if (video && url && video.getAttribute('src') !== url) { video.src = url; video.load(); }
-    return () => { if (video) { if (video.currentTime > 0) remember(key, video.currentTime, pausedRef.current); video.pause(); video.removeAttribute('src'); video.load(); } };
+    return () => { if (video) { if (video.currentTime > 0) remember(key, video.currentTime, playheads.get(key)?.paused ?? false); video.pause(); video.removeAttribute('src'); video.load(); } };
   }, [asset.id, url]);
 
   const playAttempt = useRef(0);
@@ -99,10 +98,20 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
     });
   };
   // Only the visible surface owns playback, including during exit animations.
-  const wantsPlay = !!url && visible && active && present && !userPaused;
+  const ownsPlayback = !!url && visible && active && present;
+  const ownedPlayback = useRef(false);
   useLayoutEffect(() => {
     const video = player.current; if (!video || !url) return;
-    if (wantsPlay) {
+    const takingOwnership = ownsPlayback && !ownedPlayback.current;
+    ownedPlayback.current = ownsPlayback;
+    if (takingOwnership) {
+      const sharedPause = playheads.get(key)?.paused ?? false;
+      if (sharedPause !== userPaused) {
+        setUserPaused(sharedPause);
+        return;
+      }
+    }
+    if (ownsPlayback && !userPaused) {
       // Coming back from another view of this video: continue where it was, and
       // keep a pause the person made there.
       const head = playheads.get(key);
@@ -111,7 +120,7 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
     } else { ++playAttempt.current; video.pause(); }
     return () => { ++playAttempt.current; video.pause(); };
     // Sound follows the person's choice in every view: anchoring keeps it as it was.
-  }, [wantsPlay, url, sound, full]);
+  }, [ownsPlayback, userPaused, url, sound, full]);
   // Quick tap on the card: pause or play, with a short glyph and a tick.
   const showGlyph = (kind: 'play' | 'pause') => setGlyph(g => ({ kind, n: (g?.n ?? 0) + 1 }));
   useEffect(() => { if (!glyph) return; const t = setTimeout(() => setGlyph(null), 650); return () => clearTimeout(t); }, [glyph]);
@@ -123,8 +132,8 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
   };
   useEffect(() => { if (!control || !card) return; const own = { toggle }; control.current = own; return () => { if (control.current === own) control.current = null; }; });
 
-  const choose = () => { const video = player.current; if (!video) return; haptic('light'); remember(key, video.currentTime, false); pausedRef.current = false; setUserPaused(false); start(sound); };
-  const pause = () => { const video = player.current; if (!video) return; ++playAttempt.current; remember(key, video.currentTime, true); pausedRef.current = true; video.pause(); setUserPaused(true); haptic('soft'); };
+  const choose = () => { const video = player.current; if (!video) return; haptic('light'); remember(key, video.currentTime, false); setUserPaused(false); start(sound); };
+  const pause = () => { const video = player.current; if (!video) return; ++playAttempt.current; remember(key, video.currentTime, true); video.pause(); setUserPaused(true); haptic('soft'); };
   const toggleSound = () => {
     const next = !sound;
     if (url && !userPaused) start(next);
@@ -159,10 +168,10 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
       onLoadedMetadata={e => { const v = e.currentTarget, d = v.duration; if (Number.isFinite(d) && d > 0) setLength(d);
         // Same moment as the view it came from (card ↔ held ↔ anchored).
         const head = playheads.get(key); if (head && head.time > .05 && (!Number.isFinite(d) || head.time < d - .25)) { v.currentTime = head.time; setTime(head.time); } }}
-      onPlay={() => setPlaying(true)} onPause={e => { setPlaying(false); remember(key, e.currentTarget.currentTime, pausedRef.current); }} onEnded={() => setPlaying(false)}
+      onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)}
       onWaiting={() => setWaiting(true)} onPlaying={() => setWaiting(false)}
-      onCanPlay={e => { setWaiting(false); const v = e.currentTarget; if (wantsPlay && !blocked && v.paused && !v.ended) start(sound); }}
-      onTimeUpdate={e => { const t = e.currentTarget.currentTime; remember(key, t, pausedRef.current); if (full || !time) setTime(t); }}
+      onCanPlay={e => { setWaiting(false); const v = e.currentTarget; if (ownsPlayback && !userPaused && !blocked && v.paused && !v.ended) start(sound); }}
+      onTimeUpdate={e => { const t = e.currentTarget.currentTime; if (ownsPlayback) remember(key, t, playheads.get(key)?.paused ?? false); if (full || !time) setTime(t); }}
       onError={() => { setPlaying(false); setPlayError(true); }}/>}
     {card && meta && (meta.date || meta.time || meta.location || meta.duration || meta.size) && <VhsOverlay asset={asset} place={place} settings={meta}/>}
     {card && (onSound || onOsd) && <div className="video-toggles">

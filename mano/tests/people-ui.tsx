@@ -28,8 +28,10 @@ function PanelFixture() {
 }
 
 function HookFixture() {
-  const people = usePeople('fixture-library', false, 'one');
+  const [mediaBusy, setMediaBusy] = useState(false);
+  const people = usePeople('fixture-library', mediaBusy, 'one');
   return <main><p>Native bridge MOCK — no recognition</p>
+    <button id="media-busy" onClick={() => setMediaBusy(value => !value)}>Toggle media activity</button>
     <button id="activate" onClick={() => void people.action('consent')}>Activate</button>
     <button id="reset-index" onClick={() => void people.action('reset')}>Reset</button>
     <button id="pause-index" onClick={() => void people.action('pause')}>Pause</button>
