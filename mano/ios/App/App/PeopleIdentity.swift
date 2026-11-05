@@ -38,6 +38,8 @@ struct PeopleIdentityGraph: Codable, Equatable {
     mutating func merge(_ source: String, into target: String) {
         let a = canonical(source), b = canonical(target)
         guard a != b else { return }; aliases[a] = b
+    }
+    mutating func compress() {
         for id in Array(aliases.keys) { aliases[id] = canonical(id) }
     }
     static func isNamed(_ id: String, names: [String:String]) -> Bool {
@@ -78,6 +80,7 @@ struct PeopleIdentityGraph: Codable, Equatable {
                 merge(source,into:target); membership[target,default:[]].formUnion(membership[source] ?? []); merges += 1
             }
         }
+        compress()
         return merges
     }
 }
@@ -115,6 +118,9 @@ struct PeopleState: Codable {
     var publicReady = false
     var revision = 0
     var protectionRevision = 0
+    var wantsAnalysis = false
+    var needsReconciliation = true
+    var pendingCorrections: [String:[String]] = [:]
     /// Defaults migrate v1 metadata without resetting IDs, names or corrections.
     static func decode(_ data: Data) throws -> PeopleState {
         guard var defaults = try JSONSerialization.jsonObject(with: JSONEncoder().encode(PeopleState())) as? [String:Any],
@@ -145,6 +151,7 @@ struct PeopleState: Codable {
         var replacements: [String:[PeopleFace]] = [:]
         for (entity, items) in byEntity {
             let owners = Set(items.compactMap { previousOwners[$0.1.id] ?? nil })
+            let knownPhotos = Set(items.filter { (previousOwners[$0.1.id] ?? nil) != nil }.map { $0.0 })
             let owner: String?
             if owners.count == 1 { owner = owners.first }
             else if owners.isEmpty {
@@ -155,7 +162,8 @@ struct PeopleState: Codable {
             for (photo,newFace) in items {
                 var face = newFace
                 if let old = previous[face.id] {
-                    face.person = previousOwners[face.id] ?? nil; face.ambiguous = face.person == nil
+                    face.person = (previousOwners[face.id] ?? nil) ?? (knownPhotos.count >= PeoplePolicy.minimumMergeEvidence ? owner : nil)
+                    face.ambiguous = face.person == nil
                     face.refinement = old.box == face.box ? old.refinement : nil
                     face.sampleStamp = old.box == face.box ? old.sampleStamp : nil
                 } else { face.person = owner; face.ambiguous = owner == nil }
@@ -163,5 +171,6 @@ struct PeopleState: Codable {
             }
         }
         for id in Array(entries.keys) { entries[id]?.faces = (replacements[id] ?? []).sorted { $0.id < $1.id } }
+        entities = entities.filter { byEntity[$0.key] != nil }
     }
 }

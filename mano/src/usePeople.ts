@@ -8,12 +8,23 @@ export function usePeople(fingerprint: string, paused: boolean, person?: string)
   const [revision, setRevision] = useState(0), [members, setMembers] = useState<{ person: string; ids: Set<string> }>();
   const [libraryChanges, setLibraryChanges] = useState(0);
   const refreshed = useRef<string | undefined>(undefined);
+  const publicRevision=useRef<number|undefined>(undefined);
   const quietUntil = useRef(0), enabled = useRef(false), busy = useRef(false), serial = useRef(0);
   const call = async (action: string, options: Record<string, unknown> = {}) => PeopleBridge.command({ action, ...options });
-  const adopt = (value: unknown) => { const result = value as PeopleStatus; if (typeof result.available === 'boolean') { enabled.current = !!result.running; setStatus({ ...NO_PEOPLE, ...result }); } };
+  const adopt = (value: unknown) => {
+    const result=value as Partial<PeopleStatus>;
+    if(typeof result.available!=='boolean')return;
+    enabled.current=!!result.running;
+    if(result.revision!==undefined&&result.revision!==publicRevision.current){publicRevision.current=result.revision;setRevision(v=>v+1);}
+    setStatus(previous=>{
+      const next={...previous,...result};
+      const keys=['available','consent','running','phase','blocked','hasPublication','revision','protectionRevision'] as const;
+      return keys.every(k=>previous[k]===next[k])&&!result.groups?previous:next;
+    });
+  };
   useEffect(() => { if (!isNative) return; let alive = true;
     void call('status').then(value => { if (alive) { refreshed.current = fingerprint; adopt(value); } }).catch(() => { if (alive) setStatus(NO_PEOPLE); });
-    return () => { alive = false; enabled.current = false; void call('pause').catch(() => {}); };
+    return () => { alive = false; enabled.current = false; void call('pause',{reason:'suspend'}).catch(() => {}); };
   }, []);
   useEffect(() => {
     if (!isNative || !status.available || !status.consent) return;
@@ -23,7 +34,7 @@ export function usePeople(fingerprint: string, paused: boolean, person?: string)
   }, [status.available, status.consent]);
   useEffect(() => { if (!status.available || !status.consent || refreshed.current === fingerprint) return; let alive = true;
     enabled.current = false;
-    void (async () => { await call('pause'); while (busy.current) await new Promise(resolve => setTimeout(resolve, 100));
+    void (async () => { await call('pause',{reason:'suspend'}); while (busy.current) await new Promise(resolve => setTimeout(resolve, 100));
       const value = await call('refresh'); if (alive) { refreshed.current = fingerprint; adopt(value); setRevision(v => v + 1); }
     })().catch(() => { if (alive) setError('No se pudo actualizar Personas. El análisis sigue pausado.'); });
     return () => { alive = false; };
@@ -44,22 +55,22 @@ export function usePeople(fingerprint: string, paused: boolean, person?: string)
       if (stopped) return;
       if (enabled.current && !busy.current && !paused && !document.hidden && performance.now() >= quietUntil.current) {
         busy.current = true; const token = serial.current;
-        try { const value = await call('scan'); if (!stopped && token === serial.current) { adopt(value); setRevision(v => v + 1); } }
+        try { const value = await call('scan',{sinceRevision:publicRevision.current}); if (!stopped && token === serial.current) { adopt(value); } }
         catch { if (!stopped) { enabled.current = false; setError('Análisis pausado. Reintenta cuando el iPhone esté disponible.'); } }
         finally { busy.current = false; }
       }
       if (!stopped) timer = setTimeout(tick, 1200);
     };
     timer = setTimeout(tick, 1200);
-    const hide = () => { if (document.hidden) void call('pause').then(adopt).catch(() => {}); };
+    const hide = () => { if (document.hidden) void call('pause',{reason:'suspend'}).then(adopt).catch(() => {}); else void call('status').then(adopt).catch(()=>{}); };
     document.addEventListener('visibilitychange', hide);
     return () => { stopped = true; clearTimeout(timer); document.removeEventListener('visibilitychange', hide); };
   }, [status.available, paused]);
   const action = async (name: string, options: Record<string, unknown> = {}) => {
     setError(''); enabled.current = false; serial.current++;
     try {
-      await call('pause'); while (busy.current) await new Promise(resolve => setTimeout(resolve, 100));
-      const value = await call(name, options); if (name === 'consent' || name === 'resume') refreshed.current = fingerprint; adopt(value); setRevision(v => v + 1); return value;
+      await call('pause',{reason:'suspend'}); while (busy.current) await new Promise(resolve => setTimeout(resolve, 100));
+      const value = await call(name, options); if (name === 'consent' || name === 'resume' || name === 'reconcile') refreshed.current = fingerprint; adopt(value); setRevision(v => v + 1); return value;
     } catch { setError('No se pudo completar. Tus fotos siguen intactas; puedes reintentar.'); return undefined; }
   };
   return { status, error, revision, libraryChanges, action, call, members: members && members.person === person ? members.ids : undefined,

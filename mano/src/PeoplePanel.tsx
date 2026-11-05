@@ -1,10 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { UsersIcon } from '@phosphor-icons/react';
-import { KeyboardInput } from './mobile';
+import { PersonMosaic } from './PersonMosaic';
+import { CocoLoader } from './Loader';
+import { canonicalPerson } from './people';
+import { KeyboardInput, useKeyboard } from './mobile';
 import { thumbnailInfo, isNative } from './library';
 import type { Asset, Filter } from './domain';
 import { PeopleImage, usePeopleProtection } from './PeopleMedia';
 import type { PersonItems, PeopleStatus } from './people';
+
+function PreviewName({value,change}:{value:string;change:(s:string)=>void}){const keyboard=useKeyboard();return <KeyboardInput value={value} maxLength={60} onChange={e=>change(e.target.value)} onBlur={()=>keyboard.hide()}/>;}
+function PersonName({value,change}:{value:string;change:(s:string)=>void}){return isNative?<input value={value} maxLength={60} onChange={e=>change(e.target.value)}/>:<PreviewName value={value} change={change}/>;}
 
 function PersonPreview({ asset }: { asset?: Asset }) {
   const hiddenAsset: Asset = asset ?? { id: '', kind: 'photo', date: 0, width: 1, height: 1, duration: 0 };
@@ -21,17 +27,19 @@ function PersonPreview({ asset }: { asset?: Asset }) {
   return image?.key === key ? <img src={image.src} alt="Fotografía representativa" draggable={false}/> : <span>Vista local no disponible</span>;
 }
 
-export function PeoplePanel({ status, error, assets, draft, change, action, call, revision }: {
+export function PeoplePanel({ status, error, assets, draft, change, action, call, revision, review, settings }: {
   status: PeopleStatus; error: string; assets: Asset[]; draft: Filter; change: (f: Partial<Filter>) => void;
   action: (name: string, options?: Record<string, unknown>) => Promise<unknown>;
-  call: (name: string, options?: Record<string, unknown>) => Promise<unknown>; revision: number;
+  call: (name: string, options?: Record<string, unknown>) => Promise<unknown>; revision: number;review?:(f:Filter)=>void;settings?:()=>void;
 }) {
   const [consenting, setConsenting] = useState(false), [deleting, setDeleting] = useState(false), [working, setWorking] = useState(false);
   const [items, setItems] = useState<PersonItems['items']>([]), [page, setPage] = useState(0), [picked, setPicked] = useState<string[]>([]);
   const [name, setName] = useState(''), [target, setTarget] = useState('');
   const byId = useMemo(()=>new Map(assets.map(a=>[a.id,a])),[assets]);
   const [groupPage,setGroupPage]=useState(0);
-  const selected = status.groups.find(g => g.id === draft.person);
+  const initial=status.hasPublication===false||(!status.hasPublication&&(status.phase==='indexing'||status.phase==='reconciling'));
+  const groups=initial?[]:status.groups;
+  const selected = groups.find(g => g.id === canonicalPerson(draft.person,status.aliases));
   useEffect(() => { setName(selected?.name ?? ''); setPicked([]); setPage(0); setTarget(''); }, [selected?.id]);
   useEffect(() => {
     setItems([]); if (!selected) return; let alive = true;
@@ -49,25 +57,28 @@ export function PeoplePanel({ status, error, assets, draft, change, action, call
       <label className="switch-field"><span>Permitir el análisis facial local<small>Solo fotos accesibles. No se descargan originales de iCloud ni se analizan vídeos.</small></span><input type="checkbox" checked={consenting} onChange={e => setConsenting(e.target.checked)}/></label>
       <button className="sheet-action secondary" disabled={!consenting || working} onClick={() => void run('consent')}>Activar Personas</button>
     </> : <>
-      <p className="setting-note" role="status">{status.running ? status.blocked === 'thermal' ? 'Esperando a que el iPhone se enfríe.' : status.blocked ? 'Análisis en espera.' : 'Detectando personas.' : status.remaining ? 'Análisis pausado.' : status.waiting ? 'Análisis local terminado.' : 'Biblioteca actualizada.'} {status.processed} de {status.total} fotografías analizadas. {status.groups.length} grupos encontrados.{status.waiting > 0 && <small>{status.waiting} sin vista local; se reintentan al reanudar. No se descargan automáticamente.</small>}<small>Avanza con la app abierta, cede ante gestos y multimedia y espera si el iPhone se calienta.</small></p>
-      <div className="filter-chips"><button disabled={working} onClick={() => void run(status.running ? 'pause' : 'resume')}>{status.running ? 'Pausar análisis' : 'Reanudar análisis'}</button><button onClick={() => setDeleting(true)}>Desactivar y borrar índice</button></div>
+      <div className="people-analysis" role="status">
+        {initial&&status.running&&<CocoLoader size={34}/>}
+        <p>{status.running?(initial?<>Estamos analizando tus fotos.<br/>Esto puede tardar un poco.<br/>Mientras tanto, sigue organizando tus recuerdos.</>:'Actualizando Personas. Puedes seguir organizando tus recuerdos.'):
+          status.phase==='ready'?'Personas está actualizada.':'Análisis pausado. Puedes reanudarlo cuando quieras.'}</p>
+        {!!status.blocked&&<p className="setting-note">{status.blocked==='thermal'?'Esperando a que el iPhone se enfríe.':'El análisis espera a que haya recursos disponibles.'}</p>}
+      </div>
+      <div className="filter-chips"><button disabled={working} onClick={()=>void run(status.running?'pause':status.phase==='ready'?'reconcile':'resume')}>{status.running?'Pausar análisis':status.phase==='ready'?'Revisar agrupaciones':'Reanudar análisis'}</button><button onClick={()=>setDeleting(true)}>Desactivar y borrar índice</button></div>
+      {!initial&&!groups.length&&<p className="setting-note">Todavía no hay grupos con al menos {status.minimumPhotos??'varias'} fotos distintas. Los grupos pequeños se conservan para futuras coincidencias. Las fotos sin vista local no detienen el análisis.</p>}
       {deleting && <div className="people-confirm"><p>Se borrarán agrupaciones, nombres y datos faciales de CocoWash, y se desactivará Breakup Mode. Tus fotografías y decisiones no se borran.</p><button disabled={working} onClick={async () => { if (await run('reset')) { change({ person: undefined, breakup: undefined }); setDeleting(false); setConsenting(false); } }}>Borrar índice facial</button><button onClick={() => setDeleting(false)}>Cancelar</button></div>}
       <div className="people-groups" role="group" aria-label="Grupos de personas">
-        {status.groups.slice(groupPage*20,groupPage*20+20).map(g => <button key={g.id} aria-pressed={draft.person === g.id} onClick={() => change({ person: g.id, breakup: 'normal', smart: 'all', media: 'all', seal: 'all', includeWaiting: true })}>
-          <span className="person-portrait"><PersonPreview asset={byId.get(g.representative)}/></span><strong>{g.name}</strong><small>{g.count} fotografías</small>
+        {groups.slice(groupPage*20,groupPage*20+20).map(g => <button key={g.id} aria-pressed={draft.person === g.id} onClick={() => change({ person: g.id, breakup: draft.breakup??'normal', censorStyle:draft.censorStyle??'oval', smart: 'all', media: 'all', seal: 'all', includeWaiting: true })}>
+          <PersonMosaic group={g} revision={revision}/><strong>{g.name}</strong><small>{g.count} fotografías</small>
         </button>)}
       </div>
-      {status.groups.length>20&&<div className="filter-chips"><button disabled={groupPage===0} onClick={()=>setGroupPage(p=>p-1)}>Grupos anteriores</button><button disabled={(groupPage+1)*20>=status.groups.length} onClick={()=>setGroupPage(p=>p+1)}>Más personas</button></div>}
+      {groups.length>20&&<div className="filter-chips"><button disabled={groupPage===0} onClick={()=>setGroupPage(p=>p-1)}>Grupos anteriores</button><button disabled={(groupPage+1)*20>=groups.length} onClick={()=>setGroupPage(p=>p+1)}>Más personas</button></div>}
       {selected && <>
         <p className="setting-note">Grupo probable: {selected.name}. Aplica los filtros para revisarlo con las decisiones habituales. Las favoritas siguen protegidas.</p>
-        <h3 className="people-mode-title">Breakup Mode</h3>
-        <div className="filter-chips" role="group" aria-label="Breakup Mode">
-          {([['normal', 'Normal'], ['face', 'Rostro censurado'], ['hidden', 'Fotografía oculta']] as const).map(([mode, label]) => <button key={mode} aria-pressed={draft.breakup === mode} onClick={() => change({ breakup: mode })}>{label}</button>)}
-          <button onClick={() => change({ person: undefined, breakup: undefined })}>Quitar filtro Personas</button>
-        </div>
-        <p className="setting-note">Breakup Mode protege también la revisión y el zoom. Si no hay una coincidencia vigente o no está disponible la vista local, se mantiene oculta. No cambia el original.</p>
+        <button className="sheet-action" disabled={working} onClick={()=>review?.(draft)}>Revisar estas fotografías</button>
+        <button className="sheet-action secondary" onClick={settings}>Ajustar Breakup Mode</button>
+        <p className="setting-note">La censura se configura en Ajustes y se aplica a esta persona. Las favoritas siguen protegidas.</p>
         <details><summary>Corregir este grupo</summary>
-          <label className="field">Nombre opcional{isNative ? <input value={name} maxLength={60} onChange={e => setName(e.target.value)}/> : <KeyboardInput value={name} maxLength={60} onChange={e => setName(e.target.value)}/>}</label>
+          <label className="field">Nombre opcional<PersonName value={name} change={setName}/></label>
           <button disabled={working || !name.trim()} onClick={() => void run('correct', { operation: 'rename', person: selected.id, name: name.trim() })}>Guardar nombre</button>
           <label className="field">Unificar con<select value={target} onChange={e => setTarget(e.target.value)}><option value="">Elegir otro grupo</option>{status.groups.filter(g => g.id !== selected.id).map(g => <option key={g.id} value={g.id}>{g.name}</option>)}</select></label>
           <button disabled={working || !target} onClick={async () => { if (await run('correct', { operation: 'merge', person: selected.id, target })) change({ person: target }); }}>Unificar grupos</button>
@@ -81,6 +92,7 @@ export function PeoplePanel({ status, error, assets, draft, change, action, call
         </details>
       </>}
     </>}
+    {status.correctionsNeedReview&&<p className="setting-note">Hay correcciones de fotos editadas que requieren revisión. Se conservan y no se trasladan a otro rostro sin suficiente certeza.</p>}
     {error && <p className="date-error" role="alert">{error}</p>}
   </fieldset>;
 }

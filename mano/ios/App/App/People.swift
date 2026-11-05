@@ -64,6 +64,7 @@ private actor PeopleIndex {
     private var locations: [String:(photo:String,index:Int)] = [:]
     private var checkpoint: PeopleCheckpoint?
     private var dirtyEntries = Set<String>()
+    private var metadataDirty = true
     private var work: Task<Void, Error>?
     private var store = Store(), loaded = false, running = false, scanning = false
     private var generation = 0
@@ -100,6 +101,7 @@ private actor PeopleIndex {
         }
         for (id, data) in rows { store.entries[id] = try JSONDecoder().decode(Entry.self, from: data) }
         if legacy {
+            store.wantsAnalysis = store.consent
             let nativePeople = Set(store.entities.values)
             for id in Array(store.entries.keys) {
                 guard var entry = store.entries[id] else { continue }
@@ -136,13 +138,14 @@ private actor PeopleIndex {
         return true
     }
     private func save(publication next: [PublishedPerson]? = nil) throws {
+        if !metadataDirty && dirtyEntries.isEmpty && next == nil { return }
         var meta = store; meta.entries = [:]
         let rows = try dirtyEntries.map { id -> (String, Data?) in (id, try store.entries[id].map { try JSONEncoder().encode($0) }) }
         guard let checkpoint else { throw Failure.unavailable }
         let published = try next.map { values in try values.map { ($0.id,try JSONEncoder().encode($0)) } }
-        try checkpoint.write(meta: JSONEncoder().encode(meta), rows: rows, publication: published)
+        try checkpoint.write(meta: metadataDirty ? JSONEncoder().encode(meta) : nil, rows: rows, publication: published)
         if let next { publication = next }
-        dirtyEntries.removeAll()
+        dirtyEntries.removeAll(); metadataDirty = false
     }
     private func signature(_ a: PHAsset) -> String { "\(a.modificationDate?.timeIntervalSince1970 ?? 0):\(a.pixelWidth):\(a.pixelHeight)" }
     private func group(_ f: Face) -> String? { store.group(f) }
@@ -150,18 +153,25 @@ private actor PeopleIndex {
     private func refresh() async throws {
         guard !scanning, !refreshing else { throw Failure.stale }
         refreshing = true; defer { refreshing = false }
-        generation += 1
+        generation += 1; metadataDirty = true
         let options = PHFetchOptions(); options.predicate = NSPredicate(format: "mediaType == %d AND hidden == NO", PHAssetMediaType.image.rawValue)
         var current: [String: PHAsset] = [:]
         if permission() { PHAsset.fetchAssets(with: options).enumerateObjects { a, _, _ in if !a.mediaSubtypes.contains(.photoScreenshot) { current[a.localIdentifier] = a } } }
         let obsolete = store.entries.keys.filter { id in current[id].map { signature($0) != store.entries[id]?.signature } ?? true }
+        for id in obsolete {
+            if current[id] != nil, let old = store.entries[id] {
+                let corrected=old.faces.filter { store.overrides[$0.id] != nil || store.excluded.contains($0.id) }.map(\.id)
+                if !corrected.isEmpty { store.pendingCorrections[id]=Array(Set((store.pendingCorrections[id] ?? [])+corrected)) }
+            } else { store.pendingCorrections.removeValue(forKey:id) }
+        }
         if !obsolete.isEmpty { try await analyzer?.deleteAssets(obsolete.map { MediaIntelligenceImageAsset.ID($0) }); for id in obsolete { store.entries.removeValue(forKey: id); dirtyEntries.insert(id) } }
         assets = current; total = current.count; deferred = []
         pending = current.keys.filter { store.entries[$0] == nil }.sorted(by: >)
-        let faces = Set(store.entries.values.flatMap { $0.faces.map(\.id) })
+        let faces = Set(store.entries.values.flatMap { $0.faces.map(\.id) }+store.pendingCorrections.values.flatMap{$0})
         store.excluded.formIntersection(faces); store.overrides = store.overrides.filter { faces.contains($0.key) }
         rebuildLocations()
-        phase = pending.isEmpty ? "reconciling" : "indexing"
+        if !obsolete.isEmpty || !pending.isEmpty { store.needsReconciliation = true }
+        phase = !pending.isEmpty ? "indexing" : (store.needsReconciliation || !store.publicReady ? "reconciling" : "ready")
         reconcileSamples = []; reconcileQueue = []
         if !obsolete.isEmpty { store.protectionRevision += 1 }
         // Remove inaccessible references from the last public snapshot immediately.
@@ -170,18 +180,21 @@ private actor PeopleIndex {
             p.portraits = p.portraits.filter { p.photos.contains($0.id) }
             return p.photos.count >= PeoplePolicy.minimumPhotos ? p : nil
         }
+        if pruned != publication { store.revision += 1 }
         try save(publication:pruned == publication ? nil : pruned)
         needsRefresh = false
     }
-    private func snapshot() -> [String:Any] {
-        let groups: [[String:Any]] = store.publicReady ? publication.map { p in
+    private func snapshot(includeGroups: Bool = true) -> [String:Any] {
+        let groups: [[String:Any]] = includeGroups && store.publicReady ? publication.map { p in
             ["id":p.id,"name":p.name,"count":p.photos.count,"representative":p.portraits.first?.id ?? "",
              "portraits":p.portraits.map { ["id":$0.id,"face":$0.face] }]
         } : []
-        return ["available":true,"consent":store.consent,"running":running,"phase":running ? phase : (phase == "ready" ? "ready" : "paused"),
+        var result: [String:Any] = ["available":true,"consent":store.consent,"running":running,"phase":running ? phase : (phase == "ready" ? "ready" : "paused"),
                 "hasPublication":store.publicReady,"revision":store.revision,"protectionRevision":store.protectionRevision,
-                "minimumPhotos":PeoplePolicy.minimumPhotos,"blocked":blocked,"groups":groups,"aliases":store.graph.aliases,
+                "minimumPhotos":PeoplePolicy.minimumPhotos,"blocked":blocked,"correctionsNeedReview": !store.pendingCorrections.isEmpty,
                 "processed":store.entries.count,"total":total,"remaining":pending.count,"waiting":deferred.count]
+        if includeGroups { result["groups"] = groups; result["aliases"] = store.graph.aliases }
+        return result
     }
     private func rebuildLocations() {
         locations.removeAll(keepingCapacity:true)
@@ -190,11 +203,13 @@ private actor PeopleIndex {
     private func image(_ asset: PHAsset, size: Int, tracked: Bool = false) async -> UIImage? {
         defer { if tracked { activeImage = nil } }
         return await withCheckedContinuation { continuation in
+            let delivery = PeopleImageDelivery(continuation)
             let options = PHImageRequestOptions(); options.isNetworkAccessAllowed = false; options.deliveryMode = .highQualityFormat; options.resizeMode = .exact
             let request = manager.requestImage(for: asset, targetSize: CGSize(width: CGFloat(size), height: CGFloat(size)), contentMode: .aspectFit, options: options) { image, info in
                 if (info?[PHImageResultIsDegradedKey] as? Bool) == true { return }
-                continuation.resume(returning: image)
+                delivery.finish(image)
             }
+            delivery.limit(manager:manager,request:request)
             if tracked { activeImage = request }
         }
     }
@@ -227,7 +242,7 @@ private actor PeopleIndex {
             let results = try await analyzer.insertOrUpdateAssets([MediaIntelligenceImageAsset(id: .init(id), kind: .url(file))])
             for try await _ in results { }
             guard running, token == generation else { pending.append(id); break }
-            store.entries[id] = Entry(signature: signature(asset), faces: []); dirtyEntries.insert(id); sinceGrouping += 1
+            store.entries[id] = Entry(signature: signature(asset), faces: []); dirtyEntries.insert(id); sinceGrouping += 1; store.needsReconciliation = true
         }
         guard running, token == generation, !Task.isCancelled, !CocoMediaPressure.busy else { try save(); return }
         if sinceGrouping < 64 && !pending.isEmpty && !store.entities.isEmpty { try save(); return }
@@ -251,8 +266,13 @@ private actor PeopleIndex {
         }
         guard token == generation, !Task.isCancelled else { throw CancellationError() }
         let previous = store.entries
-        store.assign(detected)
+        store.assign(detected); metadataDirty = true
         for (id,entry) in store.entries where previous[id]?.faces != entry.faces { dirtyEntries.insert(id) }
+        for id in Array(store.pendingCorrections.keys) where store.entries[id] != nil {
+            let present=Set(store.entries[id]?.faces.map(\.id) ?? [])
+            let missing=(store.pendingCorrections[id] ?? []).filter { !present.contains($0) }
+            if missing.isEmpty { store.pendingCorrections.removeValue(forKey:id) } else { store.pendingCorrections[id]=missing }
+        }
         rebuildLocations(); sinceGrouping = 0
     }
     private func selections() -> [String:[PeoplePortrait]] {
@@ -264,6 +284,7 @@ private actor PeopleIndex {
                 byPerson[person,default:[:]][photo] = face
             }
         }
+        let dates = assets.mapValues { $0.creationDate?.timeIntervalSince1970 ?? 0 }
         var result: [String:[PeoplePortrait]] = [:]
         for (person,photos) in byPerson {
             var candidates = photos.keys.sorted(), chosen: [String] = []
@@ -272,8 +293,8 @@ private actor PeopleIndex {
                 let next = candidates.max { a,b in
                     func score(_ id: String) -> Double {
                         let face = photos[id]!, area = face.box[2]*face.box[3]/max(0.000001,maxArea)
-                        let date = assets[id]?.creationDate?.timeIntervalSince1970 ?? 0
-                        let spread = chosen.map { abs(date-(assets[$0]?.creationDate?.timeIntervalSince1970 ?? 0)) }.min() ?? 0
+                        let date = dates[id] ?? 0
+                        let spread = chosen.map { abs(date-(dates[$0] ?? 0)) }.min() ?? 0
                         return area*0.6+min(1,spread/(30*86400))*0.4
                     }
                     let x = score(a), y = score(b); return x == y ? a > b : x < y
@@ -365,13 +386,17 @@ private actor PeopleIndex {
         guard token == generation, running else { return }
         let previousGraph = store.graph, previousRevision = store.revision, previousProtection = store.protectionRevision, previousReady = store.publicReady
         if graph != store.graph { store.graph = graph; store.protectionRevision += 1 }
+        let previousNeeds = store.needsReconciliation
+        store.needsReconciliation = false
         do { try publish() } catch {
+            store.needsReconciliation = previousNeeds
             store.graph = previousGraph; store.revision = previousRevision; store.protectionRevision = previousProtection; store.publicReady = previousReady
             throw error
         }
         phase = "ready"; running = false; reconcileSamples = []; reconcileQueue = []
     }
     private func publish(allowed: Set<String>? = nil) throws {
+        metadataDirty = true
         let membership = store.membership(), selected = selections()
         let values = membership.compactMap { person,photos -> PublishedPerson? in
             let visible = allowed.map { photos.intersection($0) } ?? photos
@@ -445,7 +470,7 @@ private actor PeopleIndex {
         try open()
         if needsRefresh && !scanning && !refreshing && ["scan", "person"].contains(action) { try await refresh() }
         if action == "yield" { generation += 1; work?.cancel(); if let request = activeImage { manager.cancelImageRequest(request) }; return ["available": true] }
-        if action == "pause" { running = false; generation += 1; work?.cancel(); if let request = activeImage { manager.cancelImageRequest(request) }; try save(); return snapshot() }
+        if action == "pause" { metadataDirty = true; running = false; if call.getString("reason") != "suspend" { store.wantsAnalysis = false }; generation += 1; work?.cancel(); if let request = activeImage { manager.cancelImageRequest(request) }; try save(); return snapshot() }
         if action == "reset" {
             guard !scanning, !refreshing else { running = false; generation += 1; throw Failure.stale }
             running = false; generation += 1; analyzer = nil; reconciler = nil; checkpoint = nil; dirtyEntries.removeAll()
@@ -455,11 +480,11 @@ private actor PeopleIndex {
             if let observer = memoryObserver { NotificationCenter.default.removeObserver(observer); memoryObserver = nil }
             return ["available": true, "consent": false, "groups": [], "processed": 0, "total": 0, "remaining": 0, "waiting": 0, "running": false]
         }
-        if action == "status", store.consent { try await refresh() }
-        if action == "consent" { store.consent = true; try save(); try await refresh(); running = true }
-        if action == "refresh", store.consent { try await refresh() }
+        if action == "status", store.consent { try await refresh(); running = store.wantsAnalysis && phase != "ready" }
+        if action == "consent" { metadataDirty = true; store.consent = true; store.wantsAnalysis = true; try save(); try await refresh(); running = true }
+        if action == "refresh", store.consent { try await refresh(); running = store.wantsAnalysis && phase != "ready" }
         if ["resume","reconcile"].contains(action), store.consent {
-            try await refresh(); phase = pending.isEmpty ? "reconciling" : "indexing"; running = true
+            metadataDirty = true; store.wantsAnalysis = true; store.needsReconciliation = true; try await refresh(); phase = pending.isEmpty ? "reconciling" : "indexing"; running = true
         }
         if action == "scan" {
             guard work == nil else { return snapshot() }
@@ -496,16 +521,12 @@ private actor PeopleIndex {
                 let target = store.graph.canonical(requested)
                 guard target != person, store.names[target] != nil else { throw Failure.invalid }
                 if !PeopleIdentityGraph.isNamed(target,names:store.names), PeopleIdentityGraph.isNamed(person,names:store.names) { store.names[target] = store.names[person] }
-                store.graph.merge(person,into:target)
+                store.graph.merge(person,into:target); store.graph.compress()
             }
-            store.protectionRevision += 1; reconcileSamples = []; reconcileQueue = []
+            metadataDirty = true; store.protectionRevision += 1; reconcileSamples = []; reconcileQueue = []
             try publish(allowed:Set(publication.flatMap(\.photos))); committed = true
         }
-        var result = snapshot()
-        if call.getInt("sinceRevision") == store.revision {
-            result.removeValue(forKey:"groups"); result.removeValue(forKey:"aliases")
-        }
-        return result
+        return snapshot(includeGroups:call.getInt("sinceRevision") != store.revision)
     }
 }
 #endif

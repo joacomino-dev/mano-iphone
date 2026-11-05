@@ -20,5 +20,16 @@ do {
     require(meta == Data("paused".utf8) && values.count == 50_000, "Resume metadata and decisions atomically")
     require(values["synthetic-1"] == nil && values["synthetic-2"] == Data("changed".utf8), "Update and obsolete reference deletion persist")
     require(values["synthetic-3"] == payload && values["quote' ; DROP TABLE records; --"] == payload, "Unrelated records and bound values remain intact")
+    let backup = folder.appendingPathComponent("before-migration.sqlite")
+    try reopened.backup(to:backup)
+    try reopened.write(meta:Data("v2".utf8),rows:[],publication:[("one",Data("stable-publication".utf8))])
+    do {
+        try reopened.write(meta:Data("broken-partial".utf8),rows:[("new-invalid-cycle",payload)],publication:[("duplicate",payload),("duplicate",payload)])
+        fatalError("Conflicting publication committed")
+    } catch { }
+    let (valid,after) = try reopened.read(), published = try reopened.readPublication()
+    require(valid == Data("v2".utf8) && after.count == 50_000 && published.count == 1 && published[0].0 == "one","A failed publication is fully rolled back")
+    let original = try PeopleCheckpoint(backup).read()
+    require(original.0 == Data("paused".utf8) && original.1.count == 50_000,"Pre-migration backup remains recoverable")
 }
 print("PEOPLE_CHECKPOINT_OK: 50000 synthetic records, incremental update/delete, reopen and bound identifiers; not a face performance benchmark")

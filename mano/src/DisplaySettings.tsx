@@ -37,9 +37,9 @@ const dateOptions = (upper: boolean) => DATE_FORMATS.map(format => [format, form
 
 /** How information looks on cards. Applied live and saved; it never affects
  * which files the filters put in the pile. */
-export function DisplaySettingsPanel({ display, change, geek, setGeek, library, replayIntro }: {
+export function DisplaySettingsPanel({ display, change, geek, setGeek, library, replayIntro, breakup }: {
   display: DisplaySettings; change: (next: DisplaySettings) => void; geek: boolean; setGeek: (value: boolean) => void;
-  library: ReactNode; replayIntro: () => void;
+  library: ReactNode; breakup?:ReactNode; replayIntro: () => void;
 }) {
   const photo = display.photo, video = display.video;
   const setPhoto = (patch: Partial<typeof photo>) => change({ ...display, photo: { ...photo, ...patch } });
@@ -47,6 +47,7 @@ export function DisplaySettingsPanel({ display, change, geek, setGeek, library, 
   const caption = polaroidCaption(SAMPLE, SAMPLE_PLACE, photo, locale);
   return <div className="settings-panel">
     <p className="settings-intro">Cambia cómo se ven tus recuerdos. No cambia qué fotos entran en la pila.</p>
+    {breakup}
     {/* The tour again, on purpose: first in Ajustes, a full button (no wait this time). */}
     <fieldset>
       <legend><GraduationCapIcon size={18}/>Introducción</legend>

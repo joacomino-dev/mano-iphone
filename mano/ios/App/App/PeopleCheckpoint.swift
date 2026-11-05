@@ -58,7 +58,7 @@ final class PeopleCheckpoint {
         }
         return (meta, rows)
     }
-    func write(meta: Data, rows: [(String, Data?)], publication: [(String,Data)]? = nil) throws {
+    func write(meta: Data?, rows: [(String, Data?)], publication: [(String,Data)]? = nil) throws {
         try execute("BEGIN IMMEDIATE")
         do {
             if let publication {
@@ -82,11 +82,13 @@ final class PeopleCheckpoint {
                 if let data { let result = data.withUnsafeBytes { sqlite3_bind_blob(statement, 2, $0.baseAddress, Int32($0.count), transient) }; guard result == SQLITE_OK else { throw Failure.sqlite } }
                 guard sqlite3_step(statement) == SQLITE_DONE else { throw Failure.sqlite }
             }
-            var statement: OpaquePointer?
-            guard sqlite3_prepare_v2(db, "INSERT OR REPLACE INTO settings(id,value) VALUES(1,?)", -1, &statement, nil) == SQLITE_OK else { throw Failure.sqlite }
-            defer { sqlite3_finalize(statement) }
-            let result = meta.withUnsafeBytes { sqlite3_bind_blob(statement, 1, $0.baseAddress, Int32($0.count), transient) }
-            guard result == SQLITE_OK, sqlite3_step(statement) == SQLITE_DONE else { throw Failure.sqlite }
+            if let meta {
+                var statement: OpaquePointer?
+                guard sqlite3_prepare_v2(db, "INSERT OR REPLACE INTO settings(id,value) VALUES(1,?)", -1, &statement, nil) == SQLITE_OK else { throw Failure.sqlite }
+                defer { sqlite3_finalize(statement) }
+                let result = meta.withUnsafeBytes { sqlite3_bind_blob(statement, 1, $0.baseAddress, Int32($0.count), transient) }
+                guard result == SQLITE_OK, sqlite3_step(statement) == SQLITE_DONE else { throw Failure.sqlite }
+            }
             try execute("COMMIT")
         } catch { try? execute("ROLLBACK"); throw error }
     }

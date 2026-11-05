@@ -27,7 +27,8 @@ enum PeopleGeometry {
     /// Project the safety rectangle into the oval's rotated axes. sqrt(2)
     /// expansion covers its corners; feathering happens outside that core.
     static func oval(_ bounds: [Double], width: Double, height: Double, angle: Double) -> Oval? {
-        guard let box = mask(bounds,width:width,height:height), angle.isFinite else { return nil }
+        guard valid(bounds), bounds[2] >= 0.015, bounds[3] >= 0.015,
+              let box = rect(bounds,width:width,height:height), angle.isFinite else { return nil }
         let a = CGFloat(angle), cosine = abs(cos(a)), sine = abs(sin(a))
         let rx = (box.width*cosine+box.height*sine)*0.76
         let ry = (box.width*sine+box.height*cosine)*0.76

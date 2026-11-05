@@ -1,4 +1,4 @@
-import { personFilter, type BreakupMode } from './people.ts';
+import { personFilter, type BreakupMode, type CensorStyle } from './people.ts';
 export type MediaKind = 'photo' | 'video' | 'live';
 /** `bytes`: what deleting it frees (all its resources), when measured.
  * `screenshot`: screenshots and screen recordings (PhotoKit subtype).
@@ -31,7 +31,7 @@ export type Order = 'oldest' | 'newest' | 'largest' | 'smallest' | 'random';
 /** Quick sets, combinable with every other filter. «favorites» is the only
  * one that shows favourites: everywhere else they stay out of the pile. */
 export type Smart = 'all' | 'later' | 'screenshots' | 'lowQuality' | 'text' | 'favorites';
-export type Filter = { seal: number | 'all' | 'none'; order: Order; media: 'all' | MediaKind; includeWaiting: boolean; dateRange?: 'all' | '24h' | '7d' | '30d' | 'custom'; from?: string; to?: string; geek?: boolean; smart?: Smart; person?: string; breakup?: BreakupMode; v?: 2 };
+export type Filter = { seal: number | 'all' | 'none'; order: Order; media: 'all' | MediaKind; includeWaiting: boolean; dateRange?: 'all' | '24h' | '7d' | '30d' | 'custom'; from?: string; to?: string; geek?: boolean; smart?: Smart; person?: string; breakup?: BreakupMode; censorStyle?: CensorStyle; v?: 2 };
 export const ORDERS: Order[] = ['oldest', 'newest', 'largest', 'smallest', 'random'];
 export const SMARTS: Smart[] = ['all', 'later', 'screenshots', 'lowQuality', 'text', 'favorites'];
 export const LEVELS = ['Blanco', 'Rojo', 'Verde', 'Negro', 'Azul', 'Morado', 'Naranja', 'Dorado'];
@@ -39,7 +39,7 @@ export const DAYS = [7, 14, 30, 60, 120, 240, 365, Infinity];
 export const initialState = (): RecordState => ({ marks: {}, pending: [], favorites: [], removed: [], history: [], later: [] });
 /** Chronological by default (0.6): the person knows where they are in their roll. */
 export const initialFilter: Filter = { seal: 'all', order: 'oldest', media: 'all', includeWaiting: false, smart: 'all', v: 2 };
-export function withoutPeople(filter: Filter): Filter { const { person: _person, breakup: _breakup, ...rest } = filter; return rest; }
+export function withoutPeople(filter: Filter): Filter { const { person: _person, breakup: _breakup, censorStyle: _style, ...rest } = filter; return rest; }
 /** Forget derived person associations while retaining every decision and hand. */
 export function forgetPeople(state: RecordState): RecordState {
   return { ...state, history: state.history.map(d => d.context?.filter?.person ? { ...d, context: { ...d.context, filter: withoutPeople(d.context.filter) } } : d) };

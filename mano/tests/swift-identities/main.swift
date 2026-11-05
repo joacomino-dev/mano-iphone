@@ -43,7 +43,7 @@ check(bar.angle > 0.4 && bar.angle < 0.5,"Eye bar follows measured tilt")
 check(PeopleGeometry.eyeBar(nil,bounds:[0.2,0.2,0.5,0.5],width:1000,height:1000) == nil,"No invented eye position")
 for angle in [-0.7,0,0.7] {
  let oval = PeopleGeometry.oval([0.3,0.2,0.2,0.4],width:1000,height:1000,angle:angle)!
- let box = PeopleGeometry.mask([0.3,0.2,0.2,0.4],width:1000,height:1000)!
+ let box = PeopleGeometry.rect([0.3,0.2,0.2,0.4],width:1000,height:1000)!
  for x in [box.minX,box.maxX] { for y in [box.minY,box.maxY] {
   let dx=x-oval.center.x,dy=y-oval.center.y,px=dx*cos(oval.angle)+dy*sin(oval.angle),py = -dx*sin(oval.angle)+dy*cos(oval.angle)
   check(pow(px/oval.radii.width,2)+pow(py/oval.radii.height,2)<=1,"Oval covers safety rectangle at every tested tilt")

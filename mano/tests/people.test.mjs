@@ -11,7 +11,7 @@ test('empty finish requires three presses within three seconds, no accumulating 
  burst.clear();assert.equal(burst.press(0),false);assert.equal(burst.press(3001),false);assert.equal(burst.press(6002),false);assert.equal(burst.press(6003),false);assert.equal(burst.press(6004),true);
 });
 test('unknown protected mode fails closed and old filters keep their previous meaning',()=>{
- assert.deepEqual(personFilter({person:'a',breakup:'unexpected'}),{person:'a',breakup:'hidden'});
+ assert.deepEqual(personFilter({person:'a',breakup:'unexpected'}),{person:'a',breakup:'face',censorStyle:'oval'});
  assert.deepEqual(personFilter({person:12,breakup:'face'}),{});
  assert.equal(protectedMode('a',undefined),true);assert.equal(protectedMode('a','face'),true);assert.equal(protectedMode('a','normal'),false);assert.equal(protectedMode(undefined,'face'),false);
  assert.equal(normalizeFilter(initialFilter).person,undefined);
@@ -40,4 +40,9 @@ test('deleting the facial index forgets person associations without losing decis
  assert.equal(forgotten.history[0].context.filter.person,undefined);assert.equal(forgotten.history[0].context.filter.breakup,undefined);
  assert.equal(state.history[0].context.filter.person,'private-person');
  assert.deepEqual(forgotten.pending,state.pending);assert.deepEqual(forgotten.history[0].context.handIds,['a','b']);assert.deepEqual(undo(forgotten),initialState());
+});
+
+test('9.7.1 hidden sessions migrate to censored and preserve eye style separately from the two modes',()=>{
+ assert.deepEqual(personFilter({person:'a',breakup:'hidden'}),{person:'a',breakup:'face',censorStyle:'oval'});
+ assert.deepEqual(personFilter({person:'a',breakup:'face',censorStyle:'eyes'}),{person:'a',breakup:'face',censorStyle:'eyes'});
 });

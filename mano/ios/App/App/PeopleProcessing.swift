@@ -2,6 +2,25 @@ import Foundation
 import UIKit
 import Vision
 import CoreImage
+import Photos
+
+/// Only lock-protected completion state crosses PhotoKit callback queues.
+/// Timeout/cancellation/late callbacks can resume the continuation only once.
+final class PeopleImageDelivery: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<UIImage?,Never>?
+    private var expiration: DispatchWorkItem?
+    init(_ continuation: CheckedContinuation<UIImage?,Never>) { self.continuation = continuation }
+    @discardableResult func finish(_ image: UIImage?) -> Bool {
+        lock.lock(); let pending = continuation; continuation = nil; expiration?.cancel(); expiration = nil; lock.unlock()
+        pending?.resume(returning:image); return pending != nil
+    }
+    func limit(manager: PHImageManager, request: PHImageRequestID) {
+        let item = DispatchWorkItem { [weak self] in if self?.finish(nil) == true { manager.cancelImageRequest(request) } }
+        lock.lock(); if continuation == nil { lock.unlock(); return }; expiration = item; lock.unlock()
+        DispatchQueue.global(qos:.utility).asyncAfter(deadline:.now()+15,execute:item)
+    }
+}
 
 /// Geometry-only second pass. It never assigns an identity or uses an image
 /// similarity print as a facial embedding. Results are normalized and reusable.

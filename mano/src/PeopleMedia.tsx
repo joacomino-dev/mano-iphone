@@ -5,38 +5,47 @@ import type { Asset } from './domain';
 import { RequestQueue } from './requests';
 import { cardPixels, previewPolicyKey, subscribePreviewPolicy } from './preview';
 import { useSyncExternalStore } from 'react';
-import { protectedMode, type BreakupMode } from './people';
+import { protectedMode, type BreakupMode, type CensorStyle } from './people';
 
 export const PeopleBridge = registerPlugin<{
   command(options: Record<string, unknown>): Promise<unknown>;
   addListener(event: 'libraryChanged', callback: () => void): Promise<{ remove(): Promise<void> }>;
 }>('People');
-export const PeopleProtection = createContext<{ person?: string; mode?: BreakupMode; revision: number }>({ revision: 0 });
+export const PeopleProtection = createContext<{ person?: string; mode?: BreakupMode; style?: CensorStyle; revision: number }>({ revision: 0 });
 
 const redactions = new RequestQueue<string>(1,16);
 export const clearPeoplePreviews = () => redactions.clear();
+function requestKey(asset: Asset,person:string|undefined,revision:number,size:number,style:CensorStyle,attempt=0) {
+  return `${asset.id}:${asset.modified??0}:${person}:${revision}:${size}:${style}:${previewPolicyKey()}:${attempt}`;
+}
+function censoredPreview(asset:Asset,person:string|undefined,revision:number,size:number,style:CensorStyle,signal:AbortSignal,priority:boolean,attempt=0) {
+  return redactions.request(requestKey(asset,person,revision,size,style,attempt),async()=>{
+    const value=await PeopleBridge.command({action:'redact',id:asset.id,person,size,style});
+    const path=(value as {path?:unknown}).path;
+    if(typeof path!=='string')throw new Error('Protected preview unavailable');
+    const url=Capacitor.convertFileSrc(path);return `${url}${url.includes('?')?'&':'?'}redacted=${attempt}`;
+  },signal,priority);
+}
+/** Three bounded upcoming previews reuse exactly the visible card's queue key. */
+export function prefetchCensored(assets:Asset[],person:string,revision:number,style:CensorStyle,signal:AbortSignal) {
+  for(const asset of assets.slice(0,3))void censoredPreview(asset,person,revision,cardPixels(asset),style,signal,false).catch(()=>{});
+}
 
 /** The unredacted URL never enters the DOM in protected mode. A stale result
  * cannot cross an asset/person/mode/index boundary, even for a single render. */
 export function usePeopleProtection() { const { person, mode } = useContext(PeopleProtection); return protectedMode(person, mode); }
 
 export function usePeopleImage(asset: Asset, size = cardPixels(asset)) {
-  const { person, mode, revision } = useContext(PeopleProtection);
+  const { person, mode, revision, style='oval' } = useContext(PeopleProtection);
   const protectedPhoto = protectedMode(person, mode);
   const policy = useSyncExternalStore(subscribePreviewPolicy, previewPolicyKey);
   const [attempt, setAttempt] = useState(0);
-  const key = `${asset.id}:${asset.modified ?? 0}:${person}:${mode}:${revision}:${size}:${policy}:${attempt}`;
+  const key = `${requestKey(asset,person,revision,size,style,attempt)}:${mode}:${policy}`;
   const [result, setResult] = useState<{ key: string; src: string }>();
   useEffect(() => {
     if (!protectedPhoto || mode !== 'face') return;
     const controller = new AbortController();
-    void redactions.request(key, async () => {
-      const value = await PeopleBridge.command({ action: 'redact', id: asset.id, person, size });
-      const path = (value as { path?: unknown }).path;
-      if (typeof path !== 'string') throw new Error('Protected preview unavailable');
-      const url = Capacitor.convertFileSrc(path);
-      return `${url}${url.includes('?')?'&':'?'}redacted=${attempt}`;
-    }, controller.signal).then(src => {
+    void censoredPreview(asset,person,revision,size,style,controller.signal,true,attempt).then(src => {
       if (!controller.signal.aborted) setResult({ key, src });
     }).catch(() => { /* fail closed: never fall back to an original */ });
     return () => { controller.abort(); };

@@ -1,11 +1,13 @@
 import { usePeople } from './usePeople';
+import { BreakupSettings } from './BreakupSettings';
+import { clearPortraits } from './PersonMosaic';
 import { PeoplePanel } from './PeoplePanel';
-import { PeopleProtection, PeopleImage, usePeopleProtection, clearPeoplePreviews } from './PeopleMedia';
+import { PeopleProtection, PeopleImage, usePeopleProtection, clearPeoplePreviews, prefetchCensored } from './PeopleMedia';
 import { FinishButton } from './FinishButton';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type PointerEvent, type MouseEvent } from 'react';
 import { AnimatePresence, motion, useReducedMotion, useMotionValue, useTransform, animate, type MotionValue } from 'motion/react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { FolderOpenIcon, FolderSimplePlusIcon, CaretRightIcon, ArrowCounterClockwiseIcon, ArrowUUpLeftIcon, StackIcon, TrashIcon, CheckIcon, XIcon, PlayIcon, SlidersHorizontalIcon, ArrowClockwiseIcon, ImageBrokenIcon, PlusIcon, PushPinIcon, InfoIcon, CloudIcon, CloudArrowDownIcon, SparkleIcon } from '@phosphor-icons/react';
+import { HeartBreakIcon, UsersIcon, FolderOpenIcon, FolderSimplePlusIcon, CaretRightIcon, ArrowCounterClockwiseIcon, ArrowUUpLeftIcon, StackIcon, TrashIcon, CheckIcon, XIcon, PlayIcon, SlidersHorizontalIcon, ArrowClockwiseIcon, ImageBrokenIcon, PlusIcon, PushPinIcon, InfoIcon, CloudIcon, CloudArrowDownIcon, SparkleIcon } from '@phosphor-icons/react';
 import { BottomSheet, KeyboardInput, useKeyboard } from './mobile';
 import { ReviewGrid } from './ReviewGrid';
 import { decide, undo, restore, forgetPeople, withoutPeople, eligible, eligibleFrom, orderAssets, readState, reconcileLibrary, libraryFingerprint, filterScope, LEVELS, initialFilter, initialState, type Action, type Asset, type Decision, type Filter, type RecordState } from './domain';
@@ -241,6 +243,7 @@ export function ManoApp() {
   const root=useCallback((element:HTMLElement|null)=>{rootObserver.current?.disconnect();rootObserver.current=null;if(!element||stageMeasured.current)return;const estimate=()=>setPreviewSizing({stage:{width:Math.max(200,element.clientWidth-32),height:Math.max(240,element.clientHeight-330)}});estimate();rootObserver.current=new ResizeObserver(estimate);rootObserver.current.observe(element);},[]);
   const [rawAssets,setAssets] = useState<Asset[]>(demo?demoAssets:[]);
   const [filter,setFilter] = useState<Filter>(saved?.filter??initialFilter);
+  const [peopleView,setPeopleView]=useState(false);const [peopleDraft,setPeopleDraft]=useState<Filter>(filter);
   const [session,setSession] = useState(false); const [selected,setSelected] = useState<string[]>(saved?.active?saved.context.selected:[]);
   const [sheet,setSheet] = useState<'filters'|'review'|'albums'|null>(null); const [albums,setAlbums] = useState<Album[]>([]);
   const [loading,setLoading] = useState(false); const [busy,setBusy] = useState(false); const [connected,setConnected] = useState(demo); const [limited,setLimited] = useState(false);
@@ -332,7 +335,7 @@ export function ManoApp() {
   const ordered=useMemo(()=>orderAssets(assets,filter.order,seed.current),[assets,filter.order,seedVersion]);
   const queue=useMemo(()=>eligibleFrom(ordered,state,filter,Date.now()),[ordered,state,filter]);
   // Geek is a display preference: toggling it must not reset bundles or anchors.
-  const filterKey=JSON.stringify({...filter,geek:undefined});
+  const filterKey=JSON.stringify({...filter,geek:undefined,breakup:undefined,censorStyle:undefined});
   const byId=useMemo(()=>new Map(assets.map(a=>[a.id,a] as const)),[assets]);
   const isPlayable=useMemo(()=>{const allowed=playable(state,favView);return (a:Asset|undefined):a is Asset=>allowed(a)&&(!filter.person||!!a.people?.includes(filter.person));},[state,favView,filter.person,people.members]);
   // The hand on the table stays put (sequence.ts): background work — similar
@@ -353,6 +356,11 @@ export function ManoApp() {
   // Read-ahead: the hand on the table plus the next cards as they will be dealt.
   const upcoming=useMemo(()=>upcomingFrom(queue,hand,state.later,Math.max(PRELOAD_AHEAD,hand.length+2)),[queue,windowHandKey,state.later]);
   const upcomingKey=upcoming.map(a=>`${a.id}:${a.modified??0}`).join('|');
+  useEffect(()=>{
+    if(!session||warming||!filter.person||filter.breakup==='normal')return;
+    const controller=new AbortController();prefetchCensored(upcoming,filter.person,people.status.protectionRevision??0,filter.censorStyle??'oval',controller.signal);
+    return()=>controller.abort();
+  },[session,warming,upcomingKey,filter.person,filter.breakup,filter.censorStyle,people.status.protectionRevision]);
   const videoAhead=useMemo(()=>upcomingFrom(queue,hand,state.later,Math.max(VIDEO_AHEAD,hand.length+2)).filter(a=>a.kind==='video'),[queue,windowHandKey,state.later]);
   const videoKey=videoAhead.map(a=>`${a.id}:${a.modified??0}`).join('|');
   useEffect(()=>{if(session&&!warming)prepareWindow(upcoming,String(sessionNumber.current),videoAhead);},[session,warming,upcomingKey,videoKey]);
@@ -369,9 +377,9 @@ export function ManoApp() {
   const flush=useCallback((checkpoint=false)=>{if(flushTimer.current){clearTimeout(flushTimer.current);flushTimer.current=null;}if(!dirty.current)return;
     if(writer.save(sessionKey,latest.current,undefined,checkpoint?key:undefined))dirty.current=false;
     else setError('No se pudo guardar el progreso. Libera espacio antes de continuar.');},[key,sessionKey,writer]);
-  useEffect(()=>{dirty.current=true;if(!flushTimer.current)flushTimer.current=setTimeout(flush,350);},[state,sessionOpen,filterKey,windowHandKey,selected,session]);
+  useEffect(()=>{dirty.current=true;if(!flushTimer.current)flushTimer.current=setTimeout(flush,350);},[state,sessionOpen,filter,windowHandKey,selected,session]);
   useEffect(()=>{const persist=()=>{dirty.current=true;flush(true);};document.addEventListener('visibilitychange',persist);window.addEventListener('pagehide',persist);return()=>{persist();document.removeEventListener('visibilitychange',persist);window.removeEventListener('pagehide',persist);};},[flush]);
-  const openFilters=()=>{setError('');setSheet('filters');};
+  const openFilters=()=>{setError('');setPeopleView(false);setSheet('filters');};
   const active=hand[0]; const targetIds=selected.filter(id=>hand.some(a=>a.id===id)); const targets=targetIds.length?targetIds:active?[active.id]:[];
   // «Elegir las demás»: everything but the best shot, ready for «Eliminar».
   const others=(best?hand.filter(a=>a.id!==best):hand).map(a=>a.id);const allPicked=others.length>0&&targetIds.length===others.length&&others.every(id=>targetIds.includes(id));
@@ -592,6 +600,7 @@ export function ManoApp() {
             onPointerDown={e=>start(e,asset)} onPointerMove={move} onPointerUp={end} onPointerCancel={cancel}
             tabIndex={index===0?0:-1} aria-hidden={index!==0} aria-label={`${kindLabel} ${index+1} de ${hand.length}${picked?', seleccionada':''}${tape?'. Toca o pulsa Intro para pausar o reproducir.':hand.length>1?'. Intro para ver la siguiente; espacio para seleccionar.':''}`} onKeyDown={e=>{if(e.target!==e.currentTarget)return;if(e.key===' '){e.preventDefault();select(asset.id);}if(e.key==='Enter'){e.preventDefault();index===0?(tape?videoControl.current?.toggle():cycle()):select(asset.id);}}}>
             <div className="photo-window">{tape&&index===0?<InlineVideo key={asset.id} asset={asset} state={frontVideo} active={!inspect&&!sheet} retry={()=>getVideos().retry(asset)} download={()=>getVideos().download(asset)} fullscreen={()=>void play(asset)} openSettings={openSettings} meta={display.video} place={frontPlace} sound={videoSound} onSound={()=>setVideoSound(v=>!v)} onOsd={()=>setDisplay(d=>({...d,video:{...d.video,osd:!d.video.osd}}))} control={videoControl}><Photo asset={asset} quiet pool={preloader.current}/></InlineVideo>:<Photo asset={asset} quiet={tape} pool={preloader.current}/>}</div>
+            {!tape&&filter.person&&filter.breakup==='face'&&<span className="breakup-mark" role="img" aria-label="Breakup Mode activo"><HeartBreakIcon size={18} weight="fill"/></span>}
             {index===0&&!tape&&<PolaroidCaption asset={asset} settings={display.photo} place={frontPlace} pending={display.photo.location&&!!asset.hasLocation&&frontPlace===undefined}/>}
             {hand.length>1&&<button tabIndex={index===0?0:-1} className={`pick-toggle ${picked?'selected':''}`} aria-label={`${picked?'Deseleccionar':'Seleccionar'} ${kindLabel.toLowerCase()} ${index+1}`} aria-pressed={picked} onPointerDown={e=>e.stopPropagation()} onClick={()=>{haptic('selection');select(asset.id);}}><CheckIcon size={16} weight="bold"/></button>}
             {index===0&&<button className="zoom-access" onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();openPinned(asset,e.currentTarget.closest('article')!);}}><PushPinIcon size={16} weight="bold"/>Anclar</button>}
@@ -620,23 +629,32 @@ export function ManoApp() {
     {limited&&<button className="sheet-action secondary" onClick={()=>void manageLimited()}>Elegir más fotos</button>}
     <p className="sheet-fine">Todo se analiza en tu iPhone. Las fotos de iCloud pueden necesitar conexión.</p>
   </>;
+  const openPeople=(value:Filter=filter)=>{if(document.activeElement instanceof HTMLElement)document.activeElement.blur();setPeopleDraft(value);setPeopleView(true);};
+  const applyPeople=(value:Filter)=>{resumeContext.current=undefined;setFilter(f=>({...value,geek:f.geek}));setLock(NO_HAND);setSelected([]);setPeopleView(false);setSheet(null);haptic('light');};
+  const peopleAction=async(name:string,options?:Record<string,unknown>)=>{const result=await people.action(name,options);if(name==='reset'&&result){clearPeoplePreviews();clearPortraits();resumeContext.current=undefined;setState(forgetPeople);setFilter(withoutPeople);setPeopleDraft(withoutPeople);setLock(NO_HAND);setSelected([]);}return result;};
+  useEffect(()=>{if(sheet!=='filters')return;const frame=requestAnimationFrame(()=>{const body=document.querySelector<HTMLElement>('.mano-sheet-body');const owner=body?.closest<HTMLElement>('.sheet-content')??body?.closest<HTMLElement>('.native-sheet');if(owner)owner.scrollTop=0;if(peopleView)document.getElementById('people-view-heading')?.focus({preventScroll:true});});return()=>cancelAnimationFrame(frame);},[peopleView]);
   const recoverAll=()=>{setState(s=>({...s,pending:[],history:s.history.filter(d=>d.action!=='discard')}));setSpoken('Todo recuperado');haptic('soft');};
   const recoverReview=useCallback((id:string)=>{setState(s=>restore(s,id));setSpoken('Elemento recuperado');},[]);
   // Long press never opens the system menu or loupe; text fields keep theirs.
   const blockMenu=(e:MouseEvent)=>{if(!(e.target as HTMLElement).closest('input,textarea'))e.preventDefault();};
-  return <PeopleProtection.Provider value={{person:filter.person,mode:filter.breakup,revision:people.status.protectionRevision??0}}><div onPointerDownCapture={people.interact} ref={root} className={`mano-app ${isNative?'on-device':''} ${session?'in-session':'on-screen'}`} onContextMenu={blockMenu}>
+  return <PeopleProtection.Provider value={{person:filter.person,mode:filter.breakup,style:filter.censorStyle,revision:people.status.protectionRevision??0}}><div onPointerDownCapture={people.interact} ref={root} className={`mano-app ${isNative?'on-device':''} ${session?'in-session':'on-screen'}`} onContextMenu={blockMenu}>
     {screen}
     <p className="sr-only" role="status" aria-live="polite">{spoken}</p>
     {splash&&<Splash done={()=>setSplash(false)}/>}
     <AnimatePresence>{inspect&&<InspectorBoundary key={inspect.id} close={closeInspect}><Inspector asset={inspect} src={sharpPreview(inspect)??(preloader.current?.get(inspect)?.poster||undefined)} cloud={!!preloader.current?.peek(inspect)?.value?.cloud} pinned={pinnedInspect} origin={inspectOrigin.current} peek={{x:peekX,y:peekY}} anchor={anchor} armed={overHook} geek={!!filter.geek} close={closeInspect} pin={()=>{setPinnedInspect(true);haptic('rigid');}}
       video={inspect.kind==='video'&&inspect.id===active?.id?{state:frontVideo,retry:()=>getVideos().retry(inspect),download:()=>getVideos().download(inspect),fullscreen:()=>void play(inspect),openSettings,sound:videoSound,freeze:heldVideo.current}:undefined}/></InspectorBoundary>}</AnimatePresence>
-    <Sheet open={sheet==='filters'} close={()=>setSheet(null)} title="Filtros y ajustes" description={sheetTab==='filters'?'Elige qué fotos entran en la pila.':'Elige cómo se ven tus recuerdos.'} error={error} returnTo="filter-trigger">
+    <Sheet open={sheet==='filters'} close={()=>setSheet(null)} title={peopleView?'Personas':'Filtros y ajustes'} description={sheetTab==='filters'?'Elige qué fotos entran en la pila.':'Elige cómo se ven tus recuerdos.'} error={error} returnTo="filter-trigger">
+      <div hidden={peopleView}>
       <div className="sheet-tabs" role="group" aria-label="Sección"><button aria-pressed={sheetTab==='filters'} onClick={()=>{haptic('selection');setSheetTab('filters');}}>Filtros</button><button aria-pressed={sheetTab==='settings'} onClick={()=>{haptic('selection');setSheetTab('settings');}}>Ajustes</button></div>
       <div hidden={sheetTab!=='filters'}>
-        <Filters people={(draft,change)=><PeoplePanel status={people.status} error={people.error} assets={assets} draft={draft} change={change} action={async(name,options)=>{const result=await people.action(name,options);if(name==='reset'&&result){clearPeoplePreviews();resumeContext.current=undefined;setState(forgetPeople);setFilter(withoutPeople);setLock(NO_HAND);setSelected([]);}return result;}} call={people.call} revision={people.revision}/>} filter={filter} assets={assets} state={state} preview={draft=>prewarm(eligible(assets,state,draft,Date.now(),seed.current))} index={{sized:index.sized,total:rawAssets.length,analyzed:index.analyzed,photos:index.photos,measuring:index.measuring,analyzing:index.analyzing}} apply={value=>{resumeContext.current=undefined;setFilter(f=>({...value,geek:f.geek}));setSelected([]);setLock(NO_HAND);setSheet(null);haptic('light');setSpoken('Filtros aplicados');}}/>
+        <Filters people={draft=>people.status.available?<fieldset><legend><UsersIcon size={18}/>Personas</legend><button id="people-entry" className="sheet-action secondary" onClick={()=>openPeople(draft)}>Ver grupos de personas</button></fieldset>:null} filter={filter} assets={assets} state={state} preview={draft=>prewarm(eligible(assets,state,draft,Date.now(),seed.current))} index={{sized:index.sized,total:rawAssets.length,analyzed:index.analyzed,photos:index.photos,measuring:index.measuring,analyzing:index.analyzing}} apply={value=>{resumeContext.current=undefined;setFilter(f=>({...value,geek:f.geek}));setSelected([]);setLock(NO_HAND);setSheet(null);haptic('light');setSpoken('Filtros aplicados');}}/>
         {demo&&<button className="sheet-action secondary" onClick={()=>{setState(initialState());setStats(EMPTY_STATS);setSessionOpen(false);setSession(false);setShowDone(false);setLock(NO_HAND);setFilter(initialFilter);setSelected([]);setSheet(null);setSpoken('Demostración reiniciada');}}>Reiniciar demostración</button>}
       </div>
-      <div hidden={sheetTab!=='settings'}><DisplaySettingsPanel display={display} change={setDisplay} geek={!!filter.geek} setGeek={value=>setFilter(f=>({...f,geek:value}))} library={libraryActions} replayIntro={()=>{setSheet(null);setOnboarded(false);haptic('selection');}}/></div>
+      <div hidden={sheetTab!=='settings'}><DisplaySettingsPanel breakup={people.status.available?<BreakupSettings person={filter.person} mode={filter.breakup??'normal'} style={filter.censorStyle} change={patch=>setFilter(f=>({...f,...patch}))} choose={()=>openPeople()}/>:undefined} display={display} change={setDisplay} geek={!!filter.geek} setGeek={value=>setFilter(f=>({...f,geek:value}))} library={libraryActions} replayIntro={()=>{setSheet(null);setOnboarded(false);haptic('selection');}}/></div>
+      </div>
+      {peopleView&&<section id="people-view"><button className="text-button" onClick={()=>{if(document.activeElement instanceof HTMLElement)document.activeElement.blur();setPeopleView(false);requestAnimationFrame(()=>document.getElementById('people-entry')?.focus());}}>‹ Volver a filtros</button><h3 id="people-view-heading" tabIndex={-1}>Grupos de personas</h3>
+        <PeoplePanel status={people.status} error={people.error} assets={assets} draft={peopleDraft} change={patch=>setPeopleDraft(f=>({...f,...patch}))} action={peopleAction} call={people.call} revision={people.revision} review={applyPeople} settings={()=>{resumeContext.current=undefined;setFilter(f=>({...peopleDraft,geek:f.geek}));setLock(NO_HAND);setSelected([]);setPeopleView(false);setSheetTab('settings');}}/>
+      </section>}
     </Sheet>
     <Sheet open={sheet==='albums'} close={()=>setSheet(null)} title="Guardar en un álbum" description="Se conserva y pasa a la siguiente. También sigue en tu carrete." error={error} returnTo="album-trigger"><p className="sheet-intro"><strong>{targets.length}</strong> seleccionada{targets.length>1?'s':''}</p><button className="album-row album-new" onClick={()=>setCreatingAlbum(v=>!v)} disabled={busy}><span className="row-icon"><PlusIcon size={20} weight="bold"/></span>Crear álbum nuevo</button>{creatingAlbum&&<div className="new-album"><label className="field">Nombre del álbum<AlbumInput value={newAlbum} change={setNewAlbum}/></label><button className="sheet-action" onClick={createAlbum} disabled={busy||!newAlbum.trim()}>Crear y añadir {targets.length} elemento{targets.length===1?'':'s'}</button></div>}{albums.map(a=><button className="album-row" key={a.id} onClick={()=>addAlbum(a)} disabled={busy}><span className="row-icon"><FolderOpenIcon size={20}/></span>{a.title}<CaretRightIcon size={16} weight="bold"/></button>)}</Sheet>
     <Sheet open={sheet==='review'} close={()=>setSheet(null)} title="Una última mirada" description="Recupera lo que quieras conservar antes de eliminar." error={error} returnTo={session?'review-trigger':'filter-trigger'}><p className="sheet-intro">{reviewAssets.length?<><strong>{reviewAssets.length} para eliminar</strong>{freeLabel&&<> · liberarías {reviewBytes.partial?'al menos ':''}<strong>{freeLabel}</strong></>}. Aún no se ha borrado nada.</>:'No hay nada marcado para eliminar.'}</p>
