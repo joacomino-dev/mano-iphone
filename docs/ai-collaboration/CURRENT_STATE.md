@@ -1,6 +1,17 @@
 # CocoWash — estado vigente
 
-Actualizado: 2026-11-04, America/Bogota. Codex trabaja solo por indicación del usuario.
+Actualizado: 2026-11-05, America/Bogota. Codex trabaja solo por indicación del usuario.
+
+## Desarrollo para pruebas: 9.7.2.3 / build 23
+
+CW-HO-010, Codex → usuario. Rama `codex/cocowash-people-recovery` desde `a477ac0`.
+Fuente del IPA `67a69e0`. Corregida y reproducida en Edge la pérdida de respuesta
+al cambiar la pausa multimedia durante una tanda. Hay trazas de fase sin datos
+identificativos. Avance en segundo plano y causa del cierre físico siguen abiertos.
+Incluye progreso, autoplay/sonido/pausa, VHS, Compartir, sello V y selección de pila.
+Swift, Release iPhone y smoke de reset/reapertura en simulador pasaron.
+IPA sin firma en Descargas y recorrido físico pendiente en el
+[informe del build 23](../ai-handoff/COCOWASH_9723.md).
 
 ## Corrección para pruebas: 9.7.2.1 / build 21 (no publicar)
 
@@ -103,7 +114,7 @@ actualizan después con un commit solo documental. Cierre: [CW-CX-013](CODEX_LOG
 
 ## Continuidad y recuperación
 
-Checkout de trabajo ahora en rama `cocowash/9.7.2.1`, con `main` estable preservada: `C:/Users/Joaco/Developer/CocoWash-stage1`. El checkout anterior
+Checkout de trabajo ahora en rama `codex/cocowash-people-recovery`, con `main` estable preservada: `C:/Users/Joaco/Developer/CocoWash-stage1`. El checkout anterior
 en OneDrive, HEAD 76744e2 y sus cambios previos permanecen intactos. Respaldo de
 1.457 archivos/.git verificado en `C:/Users/Joaco/CocoWash-Backups/20261104-stage1-current`;
 366 fuentes originales revalidadas tras la implementación.

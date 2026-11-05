@@ -267,3 +267,12 @@ Build 16: firma de Zángano Studio en la pantalla de inicio (isotipo + «ZANGANO
 
 ### CW-CL-033 — 0.9.6 (17): estampas ilustradas
 Estampas del usuario recortadas sin fondo (icono y icono+palabra); introducción solo con icono; cartas con icono+palabra sobre placa crema; sello de nivel sin cambios. Validado: tsc, npm test, runtime, build, capturas Chromium.
+
+### CW-HO-010 — Relevo a Codex
+Fecha: 2026-11-05, America/Bogota
+Agente: Codex
+Tarea: Continuar el prompt del usuario desde build 21.
+Estado: pendiente de integrar.
+Base Git / commit: a477ac0 → 67a69e0, rama codex/cocowash-people-recovery.
+Cambios realizados: ver CW-CX-017 y [entrega de build 23](../ai-handoff/COCOWASH_9723.md).
+Pendientes: recorrido físico con biblioteca de prueba y decisión sobre ejecución en segundo plano.

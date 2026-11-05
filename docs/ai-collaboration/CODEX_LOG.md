@@ -236,3 +236,15 @@ Validaciones:113 Node/runtime28/TypeScript/builds/Sites4/Edge/Swift; [CI41956222
 success, Release arm64 y smoke nativo reset/relaunch PASS. IPA/digest/flag verificados.
 Impacto para Claude: CW-HO-009 usuario primero; no alterar protección ni reset.
 Pendientes: análisis y cierre físico, .ips si persiste; [detalle](../ai-handoff/COCOWASH_9721.md).
+
+### CW-CX-017 — Relevo de Personas y controles de revisión
+Fecha: 2026-11-05, America/Bogota
+Agente: Codex
+Tarea: CW-HO-010, corregir Personas y preparar build 23.
+Estado: pendiente de integrar y de aceptación física.
+Base Git / commit: CocoWash-stage1, a477ac0 → 67a69e0.
+Archivos modificados: Personas, puente de Fotos, vídeo/VHS, sellos, pila, pruebas y workflow.
+Cambios realizados: recuperación de respuestas al pausar, trazas de fase, progreso real, hoja nativa de compartir, continuidad de vídeo y selección estable.
+Validaciones: base falla y build nuevo pasa en Edge la carrera de pausa. 114 Node, 4 Sites, runtime28, builds, Swift, Release iPhone y smoke de reset/reapertura en simulador. Demo verificó recuperación de vídeo, VHS y pila. IPA y SHA en [informe](../ai-handoff/COCOWASH_9723.md).
+Impacto para Claude: la tarea pasa a la rama de Codex. Usar el build 23 como candidato.
+Pendientes: diagnóstico y aceptación física de Personas, ejecución en segundo plano y validación de la hoja de iOS.
