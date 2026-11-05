@@ -6,7 +6,11 @@ func samples(_ id: String, _ n: Int) -> [IdentitySample] { (0..<n).map { Identit
 let a = samples("a",4), b = samples("b",4), c = samples("c",4), all = a+b+c
 let photos = Dictionary(grouping:all,by: { $0.person }).mapValues { Set($0.map(\.photo)) }
 func assigned(_ values:[IdentitySample]) -> [String:String] { Dictionary(uniqueKeysWithValues:values.map { ($0.face,"same") }) }
+check(!PeoplePolicy.visible(4) && PeoplePolicy.visible(5),"Five distinct photos is a presentation threshold only")
 var graph = PeopleIdentityGraph()
+let captured = PeoplePolicy.cycle(available:["a","b"],scope:nil)
+let later = PeoplePolicy.cycle(available:["a","new"],scope:captured.ids)
+check(later.ids == ["a"] && later.hasNext,"New arrivals do not extend the finite initial pass, missing resources do not block it")
 check(graph.reconcile(samples:all,assignments:assigned(all),photos:photos,names:[:]) == 2,"Multiple independent representatives consolidate three fragments")
 check(Set([graph.canonical("a"),graph.canonical("b"),graph.canonical("c")]).count == 1,"Old logical IDs remain valid aliases")
 check(try JSONDecoder().decode(PeopleIdentityGraph.self,from:JSONEncoder().encode(graph)) == graph,"Aliases persist")

@@ -58,6 +58,7 @@ private actor PeopleIndex {
     private var analyzer: FaceGroupAnalyzer?
     private var reconciler: FaceGroupAnalyzer?
     private var publication: [PublishedPerson] = []
+    private var cycleScope = Set<String>(), deferredLibraryChanges = false
     private var phase = "indexing"
     private var reconcileSamples: [IdentitySample] = []
     private var reconcileQueue: [String] = []
@@ -114,6 +115,7 @@ private actor PeopleIndex {
             }
         }
         publication = try database.readPublication().map { try JSONDecoder().decode(PublishedPerson.self,from:$0.1) }
+        cycleScope = try database.readScope()
         checkpoint = database
         rebuildLocations()
         // Interrupted transient inputs never become a permanent photo cache.
@@ -136,19 +138,20 @@ private actor PeopleIndex {
         let value = try FaceGroupAnalyzer(workingDirectory:folder.appendingPathComponent("Analyzer"))
         analyzer = value; return value
     }
-    private func memoryWarning() { memoryPauseUntil = Date().addingTimeInterval(30); generation += 1; ci.clearCaches() }
+    private func memoryWarning() { memoryPauseUntil = Date().addingTimeInterval(30); generation += 1; work?.cancel(); if let id=activeImage { manager.cancelImageRequest(id) }; ci.clearCaches() }
     func libraryChanged() -> Bool {
         guard loaded, store.consent else { return false }
-        needsRefresh = true; generation += 1; work?.cancel()
+        needsRefresh = true
+        if !store.cycleActive { generation += 1; work?.cancel() }
         return true
     }
-    private func save(publication next: [PublishedPerson]? = nil) throws {
-        if !metadataDirty && dirtyEntries.isEmpty && next == nil { return }
+    private func save(publication next: [PublishedPerson]? = nil, scope: Set<String>? = nil) throws {
+        if !metadataDirty && dirtyEntries.isEmpty && next == nil && scope == nil { return }
         var meta = store; meta.entries = [:]
         let rows = try dirtyEntries.map { id -> (String, Data?) in (id, try store.entries[id].map { try JSONEncoder().encode($0) }) }
         guard let checkpoint else { throw Failure.unavailable }
         let published = try next.map { values in try values.map { ($0.id,try JSONEncoder().encode($0)) } }
-        try checkpoint.write(meta: metadataDirty ? JSONEncoder().encode(meta) : nil, rows: rows, publication: published)
+        try checkpoint.write(meta: metadataDirty ? JSONEncoder().encode(meta) : nil, rows: rows, publication: published, scope:scope)
         if let next { publication = next }
         dirtyEntries.removeAll(); metadataDirty = false
     }
@@ -162,6 +165,13 @@ private actor PeopleIndex {
         let options = PHFetchOptions(); options.predicate = NSPredicate(format: "mediaType == %d AND hidden == NO", PHAssetMediaType.image.rawValue)
         var current: [String: PHAsset] = [:]
         if permission() { PHAsset.fetchAssets(with: options).enumerateObjects { a, _, _ in if !a.mediaSubtypes.contains(.photoScreenshot) { current[a.localIdentifier] = a } } }
+        let changed = current.count != store.entries.count || current.contains { id,asset in store.entries[id]?.signature != signature(asset) }
+        let needCycle = changed || store.needsReconciliation || !store.publicReady
+        let choice=PeoplePolicy.cycle(available:Set(current.keys),scope:store.cycleActive ? cycleScope : nil)
+        let newScope: Set<String>? = !store.cycleActive && needCycle ? choice.ids : nil
+        if let newScope { cycleScope = newScope; store.cycleActive = true }
+        deferredLibraryChanges = choice.hasNext
+        current = current.filter { choice.ids.contains($0.key) }
         let obsolete = store.entries.keys.filter { id in current[id].map { signature($0) != store.entries[id]?.signature } ?? true }
         for id in obsolete {
             if current[id] != nil, let old = store.entries[id] {
@@ -184,14 +194,14 @@ private actor PeopleIndex {
         let pruned = publication.compactMap { value -> PublishedPerson? in
             var p = value; p.photos = p.photos.filter { current[$0] != nil && store.entries[$0] != nil }
             p.portraits = p.portraits.filter { p.photos.contains($0.id) }
-            return p.photos.count >= PeoplePolicy.minimumPhotos ? p : nil
+            return p.photos.isEmpty ? nil : p
         }
         if pruned != publication { store.revision += 1 }
-        try save(publication:pruned == publication ? nil : pruned)
+        try save(publication:pruned == publication ? nil : pruned,scope:newScope)
         needsRefresh = false
     }
     private func snapshot(includeGroups: Bool = true) -> [String:Any] {
-        let groups: [[String:Any]] = includeGroups && store.publicReady ? publication.map { p in
+        let groups: [[String:Any]] = includeGroups && store.publicReady ? publication.filter { PeoplePolicy.visible($0.photos.count) }.map { p in
             ["id":p.id,"name":p.name,"count":p.photos.count,"representative":p.portraits.first?.id ?? "",
              "portraits":p.portraits.map { ["id":$0.id,"face":$0.face] }]
         } : []
@@ -240,7 +250,7 @@ private actor PeopleIndex {
             let id = pending.removeLast()
             defer { if store.entries[id] == nil && assets[id] != nil && !deferred.contains(id) && !pending.contains(id) { pending.append(id) } }
             guard let asset = assets[id] else { continue }
-            guard let source = await image(asset, size: PeoplePolicy.indexPixels, tracked: true) else { deferred.insert(id); continue }
+            guard accessible(id,signature:signature(asset)) != nil, let source = await image(asset, size: PeoplePolicy.indexPixels, tracked: true), accessible(id,signature:signature(asset)) != nil else { deferred.insert(id); continue }
             guard running, token == generation else { pending.append(id); break }
             let file = folder.appendingPathComponent("input-\(UUID().uuidString).jpg")
             defer { try? FileManager.default.removeItem(at: file) }
@@ -313,13 +323,14 @@ private actor PeopleIndex {
         return result
     }
     private func stamp(_ face: Face, photo: String) -> String {
-        let value = "portrait-v1:\(store.entries[photo]?.signature ?? ""):\(face.id):\(face.box)"
+        let value = "portrait-\(PeoplePolicy.geometryVersion):\(store.entries[photo]?.signature ?? ""):\(face.id):\(face.box):\(String(describing:face.refinement))"
         return SHA256.hash(data:Data(value.utf8)).map { String(format:"%02x",$0) }.joined()
     }
     private func refine(_ face: Face, photo: String, image: UIImage) -> Face {
-        guard face.refinement?.version != PeoplePolicy.geometryVersion else { return face }
+        let pixels=max(image.cgImage?.width ?? 0,image.cgImage?.height ?? 0)
+        if let geometry=face.refinement, geometry.version==PeoplePolicy.geometryVersion, pixels<=Int(Double(geometry.sourcePixels ?? 0)*1.25) { return face }
         var value = face
-        value.refinement = autoreleasepool { PeopleProcessing.refinement(face,image:image) } ?? PeopleRefinement(version:PeoplePolicy.geometryVersion,box:face.box,eyes:nil,angle:0)
+        value.refinement = autoreleasepool { PeopleProcessing.refinement(face,image:image) } ?? PeopleRefinement(version:PeoplePolicy.geometryVersion,box:face.box,eyes:nil,angle:0,sourcePixels:pixels)
         if let location = locations[face.id], location.photo == photo, store.entries[photo]?.faces.indices.contains(location.index) == true {
             store.entries[photo]?.faces[location.index].refinement = value.refinement; dirtyEntries.insert(photo)
         }
@@ -398,27 +409,28 @@ private actor PeopleIndex {
         guard token == generation, running else { return }
         let previousGraph = store.graph, previousRevision = store.revision, previousProtection = store.protectionRevision, previousReady = store.publicReady
         if graph != store.graph { store.graph = graph; store.protectionRevision += 1 }
-        let previousNeeds = store.needsReconciliation
-        store.needsReconciliation = false
-        do { try publish() } catch {
-            store.needsReconciliation = previousNeeds
+        let previousNeeds = store.needsReconciliation, previousCycle = store.cycleActive
+        store.needsReconciliation = false; store.cycleActive = false
+        do { try publish(scope:[]) } catch {
+            store.needsReconciliation = previousNeeds; store.cycleActive = previousCycle
             store.graph = previousGraph; store.revision = previousRevision; store.protectionRevision = previousProtection; store.publicReady = previousReady
             throw error
         }
-        phase = "ready"; running = false; reconcileSamples = []; reconcileQueue = []; self.reconciler = nil
+        cycleScope = []; phase = "ready"; running = false; reconcileSamples = []; reconcileQueue = []; self.reconciler = nil
+        if deferredLibraryChanges && store.wantsAnalysis { needsRefresh = true; running = true; phase = "indexing" }
     }
-    private func publish(allowed: Set<String>? = nil) throws {
+    private func publish(allowed: Set<String>? = nil, scope: Set<String>? = nil) throws {
         metadataDirty = true
         let membership = store.membership(), selected = selections()
         let values = membership.compactMap { person,photos -> PublishedPerson? in
             let visible = allowed.map { photos.intersection($0) } ?? photos
-            guard visible.count >= PeoplePolicy.minimumPhotos else { return nil }
+            guard !visible.isEmpty else { return nil }
             let portraits = (selected[person] ?? []).filter { visible.contains($0.id) }
             return PublishedPerson(id:person,name:store.names[person] ?? "Persona",photos:visible.sorted(),portraits:portraits)
         }.sorted { $0.id < $1.id }
         store.publicReady = true
         if values != publication { store.revision += 1 }
-        try save(publication:values)
+        try save(publication:values,scope:scope)
     }
     private func cacheFile(_ category: String, key: String) throws -> URL {
         let cache = folder.appendingPathComponent(category,isDirectory:true)
@@ -445,26 +457,33 @@ private actor PeopleIndex {
     private func portrait(id: String, person: String) async throws -> [String:Any] {
         guard store.consent, let (photo,value) = face(id), group(value) == store.graph.canonical(person),
               let entry = store.entries[photo], let asset = accessible(photo,signature:entry.signature) else { throw Failure.stale }
-        let file = try cacheFile("Portraits",key:"v1:\(stamp(value,photo:photo))")
+        var file = try cacheFile("Portraits",key:"v1:\(stamp(value,photo:photo))")
         if FileManager.default.fileExists(atPath:file.path) { return ["path":file.path] }
         CocoMediaPressure.change(1); defer { CocoMediaPressure.change(-1) }
         guard let source = await image(asset,size:PeoplePolicy.indexPixels), accessible(photo,signature:entry.signature) != nil,
               let (_,current) = face(id), group(current) == store.graph.canonical(person) else { throw Failure.stale }
         let up = PeopleProcessing.upright(source), refined = refine(current,photo:photo,image:up)
+        file = try cacheFile("Portraits",key:"v1:\(stamp(refined,photo:photo))")
         guard let crop = autoreleasepool(invoking:{PeopleProcessing.crop(refined,image:up,maxSize:256)}), let data = crop.jpegData(compressionQuality:0.9) else { throw Failure.invalid }
         try data.write(to:file,options:[.atomic,.completeFileProtection]); try save()
         try pruneCache(file,count:256,budget:48*1024*1024)
         return ["path":file.path]
     }
-    private func redact(id: String, person: String, size: Int, style: String) async throws -> [String:Any] {
+    private func redact(id: String, person: String, size: Int, style: String, refresh: Bool) async throws -> [String:Any] {
         let person = store.graph.canonical(person)
         guard store.consent, let entry = store.entries[id], let asset = accessible(id,signature:entry.signature) else { throw Failure.stale }
         let selected = entry.faces.filter { group($0) == person }
         guard !selected.isEmpty else { throw Failure.stale }
         let token = store.protectionRevision
-        let key = "oval-eyes-v1:\(id):\(entry.signature):\(person):\(token):\(size):\(style)"
-        let file = try cacheFile("Redacted",key:key)
-        if FileManager.default.fileExists(atPath:file.path) { return ["path":file.path] }
+        let key = "oval-eyes-\(PeoplePolicy.geometryVersion):\(id):\(entry.signature):\(person):\(token):\(size):\(style)"
+        func renderFile(_ values: [Face]) throws -> URL {
+            let encoder=JSONEncoder();encoder.outputFormatting=[.sortedKeys]
+            let geometry=try encoder.encode(values.map(\.refinement))
+            let version=SHA256.hash(data:geometry).map { String(format:"%02x",$0) }.joined()
+            return try cacheFile("Redacted",key:key+":"+version)
+        }
+        var file = try renderFile(selected)
+        if !refresh && FileManager.default.fileExists(atPath:file.path) { return ["path":file.path] }
         CocoMediaPressure.change(1); defer { CocoMediaPressure.change(-1) }
         guard let source = await image(asset,size:size), token == store.protectionRevision,
               accessible(id,signature:entry.signature) != nil else { throw Failure.stale }
@@ -473,6 +492,7 @@ private actor PeopleIndex {
         for value in selected { refined.append(refine(value,photo:id,image:up)) }
         guard let output = autoreleasepool(invoking:{PeopleProcessing.censor(up,faces:refined,style:style,context:ci)}),
               token == store.protectionRevision, let data = output.jpegData(compressionQuality:0.9) else { throw Failure.invalid }
+        file = try renderFile(refined)
         try data.write(to:file,options:[.atomic,.completeFileProtection]); try save()
         try pruneCache(file,count:24,budget:32*1024*1024)
         return ["path":file.path]
@@ -488,7 +508,7 @@ private actor PeopleIndex {
             running = false; generation += 1; analyzer = nil; reconciler = nil; checkpoint = nil; dirtyEntries.removeAll()
             try await FaceGroupAnalyzer.purge(workingDirectory: folder.appendingPathComponent("Analyzer"))
             try await FaceGroupAnalyzer.purge(workingDirectory: folder.appendingPathComponent("Reconciler"))
-            try FileManager.default.removeItem(at: folder); store = Store(); publication = []; loaded = false; phase = "indexing"
+            try FileManager.default.removeItem(at: folder); store = Store(); publication = []; cycleScope = []; loaded = false; phase = "indexing"
             if let observer = memoryObserver { NotificationCenter.default.removeObserver(observer); memoryObserver = nil }
             return ["available": true, "consent": false, "groups": [], "processed": 0, "total": 0, "remaining": 0, "waiting": 0, "running": false]
         }
@@ -504,7 +524,7 @@ private actor PeopleIndex {
             defer { work = nil }
             do { try await task.value } catch { if running && !task.isCancelled { throw error } }
         }
-        if action == "redact" { return try await redact(id: call.getString("id") ?? "", person: call.getString("person") ?? "", size: min(3072,max(256,call.getInt("size") ?? 1400)), style:call.getString("style") == "eyes" ? "eyes" : "oval") }
+        if action == "redact" { return try await redact(id: call.getString("id") ?? "", person: call.getString("person") ?? "", size: min(3072,max(256,call.getInt("size") ?? 1400)), style:call.getString("style") == "eyes" ? "eyes" : "oval",refresh:call.getBool("refresh") == true) }
         if action == "portrait" { return try await portrait(id:call.getString("face") ?? "",person:call.getString("person") ?? "") }
         if action == "person" {
             let person = store.graph.canonical(call.getString("person") ?? "")

@@ -54,7 +54,7 @@ enum PeopleProcessing {
         let eyes = [eye(observed.landmarks?.leftEye),eye(observed.landmarks?.rightEye)].compactMap { $0 }.sorted { $0[0] < $1[0] }
         let angle = eyes.count == 2 ? atan2((eyes[1][1]-eyes[0][1])*Double(cg.height),(eyes[1][0]-eyes[0][0])*Double(cg.width)) : 0
         guard PeopleGeometry.valid(box) else { return nil }
-        return PeopleRefinement(version:PeoplePolicy.geometryVersion,box:box,eyes:eyes.count == 2 ? eyes : nil,angle:angle)
+        return PeopleRefinement(version:PeoplePolicy.geometryVersion,box:box,eyes:eyes.count == 2 ? eyes : nil,angle:angle,sourcePixels:max(cg.width,cg.height))
     }
     static func crop(_ face: PeopleFace, image: UIImage, maxSize: CGFloat) -> UIImage? {
         guard let cg = image.cgImage,

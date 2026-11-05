@@ -276,6 +276,9 @@ export function ManoApp() {
   const warmWait=useRef<(()=>void)|null>(null);
   const getPreloader=()=>preloader.current??(preloader.current=new AssetPreloader(prepareReviewAsset));
   const prepareWindow=(items:Asset[],sessionKey:string,videoItems?:Asset[])=>{
+    if(filter.person&&filter.breakup!=='normal'){
+      getPreloader().update([],sessionKey);getVideos().want([],undefined);preloadWindow.current=[];cloudPreviews.retain([]);return;
+    }
     getPreloader().update(items,sessionKey);getVideos().want(videoItems??items,items[0]);
     preloadWindow.current=items;
     // iCloud downloads live only while their card is in this window (warm-up
@@ -363,7 +366,7 @@ export function ManoApp() {
   },[session,warming,upcomingKey,filter.person,filter.breakup,filter.censorStyle,people.status.protectionRevision]);
   const videoAhead=useMemo(()=>upcomingFrom(queue,hand,state.later,Math.max(VIDEO_AHEAD,hand.length+2)).filter(a=>a.kind==='video'),[queue,windowHandKey,state.later]);
   const videoKey=videoAhead.map(a=>`${a.id}:${a.modified??0}`).join('|');
-  useEffect(()=>{if(session&&!warming)prepareWindow(upcoming,String(sessionNumber.current),videoAhead);},[session,warming,upcomingKey,videoKey]);
+  useEffect(()=>{if(session&&!warming)prepareWindow(upcoming,String(sessionNumber.current),videoAhead);},[session,warming,upcomingKey,videoKey,filter.person,filter.breakup]);
   useEffect(()=>{inspected.current=inspect;cloudPreviews.retain(inspect?[...preloadWindow.current,inspect]:preloadWindow.current);},[inspect?.id]);
   // What a decision records to be undone exactly: the hand as shown, front first.
   const context={handIds:hand.map(a=>a.id),rotated:[] as string[],selected:[...selected],group:bundleKey??undefined,filter,...(best?{best}:{})};
@@ -600,7 +603,7 @@ export function ManoApp() {
             onPointerDown={e=>start(e,asset)} onPointerMove={move} onPointerUp={end} onPointerCancel={cancel}
             tabIndex={index===0?0:-1} aria-hidden={index!==0} aria-label={`${kindLabel} ${index+1} de ${hand.length}${picked?', seleccionada':''}${tape?'. Toca o pulsa Intro para pausar o reproducir.':hand.length>1?'. Intro para ver la siguiente; espacio para seleccionar.':''}`} onKeyDown={e=>{if(e.target!==e.currentTarget)return;if(e.key===' '){e.preventDefault();select(asset.id);}if(e.key==='Enter'){e.preventDefault();index===0?(tape?videoControl.current?.toggle():cycle()):select(asset.id);}}}>
             <div className="photo-window">{tape&&index===0?<InlineVideo key={asset.id} asset={asset} state={frontVideo} active={!inspect&&!sheet} retry={()=>getVideos().retry(asset)} download={()=>getVideos().download(asset)} fullscreen={()=>void play(asset)} openSettings={openSettings} meta={display.video} place={frontPlace} sound={videoSound} onSound={()=>setVideoSound(v=>!v)} onOsd={()=>setDisplay(d=>({...d,video:{...d.video,osd:!d.video.osd}}))} control={videoControl}><Photo asset={asset} quiet pool={preloader.current}/></InlineVideo>:<Photo asset={asset} quiet={tape} pool={preloader.current}/>}</div>
-            {!tape&&filter.person&&filter.breakup==='face'&&<span className="breakup-mark" role="img" aria-label="Breakup Mode activo"><HeartBreakIcon size={18} weight="fill"/></span>}
+            {!tape&&filter.person&&filter.breakup!=='normal'&&<span className="breakup-mark" role="img" aria-label="Breakup Mode activo"><HeartBreakIcon size={18} weight="fill"/></span>}
             {index===0&&!tape&&<PolaroidCaption asset={asset} settings={display.photo} place={frontPlace} pending={display.photo.location&&!!asset.hasLocation&&frontPlace===undefined}/>}
             {hand.length>1&&<button tabIndex={index===0?0:-1} className={`pick-toggle ${picked?'selected':''}`} aria-label={`${picked?'Deseleccionar':'Seleccionar'} ${kindLabel.toLowerCase()} ${index+1}`} aria-pressed={picked} onPointerDown={e=>e.stopPropagation()} onClick={()=>{haptic('selection');select(asset.id);}}><CheckIcon size={16} weight="bold"/></button>}
             {index===0&&<button className="zoom-access" onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();openPinned(asset,e.currentTarget.closest('article')!);}}><PushPinIcon size={16} weight="bold"/>Anclar</button>}
@@ -650,7 +653,7 @@ export function ManoApp() {
         <Filters people={draft=>people.status.available?<fieldset><legend><UsersIcon size={18}/>Personas</legend><button id="people-entry" className="sheet-action secondary" onClick={()=>openPeople(draft)}>Ver grupos de personas</button></fieldset>:null} filter={filter} assets={assets} state={state} preview={draft=>prewarm(eligible(assets,state,draft,Date.now(),seed.current))} index={{sized:index.sized,total:rawAssets.length,analyzed:index.analyzed,photos:index.photos,measuring:index.measuring,analyzing:index.analyzing}} apply={value=>{resumeContext.current=undefined;setFilter(f=>({...value,geek:f.geek}));setSelected([]);setLock(NO_HAND);setSheet(null);haptic('light');setSpoken('Filtros aplicados');}}/>
         {demo&&<button className="sheet-action secondary" onClick={()=>{setState(initialState());setStats(EMPTY_STATS);setSessionOpen(false);setSession(false);setShowDone(false);setLock(NO_HAND);setFilter(initialFilter);setSelected([]);setSheet(null);setSpoken('Demostración reiniciada');}}>Reiniciar demostración</button>}
       </div>
-      <div hidden={sheetTab!=='settings'}><DisplaySettingsPanel breakup={people.status.available?<BreakupSettings person={filter.person} mode={filter.breakup??'normal'} style={filter.censorStyle} change={patch=>setFilter(f=>({...f,...patch}))} choose={()=>openPeople()}/>:undefined} display={display} change={setDisplay} geek={!!filter.geek} setGeek={value=>setFilter(f=>({...f,geek:value}))} library={libraryActions} replayIntro={()=>{setSheet(null);setOnboarded(false);haptic('selection');}}/></div>
+      <div hidden={sheetTab!=='settings'}><DisplaySettingsPanel breakup={people.status.available?<BreakupSettings person={filter.person} mode={filter.breakup??(filter.person?'face':'normal')} style={filter.censorStyle} change={patch=>setFilter(f=>({...f,...patch}))} choose={()=>openPeople()}/>:undefined} display={display} change={setDisplay} geek={!!filter.geek} setGeek={value=>setFilter(f=>({...f,geek:value}))} library={libraryActions} replayIntro={()=>{setSheet(null);setOnboarded(false);haptic('selection');}}/></div>
       </div>
       {peopleView&&<section id="people-view"><button className="text-button" onClick={()=>{if(document.activeElement instanceof HTMLElement)document.activeElement.blur();setPeopleView(false);requestAnimationFrame(()=>document.getElementById('people-entry')?.focus());}}>‹ Volver a filtros</button><h3 id="people-view-heading" tabIndex={-1}>Grupos de personas</h3>
         <PeoplePanel status={people.status} error={people.error} assets={assets} draft={peopleDraft} change={patch=>setPeopleDraft(f=>({...f,...patch}))} action={peopleAction} call={people.call} revision={people.revision} review={applyPeople} settings={()=>{resumeContext.current=undefined;setFilter(f=>({...peopleDraft,geek:f.geek}));setLock(NO_HAND);setSelected([]);setPeopleView(false);setSheetTab('settings');}}/>

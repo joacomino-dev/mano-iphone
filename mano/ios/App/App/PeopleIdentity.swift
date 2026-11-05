@@ -8,6 +8,11 @@ enum PeoplePolicy {
     static let mergeAgreement = 0.75
     static let indexPixels = 1536
     static let geometryVersion = 1
+    static func visible(_ count: Int) -> Bool { count >= minimumPhotos }
+    static func cycle(available: Set<String>, scope: Set<String>?) -> (ids:Set<String>, hasNext:Bool) {
+        guard let scope else { return (available,false) }
+        return (scope.intersection(available),!available.subtracting(scope).isEmpty)
+    }
 }
 
 struct IdentitySample: Equatable {
@@ -90,6 +95,7 @@ struct PeopleRefinement: Codable, Equatable {
     var box: [Double]
     var eyes: [[Double]]?
     var angle: Double
+    var sourcePixels: Int?
 }
 struct PeopleFace: Codable, Equatable {
     var id: String
@@ -120,6 +126,7 @@ struct PeopleState: Codable {
     var protectionRevision = 0
     var wantsAnalysis = false
     var needsReconciliation = true
+    var cycleActive = false
     var pendingCorrections: [String:[String]] = [:]
     /// Defaults migrate v1 metadata without resetting IDs, names or corrections.
     static func decode(_ data: Data) throws -> PeopleState {

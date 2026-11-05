@@ -22,13 +22,16 @@ do {
     require(values["synthetic-3"] == payload && values["quote' ; DROP TABLE records; --"] == payload, "Unrelated records and bound values remain intact")
     let backup = folder.appendingPathComponent("before-migration.sqlite")
     try reopened.backup(to:backup)
-    try reopened.write(meta:Data("v2".utf8),rows:[],publication:[("one",Data("stable-publication".utf8))])
+    try reopened.write(meta:Data("v2".utf8),rows:[],publication:[("one",Data("stable-publication".utf8))],scope:["photo-at-cycle-start"])
+    try reopened.write(meta:nil,rows:[("synthetic-2",payload)])
+    require(try reopened.readScope() == ["photo-at-cycle-start"],"Finite cycle scope survives durable checkpoints")
     do {
-        try reopened.write(meta:Data("broken-partial".utf8),rows:[("new-invalid-cycle",payload)],publication:[("duplicate",payload),("duplicate",payload)])
+        try reopened.write(meta:Data("broken-partial".utf8),rows:[("new-invalid-cycle",payload)],publication:[("duplicate",payload),("duplicate",payload)],scope:["must-not-leak"])
         fatalError("Conflicting publication committed")
     } catch { }
     let (valid,after) = try reopened.read(), published = try reopened.readPublication()
     require(valid == Data("v2".utf8) && after.count == 50_000 && published.count == 1 && published[0].0 == "one","A failed publication is fully rolled back")
+    require(try reopened.readScope() == ["photo-at-cycle-start"],"Scope and public snapshot roll back together")
     let original = try PeopleCheckpoint(backup).read()
     require(original.0 == Data("paused".utf8) && original.1.count == 50_000,"Pre-migration backup remains recoverable")
 }

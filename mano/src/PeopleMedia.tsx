@@ -20,7 +20,7 @@ function requestKey(asset: Asset,person:string|undefined,revision:number,size:nu
 }
 function censoredPreview(asset:Asset,person:string|undefined,revision:number,size:number,style:CensorStyle,signal:AbortSignal,priority:boolean,attempt=0) {
   return redactions.request(requestKey(asset,person,revision,size,style,attempt),async()=>{
-    const value=await PeopleBridge.command({action:'redact',id:asset.id,person,size,style});
+    const value=await PeopleBridge.command({action:'redact',id:asset.id,person,size,style,refresh:attempt>0});
     const path=(value as {path?:unknown}).path;
     if(typeof path!=='string')throw new Error('Protected preview unavailable');
     const url=Capacitor.convertFileSrc(path);return `${url}${url.includes('?')?'&':'?'}redacted=${attempt}`;
@@ -41,20 +41,21 @@ export function usePeopleImage(asset: Asset, size = cardPixels(asset)) {
   const policy = useSyncExternalStore(subscribePreviewPolicy, previewPolicyKey);
   const [attempt, setAttempt] = useState(0);
   const key = `${requestKey(asset,person,revision,size,style,attempt)}:${mode}:${policy}`;
+  const [fault,setFault]=useState<string>();
   const [result, setResult] = useState<{ key: string; src: string }>();
   useEffect(() => {
     if (!protectedPhoto || mode !== 'face') return;
     const controller = new AbortController();
     void censoredPreview(asset,person,revision,size,style,controller.signal,true,attempt).then(src => {
       if (!controller.signal.aborted) setResult({ key, src });
-    }).catch(() => { /* fail closed: never fall back to an original */ });
+    }).catch(() => { if(!controller.signal.aborted)setFault(key); });
     return () => { controller.abort(); };
   }, [key, protectedPhoto]);
-  return { protectedPhoto, src: result?.key === key ? result.src : undefined, key, retry:()=>setAttempt(n=>n+1) };
+  return { protectedPhoto, src: result?.key === key ? result.src : undefined, key, fault:fault===key, retry:()=>setAttempt(n=>n+1) };
 }
 
 export function PeopleImage({ asset, allowReveal = true, size }: { asset: Asset; allowReveal?: boolean; size?: number }) {
-  const { protectedPhoto, src, key, retry } = usePeopleImage(asset,size);
+  const { protectedPhoto, src, key, retry, fault } = usePeopleImage(asset,size);
   const [reveal, setReveal] = useState<{ key: string; src: string }>();
   const [failed, setFailed] = useState('');
   const revealEpoch = useRef(0), revealRequest = useRef<AbortController | null>(null);
@@ -75,5 +76,5 @@ export function PeopleImage({ asset, allowReveal = true, size }: { asset: Asset;
   const shown = reveal?.key === key ? reveal.src : src;
   if (!protectedPhoto) return null;
   if (shown && failed !== shown) return <img src={shown} alt={reveal?.key === key ? 'Foto revelada temporalmente' : 'Rostro censurado'} draggable={false} decoding="async" onError={() => setFailed(shown)}/>;
-  return <div className="photo-loading people-covered"><span>Fotografía oculta</span>{failed&&<button onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();retry();}}>Reintentar censura</button>}{allowReveal && <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); void show(); }}>Revelar durante 3 segundos</button>}</div>;
+  return <div className="photo-loading people-covered"><span>Fotografía oculta</span>{(failed||fault)&&<button onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();retry();}}>Reintentar censura</button>}{allowReveal && <button onPointerDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); void show(); }}>Revelar durante 3 segundos</button>}</div>;
 }

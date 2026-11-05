@@ -33,6 +33,7 @@ export function usePeople(fingerprint: string, paused: boolean, person?: string)
     return () => { alive = false; void listener.then(l => l.remove()).catch(() => {}); };
   }, [status.available, status.consent]);
   useEffect(() => { if (!status.available || !status.consent || refreshed.current === fingerprint) return; let alive = true;
+    if(enabled.current){refreshed.current=fingerprint;return;}
     enabled.current = false;
     void (async () => { await call('pause',{reason:'suspend'}); while (busy.current) await new Promise(resolve => setTimeout(resolve, 100));
       const value = await call('refresh'); if (alive) { refreshed.current = fingerprint; adopt(value); setRevision(v => v + 1); }
