@@ -2,6 +2,18 @@
 
 Actualizado: 2026-11-05, America/Bogota. Codex trabaja solo por indicación del usuario.
 
+## Candidato de diagnóstico: 9.7.2.4 / build 24 (Claude)
+
+CW-CL-034, Claude → usuario. Rama `claude/people-crash-b24` desde `6346fa3`, worktree
+`C:/Users/Joaco/Developer/CocoWash-b24` (no toca `CocoWash-stage1`). Usuario reportó
+cierre en build 23 hacia ~1.000 fotos y cierres repetidos; **causa sin confirmar**.
+Build 24 añade traza local por fase con memoria, MetricKit local, «Compartir
+diagnóstico», pausa tras cierre en cualquier fase, pausa de seguridad tras dos
+cierres, foto apartada tras dos cierres, freno por memoria y reconciliación
+sin identidades de una sola foto. IPA **sin reset** para conservar el índice que
+falló. Validación física pendiente. Propuestas visuales P1–P8 esperan revisión.
+[Informe y recorrido](../ai-handoff/COCOWASH_9724.md). Sin merge ni Release.
+
 ## Desarrollo para pruebas: 9.7.2.3 / build 23
 
 CW-HO-010, Codex → usuario. Rama `codex/cocowash-people-recovery` desde `a477ac0`.
