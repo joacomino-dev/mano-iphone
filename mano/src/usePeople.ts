@@ -88,7 +88,9 @@ export function usePeople(fingerprint: string, paused: boolean, person?: string)
   const action = async (name: string, options: Record<string, unknown> = {}) => {
     setError(''); enabled.current = false; serial.current++;
     try {
-      await call('pause',{reason:'suspend'}); await idle();
+      if(name==='reset'){try{await call('pause',{reason:'suspend'});}catch{/* A corrupt index must not prevent deleting that index. */}}
+      else await call('pause',{reason:'suspend'});
+      await idle();
       const value = await call(name, options); if (name === 'consent' || name === 'resume' || name === 'reconcile') refreshed.current = fingerprint; adopt(value); setRevision(v => v + 1); return value;
     } catch { fail('No se pudo completar. El análisis está pausado; tus fotos siguen intactas y puedes reintentar.'); return undefined; }
   };

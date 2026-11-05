@@ -6,7 +6,7 @@ try {
   const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(scenario=>{
    const state={available:true,consent:true,running:true,phase:'indexing',hasPublication:false,processed:0,total:10,remaining:10,waiting:0,groups:[]};
-   let failed=false,first=true;window.calls=[];window.nativeEvents={};
+   let failed=false,first=true,corrupt=scenario==='initial-error';window.calls=[];window.nativeEvents={};
    let hidden=false;Object.defineProperty(document,'hidden',{get:()=>hidden});window.hide=value=>{hidden=value;document.dispatchEvent(new Event('visibilitychange'));};
    window.CapacitorCustomPlatform={name:'ios'};
    window.Capacitor={PluginHeaders:[{name:'People',methods:[{name:'command',rtype:'promise'},{name:'addListener',rtype:'callback'},{name:'removeListener',rtype:'promise'}]}],
@@ -15,6 +15,8 @@ try {
      if(method==='removeListener')return {};window.calls.push(o.action);
      if(o.action==='person')return {ids:['first'],items:[]};
      if(o.action==='status'&&scenario==='initial-error'&&!failed){failed=true;throw new Error('Stored index unreadable');}
+     if(o.action==='pause'&&corrupt)throw new Error('Cannot open index');
+     if(o.action==='reset'){corrupt=false;state.running=false;state.consent=false;}
      if(o.action==='pause')state.running=false;
      if(o.action==='status'&&!hidden)state.running=true;
      if(o.action==='consent')state.running=true;
@@ -35,10 +37,12 @@ try {
    assert.equal(await page.locator('#hook-error').textContent(),'');assert.equal(await page.locator('#running').textContent(),'true');
   }else{
    await page.waitForFunction(()=>document.querySelector('#hook-error').textContent.length>0);
-   assert.equal(await page.locator('#running').textContent(),'false');await page.locator('#activate').click();
+   assert.equal(await page.locator('#running').textContent(),'false');
+   if(scenario==='initial-error'){await page.locator('#reset-index').click();await page.waitForFunction(()=>window.calls.includes('reset'));await page.waitForFunction(()=>document.querySelector('#hook-error').textContent==='');}
+   await page.locator('#activate').click();
    await page.waitForFunction(()=>document.querySelector('#running').textContent==='true');assert.equal(await page.locator('#hook-error').textContent(),'');
   }
   assert.deepEqual(errors,[]);await page.close();
  }
- console.log(JSON.stringify({mockBridgeOnly:true,startupErrorRecoverable:true,scanErrorStopsSpinner:true,staleCancellationCannotPauseResumedAnalysis:true,errors:[]}));
+ console.log(JSON.stringify({mockBridgeOnly:true,startupErrorRecoverable:true,corruptIndexCanBeReset:true,scanErrorStopsSpinner:true,staleCancellationCannotPauseResumedAnalysis:true,errors:[]}));
 }finally{await browser.close();}

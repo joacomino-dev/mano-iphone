@@ -31,6 +31,7 @@ function HookFixture() {
   const people = usePeople('fixture-library', false, 'one');
   return <main><p>Native bridge MOCK — no recognition</p>
     <button id="activate" onClick={() => void people.action('consent')}>Activate</button>
+    <button id="reset-index" onClick={() => void people.action('reset')}>Reset</button>
     <button id="pause-index" onClick={() => void people.action('pause')}>Pause</button>
     <output id="member-count">{people.members?.size ?? 0}</output>
     <output id="processed">{people.status.processed}</output>

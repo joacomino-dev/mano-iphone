@@ -304,6 +304,7 @@ private actor PeopleIndex {
             defer { try? FileManager.default.removeItem(at: file) }
             guard let data = autoreleasepool(invoking: { upright(source).jpegData(compressionQuality: 0.9) }) else { deferred.insert(id); continue }
             try data.write(to: file, options: [.atomic, .completeFileProtection])
+            guard running, token == generation, PeopleActivityGate.shared.active, !Task.isCancelled else { return }
             let results = try await analyzer.insertOrUpdateAssets([MediaIntelligenceImageAsset(id: .init(id), kind: .url(file))])
             for try await _ in results { }
             guard running, token == generation, permitted(lifecycle) else { pending.append(id); break }
@@ -311,7 +312,7 @@ private actor PeopleIndex {
         }
         guard running, token == generation, PeopleActivityGate.shared.active, !Task.isCancelled, !CocoMediaPressure.busy else { try save(); return }
         if sinceGrouping < 64 && !pending.isEmpty && !store.entities.isEmpty { try save(); return }
-        if await analyzer.state == .stale { try await analyzer.update() }
+        if await analyzer.state == .stale { guard running,token == generation,PeopleActivityGate.shared.active,!Task.isCancelled else { return }; try await analyzer.update() }
         guard running, token == generation else { return }
         try await readPrimary(token:token)
         if pending.isEmpty { phase = "reconciling"; reconcileSamples = []; reconcileQueue = [] }
@@ -405,7 +406,7 @@ private actor PeopleIndex {
     }
     private func reconcileStep(token: Int) async throws {
         if reconcileSamples.isEmpty && reconcileQueue.isEmpty {
-            if let analyzer, await analyzer.state == .stale { try await analyzer.update(); guard token == generation else { return }; try await readPrimary(token:token) }
+            if let analyzer, await analyzer.state == .stale { guard running,token == generation,PeopleActivityGate.shared.active,!Task.isCancelled else { return }; try await analyzer.update(); guard token == generation else { return }; try await readPrimary(token:token) }
         }
         analyzer = nil // At most one retained identity-model context per phase.
         if reconciler == nil { reconciler = try FaceGroupAnalyzer(workingDirectory:folder.appendingPathComponent("Reconciler")) }
@@ -423,6 +424,7 @@ private actor PeopleIndex {
             guard let crop = autoreleasepool(invoking:{PeopleProcessing.crop(refined,image:up,maxSize:512)}), let data = crop.jpegData(compressionQuality:0.92) else { completed = true; continue }
             let file = folder.appendingPathComponent("input-\(UUID().uuidString).jpg"); defer { try? FileManager.default.removeItem(at:file) }
             try data.write(to:file,options:[.atomic,.completeFileProtection])
+            guard running,token == generation,PeopleActivityGate.shared.active,!Task.isCancelled else { return }
             let results = try await reconciler.insertOrUpdateAssets([MediaIntelligenceImageAsset(id:.init(id),kind:.url(file))])
             for try await _ in results { }
             guard token == generation, running, PeopleActivityGate.shared.active else { return }
@@ -431,7 +433,7 @@ private actor PeopleIndex {
         }
         try save()
         guard reconcileQueue.isEmpty, running, token == generation, PeopleActivityGate.shared.active, !Task.isCancelled, !CocoMediaPressure.busy else { return }
-        if await reconciler.state == .stale { try await reconciler.update() }
+        if await reconciler.state == .stale { guard running,token == generation,PeopleActivityGate.shared.active,!Task.isCancelled else { return }; try await reconciler.update() }
         guard token == generation, running, PeopleActivityGate.shared.active, !Task.isCancelled else { return }
         // Accept only the central face of each crop. Extra people near its edge
         // cannot vote for another identity just because they share the photo.
