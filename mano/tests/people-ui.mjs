@@ -40,9 +40,13 @@ try {
   const retry=page.getByRole('button',{name:'Reintentar censura'});await retry.waitFor();
   await retry.click();await page.waitForFunction(()=>window.fixtureCalls.some(c=>c.id==='unknown'&&c.refresh===true));
   assert.equal(await page.locator('#protected img').count(),0);
+  const beforeForeground=await page.evaluate(()=>window.fixtureCalls.length);
+  await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
+  await page.waitForFunction(n=>window.fixtureCalls.length>n,beforeForeground);
+  assert.equal(await page.locator('#protected img').count(),0);
   const transforms=await page.locator('.cloud-ring').evaluate(el=>[...el.children].map(svg=>({ring:svg.classList.contains('cloud-progress-ring'),transform:getComputedStyle(svg).transform})));
   assert.equal(transforms.find(t=>!t.ring).transform,'none');assert.notEqual(transforms.find(t=>t.ring).transform,'none');
-  assert.deepEqual(errors,[]);result.checks.push({reducedMotion:reduced,emptyFinish:true,positiveFinish:true,staleRedactionRejected:true,hiddenWithoutRequests:true,revealCancelledOnInterruption:true,uncertaintyCovered:true,retryBypassesNativeCache:true,cloudIconUpright:true,errors});
+  assert.deepEqual(errors,[]);result.checks.push({reducedMotion:reduced,emptyFinish:true,positiveFinish:true,staleRedactionRejected:true,hiddenWithoutRequests:true,revealCancelledOnInterruption:true,uncertaintyCovered:true,retryBypassesNativeCache:true,incompletePreviewRetriesOnForeground:true,cloudIconUpright:true,errors});
   await page.close();
  }
  console.log(JSON.stringify(result));

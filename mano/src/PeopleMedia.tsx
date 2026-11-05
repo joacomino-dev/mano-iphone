@@ -51,6 +51,10 @@ export function usePeopleImage(asset: Asset, size = cardPixels(asset)) {
     }).catch(() => { if(!controller.signal.aborted)setFault(key); });
     return () => { controller.abort(); };
   }, [key, protectedPhoto]);
+  useEffect(()=>{
+    const resume=()=>{if(!document.hidden&&protectedPhoto&&mode==='face'&&(result?.key!==key||fault===key))setAttempt(n=>n+1);};
+    document.addEventListener('visibilitychange',resume);return()=>document.removeEventListener('visibilitychange',resume);
+  },[key,protectedPhoto,mode,result,fault]);
   return { protectedPhoto, src: result?.key === key ? result.src : undefined, key, fault:fault===key, retry:()=>setAttempt(n=>n+1) };
 }
 

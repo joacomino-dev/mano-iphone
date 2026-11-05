@@ -17,6 +17,10 @@ function Portrait({ person, face, revision }: { person:string;face:PersonPortrai
     },controller.signal).then(src=>{if(!controller.signal.aborted)setImage({key,src});}).catch(()=>{});
     return()=>controller.abort();
   },[key,retry]);
+  useEffect(()=>{
+    const resume=()=>{if(!document.hidden&&(image?.key!==key||failed))setRetry(n=>n+1);};
+    document.addEventListener('visibilitychange',resume);return()=>document.removeEventListener('visibilitychange',resume);
+  },[key,image,failed]);
   return image?.key===key&&!failed?<img src={image.src} alt="Recorte del rostro" draggable={false} decoding="async" onError={()=>{if(retry===0)setRetry(1);else setFailed(true);}}/>:<span className="person-crop-pending" aria-hidden="true"/>;
 }
 export function PersonMosaic({ group, revision }: { group:PersonGroup;revision:number }) {
