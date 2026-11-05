@@ -74,7 +74,7 @@ export function DisplaySettingsPanel({ display, change, geek, setGeek, library, 
       <Switch label="Fecha" checked={video.date} change={date => setVideo({ date })}/>
       {video.date && <Choice label="Formato de fecha" value={video.dateFormat} options={dateOptions(true)} change={dateFormat => setVideo({ dateFormat })}/>}
       <Switch label="Hora" checked={video.time} change={time => setVideo({ time })}/>
-      {video.time && <Choice label="Formato horario" value={video.hour12} options={[[true, `12 h · ${formatTime(SAMPLE_DATE, true, true)}`], [false, `24 h · ${formatTime(SAMPLE_DATE, false)}`]]} change={hour12 => setVideo({ hour12 })}/>}
+      {video.time && <Choice label="Formato horario" value={video.hour12} options={[[true, formatTime(SAMPLE_DATE, true, true)!], [false, formatTime(SAMPLE_DATE, false)!]]} change={hour12 => setVideo({ hour12 })}/>}
       <Switch label="Ubicación" checked={video.location} change={location => setVideo({ location })}/>
       <Switch label="Duración" checked={video.duration} change={duration => setVideo({ duration })}/>
       <Switch label="Peso" hint="Lo que liberas si lo eliminas." checked={video.size} change={size => setVideo({ size })}/>

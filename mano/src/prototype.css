@@ -749,7 +749,7 @@
 .done-stats .is-keep dd{color:var(--cw-turquoise-deep)}.done-stats .is-discard dd{color:var(--cw-graphite)}.done-stats .is-favorite dd{color:var(--cw-pink-deep)}
 
 /* ---------- Filters & settings sheet ---------- */
-.sheet-tabs{position:sticky;top:0;z-index:3;display:grid;grid-template-columns:1fr 1fr;gap:2px;margin:0 0 var(--cw-space-2);padding:3px;border-radius:var(--cw-radius-pill);background:var(--cw-paper-dim)}
+.sheet-tabs{position:sticky;top:0;z-index:3;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:2px;margin:0 0 var(--cw-space-2);padding:3px;border-radius:var(--cw-radius-pill);background:var(--cw-paper-dim)}
 .sheet-tabs button{min-height:var(--cw-touch);border:0;border-radius:var(--cw-radius-pill);background:transparent;color:var(--cw-ink);font-size:var(--cw-text-sm);font-weight:500;transition:background var(--cw-base) var(--cw-ease),color var(--cw-base) var(--cw-ease),box-shadow var(--cw-base) var(--cw-ease)}
 .sheet-tabs button[aria-pressed=true]{background:var(--cw-sheet);color:var(--cw-ink);font-weight:600;box-shadow:0 1px 3px rgba(18,45,46,.18)}
 .native-sheet .sheet-tabs button[aria-pressed=true]{background:#fff}
@@ -904,3 +904,11 @@
 /* Seal V gets its own row: it is the exception, and says how to come back. */
 .seal-levels li.is-forever{grid-column:1/-1;display:grid;grid-template-columns:auto 1fr;column-gap:var(--cw-space-2);row-gap:2px}
 .seal-levels li.is-forever small{grid-column:2;color:var(--cw-ink-soft);font-size:var(--cw-text-xs)}
+/* 9.8 anti-slop: monospace stays where it is a material (Polaroid typewriter,
+   stamps, VHS, Geek data); counts and notes use the reading face. Summary
+   numbers speak in the brand's rounded voice. */
+.chip-count{font-family:var(--cw-font);font-variant-numeric:tabular-nums}
+.done-stats dd{font-family:var(--cw-font-brand);font-weight:600;font-variant-numeric:tabular-nums}
+.setting-note small,.ob-row strong small{font-family:var(--cw-font);font-weight:400}
+.access-indicator.test-mode{background:var(--cw-pink);border-color:transparent;color:var(--cw-teal-950);font-weight:600}
+

@@ -2,6 +2,14 @@
 
 Actualizado: 2026-11-05, America/Bogota. Codex trabaja solo por indicación del usuario.
 
+## Desarrollo para pruebas: 9.8 / build 27 (Claude)
+
+CW-CL-037. Decisión del usuario: Personas y Breakup Mode salen por completo; los datos
+faciales antiguos se borran al arrancar. Modo de prueba con anuncios frecuentes,
+pestaña Apoyo, anuncios como cartas solo deslizables, Compartir arriba a la derecha,
+resumen sin Filtros, orden inicial al azar, Zángano +30 %, pasada antigenéricos.
+Rama `claude/cocowash-9.8`. [Informe](../ai-handoff/COCOWASH_98.md). Sin merge ni Release.
+
 ## Desarrollo para pruebas: 9.7.2.6 / build 26 (Claude)
 
 CW-CL-036. Build 25 + monetización de `codex/cocowash-monetization-ios` (anuncios nativos,
