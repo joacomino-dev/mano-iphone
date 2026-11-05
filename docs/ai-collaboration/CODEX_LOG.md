@@ -218,3 +218,21 @@ metadatos y Release iPhone en [CI41949432356](https://github.com/joacomino-dev/m
 IPA en Descargas, digest/CRC/identidad/enlace débil verificados.
 Impacto para Claude: CW-HO-008; refinar UI preservando contratos de protección.
 Pendientes: precisión, privacidad y recursos físicos; [informe/checklist](../ai-handoff/COCOWASH_972.md).
+
+
+### CW-CX-016 — 9.7.2.1: recuperación y reset de desarrollo autorizado
+Fecha: 2026-11-04, America/Bogota.
+Agente: Codex, único escritor.
+Tarea: corregir fallo reportado de Personas/cierre; usuario autoriza reinicio de
+sesión/sellos/índice al estrenar build, sin tocar fotos.
+Estado: completada en rama para pruebas; no aceptada físicamente ni publicada.
+Base Git / commit: 0f0b8ac → `cocowash/9.7.2.1`, fuente7487cbe.
+Archivos modificados: lifecycle/Scene/arranque nativo, helper Foundation, People,
+hook/previews/mensajes, build21/workflow y pruebas. Respaldo previo24 CRLF/refs verificado.
+Cambios realizados: modelos lazy, fence nativo y cancelación, recuperación de
+interrupción, error pausa UI, reset de índice ilegible y reset por build antes de WK.
+Decisiones relevantes: datos antiguos son hipótesis, no causa probada del crash.
+Validaciones:113 Node/runtime28/TypeScript/builds/Sites4/Edge/Swift; [CI41956222043](https://github.com/joacomino-dev/mano-iphone/actions/runs/41956222043)
+success, Release arm64 y smoke nativo reset/relaunch PASS. IPA/digest/flag verificados.
+Impacto para Claude: CW-HO-009 usuario primero; no alterar protección ni reset.
+Pendientes: análisis y cierre físico, .ips si persiste; [detalle](../ai-handoff/COCOWASH_9721.md).

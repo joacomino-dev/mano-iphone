@@ -2,13 +2,28 @@
 
 Actualizado: 2026-11-04, America/Bogota. Codex trabaja solo por indicación del usuario.
 
-## Corrección en curso: 9.7.2.1 / build 21 (no publicar)
+## Corrección para pruebas: 9.7.2.1 / build 21 (no publicar)
 
 Codex único escritor en `cocowash/9.7.2.1` desde 0f0b8ac. Usuario reporta fallo
 al iniciar Personas y cerrar/reabrir. Autoriza borrar datos derivados de CocoWash
 al estrenar cada build de desarrollo; nunca Fotos. Reserva: lifecycle nativo,
 arranque/reset, errores del hook, pruebas y workflow. Backup pre-9721 verificado.
 No atribuir causa del crash sin informe del dispositivo.
+
+**Correcciones implementadas**, fuente7487cbe; [CI41956222043](https://github.com/joacomino-dev/mano-iphone/actions/runs/41956222043)
+**success**. 113 Node/runtime28/TypeScript/builds/Sites4, regresiones Edge de error/
+reset/cancelación/reapertura, Swift y Release iPhone PASS. Smoke nativo de arranque,
+reset de índice sintético y reapertura del mismo build conservando nuevo progreso PASS.
+Capturas de simulador revisadas; permiso Fotos visible, no concedido en la prueba.
+No es prueba de reconocimiento ni del crash en iPhone; confirmación física pendiente.
+IPA verificado: `C:/Users/Joaco/Downloads/CocoWash-9.7.2.1-correccion-7487cbe4.ipa`,
+5.797.140 bytes; SHA256 `d8a42b427438fba18a1cd66d9c4b90fbe371ae3f7b46277f7ce3fded05d8a3d6`.
+CFBundleShortVersionString9.7.2, build21; nombre de entrega9.7.2.1. Reset activado
+solo por flag explícito de IPA de desarrollo, una vez por versión/build; nuevo
+arranque del mismo build conserva datos. Fotos/álbumes/favoritos del sistema intactos.
+[Informe y checklist dirigida](../ai-handoff/COCOWASH_9721.md). CW-HO-009 lista
+para usuario; Claude recibe refinamiento después de comprobar esta corrección.
+Sin instalación física, Release, merge ni modificación de las ramas anteriores.
 
 ## Desarrollo autorizado: 9.7.2 / build 20 (no publicar)
 
@@ -22,7 +37,8 @@ Alcance reservado: motor/identidades/publicación/migración/miniaturas/máscara
 Personas en submenú y ajustes funcionales. Claude recibe refinamiento visual después.
 Sin merge a main, Release ni App Store. Se conserva el IPA estable anterior.
 
-**Completada en rama para prueba física**, fuente `01f150b`.
+**Entregada para pruebas, con regresión física reportada posteriormente** (fallo
+al iniciar Personas/cerrar app); no aceptada. Corrección9.7.2.1 arriba. Fuente `01f150b`.
 [CI final 41949432356](https://github.com/joacomino-dev/mano-iphone/actions/runs/41949432356)
 success: Swift/API pública/Release iPhone; 113 Node, runtime28, TypeScript, builds,
 Sites4 y regresiones Edge PASS. Identidades lógicas/alias, reconciliación conservadora,
@@ -87,7 +103,7 @@ actualizan después con un commit solo documental. Cierre: [CW-CX-013](CODEX_LOG
 
 ## Continuidad y recuperación
 
-Checkout de trabajo ahora en rama `cocowash/9.7.2`, con `main` estable preservada: `C:/Users/Joaco/Developer/CocoWash-stage1`. El checkout anterior
+Checkout de trabajo ahora en rama `cocowash/9.7.2.1`, con `main` estable preservada: `C:/Users/Joaco/Developer/CocoWash-stage1`. El checkout anterior
 en OneDrive, HEAD 76744e2 y sus cambios previos permanecen intactos. Respaldo de
 1.457 archivos/.git verificado en `C:/Users/Joaco/CocoWash-Backups/20261104-stage1-current`;
 366 fuentes originales revalidadas tras la implementación.
