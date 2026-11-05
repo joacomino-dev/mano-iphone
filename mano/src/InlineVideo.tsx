@@ -46,9 +46,11 @@ const useDocumentVisible = () => {
  * its poster, weight and VHS letters stay, and «Descargar y ver» asks for it.
  * The card carries two quiet toggles: sound (kept for the session) and the VHS
  * letters (saved with Ajustes). */
-export function InlineVideo({ asset, state, active = true, mode = 'card', retry, download, fullscreen, openSettings, meta, place, sound = false, onSound, onOsd, control, children }: {
+export function InlineVideo({ asset, state, active = true, mode = 'card', retry, download, fullscreen, openSettings, meta, place, sound = false, onSound, onOsd, control, tools, children }: {
   asset: Asset; state: VideoState; active?: boolean; mode?: 'card' | 'peek' | 'full'; retry: () => void; download: () => void; fullscreen: () => void; openSettings: () => void;
-  meta?: VideoMeta; place?: Place; sound?: boolean; onSound?: () => void; onOsd?: () => void; control?: MutableRefObject<VideoControl | null>; children: ReactNode;
+  meta?: VideoMeta; place?: Place; sound?: boolean; onSound?: () => void; onOsd?: () => void; control?: MutableRefObject<VideoControl | null>;
+  /** Extra card tool (Compartir) drawn in the same row as sound and VHS. */
+  tools?: ReactNode; children: ReactNode;
 }) {
   const player = useRef<HTMLVideoElement>(null);
   const reduced = useReducedMotion();
@@ -174,11 +176,12 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
       onTimeUpdate={e => { const t = e.currentTarget.currentTime; if (ownsPlayback) remember(key, t, playheads.get(key)?.paused ?? false); if (full || !time) setTime(t); }}
       onError={() => { setPlaying(false); setPlayError(true); }}/>}
     {card && meta && (meta.date || meta.time || meta.location || meta.duration || meta.size) && <VhsOverlay asset={asset} place={place} settings={meta}/>}
-    {card && (onSound || onOsd) && <div className="video-toggles">
+    {card && (onSound || onOsd || tools) && <div className="video-toggles">
       {/* The icon follows what really plays: iOS may refuse sound and fall back
           to silent. A tap asks for the opposite inside the gesture itself. */}
       {onSound && <button onPointerDown={stop} onClick={e => { e.stopPropagation(); toggleSound(); }} aria-pressed={!muted} aria-label={muted ? 'Activar sonido' : 'Silenciar'}>{muted ? <SpeakerSlashIcon size={18} weight="bold"/> : <SpeakerHighIcon size={18} weight="bold"/>}</button>}
       {onOsd && <button onPointerDown={stop} onClick={e => { e.stopPropagation(); haptic('selection'); onOsd(); }} aria-pressed={meta?.osd !== false} aria-label={meta?.osd !== false ? 'Ocultar letras VHS' : 'Mostrar letras VHS'}>{meta?.osd !== false ? <EyeIcon size={18} weight="bold"/> : <EyeSlashIcon size={18} weight="bold"/>}</button>}
+      {tools}
     </div>}
 
     <AnimatePresence>{glyph && <motion.span key={glyph.n} className="video-glyph" aria-hidden="true"

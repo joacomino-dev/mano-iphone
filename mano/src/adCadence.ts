@@ -1,6 +1,12 @@
 export const INTRO_MS = 180_000;
 export const AD_GAP_MS = 120_000;
 
+/** Cadence rules. The defaults are the product rules; TEST_RULES only apply
+ * in «Modo de prueba» so the owner can see and judge ads quickly. */
+export type CadenceRules = { introMs: number; gapMs: number; min: number; span: number; finishEvery: number; finishDaily: number };
+export const DEFAULT_RULES: CadenceRules = { introMs: INTRO_MS, gapMs: AD_GAP_MS, min: 30, span: 11, finishEvery: 3, finishDaily: 2 };
+export const TEST_RULES: CadenceRules = { introMs: 0, gapMs: 0, min: 4, span: 3, finishEvery: 1, finishDaily: 99 };
+
 export class AdCadence {
   private seen = new Set<string>();
   private remaining: number;
@@ -9,11 +15,13 @@ export class AdCadence {
   private finishDay = '';
   private finishAds = 0;
   private readonly random: () => number;
+  readonly rules: CadenceRules;
 
-  constructor(random = Math.random, saved?: { day: string; ads: number; count: number }) {
+  constructor(random = Math.random, saved?: { day: string; ads: number; count: number }, rules: CadenceRules = DEFAULT_RULES) {
     this.random = random;
+    this.rules = rules;
     if (saved && Number.isInteger(saved.ads) && Number.isInteger(saved.count) &&
-        saved.ads >= 0 && saved.ads <= 2 && saved.count >= 0 && typeof saved.day === 'string') {
+        saved.ads >= 0 && saved.ads <= rules.finishDaily && saved.count >= 0 && typeof saved.day === 'string') {
       this.finishDay = saved.day;
       this.finishAds = saved.ads;
       this.finishCount = saved.count;
@@ -21,7 +29,7 @@ export class AdCadence {
     this.remaining = this.interval();
   }
 
-  private interval() { return 30 + Math.floor(this.random() * 11); }
+  private interval() { return this.rules.min + Math.floor(this.random() * this.rules.span); }
 
   review(ids: string[]) {
     for (const id of ids) {
@@ -32,7 +40,7 @@ export class AdCadence {
   }
 
   between(activeMs: number) {
-    return this.remaining <= 0 && activeMs >= INTRO_MS;
+    return this.remaining <= 0 && activeMs >= this.rules.introMs;
   }
 
   finish(activeMs: number, day: string) {
@@ -40,10 +48,10 @@ export class AdCadence {
       this.finishDay = day;
       this.finishAds = 0;
     }
-    if (activeMs < INTRO_MS || this.finishAds >= 2) return false;
-    if (this.finishCount > 0 && activeMs - this.lastShown < AD_GAP_MS) return false;
+    if (activeMs < this.rules.introMs || this.finishAds >= this.rules.finishDaily) return false;
+    if (this.finishCount > 0 && activeMs - this.lastShown < this.rules.gapMs) return false;
     this.finishCount++;
-    return this.finishCount % 3 === 1;
+    return this.finishCount % this.rules.finishEvery === (this.rules.finishEvery === 1 ? 0 : 1);
   }
 
   finishSnapshot() {

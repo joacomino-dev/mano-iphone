@@ -1,7 +1,8 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowCounterClockwiseIcon, CalendarCheckIcon, CoffeeIcon, InfinityIcon, ShieldCheckIcon } from '@phosphor-icons/react';
-import { AdCadence, INTRO_MS } from './adCadence';
+import { AdCadence, DEFAULT_RULES, TEST_RULES, INTRO_MS } from './adCadence';
+import { Character } from './Characters';
 import './monetization.css';
 
 type Placement = 'deck' | 'finish';
@@ -23,16 +24,19 @@ const Store = registerPlugin<{
 const key = 'cocowash-ad-active-ms-v1';
 const finishKey = 'cocowash-finish-ads-v1';
 
-export function useMonetization(enabled: boolean, cleaning: boolean) {
+/** testing: «Modo de prueba» — same placements, much shorter cadence, separate counters. */
+export function useMonetization(enabled: boolean, cleaning: boolean, testing = false) {
+  const rules = testing ? TEST_RULES : DEFAULT_RULES;
+  const finishStore = testing ? finishKey + '-test' : finishKey;
   const available = native && enabled;
   const [status, setStatus] = useState<Status>();
   const [placement, setPlacement] = useState<Placement>();
   const [cadence] = useState(() => {
-    try { return new AdCadence(Math.random, JSON.parse(localStorage.getItem(finishKey) ?? 'null')); }
-    catch { return new AdCadence(); }
+    try { return new AdCadence(Math.random, JSON.parse(localStorage.getItem(finishStore) ?? 'null'), rules); }
+    catch { return new AdCadence(Math.random, undefined, rules); }
   });
   const saveFinishes = () => {
-    try { localStorage.setItem(finishKey, JSON.stringify(cadence.finishSnapshot())); } catch { /* optional */ }
+    try { localStorage.setItem(finishStore, JSON.stringify(cadence.finishSnapshot())); } catch { /* optional */ }
   };
   const activeMs = useRef(0);
   const ready = useRef(false);
@@ -83,7 +87,7 @@ export function useMonetization(enabled: boolean, cleaning: boolean) {
         if (previous < INTRO_MS) try { localStorage.setItem(key, String(Math.floor(activeMs.current))); } catch { /* optional */ }
       }
       last = now;
-      if (document.hidden || !status || status.adFree || activeMs.current < INTRO_MS || ready.current || loading.current || current.current || now < nextAttempt.current) return;
+      if (document.hidden || !status || status.adFree || activeMs.current < rules.introMs || ready.current || loading.current || current.current || now < nextAttempt.current) return;
       loading.current = true;
       nextAttempt.current = now + 30_000;
       void Store.prepare().then(value => { ready.current = value.ready; }).catch(() => {}).finally(() => { loading.current = false; });
@@ -188,10 +192,12 @@ export function AdSlot({ where, money }: { where: Placement; money: Monetization
 }
 
 const offers = [
-  { id: 'work.joaquin.mano.noads.year', name: 'Un año sin anuncios', detail: 'Pago único. Dura un año y no se renueva solo.', icon: CalendarCheckIcon },
-  { id: 'work.joaquin.mano.noads.lifetime', name: 'Sin anuncios para siempre', detail: 'Pago único, sin vencimiento.', icon: InfinityIcon },
-  { id: 'work.joaquin.mano.coffee', name: 'Invítame un café', detail: 'CocoWash lo hace una sola persona. El café no quita anuncios: es un gracias.', icon: CoffeeIcon },
-];
+  { id: 'work.joaquin.mano.noads.year', name: 'Un año sin anuncios', detail: 'Pago único. Dura un año y no se renueva solo.', icon: CalendarCheckIcon, tone: 'year' },
+  { id: 'work.joaquin.mano.noads.lifetime', name: 'Sin anuncios para siempre', detail: 'Pago único, sin vencimiento.', icon: InfinityIcon, tone: 'forever' },
+  { id: 'work.joaquin.mano.coffee', name: 'Invítame un café', detail: 'CocoWash lo hace una sola persona. El café no quita anuncios: es un gracias.', icon: CoffeeIcon, tone: 'coffee' },
+] as const;
+/** «Apoyo»: the three purchases as postage stamps — CocoWash already speaks in
+ * stamps (Sellos), so buying one reads as sending something, not a paywall. */
 export function PurchaseOptions({ money }: { money: Monetization }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -213,30 +219,34 @@ export function PurchaseOptions({ money }: { money: Monetization }) {
     finally { setBusy(false); }
   };
   const status = money.status;
-  const note = status?.adFree
-    ? (status.expires ? `Sin anuncios hasta el ${new Date(status.expires).toLocaleDateString('es')}. Gracias por apoyar CocoWash.` : 'Sin anuncios para siempre. Gracias por apoyar CocoWash.')
-    : 'Todo CocoWash es gratis. De vez en cuando aparece un anuncio entre tus fotos; con un pase desaparecen.';
-  return <fieldset className="cw-purchases">
-    <legend><ShieldCheckIcon size={18}/>Anuncios y apoyo</legend>
-    <p className="setting-note">{note}</p>
-    <div className="cw-offers">{offers.map(offer => {
+  return <section className="support-panel" aria-labelledby="support-title">
+    <header className="support-hero">
+      <Character pose="coqui-wave" height={88} motion="still"/>
+      <div>
+        <h3 id="support-title">CocoWash es gratis</h3>
+        <p>{status?.adFree
+          ? (status.expires ? `Sin anuncios hasta el ${new Date(status.expires).toLocaleDateString('es')}. Gracias por apoyarla.` : 'Sin anuncios para siempre. Gracias por apoyarla.')
+          : 'De vez en cuando llega un anuncio entre tus fotos. Con un pase dejan de llegar.'}</p>
+      </div>
+    </header>
+    <div className="support-stamps">{offers.map(offer => {
       const product = status?.products?.find(item => item.id === offer.id);
-      const coffee = offer === offers[2];
-      const owned = !coffee && !!status?.adFree && (!status.expires || offer === offers[0]);
+      const coffee = offer.tone === 'coffee';
+      const owned = !coffee && !!status?.adFree && (!status.expires || offer.tone === 'year');
       const Icon = offer.icon;
-      return <button key={offer.id} type="button" className={`cw-offer${coffee ? ' is-coffee' : ''}`} disabled={busy || !product || owned}
+      return <button key={offer.id} type="button" className={`support-stamp tone-${offer.tone}`} disabled={busy || !product || owned}
         aria-label={`${offer.name}. ${offer.detail} ${owned ? 'Activo.' : product ? `Precio ${product.price}.` : 'Precio no disponible.'}`}
         onClick={() => void perform(() => Store.buy({ id: offer.id }), coffee ? '¡Gracias por el café!' : 'Listo: tu pase está activo.')}>
-        <span className="row-icon" aria-hidden="true"><Icon size={20} weight={coffee ? 'fill' : 'regular'}/></span>
-        <span className="cw-offer-text"><strong>{offer.name}</strong><small>{offer.detail}</small></span>
-        <span className="cw-offer-price" aria-hidden="true">{owned ? 'Activo' : product?.price ?? '—'}</span>
+        <span className="stamp-art" aria-hidden="true"><Icon size={34} weight={coffee ? 'fill' : 'duotone'}/></span>
+        <span className="stamp-text"><strong>{offer.name}</strong><small>{offer.detail}</small></span>
+        <span className="stamp-value" aria-hidden="true">{owned ? 'Activo' : product?.price ?? '—'}</span>
       </button>;
     })}</div>
-    <div className="filter-chips">
-      {!status?.products?.length && <button type="button" onClick={refresh}>Cargar precios</button>}
-      <button type="button" disabled={busy} onClick={() => void perform(Store.restore.bind(Store), 'Compras consultadas.')}><ArrowCounterClockwiseIcon size={16}/>Restaurar compras</button>
-      <button type="button" disabled={busy} onClick={() => void perform(Store.privacy.bind(Store), '')}>Privacidad de anuncios</button>
+    <div className="support-links">
+      {!status?.products?.length && <button type="button" className="text-button" onClick={refresh}>Cargar precios</button>}
+      <button type="button" className="text-button" disabled={busy} onClick={() => void perform(Store.restore.bind(Store), 'Compras consultadas.')}><ArrowCounterClockwiseIcon size={16}/>Restaurar compras</button>
+      <button type="button" className="text-button" disabled={busy} onClick={() => void perform(Store.privacy.bind(Store), '')}><ShieldCheckIcon size={16}/>Privacidad de anuncios</button>
     </div>
     <p className="setting-note" aria-live="polite">{message}</p>
-  </fieldset>;
+  </section>;
 }

@@ -309,25 +309,26 @@ final class CocoMonetizationPlugin: CAPPlugin, CAPBridgedPlugin, NativeAdLoaderD
     }
 }
 
-/// Native ad drawn as a CocoWash card: ivory paper, Polaroid shadow, teal
-/// action and the same swipe language as the photo pile. In the pile, the
-/// first swipe nudges the card aside; a second one sends it away like a
-/// decided photo. «Saltar» always works with one tap.
+/// Native ad drawn as a CocoWash letter: ivory writing paper with an airmail
+/// edge, «Publicidad» in a postage-stamp frame and a short greeting. No buttons:
+/// like every card in CocoWash it leaves with a swipe — the first one nudges it
+/// aside, the second sends it away. VoiceOver gets a custom action instead.
 private final class CocoNativeAdCard: UIView {
     var dismiss: (() -> Void)?
     private let surface = UIView()
     private let hint = UILabel()
-    private let deck: Bool
     private var offset: CGFloat = 0
     private var leaving = false
     private let light = UIImpactFeedbackGenerator(style: .light)
 
     // Same values as the web tokens (prototype.css): --pal-surface, --pal-text,
-    // --cw-teal-800, --cw-paper, --cw-paper-edge.
+    // --cw-teal-800, --pal-turquoise, --pal-heart, --cw-paper, --cw-paper-edge.
     private static let ivory = UIColor(red: 1.0, green: 0.992, blue: 0.969, alpha: 1)
     private static let ink = UIColor(red: 0.145, green: 0.227, blue: 0.227, alpha: 1)
     private static let inkSoft = UIColor(red: 0.231, green: 0.306, blue: 0.294, alpha: 1)
     private static let teal = UIColor(red: 0.114, green: 0.251, blue: 0.259, alpha: 1)
+    private static let turquoise = UIColor(red: 0.118, green: 0.455, blue: 0.439, alpha: 1)
+    private static let heart = UIColor(red: 0.937, green: 0.604, blue: 0.596, alpha: 1)
     private static let paper = UIColor(red: 0.949, green: 0.906, blue: 0.835, alpha: 1)
     private static let edge = UIColor(red: 0.851, green: 0.784, blue: 0.675, alpha: 1)
     private var reduced: Bool { UIAccessibility.isReduceMotionEnabled }
@@ -337,21 +338,42 @@ private final class CocoNativeAdCard: UIView {
         let rounded = base.fontDescriptor.withDesign(.rounded).map { UIFont(descriptor: $0, size: size) } ?? base
         return UIFontMetrics(forTextStyle: style).scaledFont(for: rounded)
     }
+    /// Diagonal airmail stripes: turquoise, paper, heart pink, paper.
+    private static let airmail: UIColor = {
+        let tile = CGSize(width: 28, height: 28)
+        let image = UIGraphicsImageRenderer(size: tile).image { ctx in
+            CocoNativeAdCard.ivory.setFill(); ctx.fill(CGRect(origin: .zero, size: tile))
+            let c = ctx.cgContext
+            for (i, color) in [CocoNativeAdCard.turquoise, CocoNativeAdCard.heart].enumerated() {
+                color.setFill()
+                for shift in [-28.0, 0.0, 28.0] {
+                    let x = CGFloat(i) * 14 + shift
+                    c.move(to: CGPoint(x: x, y: 28)); c.addLine(to: CGPoint(x: x + 9, y: 28))
+                    c.addLine(to: CGPoint(x: x + 37, y: 0)); c.addLine(to: CGPoint(x: x + 28, y: 0)); c.closePath(); c.fillPath()
+                }
+            }
+        }
+        return UIColor(patternImage: image)
+    }()
 
     init(ad: NativeAd, deck: Bool) {
-        self.deck = deck
         super.init(frame: .zero)
         let creative = NativeAdView()
         creative.backgroundColor = .clear
 
-        let attribution = PaddedLabel()
-        attribution.text = "Publicidad"
-        attribution.font = Self.font(12, .semibold, .caption1)
-        attribution.adjustsFontForContentSizeCategory = true
-        attribution.textColor = Self.ink
-        attribution.backgroundColor = Self.paper
-        attribution.layer.cornerRadius = 9
-        attribution.clipsToBounds = true
+        let stamp = StampLabel()
+        stamp.text = "Publicidad"
+        stamp.font = Self.font(12, .semibold, .caption1)
+        stamp.adjustsFontForContentSizeCategory = true
+        stamp.textColor = Self.turquoise
+        stamp.stroke = Self.turquoise
+
+        let greeting = UILabel()
+        greeting.text = "Esta carta mantiene CocoWash gratis"
+        greeting.font = Self.font(13, .medium, .footnote)
+        greeting.adjustsFontForContentSizeCategory = true
+        greeting.textColor = Self.inkSoft
+        greeting.numberOfLines = 2
 
         let headline = UILabel()
         headline.text = ad.headline
@@ -364,7 +386,7 @@ private final class CocoNativeAdCard: UIView {
         media.mediaContent = ad.mediaContent
         media.contentMode = .scaleAspectFit
         media.backgroundColor = Self.paper
-        media.layer.cornerRadius = 10
+        media.layer.cornerRadius = 4
         media.clipsToBounds = true
 
         // The SDK handles the tap on the call to action; the button only draws it.
@@ -391,22 +413,23 @@ private final class CocoNativeAdCard: UIView {
         let title = UIStackView(arrangedSubviews: [icon, headline])
         title.alignment = .center
         title.spacing = 10
-        let badge = UIStackView(arrangedSubviews: [attribution, UIView()])
-        let assets = UIStackView(arrangedSubviews: [badge, title, media, action])
+        let top = UIStackView(arrangedSubviews: [stamp, UIView()])
+        let assets = UIStackView(arrangedSubviews: [top, greeting, title, media, action])
         assets.translatesAutoresizingMaskIntoConstraints = false
         assets.axis = .vertical
-        assets.spacing = 10
+        assets.spacing = 8
+        assets.setCustomSpacing(12, after: greeting)
         assets.setCustomSpacing(12, after: media)
         media.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
         creative.addSubview(assets)
         NSLayoutConstraint.activate([
-            assets.topAnchor.constraint(equalTo: creative.topAnchor, constant: 12),
-            assets.bottomAnchor.constraint(equalTo: creative.bottomAnchor, constant: -12),
-            assets.leadingAnchor.constraint(equalTo: creative.leadingAnchor, constant: 12),
+            assets.topAnchor.constraint(equalTo: creative.topAnchor, constant: 18),
+            assets.bottomAnchor.constraint(equalTo: creative.bottomAnchor, constant: -18),
+            assets.leadingAnchor.constraint(equalTo: creative.leadingAnchor, constant: 16),
+            assets.trailingAnchor.constraint(equalTo: creative.trailingAnchor, constant: -16),
             // Room for the AdChoices mark the SDK places in the top corner.
-            assets.trailingAnchor.constraint(equalTo: creative.trailingAnchor, constant: -12),
-            badge.trailingAnchor.constraint(equalTo: assets.trailingAnchor, constant: -28),
-            media.heightAnchor.constraint(greaterThanOrEqualToConstant: 120),
+            top.trailingAnchor.constraint(equalTo: assets.trailingAnchor, constant: -28),
+            media.heightAnchor.constraint(greaterThanOrEqualToConstant: 110),
         ])
         creative.iconView = icon
         creative.headlineView = headline
@@ -415,58 +438,62 @@ private final class CocoNativeAdCard: UIView {
         creative.nativeAd = ad
 
         surface.backgroundColor = Self.ivory
-        surface.layer.cornerRadius = 18
+        surface.layer.cornerRadius = 6
         surface.layer.borderColor = Self.edge.cgColor
         surface.layer.borderWidth = 1
         surface.layer.shadowColor = Self.ink.cgColor
         surface.layer.shadowOpacity = 0.16
         surface.layer.shadowRadius = 14
         surface.layer.shadowOffset = CGSize(width: 0, height: 8)
+        let paperClip = UIView()
+        paperClip.layer.cornerRadius = 6
+        paperClip.clipsToBounds = true
+        paperClip.translatesAutoresizingMaskIntoConstraints = false
+        surface.addSubview(paperClip)
+        let bands = [UIView(), UIView()]
+        for band in bands { band.backgroundColor = Self.airmail; band.translatesAutoresizingMaskIntoConstraints = false; paperClip.addSubview(band) }
         creative.translatesAutoresizingMaskIntoConstraints = false
-        surface.addSubview(creative)
+        paperClip.addSubview(creative)
         surface.translatesAutoresizingMaskIntoConstraints = false
+        surface.isAccessibilityElement = false
         addSubview(surface)
 
-        hint.text = deck ? "Desliza para volver a tus fotos" : "Gracias por mantener CocoWash gratis"
+        hint.text = "‹  Desliza para seguir  ›"
         hint.font = Self.font(13, .medium, .footnote)
         hint.adjustsFontForContentSizeCategory = true
         hint.textColor = Self.inkSoft
-        hint.numberOfLines = 2
-        var skipConfig = UIButton.Configuration.plain()
-        skipConfig.baseForegroundColor = Self.teal
-        skipConfig.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attributes in
-            var next = attributes; next.font = Self.font(15, .semibold, .subheadline); return next
-        }
-        let skip = UIButton(configuration: skipConfig)
-        skip.setTitle(deck ? "Saltar" : "Cerrar", for: .normal)
-        skip.accessibilityLabel = deck ? "Saltar anuncio y volver a tus fotos" : "Cerrar anuncio"
-        skip.addTarget(self, action: #selector(skipAd), for: .touchUpInside)
-        skip.setContentHuggingPriority(.required, for: .horizontal)
-        skip.widthAnchor.constraint(greaterThanOrEqualToConstant: 64).isActive = true
-        let controls = UIStackView(arrangedSubviews: [hint, skip])
-        controls.alignment = .center
-        controls.spacing = 8
-        controls.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(controls)
+        hint.textAlignment = .center
+        hint.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(hint)
         NSLayoutConstraint.activate([
             surface.topAnchor.constraint(equalTo: topAnchor),
             surface.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 14),
             surface.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -14),
-            creative.topAnchor.constraint(equalTo: surface.topAnchor),
-            creative.bottomAnchor.constraint(equalTo: surface.bottomAnchor),
-            creative.leadingAnchor.constraint(equalTo: surface.leadingAnchor),
-            creative.trailingAnchor.constraint(equalTo: surface.trailingAnchor),
-            controls.topAnchor.constraint(equalTo: surface.bottomAnchor, constant: 5),
-            controls.leadingAnchor.constraint(equalTo: surface.leadingAnchor, constant: 6),
-            controls.trailingAnchor.constraint(equalTo: surface.trailingAnchor),
-            controls.bottomAnchor.constraint(equalTo: bottomAnchor),
-            controls.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
+            paperClip.topAnchor.constraint(equalTo: surface.topAnchor),
+            paperClip.bottomAnchor.constraint(equalTo: surface.bottomAnchor),
+            paperClip.leadingAnchor.constraint(equalTo: surface.leadingAnchor),
+            paperClip.trailingAnchor.constraint(equalTo: surface.trailingAnchor),
+            bands[0].topAnchor.constraint(equalTo: paperClip.topAnchor),
+            bands[1].bottomAnchor.constraint(equalTo: paperClip.bottomAnchor),
+            creative.topAnchor.constraint(equalTo: paperClip.topAnchor),
+            creative.bottomAnchor.constraint(equalTo: paperClip.bottomAnchor),
+            creative.leadingAnchor.constraint(equalTo: paperClip.leadingAnchor),
+            creative.trailingAnchor.constraint(equalTo: paperClip.trailingAnchor),
+            hint.topAnchor.constraint(equalTo: surface.bottomAnchor, constant: 8),
+            hint.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 14),
+            hint.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -14),
+            hint.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor),
+            surface.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -32),
         ])
-        if deck {
-            let pan = UIPanGestureRecognizer(target: self, action: #selector(drag(_:)))
-            surface.addGestureRecognizer(pan)
-            surface.accessibilityCustomActions = [UIAccessibilityCustomAction(name: "Saltar anuncio") { [weak self] _ in self?.skipAd(); return true }]
+        for band in bands {
+            band.heightAnchor.constraint(equalToConstant: 6).isActive = true
+            band.leadingAnchor.constraint(equalTo: paperClip.leadingAnchor).isActive = true
+            band.trailingAnchor.constraint(equalTo: paperClip.trailingAnchor).isActive = true
         }
+        surface.addGestureRecognizer(UIPanGestureRecognizer(target: self, action: #selector(drag(_:))))
+        accessibilityElements = [creative, hint]
+        hint.accessibilityLabel = deck ? "Anuncio. Desliza dos veces para volver a tus fotos." : "Anuncio. Desliza dos veces para seguir."
+        hint.accessibilityCustomActions = [UIAccessibilityCustomAction(name: "Seguir sin el anuncio") { [weak self] _ in self?.leave(1, velocity: 0); return true }]
     }
 
     required init?(coder: NSCoder) { nil }
@@ -484,16 +511,6 @@ private final class CocoNativeAdCard: UIView {
         }
     }
 
-    @objc private func skipAd() {
-        guard !leaving else { return }
-        leaving = true
-        isUserInteractionEnabled = false
-        UIView.animate(withDuration: reduced ? 0.12 : 0.22, delay: 0, options: [.curveEaseIn]) {
-            self.alpha = 0
-            if !self.reduced { self.surface.transform = CGAffineTransform(translationX: 0, y: 12).scaledBy(x: 0.96, y: 0.96) }
-        } completion: { [weak self] _ in self?.dismiss?() }
-    }
-
     private func leave(_ direction: CGFloat, velocity: CGFloat) {
         guard !leaving else { return }
         leaving = true
@@ -503,6 +520,7 @@ private final class CocoNativeAdCard: UIView {
         let duration = reduced ? 0.14 : TimeInterval(min(0.32, max(0.18, distance / max(abs(velocity), 900))))
         UIView.animate(withDuration: duration, delay: 0, options: [.curveEaseIn]) {
             self.surface.alpha = 0
+            self.hint.alpha = 0
             if !self.reduced {
                 self.surface.transform = CGAffineTransform(translationX: direction * distance, y: -24).rotated(by: direction * 0.22)
             }
@@ -525,7 +543,7 @@ private final class CocoNativeAdCard: UIView {
             offset = t.x > 0 ? 16 : -16
             light.impactOccurred()
             hint.text = "Una vez más y seguimos"
-            UIAccessibility.post(notification: .announcement, argument: "Desliza otra vez para volver a tus fotos")
+            UIAccessibility.post(notification: .announcement, argument: "Desliza otra vez para seguir")
             settle()
         case .ended, .cancelled, .failed:
             settle()
@@ -541,11 +559,26 @@ private final class CocoNativeAdCard: UIView {
     }
 }
 
-/// «Publicidad» badge with breathing room on both sides.
-private final class PaddedLabel: UILabel {
-    override func drawText(in rect: CGRect) { super.drawText(in: rect.insetBy(dx: 8, dy: 2)) }
+/// «Publicidad» inside a dashed postage-stamp frame.
+private final class StampLabel: UILabel {
+    var stroke: UIColor = .black
+    private let frameLayer = CAShapeLayer()
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        frameLayer.fillColor = UIColor.clear.cgColor
+        frameLayer.lineWidth = 1.5
+        frameLayer.lineDashPattern = [3, 2]
+        layer.addSublayer(frameLayer)
+    }
+    required init?(coder: NSCoder) { nil }
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        frameLayer.strokeColor = stroke.cgColor
+        frameLayer.path = UIBezierPath(roundedRect: bounds.insetBy(dx: 0.75, dy: 0.75), cornerRadius: 3).cgPath
+    }
+    override func drawText(in rect: CGRect) { super.drawText(in: rect.insetBy(dx: 8, dy: 3)) }
     override var intrinsicContentSize: CGSize {
         let size = super.intrinsicContentSize
-        return CGSize(width: size.width + 16, height: size.height + 4)
+        return CGSize(width: size.width + 16, height: size.height + 6)
     }
 }

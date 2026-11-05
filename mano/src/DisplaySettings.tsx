@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { CameraIcon, FilmStripIcon, HandTapIcon, BooksIcon, ImageSquareIcon, CloudArrowDownIcon, StampIcon, GraduationCapIcon, PlayCircleIcon } from '@phosphor-icons/react';
+import { CameraIcon, FilmStripIcon, HandTapIcon, BooksIcon, ImageSquareIcon, CloudArrowDownIcon, StampIcon, GraduationCapIcon, PlayCircleIcon, FlaskIcon } from '@phosphor-icons/react';
 import type { Asset } from './domain';
 import { DATE_FORMATS, formatDate, formatTime, polaroidCaption, type CloudMode, type DateFormat, type DisplaySettings, type OsdSize } from './meta';
 import { VhsOverlay } from './Vhs';
@@ -22,7 +22,7 @@ const CLOUD: [CloudMode, string, string][] = [
   ['always', 'Descargar siempre', 'Cada carta se descarga con nitidez completa. Más cómodo con buena conexión y espacio libre.'],
 ];
 const OSD_SIZE: [OsdSize, string][] = [['s', 'Pequeño'], ['m', 'Mediano'], ['l', 'Grande']];
-const facts = (q: PreviewQuality) => { const p = PREVIEW_PROFILES[q]; return `Carta hasta ${p.cardMax} px · al ampliar ${p.zoom} px · caché ${p.cacheMB} MB`; };
+const facts = (q: PreviewQuality) => { const p = PREVIEW_PROFILES[q]; return `Carta hasta ${p.cardMax} px, ${p.zoom} px al ampliar y ${p.cacheMB} MB de caché.`; };
 const locale = typeof navigator !== 'undefined' ? navigator.language || 'es' : 'es';
 
 function Switch({ label, hint, checked, change }: { label: string; hint?: string; checked: boolean; change: (value: boolean) => void }) {
@@ -37,9 +37,11 @@ const dateOptions = (upper: boolean) => DATE_FORMATS.map(format => [format, form
 
 /** How information looks on cards. Applied live and saved; it never affects
  * which files the filters put in the pile. */
-export function DisplaySettingsPanel({ display, change, geek, setGeek, library, replayIntro }: {
+export function DisplaySettingsPanel({ display, change, geek, setGeek, library, replayIntro, testing }: {
   display: DisplaySettings; change: (next: DisplaySettings) => void; geek: boolean; setGeek: (value: boolean) => void;
   library: ReactNode; replayIntro: () => void;
+  /** iPhone only, until 1.0: «Modo de prueba» (testMode.ts). */
+  testing?: { on: boolean; set: (on: boolean) => void };
 }) {
   const photo = display.photo, video = display.video;
   const setPhoto = (patch: Partial<typeof photo>) => change({ ...display, photo: { ...photo, ...patch } });
@@ -47,14 +49,9 @@ export function DisplaySettingsPanel({ display, change, geek, setGeek, library, 
   const caption = polaroidCaption(SAMPLE, SAMPLE_PLACE, photo, locale);
   return <div className="settings-panel">
     <p className="settings-intro">Cambia cómo se ven tus recuerdos. No cambia qué fotos entran en la pila.</p>
-    {/* The tour again, on purpose: first in Ajustes, a full button (no wait this time). */}
     <fieldset>
-      <legend><GraduationCapIcon size={18}/>Introducción</legend>
-      <button className="sheet-action secondary replay-intro" onClick={replayIntro}><PlayCircleIcon size={20} weight="bold"/>Ver la introducción de nuevo</button>
-      <p className="settings-intro">Las tarjetas del primer día: los gestos, anclar, ampliar y la privacidad.</p>
-    </fieldset>
-    <fieldset>
-      <legend><CameraIcon size={18}/>Fotos · Polaroid</legend>
+      <legend><CameraIcon size={18}/>Fotos</legend>
+      <p className="settings-intro">Lo que se escribe en el pie de cada Polaroid.</p>
       <div className="setting-preview" aria-hidden="true"><div className="mini-polaroid paper"><img src={SAMPLE_PHOTO} alt="" draggable={false}/>
         <span className="polaroid-caption"><span className="caption-where">{caption.where}</span>{caption.when && <span className="caption-when">{caption.when}</span>}</span></div>
         <small>Vista previa</small></div>
@@ -65,7 +62,8 @@ export function DisplaySettingsPanel({ display, change, geek, setGeek, library, 
       {photo.time && <Choice label="Formato de hora" value={photo.hour12} options={[[false, formatTime(SAMPLE_DATE, false)!], [true, formatTime(SAMPLE_DATE, true)!]]} change={hour12 => setPhoto({ hour12 })}/>}
     </fieldset>
     <fieldset>
-      <legend><FilmStripIcon size={18}/>Vídeos · VHS</legend>
+      <legend><FilmStripIcon size={18}/>Vídeos</legend>
+      <p className="settings-intro">Las letras de cinta VHS sobre cada vídeo.</p>
       {/* A true miniature: the tape is laid out at a real card's width (the OSD
           fit depends on it) and only drawn smaller, so Pequeño / Mediano / Grande
           compare exactly as they will on the card. */}
@@ -87,7 +85,7 @@ export function DisplaySettingsPanel({ display, change, geek, setGeek, library, 
       <Switch label="Mostrar el sello en las fotos" hint="Tócalo sobre una foto para ocultarlos al momento." checked={photo.seal} change={seal => setPhoto({ seal })}/>
     </fieldset>
     <fieldset>
-      <legend><ImageSquareIcon size={18}/>Calidad de vista previa</legend>
+      <legend><ImageSquareIcon size={18}/>Nitidez de las cartas</legend>
       <p className="settings-intro">Solo cambia cómo se ve la vista previa en CocoWash. Tus originales no se tocan. Se aplica a las siguientes fotos.</p>
       <div className="filter-chips quality-chips" role="group" aria-label="Calidad de vista previa">
         {QUALITY.map(([value, label]) => <button key={value} aria-pressed={display.quality === value} onClick={() => { haptic('selection'); change({ ...display, quality: value }); }}>{label}</button>)}
@@ -109,6 +107,15 @@ export function DisplaySettingsPanel({ display, change, geek, setGeek, library, 
     <fieldset>
       <legend><BooksIcon size={18}/>Biblioteca</legend>
       {library}
+    </fieldset>
+    {testing && <fieldset className="test-mode-field">
+      <legend><FlaskIcon size={18}/>Modo de prueba</legend>
+      <Switch label="Practicar sin tocar Fotos" hint="Usa las postales de ejemplo e imita cada acción: nada se borra ni se guarda en tu biblioteca. Los anuncios de prueba salen cada pocas fotos para que los revises. Al cambiarlo, CocoWash se reinicia." checked={testing.on} change={testing.set}/>
+    </fieldset>}
+    <fieldset>
+      <legend><GraduationCapIcon size={18}/>Introducción</legend>
+      <button className="sheet-action secondary replay-intro" onClick={replayIntro}><PlayCircleIcon size={20} weight="bold"/>Ver la introducción de nuevo</button>
+      <p className="settings-intro">Las tarjetas del primer día: los gestos, anclar, ampliar y la privacidad.</p>
     </fieldset>
   </div>;
 }

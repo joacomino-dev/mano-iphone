@@ -46,3 +46,13 @@ test('first eligible finish retries when no ad renders; subsequent finishes are 
   assert.equal(reopened.finish(later + AD_GAP_MS, '2026-11-06'), false);
   assert.equal(reopened.finish(later + AD_GAP_MS, '2026-11-06'), true);
 });
+
+test('test mode shows deck ads every 4-6 reviewed items and a finish card at every close', async () => {
+  const { TEST_RULES } = await import('../src/adCadence.ts');
+  const cadence = new AdCadence(() => 0, undefined, TEST_RULES);
+  cadence.review(ids(0, 3));
+  assert.equal(cadence.between(0), false);
+  cadence.review(ids(3, 1));
+  assert.equal(cadence.between(0), true);
+  for (let i = 0; i < 5; i++) { assert.equal(cadence.finish(0, '2026-11-05'), true); cadence.shown(0, 'finish'); }
+});

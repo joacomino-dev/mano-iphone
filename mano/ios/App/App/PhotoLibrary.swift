@@ -16,7 +16,6 @@ import UniformTypeIdentifiers
 let preparedVideoFolder = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
     .appendingPathComponent("MemSwipeVideos", isDirectory: true)
 
-@objc(ManoBridgeController)
 /// Shared, non-blocking signal that visible media is being prepared.
 enum CocoMediaPressure {
     private static let lock = NSLock()
@@ -25,6 +24,7 @@ enum CocoMediaPressure {
     static var busy: Bool { lock.lock(); defer { lock.unlock() }; return count > 0 }
 }
 
+@objc(ManoBridgeController)
 class ManoBridgeController: CAPBridgeViewController {
     private let mediaStream = PreparedVideoStreamHandler()
     override func webViewConfiguration(for instanceConfiguration: InstanceConfiguration) -> WKWebViewConfiguration {
