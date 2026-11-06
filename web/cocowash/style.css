@@ -1,0 +1,172 @@
+/* CocoWash · web de soporte y privacidad.
+   Misma identidad que la app («Sello y papel»): papel cálido, tinta verde grafito,
+   turquesa para lo positivo, rosa del corazón y café para acentos pequeños.
+   Fredoka 600 (marca) y Patua One (sellos), SIL OFL 1.1, servidas en local.
+   Se publica en https://joaquinmino.work/cocowash/ */
+@font-face{font-family:'Fredoka';font-weight:600;font-display:swap;src:url('./assets/fonts/fredoka-latin-600.woff2') format('woff2')}
+@font-face{font-family:'Patua One';font-weight:400;font-display:swap;src:url('./assets/fonts/patua-one-latin-400.woff2') format('woff2')}
+
+:root{
+  --paper:#F3ECE1;      /* Warm Paper de la app */
+  --ivory:#FFFDF7;      /* superficies: Polaroid, hojas */
+  --ink:#253A3A;        /* tinta: 10.3:1 sobre el papel */
+  --ink-soft:#3B4E4B;   /* 8.0:1 */
+  --ink-faint:#51625E;  /* 5.5:1 */
+  --turq:#1E7470;       /* identidad y acciones positivas: 5.0:1 */
+  --heart:#EF9A98;      /* corazón: solo relleno, nunca texto */
+  --heart-deep:#A3405A; /* 5.6:1 */
+  --coffee:#8A4B2D;     /* 6.1:1 */
+  --line:color-mix(in srgb,var(--ink) 16%,transparent);
+  --line-strong:color-mix(in srgb,var(--ink) 34%,transparent);
+  --shadow:0 1px 2px color-mix(in srgb,var(--ink) 8%,transparent),0 6px 18px color-mix(in srgb,var(--ink) 10%,transparent);
+  --brand:'Fredoka','Avenir Next Rounded','Arial Rounded MT Bold',system-ui,sans-serif;
+  --stamp:'Patua One',Georgia,serif;
+  --text:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,'Helvetica Neue',sans-serif;
+  --gutter:clamp(1rem,4vw,2rem);
+  color-scheme:light;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-padding-top:1rem}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 1.0625rem/1.6 var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img{display:block;max-width:100%;height:auto}
+a{color:var(--turq);text-decoration-thickness:1.5px;text-underline-offset:.18em}
+a:hover{color:var(--ink)}
+:focus-visible{outline:3px solid var(--coffee);outline-offset:3px;border-radius:6px}
+p,ul,ol{margin:0 0 1rem}
+h1,h2,h3{font-family:var(--brand);font-weight:600;color:var(--ink);text-wrap:balance}
+b,strong{font-weight:650}
+
+.wrap{width:min(100% - 2 * var(--gutter),62rem);margin-inline:auto}
+.skip{position:absolute;left:1rem;top:-4rem;z-index:10;padding:.6rem 1rem;border-radius:999px;background:var(--ink);color:var(--ivory);font-weight:600}
+.skip:focus{top:1rem}
+
+
+/* Cabecera */
+.site-head{display:flex;align-items:center;justify-content:space-between;gap:.75rem 1rem;flex-wrap:wrap;padding:1rem 0 .5rem}
+.brand{display:block;flex:none;border-radius:10px}
+.brand img{width:auto;height:52px}
+.site-nav ul{display:flex;flex-wrap:wrap;align-items:center;gap:.25rem;margin:0;padding:0;list-style:none}
+.site-nav a{display:inline-flex;align-items:center;min-height:44px;padding:0 .95rem;border-radius:999px;color:var(--ink);font:600 1rem/1 var(--brand);text-decoration:none;letter-spacing:.01em}
+.site-nav a:hover{background:color-mix(in srgb,var(--ink) 7%,transparent)}
+.site-nav a[aria-current=page]{background:var(--ink);color:var(--ivory)}
+.site-nav .lang{margin-inline-start:.25rem;box-shadow:inset 0 0 0 1.5px var(--line-strong)}
+
+/* Portada: título, entrada y Coqui con el matasellos de la casa */
+.hero{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:1rem 2.5rem;padding:clamp(1.5rem,6vw,3.5rem) 0 clamp(2rem,6vw,3.5rem)}
+.hero h1{margin:0 0 .9rem;font-size:clamp(2.35rem,6.2vw,3.9rem);line-height:1.04;letter-spacing:-.015em}
+.lead{max-width:34rem;margin:0;color:var(--ink-soft);font-size:clamp(1.0625rem,2.2vw,1.25rem);line-height:1.55}
+.meta{margin:.9rem 0 0;color:var(--ink-faint);font-size:.9375rem}
+.hero-art{position:relative;width:clamp(150px,24vw,230px);margin-inline-end:1.5rem}
+.postmark{position:absolute;right:-1.9rem;bottom:-.6rem;display:grid;place-items:center;width:clamp(96px,12vw,116px);aspect-ratio:1;padding:.85rem;border-radius:50%;
+  background:var(--ivory);box-shadow:0 0 0 3px var(--paper),0 0 0 5px var(--heart-deep),inset 0 0 0 2px var(--heart-deep);
+  color:var(--heart-deep);font:400 clamp(.8rem,1.5vw,.95rem)/1.12 var(--stamp);text-align:center;transform:rotate(-11deg)}
+.hero.compact .hero-art{width:clamp(120px,18vw,170px)}
+
+/* Bloques */
+section,article{margin:0 0 clamp(2.5rem,7vw,4rem)}
+.section-title{display:flex;align-items:center;gap:.9rem;margin:0 0 1.25rem}
+.section-title img{flex:none;width:64px}
+.section-title h2{margin:0}
+h2.section-title{display:block;margin:0 0 1.25rem}
+.section-title h2,h2.section-title{font-size:clamp(1.55rem,3.6vw,2.1rem);line-height:1.12}
+.section-title p{margin:.3rem 0 0;color:var(--ink-soft)}
+
+/* El borrado, como un recorrido postal: tres paradas unidas por una línea */
+.route{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.5rem;margin:0;padding:0;list-style:none;counter-reset:route}
+.route li{position:relative;padding-top:4.1rem;counter-increment:route}
+.route li::before{content:counter(route);position:absolute;left:0;top:0;display:grid;place-items:center;width:3.1rem;height:3.1rem;border-radius:50%;background:var(--turq);color:var(--ivory);
+  box-shadow:0 0 0 4px var(--paper),0 0 0 6px var(--turq);font:400 1.45rem/1 var(--stamp);z-index:1}
+.route li:not(:last-child)::after{content:'';position:absolute;left:3.6rem;right:-1rem;top:1.5rem;border-top:2px dashed var(--line-strong)}
+.route li:last-child::before{background:var(--heart-deep);box-shadow:0 0 0 4px var(--paper),0 0 0 6px var(--heart-deep)}
+.route h3{margin:0 0 .35rem;font-size:1.25rem;line-height:1.2}
+.route p{margin:0;color:var(--ink-soft)}
+
+/* Preguntas frecuentes: hoja de papel marfil con grupos */
+.sheet{background:var(--ivory);border-radius:20px;box-shadow:var(--shadow);padding:clamp(1.1rem,4vw,2.25rem)}
+.faq-group+.faq-group{margin-top:1.75rem}
+.faq-group>h3{margin:0 0 .25rem;color:var(--turq);font-size:1.0625rem;letter-spacing:.01em}
+details{border-bottom:1px solid var(--line)}
+details:last-child{border-bottom:0}
+summary{position:relative;display:block;min-height:44px;padding:.85rem 3rem .85rem 0;list-style:none;cursor:pointer;font-weight:650;line-height:1.4}
+summary::-webkit-details-marker{display:none}
+summary::after{content:'';position:absolute;right:.15rem;top:50%;width:1.75rem;height:1.75rem;margin-top:-.875rem;border-radius:50%;
+  background:linear-gradient(var(--ink),var(--ink)) center/.75rem 2px no-repeat,linear-gradient(var(--ink),var(--ink)) center/2px .75rem no-repeat;box-shadow:inset 0 0 0 1.5px var(--line-strong)}
+details[open]>summary{color:var(--turq)}
+details[open]>summary::after{transform:rotate(45deg);background-color:color-mix(in srgb,var(--turq) 12%,transparent)}
+@media (prefers-reduced-motion:no-preference){summary::after{transition:transform .2s cubic-bezier(.2,.8,.2,1)}}
+summary:hover{color:var(--turq)}
+.answer{padding:0 0 1.1rem;max-width:62ch;color:var(--ink-soft)}
+.answer>:last-child{margin-bottom:0}
+.answer ol,.answer ul{padding-inline-start:1.25rem}
+.answer li+li{margin-top:.3rem}
+.path{color:var(--ink);font-weight:600}
+
+/* Contacto: una carta con borde de correo aéreo */
+.letter{position:relative;padding:clamp(1.25rem,4vw,2.25rem);background:var(--ivory);border:10px solid transparent;
+  border-image:repeating-linear-gradient(-45deg,var(--heart-deep) 0 14px,var(--ivory) 14px 22px,var(--turq) 22px 36px,var(--ivory) 36px 44px) 10;box-shadow:var(--shadow)}
+.letter h2{margin:0 0 .6rem;font-size:clamp(1.55rem,3.6vw,2.1rem)}
+.letter ul{padding-inline-start:1.25rem;color:var(--ink-soft)}
+.letter>:last-child{margin-bottom:0}
+
+/* Avisos */
+.todo{display:inline-block;padding:.05rem .5rem;border:1.5px dashed var(--coffee);border-radius:6px;color:var(--coffee);font-weight:650;font-size:.9375rem;line-height:1.5}
+.note{margin:1rem 0;padding:.8rem 1rem;border-left:4px solid var(--heart-deep);border-radius:0 12px 12px 0;background:color-mix(in srgb,var(--heart) 16%,var(--ivory));color:var(--ink);font-size:.9375rem}
+.note strong{color:var(--heart-deep)}
+
+/* Política */
+.policy{display:grid;grid-template-columns:minmax(0,46rem) minmax(12rem,1fr);align-items:start;gap:clamp(2rem,5vw,4rem)}
+.policy>.sheet{grid-column:1;grid-row:1}
+.policy>.toc{grid-column:2;grid-row:1;position:sticky;top:1.5rem}
+.policy .sheet{padding:clamp(1.25rem,5vw,2.75rem)}
+.policy h2{margin:2.25rem 0 .6rem;font-size:clamp(1.35rem,3vw,1.6rem);line-height:1.2}
+.policy h2:first-child{margin-top:0}
+.policy h3{margin:1.4rem 0 .4rem;font-size:1.0625rem}
+.policy p,.policy li{color:var(--ink-soft)}
+.policy ul{padding-inline-start:1.25rem}
+.policy li+li{margin-top:.35rem}
+.gist{margin:0 0 2rem;padding:0;list-style:none;display:grid;gap:.6rem}
+.gist li{position:relative;padding-inline-start:2.1rem;color:var(--ink)}
+.gist li::before{content:'';position:absolute;left:0;top:.2rem;width:1.35rem;height:1.35rem;border-radius:50%;background:var(--turq) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.5l2.6 2.5L12 5.5' fill='none' stroke='%23FFFDF7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/.95rem no-repeat}
+.toc{margin:0;padding:.25rem 0 0 1.25rem;border-left:2px solid var(--line)}
+.toc p{margin:0 0 .4rem;color:var(--ink-faint);font-size:.9375rem}
+.toc ul{margin:0;padding:0;list-style:none}
+.toc li{break-inside:avoid}
+.toc a{display:inline-block;padding:.35rem 0;color:var(--ink-soft);font-weight:600;text-decoration:none}
+.toc a:hover{color:var(--turq);text-decoration:underline}
+
+/* Pie */
+.site-foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem 2rem;padding:1.75rem 0 2.5rem;border-top:1px solid var(--line)}
+.motto{margin:0;color:var(--coffee);font:400 1.35rem/1.2 var(--stamp)}
+.site-foot ul{display:flex;flex-wrap:wrap;gap:.25rem 1.25rem;margin:0;padding:0;list-style:none;font-size:.9375rem}
+.site-foot a{display:inline-block;padding:.5rem 0;color:var(--ink-soft)}
+.site-foot small{flex-basis:100%;color:var(--ink-faint);font-size:.875rem}
+
+@media (max-width:900px){
+  .policy{grid-template-columns:minmax(0,1fr);gap:1.25rem}
+  .policy>.toc{grid-column:1;grid-row:auto;position:static;padding:0;border:0}
+  .policy>.toc{padding:.9rem 1rem;border-radius:14px;background:color-mix(in srgb,var(--ink) 5%,transparent)}
+  .policy>.toc ul{columns:2 8.5rem;column-gap:1rem}
+  .policy>.toc a{padding:.3rem 0;font-size:.9375rem;line-height:1.3}
+  .policy>.sheet{grid-row:auto}
+}
+@media (max-width:760px){
+  .route{grid-template-columns:1fr;gap:1.25rem}
+  .route li{padding:0 0 0 4.25rem;min-height:3.4rem}
+  .route li:not(:last-child)::after{left:1.55rem;right:auto;top:3.6rem;bottom:-1.2rem;border-top:0;border-left:2px dashed var(--line-strong)}
+}
+@media (max-width:560px){
+  .brand img{height:44px}
+  .site-nav a{padding:0 .7rem;font-size:.9375rem}
+  .hero{grid-template-columns:1fr;gap:1.25rem}
+  .hero-art{order:-1;width:132px;margin-inline-end:0}
+  .hero.compact .hero-art{width:112px}
+  .postmark{right:-6.4rem;bottom:.6rem;width:96px}
+}
+@media print{
+  .site-nav,.skip,.hero-art{display:none}
+  body{background:#fff}
+  .sheet,.letter{box-shadow:none}
+  details{border:0}details>summary::after{display:none}
+}

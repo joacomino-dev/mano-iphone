@@ -160,6 +160,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "permissionStatus", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "openSettings", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "openPhotos", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "openLink", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "manageLimitedAccess", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "haptic", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "place", returnType: CAPPluginReturnPromise),
@@ -303,6 +304,15 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         DispatchQueue.main.async {
             guard let url = URL(string: "photos-redirect://") else { call.reject("No se pudo abrir Fotos."); return }
             UIApplication.shared.open(url) { opened in opened ? call.resolve() : call.reject("No se pudo abrir Fotos.") }
+        }
+    }
+    /// Help and privacy pages open in Safari. Only https pages of the CocoWash site.
+    @objc func openLink(_ call: CAPPluginCall) {
+        guard let raw = call.getString("url"), let url = URL(string: raw), url.scheme == "https", url.host == "joaquinmino.work" else {
+            call.reject("No se pudo abrir el enlace."); return
+        }
+        DispatchQueue.main.async {
+            UIApplication.shared.open(url) { opened in opened ? call.resolve() : call.reject("No se pudo abrir el enlace.") }
         }
     }
     @objc func manageLimitedAccess(_ call: CAPPluginCall) {

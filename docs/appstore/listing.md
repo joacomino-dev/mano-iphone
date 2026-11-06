@@ -6,6 +6,14 @@ subtítulo (Apple ya los indexa). Revisión nativa recomendada antes de publicar
 
 Categoría principal: Fotografía · secundaria: Utilidades · Clasificación: 4+ (anuncios G).
 
+URL (iguales en todos los idiomas salvo la de soporte y privacidad, que tienen inglés):
+- **Soporte:** https://joaquinmino.work/cocowash/ (en: …/cocowash/support.html)
+- **Marketing:** https://joaquinmino.work/cocowash/ (AdMob busca `app-ads.txt` en la raíz
+  de este dominio: https://joaquinmino.work/app-ads.txt)
+- **Política de privacidad:** https://joaquinmino.work/cocowash/privacidad.html
+  (en: …/cocowash/privacy.html)
+- **Copyright:** 2026 Joaquin Miño
+
 ---
 
 ## Español (principal)

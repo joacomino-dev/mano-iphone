@@ -43,6 +43,8 @@ type LibraryPlugin = {
   permissionStatus(): Promise<{ status: string }>;
   openSettings(): Promise<void>;
   openPhotos(): Promise<void>;
+  /** Opens an https://joaquinmino.work page in Safari (help, privacy). */
+  openLink(options: { url: string }): Promise<void>;
   manageLimitedAccess(): Promise<{ changed: boolean }>;
   haptic(options: { kind: HapticKind }): Promise<void>;
   place(options: { id: string }): Promise<Place & { retry?: string }>;

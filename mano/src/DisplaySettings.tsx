@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { CameraIcon, FilmStripIcon, HandTapIcon, BooksIcon, ImageSquareIcon, CloudArrowDownIcon, GraduationCapIcon, PlayCircleIcon, FlaskIcon, TranslateIcon } from '@phosphor-icons/react';
+import { CameraIcon, FilmStripIcon, HandTapIcon, BooksIcon, ImageSquareIcon, CloudArrowDownIcon, GraduationCapIcon, PlayCircleIcon, FlaskIcon, TranslateIcon, LifebuoyIcon, QuestionIcon, ShieldCheckIcon } from '@phosphor-icons/react';
+import { helpUrl, openLink, privacyUrl } from './links';
 import type { Asset } from './domain';
 import { DATE_FORMATS, formatDate, formatTime, polaroidCaption, type DateFormat, type DisplaySettings, type OsdSize } from './meta';
 import { VhsOverlay } from './Vhs';
@@ -111,6 +112,12 @@ export function DisplaySettingsPanel({ display, change, geek, setGeek, library, 
     </Section>}
     <Section icon={<GraduationCapIcon size={18}/>} title={t('Introducción')}>
       <div className="settings-actions"><button className="sheet-action secondary replay-intro" onClick={replayIntro}><PlayCircleIcon size={20} weight="bold"/>{t('Ver la introducción de nuevo')}</button></div>
+    </Section>
+    <Section icon={<LifebuoyIcon size={18}/>} title={t('Ayuda')}>
+      <div className="support-links help-links">
+        <button type="button" className="text-button" onClick={() => void openLink(helpUrl()).catch(() => {})}><QuestionIcon size={16}/>{t('Preguntas frecuentes')}</button>
+        <button type="button" className="text-button" onClick={() => void openLink(privacyUrl()).catch(() => {})}><ShieldCheckIcon size={16}/>{t('Política de privacidad')}</button>
+      </div>
     </Section>
   </div>;
 }

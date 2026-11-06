@@ -11,12 +11,16 @@ CocoWash helps people tidy their Photos library by swiping through their photos 
   shows its own confirmation. Favorites can never be marked for deletion.
 - **Ads:** Google AdMob native ads, labelled «Ad» on a letter-style card: one in the
   photo pile every 20–30 photos (dismissed by swiping, like any card), one fixed in
-  «One last look» and one on the summary after deleting. Consent (UMP) and ATT are asked
-  before the first ad request; the app works fully if tracking is denied.
+  «One last look» and one on the summary after deleting. Google's consent form (UMP) appears
+  first where required, then Apple's tracking prompt (ATT), both before the first ad
+  request. Without permission ads are non-personalized; the app works fully either way.
+  Ads are limited to the G rating in code.
 - **In-app purchases** (Settings › Support): «A year without ads» (non-renewing
   subscription, one year from purchase), «No ads, forever» (non-consumable) and «Buy me a
   coffee» (consumable tip that unlocks nothing, as stated in the app). «Restore purchases»
   is on the same screen.
+- **Privacy policy and help** are linked at the end of Settings (Filters › Settings ›
+  Help): https://joaquinmino.work/cocowash/privacy.html
 - **«Open Photos»** on the summary opens the Photos app so the person can empty Recently
   Deleted themselves; CocoWash cannot and does not empty it.
 

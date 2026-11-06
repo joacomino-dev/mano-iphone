@@ -1,0 +1,5 @@
+# CocoWash · Joaquin Miño · Google AdMob
+# Va en la raíz del dominio: https://joaquinmino.work/app-ads.txt
+# Sustituye pub-XXXXXXXXXXXXXXXX por el ID de editor de AdMob
+# (AdMob › Configuración › Información de la cuenta › ID de editor).
+google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0

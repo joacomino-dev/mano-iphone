@@ -5,6 +5,7 @@
 export const NATIVE_MESSAGES = [
   'Falta el identificador de preparación.',
   'No se pudo abrir Ajustes.',
+  'No se pudo abrir el enlace.',
   'Ya hay un análisis en curso.',
   'Usa un nombre de 1 a 100 caracteres y selecciona entre 1 y 500 elementos.',
   'Permite acceso a Fotos en Ajustes.',

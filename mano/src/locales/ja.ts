@@ -431,5 +431,9 @@ const table: Record<string, string> = {
   'Para liberarlos ya': '今すぐ容量を空けるには',
   'O espera 30 días: Fotos lo vacía solo.': 'または30日待てば「写真」が自動で空にします。',
   'Desliza para ver todo lo que vas a eliminar': 'スクロールして削除するものをすべて確認',
+  'Ayuda': 'ヘルプ',
+  'Preguntas frecuentes': 'よくある質問',
+  'Política de privacidad': 'プライバシーポリシー',
+  'No se pudo abrir el enlace.': 'リンクを開けませんでした。',
 };
 export default table;

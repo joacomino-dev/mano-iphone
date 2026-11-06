@@ -1104,3 +1104,8 @@ input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;u
 .native-sheet .sheet-tabs::before{background:var(--cw-sheet-native)}
 .sheet-tabs{background:transparent}
 .sheet-tabs::after{content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;background:var(--cw-paper-dim)}
+
+/* 0.9.9.1 (37): help and privacy links at the end of Ajustes (the privacy policy
+   must be reachable inside the app). Same quiet links as Apoyo. */
+.help-links{display:flex;flex-wrap:wrap;justify-content:center;gap:var(--cw-space-2) var(--cw-space-4)}
+.help-links .text-button{display:inline-flex;align-items:center;gap:6px;color:var(--cw-ink)}

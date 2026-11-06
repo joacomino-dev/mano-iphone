@@ -408,3 +408,22 @@ Fuera del repo: revisión de la web de soporte y privacidad de Codex (borrador l
 política del repo (`docs/appstore/privacy-policy.md`) aún dice que la ubicación no sale
 del iPhone, pero los nombres de lugar usan la geocodificación de Apple (coordenadas
 redondeadas a ~1 km). Corregir al publicar.
+
+### CW-CL-047 — 0.9.9.1 (37): permiso de rastreo, enlaces de ayuda y privacidad, web final
+Fecha: 2026-11-06, America/Bogota
+Agente: Claude
+Estado: completada; pendiente de prueba física y de publicar la web (ChatGPT/Codex).
+Base Git / commit: `main` (`7436946`) → este commit.
+Cambios realizados: la app pide el permiso de rastreo de Apple (ATT) una vez, tras el
+formulario de consentimiento de Google y antes del primer anuncio; sin permiso los anuncios
+siguen sin personalizar (`npa=1`). Anuncios limitados a G en código. Ajustes termina con
+«Ayuda»: «Preguntas frecuentes» y «Política de privacidad» abren
+https://joaquinmino.work/cocowash/ en Safari (método nativo `openLink`, solo https de ese
+dominio). Web de soporte y privacidad final en `web/cocowash/` (es/en; responsable Joaquin
+Miño, Quito; cocowash@joaquinmino.work; bases legales RGPD/LOPDP, transferencias,
+conservación, derechos y aviso de EE. UU.; `app-ads.txt` con el ID de editor por poner).
+`docs/appstore/` y la hoja de ruta apuntan a las URL definitivas.
+Decisiones relevantes: el usuario autorizó definir fecha (6-11-2026), datos y textos
+legales. No es asesoramiento legal.
+Validaciones: 119 Node, runtime 28, builds; Playwright: sección Ayuda sin desbordamiento y
+`openLink` con la URL correcta; web: 4 páginas, 22 preguntas, enlaces y anclas.

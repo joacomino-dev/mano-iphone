@@ -179,6 +179,16 @@ final class CocoMonetizationPlugin: CAPPlugin, CAPBridgedPlugin, NativeAdLoaderD
                     call.resolve(["ready": false])
                     return
                 }
+                // Apple's tracking prompt, once, after Google's consent form and before the
+                // first ad request (the order Google recommends). If the AdMob IDFA
+                // explainer is turned on, UMP has already asked and this is skipped.
+                // Without permission every request stays non-personalized (npa=1 below).
+                if ATTrackingManager.trackingAuthorizationStatus == .notDetermined,
+                   UIApplication.shared.applicationState == .active {
+                    _ = await ATTrackingManager.requestTrackingAuthorization()
+                }
+                // Family-safe ads only (G), whatever the AdMob console says.
+                MobileAds.shared.requestConfiguration.maxAdContentRating = .general
                 _ = await MobileAds.shared.start()
                 initialized = true
             }

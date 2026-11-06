@@ -432,5 +432,9 @@ const table: Record<string, string> = {
   'Para liberarlos ya': 'Pour libérer l’espace maintenant',
   'O espera 30 días: Fotos lo vacía solo.': 'Ou attends 30 jours : Photos le vide tout seul.',
   'Desliza para ver todo lo que vas a eliminar': 'Fais défiler pour tout voir avant de supprimer',
+  'Ayuda': 'Aide',
+  'Preguntas frecuentes': 'Questions fréquentes',
+  'Política de privacidad': 'Politique de confidentialité',
+  'No se pudo abrir el enlace.': 'Impossible d’ouvrir le lien.',
 };
 export default table;

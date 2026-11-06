@@ -427,5 +427,9 @@ const table: Record<string, string> = {
   'Para liberarlos ya': 'Jetzt freigeben',
   'O espera 30 días: Fotos lo vacía solo.': 'Oder warte 30 Tage: Fotos leert es von selbst.',
   'Desliza para ver todo lo que vas a eliminar': 'Scrolle, um alles zu sehen, was du löschst',
+  'Ayuda': 'Hilfe',
+  'Preguntas frecuentes': 'Häufige Fragen',
+  'Política de privacidad': 'Datenschutzerklärung',
+  'No se pudo abrir el enlace.': 'Der Link ließ sich nicht öffnen.',
 };
 export default table;

@@ -17,11 +17,12 @@ Quién: **U** = usuario (cuentas, dinero, decisiones legales, arte), **C** = Cla
 4. **DSA (UE)**: declarar si eres «comerciante». Como hay compras y anuncios, lo normal es
    que sí: tu dirección, teléfono y correo serán públicos en la ficha europea.
 5. **AdMob**: crear la app iOS, una unidad **nativa** y anotar el ID de app y el de unidad.
-   Configurar en AdMob el mensaje de consentimiento (RGPD + estados de EE. UU.) y el mensaje
-   explicativo de ATT. Clasificación máxima de anuncios: G (para todos).
-6. **Web mínima** en un dominio tuyo con: política de privacidad (borrador en
-   `docs/appstore/privacy-policy.md`; completa tus datos), página de soporte con un
-   correo, y el archivo **`app-ads.txt`** que te da AdMob (sin él, AdMob limita los anuncios).
+   Configurar en «Privacidad y mensajes» el mensaje RGPD y el de estados de EE. UU. (la app
+   ya pide el permiso de rastreo por sí misma desde 0.9.9.1 (37) y limita los anuncios a G).
+6. ~~Web de soporte y privacidad~~ — hecha en `web/cocowash/` (es/en, responsable, bases
+   legales RGPD/LOPDP, aviso de EE. UU.). Falta publicarla en
+   https://joaquinmino.work/cocowash/, crear `cocowash@joaquinmino.work` y poner en la raíz
+   del dominio `app-ads.txt` con el ID de editor de AdMob (lo hace ChatGPT/Codex).
 7. **Marca**: comprobar que «CocoWash» no choca con una marca registrada en tus mercados.
 
 ## Fase 2 · Arte (U)

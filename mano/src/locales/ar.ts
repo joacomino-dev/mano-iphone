@@ -431,5 +431,9 @@ const table: Record<string, string> = {
   'Para liberarlos ya': 'لتحريرها الآن',
   'O espera 30 días: Fotos lo vacía solo.': 'أو انتظر 30 يومًا: يفرغها تطبيق الصور تلقائيًا.',
   'Desliza para ver todo lo que vas a eliminar': 'مرّر لرؤية كل ما ستحذفه',
+  'Ayuda': 'المساعدة',
+  'Preguntas frecuentes': 'الأسئلة الشائعة',
+  'Política de privacidad': 'سياسة الخصوصية',
+  'No se pudo abrir el enlace.': 'تعذّر فتح الرابط.',
 };
 export default table;

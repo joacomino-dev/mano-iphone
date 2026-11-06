@@ -444,5 +444,9 @@ const table: Record<string, string> = {
   'Para liberarlos ya': 'To free it up now',
   'O espera 30 días: Fotos lo vacía solo.': 'Or wait 30 days: Photos empties it on its own.',
   'Desliza para ver todo lo que vas a eliminar': 'Scroll to see everything you’re deleting',
+  'Ayuda': 'Help',
+  'Preguntas frecuentes': 'Frequently asked questions',
+  'Política de privacidad': 'Privacy policy',
+  'No se pudo abrir el enlace.': 'Couldn’t open the link.',
 };
 export default table;
