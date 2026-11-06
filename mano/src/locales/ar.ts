@@ -366,7 +366,6 @@ const table: Record<string, string> = {
   'Guardado': 'محفوظ',
   'Buena ronda.': 'جولة موفّقة.',
   'Revisión guardada.': 'حُفظت المراجعة.',
-  'Con CocoWash ya llevas {size}': 'حرّرت حتى الآن {size} مع CocoWash',
   'Conservadas': 'محتفَظ بها',
   'Eliminadas': 'محذوفة',
   'Para eliminar': 'للحذف',
@@ -413,17 +412,12 @@ const table: Record<string, string> = {
   'De vez en cuando aparece un anuncio entre tus fotos. Con un pase, CocoWash queda sin anuncios.': 'من حين لآخر يظهر إعلان بين صورك. مع الاشتراك يصبح CocoWash بلا إعلانات.',
   'No se pudo abrir Fotos.': 'تعذّر فتح تطبيق الصور.',
   // 9.8.3
-  'Enviado': 'أُرسلت',
-  'Falta un paso para liberar el espacio.': 'بقيت خطوة واحدة لتحرير المساحة.',
   'Espacio por liberar': 'المساحة التي ستتحرّر',
-  'Al vaciar «Eliminado recientemente» liberas al menos': 'عند إفراغ «المحذوفة مؤخرًا» تحرّر على الأقل',
-  'Al vaciar «Eliminado recientemente» liberas': 'عند إفراغ «المحذوفة مؤخرًا» تحرّر',
   '{photos} y {videos} en «Eliminado recientemente»': '{photos} و{videos} في «المحذوفة مؤخرًا»',
   '{items} en «Eliminado recientemente»': '{items} في «المحذوفة مؤخرًا»',
   'Abre Fotos.': 'افتح تطبيق الصور.',
   'Busca el álbum «Eliminado recientemente».': 'ابحث عن ألبوم «المحذوفة مؤخرًا».',
   'Toca Seleccionar › Eliminar todo.': 'المس «تحديد» › «حذف الكل».',
-  'Si no lo vacías, Fotos lo hace solo en 30 días.': 'إن لم تفرغه، يفرغه تطبيق الصور تلقائيًا بعد 30 يومًا.',
   'Abrir Fotos': 'فتح الصور',
   'Mira el toque y las dos formas de zoom una vez.': 'شاهد اللمس وطريقتي التكبير مرة واحدة.',
   // 9.8.5
@@ -432,5 +426,12 @@ const table: Record<string, string> = {
   'Postales de ejemplo: nada toca tu biblioteca. Anuncios de prueba frecuentes.': 'بطاقات بريدية تجريبية: لا شيء يمسّ مكتبتك. إعلانات تجريبية متكررة.',
   'Solo tus favoritas. Aquí el corazón las quita de Favoritas; no se eliminan.': 'مفضلتك فقط. هنا يزيلها القلب من المفضلة؛ ولا تُحذف أبدًا.',
   'Cómo funcionan los sellos': 'كيف تعمل الأختام',
+  // 9.8.6
+  'Eliminado': 'حُذف',
+  'por liberar': 'ستتحرّر',
+  'por liberar, como mínimo': 'ستتحرّر على الأقل',
+  'Para liberarlos ya': 'لتحريرها الآن',
+  'O espera 30 días: Fotos lo vacía solo.': 'أو انتظر 30 يومًا: يفرغها تطبيق الصور تلقائيًا.',
+  'Desliza para ver todo lo que vas a eliminar': 'مرّر لرؤية كل ما ستحذفه',
 };
 export default table;

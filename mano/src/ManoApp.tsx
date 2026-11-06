@@ -2,7 +2,7 @@ import { FinishButton } from './FinishButton';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type PointerEvent, type MouseEvent } from 'react';
 import { AnimatePresence, motion, useReducedMotion, useMotionValue, useTransform, animate, type MotionValue } from 'motion/react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { ExportIcon, FolderOpenIcon, FolderSimplePlusIcon, CaretRightIcon, ArrowCounterClockwiseIcon, ArrowUUpLeftIcon, StackIcon, TrashIcon, CheckIcon, XIcon, PlayIcon, SlidersHorizontalIcon, ArrowClockwiseIcon, ImageBrokenIcon, PlusIcon, PushPinIcon, InfoIcon, CloudIcon, CloudArrowDownIcon, SparkleIcon } from '@phosphor-icons/react';
+import { ExportIcon, FolderOpenIcon, FolderSimplePlusIcon, CaretRightIcon, CaretDownIcon, ArrowCounterClockwiseIcon, ArrowUUpLeftIcon, StackIcon, TrashIcon, CheckIcon, XIcon, PlayIcon, SlidersHorizontalIcon, ArrowClockwiseIcon, ImageBrokenIcon, PlusIcon, PushPinIcon, InfoIcon, CloudIcon, CloudArrowDownIcon, SparkleIcon } from '@phosphor-icons/react';
 import { BottomSheet, KeyboardInput, useKeyboard } from './mobile';
 import { ReviewGrid } from './ReviewGrid';
 import { decide, undo, restore, eligible, eligibleFrom, orderAssets, readState, reconcileLibrary, libraryFingerprint, filterScope, LEVELS, initialFilter, initialState, type Action, type Asset, type Decision, type Filter, type RecordState } from './domain';
@@ -175,6 +175,15 @@ function useNoticeRoom() {
       const l=left?(left.getBoundingClientRect().right-box.left)/k:0;const r=right&&!right.classList.contains('header-spacer')?(box.right-right.getBoundingClientRect().left)/k:l;
       header.style.setProperty('--notice-room',`${Math.floor(Math.max(96,header.offsetWidth-2*(Math.max(l,r)+10)))}px`);};
     measure();const o=new ResizeObserver(measure);o.observe(header);for(const child of header.children)o.observe(child);observer.current=o;},[]);
+}
+/** «Una última mirada»: a quiet cue at the bottom of the sheet until the
+ * actions at the end of the list come into view. */
+function ScrollCue({ until }: { until: { current: HTMLElement | null } }) {
+  const [reached, setReached] = useState(false);
+  useEffect(() => { const element = until.current; if (!element) return;
+    const observer = new IntersectionObserver(([entry]) => setReached(entry.isIntersecting), { threshold: .15 });
+    observer.observe(element); return () => observer.disconnect(); }, [until]);
+  return <div className={`scroll-cue ${reached ? 'is-done' : ''}`} aria-hidden="true"><CaretDownIcon size={16} weight="bold"/>{t('Desliza para ver todo lo que vas a eliminar')}</div>;
 }
 /** Errors and refusals that need the person: full text, persistent until
  * closed, never squeezed into the name's slot. */
@@ -610,7 +619,7 @@ export function ManoApp() {
   else if(permission==='unknown')screen=loadError?<LoadErrorScreen message={loadError} retry={()=>{initialLibrary.current=null;loadLibrary();}}/>:<PreparingScreen/>;
   else if(!allowed)screen=<AccessScreen status={permission} request={()=>void requestAccess()} openSettings={openSettings}/>;
   else if(loadError)screen=<LoadErrorScreen message={loadError} retry={()=>{initialLibrary.current=null;loadLibrary();}}/>;
-  else if(!session)screen=showDone&&sheet==='review'?<div className="session-content">{doneHeader}<main className="status-screen is-quiet"><Character pose="memo-cards" height={120} motion="still"/><p className="status-line">{t('Una última mirada antes de terminar.')}</p></main></div>:showDone?<div className="session-content">{doneHeader}<SessionDone stats={stats} pending={pending} pendingBytes={reviewBytes.bytes} pendingPartial={reviewBytes.partial} lifetime={lifetime.bytes} again={()=>{money.clear();setShowDone(false);setNotice('');}} emptyDeleted={openPhotos} review={()=>{money.clear();setError('');setSheet('review');}} monetization={money.available&&(money.placement==='finish'||money.awaiting==='finish')&&<div className="finish-monetization">{money.placement==='finish'?<AdSlot where="finish" money={money}/>:<AdRoom where="finish"/>}</div>}/></div>:<PreparingScreen cancel={()=>{cancelWarmup();setShowDone(true);}}/>;
+  else if(!session)screen=showDone&&sheet==='review'?<div className="session-content">{doneHeader}<main className="status-screen is-quiet"><Character pose="memo-cards" height={120} motion="still"/><p className="status-line">{t('Una última mirada antes de terminar.')}</p></main></div>:showDone?<div className="session-content">{doneHeader}<SessionDone stats={stats} pending={pending} pendingBytes={reviewBytes.bytes} pendingPartial={reviewBytes.partial} again={()=>{money.clear();setShowDone(false);setNotice('');}} emptyDeleted={openPhotos} review={()=>{money.clear();setError('');setSheet('review');}} monetization={money.available&&(money.placement==='finish'||money.awaiting==='finish')&&<div className="finish-monetization">{money.placement==='finish'?<AdSlot where="finish" money={money}/>:<AdRoom where="finish"/>}</div>}/></div>:<PreparingScreen cancel={()=>{cancelWarmup();setShowDone(true);}}/>;
   else screen=<div className="session-content" inert={pinnedInspect}>
     {/* «Terminar» ends the round: the summary keeps pending discards and offers the review. */}
     <header ref={noticeRoom} className="archive-header is-session">{filtersButton}{brand}<FinishButton pending={pending} busy={busy} announce={setSpoken} finish={()=>{cancel();setError('');setSheet('review');haptic('light');}}/></header>
@@ -656,6 +665,7 @@ export function ManoApp() {
     {!demo&&<button className="sheet-action secondary" onClick={connect}>{t('Actualizar biblioteca')}</button>}
     {limited&&<button className="sheet-action secondary" onClick={()=>void manageLimited()}>{t('Elegir más fotos')}</button>}
   </>;
+  const reviewEnd=useRef<HTMLDivElement>(null);
   const recoverAll=()=>{setState(s=>({...s,pending:[],history:s.history.filter(d=>d.action!=='discard')}));setSpoken(t('Todo recuperado'));haptic('soft');};
   const recoverReview=useCallback((id:string)=>{setState(s=>restore(s,id));setSpoken(t('Elemento recuperado'));},[]);
   // Long press never opens the system menu or loupe; text fields keep theirs.
@@ -678,8 +688,12 @@ export function ManoApp() {
       {money.available&&<div hidden={sheetTab!=='support'}>{sheet==='filters'&&sheetTab==='support'&&<PurchaseOptions money={money}/>}</div>}
     </Sheet>
     <Sheet open={sheet==='albums'} close={()=>setSheet(null)} title={t('Guardar en un álbum')} description={t('Se conserva y pasa a la siguiente. También sigue en tu carrete.')} error={error} returnTo="album-trigger"><p className="sheet-intro">{parts(tn('selected',targets.length),{n:<strong key="n">{formatNumber(targets.length)}</strong>})}</p><button className="album-row album-new" onClick={()=>setCreatingAlbum(v=>!v)} disabled={busy}><span className="row-icon"><PlusIcon size={20} weight="bold"/></span>{t('Crear álbum nuevo')}</button>{creatingAlbum&&<div className="new-album"><label className="field">{t('Nombre del álbum')}<AlbumInput value={newAlbum} change={setNewAlbum}/></label><button className="sheet-action" onClick={createAlbum} disabled={busy||!newAlbum.trim()}>{tn('createAndAdd',targets.length)}</button></div>}{albums.map(a=><button className="album-row" key={a.id} onClick={()=>addAlbum(a)} disabled={busy}><span className="row-icon"><FolderOpenIcon size={20}/></span>{a.title}<CaretRightIcon size={16} weight="bold" className="flip-rtl"/></button>)}</Sheet>
-    <Sheet open={sheet==='review'} close={()=>setSheet(null)} footer={reviewAssets.length>0&&<div className="review-primary"><button className="sheet-action secondary recover-all" disabled={busy} onClick={recoverAll}><ArrowCounterClockwiseIcon size={20}/>{reviewAssets.length===1?t('Recuperar'):t('Recuperar todo ({n})',{n:reviewAssets.length})}</button><button className="sheet-action danger" onClick={commitDelete} disabled={busy} aria-busy={busy}><TrashIcon size={20}/>{busy?t('Esperando a Fotos…'):freeLabel&&!reviewBytes.partial?t('Eliminar {n} ({size})',{n:reviewAssets.length,size:freeLabel}):t('Eliminar {n}',{n:reviewAssets.length})}</button><p className="sheet-fine">{t('Fotos te pedirá confirmación; lo eliminado queda 30 días en «Eliminado recientemente», también en iCloud.')}</p>{money.available&&(money.placement==='review'||money.awaiting==='review')&&<div className="review-monetization">{money.placement==='review'?<AdSlot where="review" money={money}/>:<AdRoom where="review"/>}</div>}</div>} title={t('Una última mirada')} description={t('Recupera lo que quieras conservar antes de eliminar.')} error={error} returnTo={session?'review-trigger':'filter-trigger'}><p className="sheet-intro">{reviewAssets.length?parts(freeLabel?(reviewBytes.partial?t('{count}: liberarías al menos {size}. Aún no se ha borrado nada.'):t('{count}: liberarías {size}. Aún no se ha borrado nada.')):t('{count}. Aún no se ha borrado nada.'),{count:<strong key="count">{t('{n} para eliminar',{n:reviewAssets.length})}</strong>,size:<strong key="size">{freeLabel}</strong>}):t('No hay nada marcado para eliminar.')}</p>
-      {reviewAssets.length>0&&<ReviewGrid assets={reviewAssets} open={sheet==='review'} recover={recoverReview}/>}
+    <Sheet open={sheet==='review'} close={()=>setSheet(null)} footer={reviewAssets.length>0&&money.available&&(money.placement==='review'||money.awaiting==='review')&&<div className="review-monetization">{money.placement==='review'?<AdSlot where="review" money={money}/>:<AdRoom where="review"/>}</div>} title={t('Una última mirada')} description={t('Recupera lo que quieras conservar antes de eliminar.')} error={error} returnTo={session?'review-trigger':'filter-trigger'}><p className="sheet-intro">{reviewAssets.length?parts(freeLabel?(reviewBytes.partial?t('{count}: liberarías al menos {size}. Aún no se ha borrado nada.'):t('{count}: liberarías {size}. Aún no se ha borrado nada.')):t('{count}. Aún no se ha borrado nada.'),{count:<strong key="count">{t('{n} para eliminar',{n:reviewAssets.length})}</strong>,size:<strong key="size">{freeLabel}</strong>}):t('No hay nada marcado para eliminar.')}</p>
+      {/* 9.8.6: every photo first, three across; the decision waits at the end of
+          the list, so it is made after seeing all of it. A cue says so until then. */}
+      {reviewAssets.length>0&&<><ReviewGrid assets={reviewAssets} open={sheet==='review'} recover={recoverReview}/>
+        <ScrollCue until={reviewEnd}/>
+        <div className="review-primary" ref={reviewEnd}><button className="sheet-action secondary recover-all" disabled={busy} onClick={recoverAll}><ArrowCounterClockwiseIcon size={20}/>{reviewAssets.length===1?t('Recuperar'):t('Recuperar todo ({n})',{n:reviewAssets.length})}</button><button className="sheet-action danger" onClick={commitDelete} disabled={busy} aria-busy={busy}><TrashIcon size={20}/>{busy?t('Esperando a Fotos…'):freeLabel&&!reviewBytes.partial?t('Eliminar {n} ({size})',{n:reviewAssets.length,size:freeLabel}):t('Eliminar {n}',{n:reviewAssets.length})}</button><p className="sheet-fine">{t('Fotos te pedirá confirmación; lo eliminado queda 30 días en «Eliminado recientemente», también en iCloud.')}</p></div></>}
     </Sheet>
 
   </div>;

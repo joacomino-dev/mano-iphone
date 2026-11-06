@@ -2,6 +2,12 @@
 
 Actualizado: 2026-11-05, America/Bogota. Codex trabaja solo por indicación del usuario.
 
+## Desarrollo para pruebas: 9.8.6 / build 33 (Claude)
+
+CW-CL-043. Controles de carta unificados, sin lupa de iOS, resumen sin desplazamiento con
+Coqui y Memo, «Una última mirada» con las fotos primero y la carta fija encima.
+Rama `claude/cocowash-9.8.6`. CI e IPA en esta entrada al terminar. Sin merge ni Release.
+
 ## Desarrollo para pruebas: 9.8.5 / build 32 (Claude)
 
 CW-CL-042. 9.8.4 + Ajustes y Filtros rediseñados: menos texto, bloques agrupados, un solo

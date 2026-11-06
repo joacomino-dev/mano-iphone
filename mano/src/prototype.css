@@ -920,7 +920,6 @@
 /* Polaroid caption: line-height 1 inside an ellipsis box cut descenders (Zaragoza's g). */
 .polaroid-caption{line-height:1.35}
 .caption-where,.caption-when{padding-block:.14em}
-.cloud-chip.is-ring{padding:3px}
 /* The heart is the pink of «Wash» in the logo, with a base of the same hue. */
 :root{--cw-wash:#F17472;--cw-wash-deep:#B8444B;--cw-lettering:#3B1E10;--cw-action-danger-pressed:#93201A}
 .bar-heart .piece-fill{fill:var(--cw-wash)}
@@ -972,11 +971,8 @@
 /* Loader: the whole ring turns as one compositor layer (smooth while busy). */
 /* «Una última mirada»: letter and buttons in a fixed footer; only the photos scroll. */
 .native-sheet .sheet-footer{flex:none;padding:var(--cw-space-3) var(--cw-space-5) calc(env(safe-area-inset-bottom) + var(--cw-space-3));border-top:1px solid var(--cw-line);background:var(--cw-sheet-native)}
-.sheet-footer .review-primary{margin-top:0}
-.sheet-footer .review-primary .sheet-action{min-height:48px}
-.sheet-footer .review-primary .recover-all{margin-bottom:var(--cw-space-2)}
 /* Summary: fixed, never scrolls; the letter stays put. */
-@media (max-height:820px){.session-done.has-letter .character-pair,.session-done.has-letter .status-character{display:none}}
+@media (max-height:820px){.session-done.has-letter:not(.is-freed) .character-pair,.session-done.has-letter:not(.is-freed) .status-character{display:none}}
 .freed-note{max-width:30ch;font-weight:500;color:var(--cw-ink)!important}
 .status-actions.is-pair{flex-direction:row;flex-wrap:wrap;justify-content:center}
 .danger-empty{display:flex;align-items:center;gap:var(--cw-space-2);min-height:var(--cw-control);padding:0 var(--cw-space-5);border:0;border-radius:var(--cw-radius-pill);background:var(--cw-action-danger);color:var(--cw-on-action-danger);font-weight:600;box-shadow:var(--cw-shadow-press)}
@@ -1000,13 +996,18 @@
 .session-done>.done-body::-webkit-scrollbar{display:none}
 .session-done.has-letter>.done-body{gap:var(--cw-space-2)}
 .session-done>.finish-monetization{flex:none}
-/* Review footer: the two actions share a row so the photos keep their room. */
-.sheet-footer .review-primary{display:grid;grid-template-columns:1fr 1fr;gap:var(--cw-space-2)}
-.sheet-footer .review-primary .recover-all{margin:0}
-.sheet-footer .review-primary .sheet-action{margin:0;padding:0 var(--cw-space-2);font-size:var(--cw-text-sm);line-height:1.2}
-.sheet-footer .review-primary .sheet-fine,.sheet-footer .review-primary .review-monetization{grid-column:1/-1}
-.sheet-footer .review-primary .review-monetization{margin:var(--cw-space-2) 0 0}
-@media (max-height:740px){.sheet-footer .review-primary .sheet-fine{display:none}}
+/* «Una última mirada»: the actions close the list (two in a row); the sheet's
+   fixed footer holds only the letter, over everything, all the time. */
+.review-primary{display:grid;grid-template-columns:1fr 1fr;gap:var(--cw-space-2);margin-top:var(--cw-space-5)}
+.review-primary .sheet-action{margin:0;min-height:48px;padding:0 var(--cw-space-2);font-size:var(--cw-text-sm);line-height:1.2}
+.review-primary .recover-all{margin:0}
+.review-primary .sheet-fine{grid-column:1/-1;margin:var(--cw-space-1) 0 0}
+.sheet-footer .review-monetization{margin:0}
+.scroll-cue{position:sticky;bottom:var(--cw-space-3);z-index:3;display:flex;align-items:center;gap:6px;width:fit-content;margin:var(--cw-space-4) auto 0;padding:8px 14px;border-radius:var(--cw-radius-pill);background:var(--cw-teal-800);color:var(--cw-paper);font-size:var(--cw-text-sm);font-weight:600;box-shadow:var(--cw-shadow-2);transition:opacity var(--cw-base) var(--cw-ease),transform var(--cw-base) var(--cw-ease)}
+.scroll-cue svg{animation:cw-nudge 1.4s var(--cw-ease) infinite}
+@keyframes cw-nudge{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
+.scroll-cue.is-done{opacity:0;transform:translateY(8px);pointer-events:none}
+@media (prefers-reduced-motion:reduce){.scroll-cue svg{animation:none}.scroll-cue{transition:none}}
 /* Small chips keep their look but get a 44 pt touch area. */
 .access-indicator::after{content:'';position:absolute;inset:-9px -4px}
 .status-actions.is-pair>button{white-space:nowrap;font-size:.875rem}
@@ -1038,3 +1039,56 @@
 .seal-details summary{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;font-weight:600;color:var(--cw-ink);cursor:pointer;list-style:none}
 .seal-details summary::-webkit-details-marker{display:none}
 .filters-panel fieldset>details{clear:both}
+
+/* ================= 9.8.6 ================= */
+/* Controls on a card: one system for photos and videos. A 36 px glass circle
+   with an ivory ring (44 pt touch area), 10 px from the photo's edge, 8 px
+   apart; chips (LIVE, iCloud, Mejor toma) 28 px tall in the same glass.
+   Card-level controls add the Polaroid border so every inset is measured from
+   the photo, not the paper. */
+:root{--cw-ctl:36px;--cw-ctl-inset:10px;--cw-ctl-gap:8px;--cw-ctl-bg:rgba(15,38,39,.62);--cw-ctl-bg-on:rgba(15,38,39,.82);--cw-ctl-ring:rgba(250,246,238,.9);--cw-chip:28px;--cw-ctl-edge:calc(var(--cw-card-side) + var(--cw-ctl-inset))}
+.card-share,.video-toggles button{position:relative;width:var(--cw-ctl);height:var(--cw-ctl);border-radius:50%;background:var(--cw-ctl-bg);box-shadow:inset 0 0 0 1.5px var(--cw-ctl-ring);color:var(--cw-white)}
+.card-share::after,.video-toggles button::after{content:'';position:absolute;inset:-4px}
+.card-share svg,.video-toggles button svg{width:18px;height:18px}
+.video-toggles button[aria-pressed=true]{background:var(--cw-ctl-bg-on)}
+.photo-card>.card-share{position:absolute;top:var(--cw-ctl-edge);right:var(--cw-ctl-edge)}
+.video-toggles{top:var(--cw-ctl-inset);right:var(--cw-ctl-inset);gap:var(--cw-ctl-gap)}
+.pick-toggle,.geek-access{width:calc(var(--cw-ctl) + 8px);height:calc(var(--cw-ctl) + 8px)}
+.pick-toggle{left:calc(var(--cw-ctl-edge) - 4px);top:calc(var(--cw-ctl-edge) - 4px)}
+.pick-toggle:before,.geek-access:before{inset:4px;border:0;background:var(--cw-ctl-bg);box-shadow:inset 0 0 0 1.5px var(--cw-ctl-ring)}
+.pick-toggle.selected:before{background:var(--cw-turquoise)}
+.geek-access{right:calc(var(--cw-ctl-edge) - 4px);top:calc(var(--cw-ctl-edge) - 4px)}
+.photo-card:has(.card-share) .geek-access,.photo-card.tape:has(.video-toggles) .geek-access{top:calc(var(--cw-ctl-edge) + var(--cw-ctl) + var(--cw-ctl-gap) - 4px)}
+.media-play,.cloud-chip,.best-chip{min-height:var(--cw-chip);height:var(--cw-chip);padding:0 10px;border:0;border-radius:var(--cw-radius-pill);font:600 .75rem/1 var(--cw-font);letter-spacing:.02em}
+.media-play,.cloud-chip{background:var(--cw-ctl-bg);box-shadow:inset 0 0 0 1.5px var(--cw-ctl-ring);color:var(--cw-white)}
+.media-play{left:var(--cw-ctl-edge);bottom:calc(var(--cw-caption) + var(--cw-ctl-inset))}
+.cloud-chip{left:var(--cw-ctl-inset);bottom:var(--cw-ctl-inset);padding-inline:4px 10px}
+.cloud-chip.is-ring{padding:0 4px}
+.best-chip{top:var(--cw-ctl-edge);box-shadow:inset 0 0 0 1px var(--cw-line-on-bg)}
+/* No system loupe, selection or callout anywhere (text fields keep theirs). */
+html,body,body *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+
+/* Summary after «Eliminar»: never scrolls; Coqui and Memo, the stamp, the
+   amount as the one big thing, one line of where, the step, the two ways on. */
+.session-done>.done-body{overflow:hidden}
+.session-done.is-freed .character-pair img{height:clamp(64px,13dvh,128px);width:auto}
+.session-done.is-freed .done-freed{gap:0;padding:var(--cw-space-4) var(--cw-space-4) var(--cw-space-3);background:transparent;box-shadow:none}
+.session-done.is-freed .freed-amount{font-size:clamp(40px,8dvh,56px);line-height:1}
+.session-done.is-freed .freed-label{margin-top:2px;font-size:var(--cw-text-md);font-weight:600;color:var(--cw-ink)}
+.session-done.is-freed .freed-items{margin-top:var(--cw-space-2);font-size:var(--cw-text-sm);color:var(--cw-ink-soft)}
+.freed-how{display:grid;gap:6px;width:100%;margin-top:var(--cw-space-4);padding:var(--cw-space-3);border-radius:14px;background:var(--cw-surface);box-shadow:inset 0 0 0 1px var(--cw-line);text-align:start}
+.freed-how>strong{font:600 var(--cw-text-sm)/1.3 var(--cw-font);color:var(--cw-ink)}
+.freed-how .freed-steps{margin:0;padding:0;background:none}
+.session-done.is-freed .freed-note{margin-top:var(--cw-space-2);font-weight:400;color:var(--cw-ink-soft)!important}
+/* Fit without scrolling: sizes follow the screen's height. */
+.session-done.is-freed>.done-body{gap:var(--cw-space-2);justify-content:flex-start;padding-top:var(--cw-space-2)}
+.session-done.is-freed .character-pair img{height:clamp(52px,10dvh,112px)}
+.session-done.is-freed .freed-amount{font-size:clamp(34px,6.4dvh,52px)}
+.session-done.is-freed .done-freed{padding:var(--cw-space-2) var(--cw-space-4) 0}
+.session-done.is-freed .freed-how{margin-top:var(--cw-space-3);gap:4px;padding:10px 12px}
+.session-done.is-freed .freed-steps{gap:2px}
+.session-done.is-freed .status-actions{margin-top:var(--cw-space-2)}
+@media (max-height:780px){.session-done.is-freed .freed-note{display:none}.session-done.is-freed .done-stamp{padding:6px 14px;font-size:var(--cw-text-md)}}
+@media (max-height:700px){.session-done.is-freed .freed-items{display:none}}
+@media (max-height:700px){.session-done.is-freed .character-pair img{height:44px}.session-done.is-freed .freed-amount{font-size:32px}.session-done.is-freed .freed-how{margin-top:var(--cw-space-2)}.session-done.is-freed>.done-body{gap:6px}}

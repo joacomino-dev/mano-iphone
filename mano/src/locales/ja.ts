@@ -366,7 +366,6 @@ const table: Record<string, string> = {
   'Guardado': '保存済み',
   'Buena ronda.': 'いい整理でした。',
   'Revisión guardada.': '確認の結果を保存しました。',
-  'Con CocoWash ya llevas {size}': 'CocoWashでこれまでに{size}',
   'Conservadas': '残した',
   'Eliminadas': '削除した',
   'Para eliminar': '削除予定',
@@ -413,17 +412,12 @@ const table: Record<string, string> = {
   'De vez en cuando aparece un anuncio entre tus fotos. Con un pase, CocoWash queda sin anuncios.': '写真の合間にときどき広告が表示されます。パスがあれば、CocoWashから広告がなくなります。',
   'No se pudo abrir Fotos.': '「写真」を開けませんでした。',
   // 9.8.3
-  'Enviado': '送信済み',
-  'Falta un paso para liberar el espacio.': '容量を空けるまで、あとひと手間です。',
   'Espacio por liberar': '空けられる容量',
-  'Al vaciar «Eliminado recientemente» liberas al menos': '「最近削除した項目」を空にすると少なくとも',
-  'Al vaciar «Eliminado recientemente» liberas': '「最近削除した項目」を空にすると',
   '{photos} y {videos} en «Eliminado recientemente»': '{photos}と{videos}が「最近削除した項目」に',
   '{items} en «Eliminado recientemente»': '{items}が「最近削除した項目」に',
   'Abre Fotos.': '「写真」を開く。',
   'Busca el álbum «Eliminado recientemente».': '「最近削除した項目」アルバムを開く。',
   'Toca Seleccionar › Eliminar todo.': '「選択」›「すべて削除」をタップ。',
-  'Si no lo vacías, Fotos lo hace solo en 30 días.': '空にしなくても、30日後に「写真」が自動で削除します。',
   'Abrir Fotos': '「写真」を開く',
   'Mira el toque y las dos formas de zoom una vez.': 'タップと2つのズーム方法を一度見てみよう。',
   // 9.8.5
@@ -432,5 +426,12 @@ const table: Record<string, string> = {
   'Postales de ejemplo: nada toca tu biblioteca. Anuncios de prueba frecuentes.': 'サンプルのポストカードで練習。ライブラリには触れず、テスト広告が頻繁に出ます。',
   'Solo tus favoritas. Aquí el corazón las quita de Favoritas; no se eliminan.': 'お気に入りだけを表示。ここではハートでお気に入りから外せます。削除はできません。',
   'Cómo funcionan los sellos': 'スタンプのしくみ',
+  // 9.8.6
+  'Eliminado': '削除済み',
+  'por liberar': '空けられます',
+  'por liberar, como mínimo': '少なくとも空けられます',
+  'Para liberarlos ya': '今すぐ容量を空けるには',
+  'O espera 30 días: Fotos lo vacía solo.': 'または30日待てば「写真」が自動で空にします。',
+  'Desliza para ver todo lo que vas a eliminar': 'スクロールして削除するものをすべて確認',
 };
 export default table;

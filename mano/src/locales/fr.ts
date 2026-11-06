@@ -367,7 +367,6 @@ const table: Record<string, string> = {
   'Guardado': 'Enregistré',
   'Buena ronda.': 'Joli tour.',
   'Revisión guardada.': 'Tri enregistré.',
-  'Con CocoWash ya llevas {size}': 'Avec CocoWash, tu en es déjà à {size}',
   'Conservadas': 'Gardées',
   'Eliminadas': 'Supprimées',
   'Para eliminar': 'À supprimer',
@@ -414,17 +413,12 @@ const table: Record<string, string> = {
   'De vez en cuando aparece un anuncio entre tus fotos. Con un pase, CocoWash queda sin anuncios.': 'De temps en temps, une pub apparaît entre tes photos. Avec un pass, CocoWash passe sans pub.',
   'No se pudo abrir Fotos.': 'Impossible d’ouvrir Photos.',
   // 9.8.3
-  'Enviado': 'Envoyé',
-  'Falta un paso para liberar el espacio.': 'Encore une étape pour libérer l’espace.',
   'Espacio por liberar': 'Espace à libérer',
-  'Al vaciar «Eliminado recientemente» liberas al menos': 'En vidant Suppressions récentes, tu libères au moins',
-  'Al vaciar «Eliminado recientemente» liberas': 'En vidant Suppressions récentes, tu libères',
   '{photos} y {videos} en «Eliminado recientemente»': '{photos} et {videos} dans Suppressions récentes',
   '{items} en «Eliminado recientemente»': '{items} dans Suppressions récentes',
   'Abre Fotos.': 'Ouvre Photos.',
   'Busca el álbum «Eliminado recientemente».': 'Trouve l’album Suppressions récentes.',
   'Toca Seleccionar › Eliminar todo.': 'Touche Sélectionner › Tout supprimer.',
-  'Si no lo vacías, Fotos lo hace solo en 30 días.': 'Sinon, Photos le vide tout seul au bout de 30 jours.',
   'Abrir Fotos': 'Ouvrir Photos',
   'Mira el toque y las dos formas de zoom una vez.': 'Regarde le toucher et les deux façons de zoomer une fois.',
   // 9.8.5
@@ -433,5 +427,12 @@ const table: Record<string, string> = {
   'Postales de ejemplo: nada toca tu biblioteca. Anuncios de prueba frecuentes.': 'Cartes postales d’exemple : rien ne touche ta photothèque. Pubs de test fréquentes.',
   'Solo tus favoritas. Aquí el corazón las quita de Favoritas; no se eliminan.': 'Seulement tes favoris. Ici, le cœur les retire des favoris ; ils ne sont jamais supprimés.',
   'Cómo funcionan los sellos': 'Comment marchent les tampons',
+  // 9.8.6
+  'Eliminado': 'Supprimé',
+  'por liberar': 'à libérer',
+  'por liberar, como mínimo': 'à libérer, au moins',
+  'Para liberarlos ya': 'Pour libérer l’espace maintenant',
+  'O espera 30 días: Fotos lo vacía solo.': 'Ou attends 30 jours : Photos le vide tout seul.',
+  'Desliza para ver todo lo que vas a eliminar': 'Fais défiler pour tout voir avant de supprimer',
 };
 export default table;

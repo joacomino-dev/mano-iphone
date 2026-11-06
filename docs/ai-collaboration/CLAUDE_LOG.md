@@ -362,3 +362,11 @@ Estado: completada local, pendiente de prueba física e integración.
 Base Git / commit: `claude/cocowash-9.8.5` desde `3bf4890` (9.8.4).
 Cambios realizados: el usuario sentía ambas hojas cargadas y con espacios mal definidos. Un ritmo para las dos (28 px entre secciones, 10 px título→bloque), títulos en el café de la marca, un bloque agrupado por sección con filas de 52 pt y las opciones de cada interruptor dentro de su bloque. Se retiran 18 textos de ayuda redundantes (Sellos pasa a Fotos; la explicación de sellos va en un desplegable). 5 textos nuevos en los cinco idiomas.
 Validaciones: 119 Node, TypeScript, runtime 28, auditoría táctil/contraste; capturas `work/qa-985/`.
+
+### CW-CL-043 — 9.8.6: controles de carta unificados, sin lupa, resumen y revisión repensados
+Fecha: 2026-11-06, America/Bogota
+Agente: Claude
+Estado: completada local, pendiente de prueba física e integración.
+Base Git / commit: `claude/cocowash-9.8.6` desde `5ea584f` (9.8.5).
+Cambios realizados: controles sobre fotos y vídeos con un solo sistema (círculo 36 px con aro marfil, área 44 pt, 10 px desde la foto, 8 px entre ellos; chips de 28 px). Sin lupa ni selección: CSS global y `isTextInteractionEnabled = false` + `allowsLinkPreview = false` en el WebView. Resumen tras eliminar sin desplazamiento: Coqui y Memo, sello «Eliminado», cifra «por liberar», dónde están, «Para liberarlos ya» con 3 pasos, dos botones; tamaños según la altura (verificado 390×844 y 375×667). «Una última mirada»: todas las fotos primero (3 columnas), acciones al final de la lista, aviso «Desliza para ver todo…» hasta llegar, carta fija encima siempre (salvo pase).
+Validaciones: 119 Node, TypeScript, runtime 28; capturas `work/qa-986/`.

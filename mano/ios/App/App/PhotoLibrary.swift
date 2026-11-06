@@ -32,6 +32,9 @@ class ManoBridgeController: CAPBridgeViewController {
         // Capacitor's file handler answers a <video> "bytes=0-" request by reading the
         // whole file into memory on the main thread. Prepared videos stream instead.
         configuration.mediaTypesRequiringUserActionForPlayback = []
+        // 9.8.6: no loupe, text selection or Live Text on long presses anywhere —
+        // holding a card is a CocoWash gesture. Text fields still take typing.
+        configuration.preferences.isTextInteractionEnabled = false
         configuration.setURLSchemeHandler(mediaStream, forURLScheme: PreparedVideoStreamHandler.scheme)
         // The app's language as iOS resolved it (Settings › CocoWash › Language, or
         // the device languages matched against the bundle's lproj folders), read by
@@ -46,6 +49,7 @@ class ManoBridgeController: CAPBridgeViewController {
         super.capacitorDidLoad()
         bridge?.registerPluginInstance(PhotoLibraryPlugin())
         bridge?.registerPluginInstance(CocoMonetizationPlugin())
+        webView?.allowsLinkPreview = false
         NSLog("MEMSWIPE_BRIDGE_READY")
     }
     // Coco Cream (0.9): dark status bar text on the light cream frame.

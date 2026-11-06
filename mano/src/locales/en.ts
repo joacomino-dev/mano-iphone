@@ -378,7 +378,6 @@ const table: Record<string, string> = {
   'Guardado': 'Saved',
   'Buena ronda.': 'Good round.',
   'Revisión guardada.': 'Review saved.',
-  'Con CocoWash ya llevas {size}': 'With CocoWash you’re at {size} so far',
   'Conservadas': 'Kept',
   'Eliminadas': 'Deleted',
   'Para eliminar': 'To delete',
@@ -426,17 +425,12 @@ const table: Record<string, string> = {
   'De vez en cuando aparece un anuncio entre tus fotos. Con un pase, CocoWash queda sin anuncios.': 'Every now and then an ad shows up between your photos. A pass makes CocoWash ad-free.',
   'No se pudo abrir Fotos.': 'Couldn’t open Photos.',
   // 9.8.3
-  'Enviado': 'Sent',
-  'Falta un paso para liberar el espacio.': 'One step left to free up the space.',
   'Espacio por liberar': 'Space to free up',
-  'Al vaciar «Eliminado recientemente» liberas al menos': 'Empty Recently Deleted and you free up at least',
-  'Al vaciar «Eliminado recientemente» liberas': 'Empty Recently Deleted and you free up',
   '{photos} y {videos} en «Eliminado recientemente»': '{photos} and {videos} in Recently Deleted',
   '{items} en «Eliminado recientemente»': '{items} in Recently Deleted',
   'Abre Fotos.': 'Open Photos.',
   'Busca el álbum «Eliminado recientemente».': 'Find the Recently Deleted album.',
   'Toca Seleccionar › Eliminar todo.': 'Tap Select › Delete All.',
-  'Si no lo vacías, Fotos lo hace solo en 30 días.': 'If you don’t, Photos empties it on its own after 30 days.',
   'Abrir Fotos': 'Open Photos',
   'Mira el toque y las dos formas de zoom una vez.': 'Watch the tap and both ways to zoom once.',
   // 9.8.5
@@ -445,5 +439,12 @@ const table: Record<string, string> = {
   'Postales de ejemplo: nada toca tu biblioteca. Anuncios de prueba frecuentes.': 'Sample postcards: nothing touches your library. Frequent test ads.',
   'Solo tus favoritas. Aquí el corazón las quita de Favoritas; no se eliminan.': 'Only your favorites. Here the heart takes them out of Favorites; they’re never deleted.',
   'Cómo funcionan los sellos': 'How seals work',
+  // 9.8.6
+  'Eliminado': 'Deleted',
+  'por liberar': 'to free up',
+  'por liberar, como mínimo': 'to free up, at least',
+  'Para liberarlos ya': 'To free it up now',
+  'O espera 30 días: Fotos lo vacía solo.': 'Or wait 30 days: Photos empties it on its own.',
+  'Desliza para ver todo lo que vas a eliminar': 'Scroll to see everything you’re deleting',
 };
 export default table;

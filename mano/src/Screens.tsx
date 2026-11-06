@@ -73,41 +73,44 @@ export function saveLifetime(key: string, value: Lifetime) { try { localStorage.
  * next round; with any pending, «Una última mirada» leads, since deletion only
  * happens there (Fotos confirms). «Cerrar» in that review comes back here.
  * After «Eliminar N», the reward leads: how much space this round freed. */
-export function SessionDone({ stats, pending, pendingBytes, pendingPartial, lifetime, again, review, monetization, emptyDeleted }: { stats: RoundStats; pending: number; pendingBytes: number; pendingPartial: boolean; lifetime: number; again: () => void; review: () => void; monetization?: ReactNode; emptyDeleted?: () => void }) {
+export function SessionDone({ stats, pending, pendingBytes, pendingPartial, again, review, monetization, emptyDeleted }: { stats: RoundStats; pending: number; pendingBytes: number; pendingPartial: boolean; again: () => void; review: () => void; monetization?: ReactNode; emptyDeleted?: () => void }) {
   const reduced = useReducedMotion();
   const total = stats.keep + stats.discard + stats.favorite + stats.later;
   const freed = stats.freedPhotos + stats.freedVideos > 0;
   const freedLabel = formatBytes(stats.freed, locale);
   const pendingLabel = formatBytes(pendingBytes, locale);
   const items = [stats.freedPhotos ? tn('photos', stats.freedPhotos) : '', stats.freedVideos ? tn('videos', stats.freedVideos) : ''].filter(Boolean);
-  // With the fixed letter below, the characters step back so everything fits.
-  const compact = !!monetization || freed;
-  return <main className={`status-screen session-done ${compact ? 'has-letter' : ''}`}><div className="done-body">
-    {/* 9.8.3: after «Eliminar» the screen is about the one step left, so the characters step aside. */}
-    {freed ? null : total ? <div className="character-pair"><Character pose="coqui-cheer" height={compact ? 88 : 140} motion="hop"/><Character pose="memo-dance" height={compact ? 70 : 110} motion="hop" delay={.2}/></div>
+  const compact = !!monetization;
+  // 9.8.6: after «Eliminar» the screen never scrolls and reads top to bottom —
+  // Coqui and Memo celebrate, the stamp says it, the amount leads, then the one
+  // step left (Fotos empties «Eliminado recientemente»), then the two ways on.
+  return <main className={`status-screen session-done ${compact ? 'has-letter' : ''} ${freed ? 'is-freed' : ''}`}><div className="done-body">
+    {total || freed ? <div className="character-pair"><Character pose="coqui-cheer" height={compact ? 96 : 140} motion="hop"/><Character pose="memo-dance" height={compact ? 76 : 110} motion="hop" delay={.2}/></div>
       : <Character pose="memo-calm" height={compact ? 90 : 120} className="status-character" motion="sway"/>}
-    <motion.div className="done-stamp" initial={reduced ? false : { scale: 1.6, opacity: 0, rotate: -14 }} animate={{ scale: 1, opacity: 1, rotate: -6 }} transition={{ type: 'spring', stiffness: 380, damping: 18, delay: .05 }} aria-hidden="true">{freed ? t('Enviado') : t('Guardado')}</motion.div>
-    <motion.h1 {...rise(reduced, .12)}>{freed ? t('Falta un paso para liberar el espacio.') : total ? t('Buena ronda.') : t('Revisión guardada.')}</motion.h1>
-    {freed && <motion.section {...rise(reduced, .16)} className="done-freed" aria-label={t('Espacio por liberar')}>
-      <span className="freed-label">{stats.freedPartial && freedLabel ? t('Al vaciar «Eliminado recientemente» liberas al menos') : t('Al vaciar «Eliminado recientemente» liberas')}</span>
-      <motion.strong className="freed-amount" initial={reduced ? false : { scale: .6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 16, delay: .3 }}>{freedLabel ? freedLabel : tn('files', stats.freedPhotos + stats.freedVideos)}</motion.strong>
+    <motion.div className="done-stamp" initial={reduced ? false : { scale: 1.6, opacity: 0, rotate: -14 }} animate={{ scale: 1, opacity: 1, rotate: -6 }} transition={{ type: 'spring', stiffness: 380, damping: 18, delay: .05 }} aria-hidden="true">{freed ? t('Eliminado') : t('Guardado')}</motion.div>
+    {freed ? <motion.section {...rise(reduced, .12)} className="done-freed" aria-label={t('Espacio por liberar')}>
+      <motion.strong className="freed-amount" initial={reduced ? false : { scale: .6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 16, delay: .25 }}>{freedLabel ? freedLabel : tn('files', stats.freedPhotos + stats.freedVideos)}</motion.strong>
+      <span className="freed-label">{stats.freedPartial && freedLabel ? t('por liberar, como mínimo') : t('por liberar')}</span>
       <span className="freed-items">{items.length > 1 ? t('{photos} y {videos} en «Eliminado recientemente»', { photos: items[0], videos: items[1] }) : t('{items} en «Eliminado recientemente»', { items: items[0] ?? '' })}</span>
-      {lifetime > stats.freed && formatBytes(lifetime, locale) && <span className="freed-total">{t('Con CocoWash ya llevas {size}', { size: formatBytes(lifetime, locale)! })}</span>}
       {/* No API empties «Eliminado recientemente»: the person does it in Fotos (Face ID). */}
-      <ol className="freed-steps">
-        <li>{t('Abre Fotos.')}</li>
-        <li>{t('Busca el álbum «Eliminado recientemente».')}</li>
-        <li>{t('Toca Seleccionar › Eliminar todo.')}</li>
-      </ol>
-      <small className="freed-note">{t('Si no lo vacías, Fotos lo hace solo en 30 días.')}</small>
-    </motion.section>}
+      <div className="freed-how">
+        <strong>{t('Para liberarlos ya')}</strong>
+        <ol className="freed-steps">
+          <li>{t('Abre Fotos.')}</li>
+          <li>{t('Busca el álbum «Eliminado recientemente».')}</li>
+          <li>{t('Toca Seleccionar › Eliminar todo.')}</li>
+        </ol>
+      </div>
+      <small className="freed-note">{t('O espera 30 días: Fotos lo vacía solo.')}</small>
+    </motion.section>
+    : <motion.h1 {...rise(reduced, .12)}>{total ? t('Buena ronda.') : t('Revisión guardada.')}</motion.h1>}
     {/* With the letter below, the one step left matters more than the tally. */}
-    {total > 0 && !(freed && monetization) ? <motion.dl {...rise(reduced, .18)} className="done-stats">
+    {freed ? null : total > 0 ? <motion.dl {...rise(reduced, .18)} className="done-stats">
       <div className="is-keep"><dt>{t('Conservadas')}</dt><dd><AnimatedNumber value={stats.keep}/></dd></div>
       <div className="is-discard"><dt>{freed ? t('Eliminadas') : t('Para eliminar')}</dt><dd><AnimatedNumber value={stats.discard}/></dd></div>
       <div className="is-favorite"><dt>{t('Favoritas')}</dt><dd><AnimatedNumber value={stats.favorite}/></dd></div>
-    </motion.dl> : !freed && <motion.p {...rise(reduced, .18)}>{t('Tu progreso está a salvo. Sigue cuando quieras.')}</motion.p>}
-    {stats.later > 0 && <motion.p {...rise(reduced, .2)} className="done-later"><ClockCountdownIcon size={18} weight="bold"/>{tn('laterWaiting', stats.later)}</motion.p>}
+    </motion.dl> : <motion.p {...rise(reduced, .18)}>{t('Tu progreso está a salvo. Sigue cuando quieras.')}</motion.p>}
+    {stats.later > 0 && !freed && <motion.p {...rise(reduced, .2)} className="done-later"><ClockCountdownIcon size={18} weight="bold"/>{tn('laterWaiting', stats.later)}</motion.p>}
     <motion.div {...rise(reduced, .24)} className={`status-actions ${freed && emptyDeleted ? 'is-pair' : ''}`}>
       {freed && emptyDeleted && <button className="danger-empty" onClick={emptyDeleted}><ArrowSquareOutIcon size={18} weight="bold"/>{t('Abrir Fotos')}</button>}
       {pending > 0 && <button className="primary-empty" onClick={review}><EyeIcon size={20} weight="bold"/>{t('Una última mirada ({n})', { n: pending })}</button>}
