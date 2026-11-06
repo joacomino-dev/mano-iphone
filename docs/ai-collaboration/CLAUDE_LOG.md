@@ -453,3 +453,6 @@ Validaciones: Playwright en SE, mini, 390, 393, Pro Max, texto 125 % y 150 %, en
 it, ar y ja: nada se solapa con la carta, botones enteros y visibles, sin recortes. Puente
 simulado: `hide` al arrancar y reintento que vuelve a colocar la carta. 119 Node, runtime
 28, builds.
+CI `42271272158`: el primer intento se colgó en `simctl io screenshot` (la app había
+arrancado bien, según la captura); relanzado, correcto. IPA 0.9.9 (38) de `2940785`,
+6 808 407 bytes, sha256 `3a0ec5f0…fa57`.
