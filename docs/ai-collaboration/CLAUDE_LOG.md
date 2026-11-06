@@ -393,3 +393,18 @@ notas para el revisor en `docs/appstore/`. Versión 0.9.9 (35) mostrada como 0.9
 `main` = `build-people-dev.yml`; el flujo AltStore antiguo queda manual.
 Decisiones relevantes: el usuario autorizó expresamente dejar esta versión como `main`.
 Validaciones: 119 Node, TypeScript, runtime 28, builds; capturas `work/qa-991/`.
+
+### CW-CL-046 — 0.9.9.1 (36): Ajustes sin desplazamiento lateral
+Fecha: 2026-11-06, America/Bogota
+Agente: Claude
+Estado: completada; pendiente de prueba física.
+Base Git / commit: `main` (`29ed832`) → este commit.
+Cambios realizados: el fondo detrás de las pestañas de la hoja (CW-CL-045) sobresalía 4 px
+por cada lado y Filtros/Ajustes/Apoyo se podían desplazar en horizontal. Ahora ocupa justo
+el margen de la hoja y el cuerpo de la hoja nunca se desplaza en horizontal. Build 36.
+Validaciones: medido en Playwright (scrollWidth 394 → 390 = clientWidth en Filtros y
+Ajustes), 119 Node, runtime 28, builds web y nativa.
+Fuera del repo: revisión de la web de soporte y privacidad de Codex (borrador local); la
+política del repo (`docs/appstore/privacy-policy.md`) aún dice que la ubicación no sale
+del iPhone, pero los nombres de lugar usan la geocodificación de Apple (coordenadas
+redondeadas a ~1 km). Corregir al publicar.

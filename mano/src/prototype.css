@@ -1097,7 +1097,10 @@ input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;u
 
 /* 0.9.9.1: content scrolling under the Filtros/Ajustes/Apoyo tabs disappears at
    their lower edge: a backing in the sheet's colour fills around the pill. */
-.sheet-tabs::before{content:'';position:absolute;z-index:-1;left:calc(-1 * var(--cw-space-6));right:calc(-1 * var(--cw-space-6));top:-200px;bottom:0;background:var(--cw-sheet)}
+/* 0.9.9.1 (36): the backing spans exactly the sheet's side padding and the body
+   never scrolls sideways (it overhung by 4 px and Ajustes panned horizontally). */
+.sheet-tabs::before{content:'';position:absolute;z-index:-1;left:calc(-1 * var(--cw-space-5));right:calc(-1 * var(--cw-space-5));top:-200px;bottom:0;background:var(--cw-sheet)}
+.native-sheet .mano-sheet-body{overflow-x:hidden;overflow-y:auto;overscroll-behavior-x:none}
 .native-sheet .sheet-tabs::before{background:var(--cw-sheet-native)}
 .sheet-tabs{background:transparent}
 .sheet-tabs::after{content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;background:var(--cw-paper-dim)}
