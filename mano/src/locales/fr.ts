@@ -444,5 +444,6 @@ const table: Record<string, string> = {
   'Toca Seleccionar › Eliminar todo.': 'Touche Sélectionner › Tout supprimer.',
   'Si no lo vacías, Fotos lo hace solo en 30 días.': 'Sinon, Photos le vide tout seul au bout de 30 jours.',
   'Abrir Fotos': 'Ouvrir Photos',
+  'Mira el toque y las dos formas de zoom una vez.': 'Regarde le toucher et les deux façons de zoomer une fois.',
 };
 export default table;

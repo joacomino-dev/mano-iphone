@@ -58,7 +58,7 @@ function glossPath(cx: number, top: number, s: number) {
 }
 
 /* ---------- Layout ---------- */
-export type BarVariant = 'stacked' | 'icon';
+export type BarVariant = 'compact' | 'icon';
 type Box = { x: number; y: number; w: number; h: number };
 type Piece = { box: Box; d: string };
 type Geometry = { width: number; height: number; heart: Piece & { gloss: string; inner: string }; discard: Piece & { content: Box }; keep: Piece & { content: Box } };
@@ -139,16 +139,19 @@ function textWidth(text: string, px: number) {
   ctx.font = `400 ${px}px ${barFont()}`;
   return ctx.measureText(text.toUpperCase()).width + text.length * px * .02;
 }
-/** 9.8.3: a large icon with its verb underneath, the same in every language.
- * The word shrinks until the longer of both fits the room; the icon takes the
- * height left. Only when no legible word fits does the bar show icons alone. */
-function pickVariant(room: number, rem: number, height: number): { variant: BarVariant; font: number; icon: number } {
+/** The richest variant whose longer label fits, at the size Dynamic Type asks
+ * for (rem); both sides always use the same variant, for symmetry. */
+function pickVariant(room: number, rem: number): { variant: BarVariant; font: number; icon: number } {
+  // Both sides share one variant: measure the longer word (it changes by language).
   const word = (px: number) => Math.max(textWidth(LABELS.keep(), px), textWidth(LABELS.discard(), px));
-  for (const scale of [1, .92, .84, .76]) {
-    const px = rem * .8125 * scale;
-    if (word(px) <= room) return { variant: 'stacked', font: px, icon: Math.round(Math.max(rem * 1.25, Math.min(rem * 1.75, height - px - 6))) };
+  // No arrows (9.8.2): short words got them and long ones did not, so the bar
+  // now looks the same in every language.
+  const icon = Math.round(rem * 1.25), gap = rem * .3125;
+  for (const scale of [1, .94, .88, .82]) {
+    const px = rem * 1.0625 * scale;
+    if (word(px) + icon + gap <= room) return { variant: 'compact', font: px, icon };
   }
-  return { variant: 'icon', font: rem, icon: Math.round(Math.min(rem * 1.875, height - 6)) };
+  return { variant: 'icon', font: rem, icon: Math.round(rem * 1.75) };
 }
 
 type Props = {
@@ -184,7 +187,7 @@ export function DecisionBar({ count, disabled, favoriteOn, armed, onDiscard, onF
   }, []);
   useEffect(() => { if (fontReady) return; let alive = true; document.fonts?.load(`16px ${barFont()}`).then(() => { if (alive) setFontReady(true); }).catch(() => {}); return () => { alive = false; }; }, [fontReady]);
   const geometry = useMemo(() => size.width ? barGeometry(size.width, size.button, size.heart) : null, [size.width, size.button, size.heart]);
-  const fit = useMemo(() => geometry ? pickVariant(geometry.discard.content.w, size.rem, geometry.discard.content.h) : null, [geometry, size.rem, fontReady]);
+  const fit = useMemo(() => geometry ? pickVariant(geometry.discard.content.w, size.rem) : null, [geometry, size.rem, fontReady]);
   const style = { '--bar-height': geometry ? `${geometry.height}px` : undefined } as CSSProperties;
   return <div ref={host} className={`decision-bar ${armed ? `armed-${armed}` : ''} ${favoriteOn ? 'is-favorites' : ''} ${fit ? `is-${fit.variant}` : ''}`} style={style}>
     {geometry && fit && <>

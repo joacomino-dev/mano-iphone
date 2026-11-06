@@ -443,5 +443,6 @@ const table: Record<string, string> = {
   'Toca Seleccionar › Eliminar todo.': 'المس «تحديد» › «حذف الكل».',
   'Si no lo vacías, Fotos lo hace solo en 30 días.': 'إن لم تفرغه، يفرغه تطبيق الصور تلقائيًا بعد 30 يومًا.',
   'Abrir Fotos': 'فتح الصور',
+  'Mira el toque y las dos formas de zoom una vez.': 'شاهد اللمس وطريقتي التكبير مرة واحدة.',
 };
 export default table;

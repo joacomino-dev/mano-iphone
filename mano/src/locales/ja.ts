@@ -443,5 +443,6 @@ const table: Record<string, string> = {
   'Toca Seleccionar › Eliminar todo.': '「選択」›「すべて削除」をタップ。',
   'Si no lo vacías, Fotos lo hace solo en 30 días.': '空にしなくても、30日後に「写真」が自動で削除します。',
   'Abrir Fotos': '「写真」を開く',
+  'Mira el toque y las dos formas de zoom una vez.': 'タップと2つのズーム方法を一度見てみよう。',
 };
 export default table;

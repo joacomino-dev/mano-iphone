@@ -346,3 +346,11 @@ Base Git / commit: `claude/cocowash-9.8.3` desde `0d08e83`.
 Cambios realizados: nuevo basurero ilustrado como sello «Eliminar» (fuente en `brand/stamps/discard-trash-source.webp`); barra de decisión con icono grande y verbo debajo en todos los idiomas; cartas fijas siempre en «Una última mirada» (bajo los botones) y en el resumen (la siguiente se prepara mientras se ve una); resumen que explica que el espacio se libera al vaciar «Eliminado recientemente», con pasos y «Abrir Fotos»; postales de demostración 1–6 redibujadas. Revisión: `/code-review` high (7 corregidos, 1 omitido), checklist de `ui-ux-pro-max` con `tests/qa-a11y-audit.mjs` (área táctil del chip), lint manual de `styleseed` (hex a tokens), `swiftui-pro` (topes de Dynamic Type en la carta nativa), `/simplify` (cadencia de cierre, variantes con flecha, sellos dibujados y CSS por capas eliminados).
 Validaciones: 119 Node, TypeScript; capturas `work/qa-983/`; CI en CURRENT_STATE.
 Pendiente del plan: Nickture, unslop y asodev no están instalados (revisión de traducciones y fichas de tienda); `frontend-design` solo con pantallas elegidas por el usuario.
+
+### CW-CL-041 — 9.8.4: estampas al deslizar, barra restaurada, intro y precarga
+Fecha: 2026-11-06, America/Bogota
+Agente: Claude
+Estado: completada local, pendiente de prueba física e integración.
+Base Git / commit: `claude/cocowash-9.8.4` desde `8b9287b`.
+Cambios realizados: el usuario aclaró que el «icono grande y texto debajo» era para las estampas al deslizar, no para los botones: barra restaurada como en 9.8.2 (fila, sin flechas); las cuatro estampas de arrastre/decisión con la ilustración grande y la palabra debajo (se retiran las `*-word.webp`). Nieve del pico izquierdo de la postal 2 dentro de la ladera. Intro 3: «Continuar» bloqueado con relleno hasta ver toque, mantener y pellizcar (primera vez). Anuncios: precarga a los 8 s de ordenar y hueco reservado (`AdRoom`) mientras llega, sin saltos.
+Validaciones: 119 Node, TypeScript; capturas `work/qa-984/`; CI en CURRENT_STATE.

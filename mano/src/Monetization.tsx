@@ -25,6 +25,9 @@ const Store = registerPlugin<{
   addListener(event: 'purchaseChanged' | 'adDismissed', cb: () => void): Promise<{ remove(): Promise<void> }>;
 }>('CocoMonetization');
 const key = 'cocowash-ad-active-ms-v1';
+/** The next letter starts loading a few seconds into sorting (not after the
+ * one-minute intro), so «Terminar» and the summary find it ready: no pop. */
+const PRELOAD_MS = 8_000;
 
 /** testing: «Modo de prueba» — same placements, much shorter cadence, separate counters.
  * `cleaning` counts active sorting time; `warm` also lets the next letter load
@@ -44,8 +47,12 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
 
   /** A fixed letter asked for before an ad was ready: shown as soon as one is. */
   const wanted = useRef<Placement | undefined>(undefined);
+  // Mirrors `wanted` for rendering: the screen keeps the letter's room meanwhile.
+  const [awaiting, setAwaiting] = useState<Placement>();
+  const want = (where: Placement) => { wanted.current = where; setAwaiting(where); };
   const clear = () => {
     wanted.current = undefined;
+    setAwaiting(undefined);
     current.current = undefined;
     setPlacement(undefined);
   };
@@ -84,14 +91,14 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
       last = now;
       // 9.8.3: the next letter may load while a fixed one is on screen (the review
       // letter, then the summary one); only the pile letter waits for its turn.
-      if (document.hidden || !status || status.adFree || (activeMs.current < rules.introMs && !wanted.current) || ready.current || loading.current || current.current === 'deck' || now < nextAttempt.current) return;
+      if (document.hidden || !status || status.adFree || (activeMs.current < PRELOAD_MS && !wanted.current) || ready.current || loading.current || current.current === 'deck' || now < nextAttempt.current) return;
       loading.current = true;
       nextAttempt.current = now + 30_000;
       void Store.prepare().then(value => {
         ready.current = value.ready;
         if (value.ready) nextAttempt.current = 0;
-        const want = wanted.current;
-        if (value.ready && want && !current.current) { wanted.current = undefined; offer(want); }
+        const pending = wanted.current;
+        if (value.ready && pending && !current.current) { wanted.current = undefined; setAwaiting(undefined); offer(pending); }
       }).catch(() => {}).finally(() => { loading.current = false; });
     }, 1000);
     return () => window.clearInterval(timer);
@@ -105,7 +112,7 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
     return true;
   };
   return {
-    available, placement, status, setStatus, clear,
+    available, placement, awaiting, status, setStatus, clear,
     review(ids: string[]) {
       if (!available || status?.adFree) return;
       cadence.review(ids);
@@ -117,7 +124,7 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
       // A pile letter waiting behind the sheet is never seen: the review letter takes its turn.
       if (current.current === 'deck') { current.current = undefined; setPlacement(undefined); }
       if (current.current) return;
-      if (!offer('review')) wanted.current = 'review';
+      if (!offer('review')) want('review');
     },
     /** Leaving a screen: drop its letter, shown or still awaited. */
     release(where: Placement) {
@@ -127,7 +134,7 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
     finish() {
       clear();
       if (!available || !status || status.adFree) return;
-      if (!offer('finish')) wanted.current = 'finish';
+      if (!offer('finish')) want('finish');
     },
     shown(where: Placement) {
       if (current.current !== where) return;
@@ -217,6 +224,11 @@ export function AdSlot({ where, money }: { where: Placement; money: Monetization
   return <div ref={node} className={'cw-ad-slot cw-ad-' + where + (covered ? ' is-covered' : '')} role="region" aria-label={t('Publicidad')}>
     <span className="cw-ad-blank" aria-hidden="true"/>
   </div>;
+}
+
+/** The letter's room while its ad is still on the way (no layout jump when it lands). */
+export function AdRoom({ where }: { where: Placement }) {
+  return <div className={'cw-ad-slot cw-ad-' + where} aria-hidden="true"><span className="cw-ad-blank"/></div>;
 }
 
 const offers = [

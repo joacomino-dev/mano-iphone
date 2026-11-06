@@ -2,6 +2,12 @@
 
 Actualizado: 2026-11-05, America/Bogota. Codex trabaja solo por indicación del usuario.
 
+## Desarrollo para pruebas: 9.8.4 / build 31 (Claude)
+
+CW-CL-041. Estampas al deslizar con la palabra debajo, barra de decisión restaurada,
+nieve corregida, intro 3 bloqueada hasta ver el zoom, anuncios precargados.
+Rama `claude/cocowash-9.8.4`. CI e IPA en esta entrada al terminar. Sin merge ni Release.
+
 ## Desarrollo para pruebas: 9.8.3 / build 30 (Claude)
 
 CW-CL-040. Revisión con skills + basurero nuevo, barra con icono grande y verbo debajo,

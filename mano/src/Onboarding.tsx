@@ -54,6 +54,8 @@ const DEMO_DELAY_MS = 700;
 /** Card 3, 9.8.1: «Toca» leads and stays longest (two taps through a group of
  * three), then «Zoom» shows its two ways: hold and drag to «Anclar», or pinch. */
 const PHASE_MS: Record<Phase, number> = { tap: 5200, hold: 3800, pinch: 3600 };
+/** One full round of card 3 (tap, hold, pinch); «Continuar» waits for it once. */
+export const ZOOM_ROUND_MS = PHASE_MS.tap + PHASE_MS.hold + PHASE_MS.pinch;
 /** Within the tap phase: when each tap lands (s). */
 const TAPS = [1.1, 3.0];
 type Step = 'keep' | 'discard' | 'favorite' | 'later';
@@ -158,6 +160,7 @@ export function Onboarding({ requestAccess, finish, granted = false }: { request
   // Seen before (tour opened again from Ajustes): the demo plays, nothing waits.
   const [replay] = useState(() => { try { return localStorage.getItem(ONBOARDING_KEY) === 'done'; } catch { return false; } });
   const [seen, setSeen] = useState(replay);
+  const [seenZoom, setSeenZoom] = useState(replay);
   const [phase, setPhase] = useState<Phase>('tap');
   // Gesture demo: which swipe is playing (turn counts steps, so each restarts).
   const [turn, setTurn] = useState(0);
@@ -165,7 +168,9 @@ export function Onboarding({ requestAccess, finish, granted = false }: { request
   const heading = useRef<HTMLHeadingElement>(null);
   const card = deck[index];
   const last = index === deck.length - 1;
-  const locked = index === 1 && !seen;
+  // Cards 2 and 3 each play their demo once before «Continuar» unlocks (first time only).
+  const locked = (index === 1 && !seen) || (index === 2 && !seenZoom);
+  const lockMs = index === 2 ? ZOOM_ROUND_MS : GESTURE_ROUND_MS;
   // Cards 2–3 arrive with the photo at rest; the demo starts after a pause.
   const [waiting, setWaiting] = useState(true);
   useEffect(() => { if (index !== 1 && index !== 2) return; setWaiting(true); const t = setTimeout(() => setWaiting(false), DEMO_DELAY_MS); return () => clearTimeout(t); }, [index]);
@@ -173,6 +178,7 @@ export function Onboarding({ requestAccess, finish, granted = false }: { request
   // «Continuar» waits for one full round of the four swipes, the first time only
   // (the same round with Reduce Motion: stamps in place and arrows).
   useEffect(() => { if (index !== 1 || seen) return; const t = setTimeout(() => setSeen(true), DEMO_DELAY_MS + GESTURE_ROUND_MS); return () => clearTimeout(t); }, [index, seen]);
+  useEffect(() => { if (index !== 2 || seenZoom) return; const t = setTimeout(() => setSeenZoom(true), DEMO_DELAY_MS + ZOOM_ROUND_MS); return () => clearTimeout(t); }, [index, seenZoom]);
   // Card 3 cycles tap → hold → pinch, each phase for its own time.
   useEffect(() => { if (index !== 2 || waiting) return; setPhase('tap'); }, [index, waiting]);
   useEffect(() => { if (index !== 2 || waiting) return; const timer = setTimeout(() => setPhase(p => PHASES[(PHASES.indexOf(p) + 1) % PHASES.length]), PHASE_MS[phase]); return () => clearTimeout(timer); }, [index, waiting, phase]);
@@ -229,10 +235,10 @@ export function Onboarding({ requestAccess, finish, granted = false }: { request
         {last ? <button className="ob-next" onClick={allow} disabled={asking} aria-busy={asking}>{asking ? <><CocoLoader size={24}/>{t('Esperando permiso…')}</> : <>{granted ? t('Empezar') : t('Permitir acceso a Fotos')}</>}</button>
           : <button className={`ob-next ${locked ? 'is-waiting' : ''}`} onClick={() => go(index + 1)} aria-disabled={locked || undefined} aria-describedby={locked ? 'ob-wait' : undefined}>
             {/* While the first round plays, the button fills with it: waiting, not broken. Same size and label throughout. */}
-            {locked && <motion.span key="fill" className="ob-next-fill" aria-hidden="true" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: DEMO_DELAY_MS / 1000, duration: GESTURE_ROUND_MS / 1000, ease: 'linear' }}/>}
+            {locked && <motion.span key={`fill-${index}`} className="ob-next-fill" aria-hidden="true" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: DEMO_DELAY_MS / 1000, duration: lockMs / 1000, ease: 'linear' }}/>}
             <span className="ob-next-label">{t('Continuar')}<CaretRightIcon size={18} weight="bold" className="flip-rtl"/></span></button>}
       </footer>
-      <p id="ob-wait" className={`ob-wait ${locked ? 'is-on' : ''}`} aria-live="polite">{index === 1 ? (locked ? t('Mira las cuatro direcciones una vez.') : replay ? '' : t('Ya puedes continuar.')) : ''}</p>
+      <p id="ob-wait" className={`ob-wait ${locked ? 'is-on' : ''}`} aria-live="polite">{index === 1 || index === 2 ? (locked ? (index === 1 ? t('Mira las cuatro direcciones una vez.') : t('Mira el toque y las dos formas de zoom una vez.')) : replay ? '' : t('Ya puedes continuar.')) : ''}</p>
     </div>
   </main>;
 }

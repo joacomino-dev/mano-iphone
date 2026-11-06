@@ -1,7 +1,7 @@
 import { useId } from 'react';
 import { motion } from 'motion/react';
 import { DAYS } from './domain';
-import { lang, t } from './i18n';
+import { t } from './i18n';
 
 /** The four decision marks. Each one differs by colour, shape, icon and word,
  * so no decision depends on colour alone, and the same icon (DecisionIcon) is
@@ -53,12 +53,13 @@ export function Stamp({ kind, level, word = false, className = '' }: { kind: Sta
   if (level) return <span className={`stamp stamp-${kind} ${className}`} aria-hidden="true"><KeepSeal level={level}/></span>;
   // The illustrated word is lettered in Spanish: other languages set the same
   // seal next to their own word, between the same wavy lines.
-  // 9.8.3: the new trash can for «Eliminar» has no lettered version: its word is set beside it too.
-  if (word && (lang !== 'es' || kind === 'discard')) return <span className={`stamp stamp-${kind} is-art has-word is-composed ${className}`} aria-hidden="true">
+  // 9.8.4: with its word, the stamp is large and the word sits underneath,
+  // between two wavy lines, set in the app's language (same for all four).
+  if (word) return <span className={`stamp stamp-${kind} is-art has-word is-composed ${className}`} aria-hidden="true">
     <img src={`/assets/stamps/${kind}.webp`} alt="" draggable={false}/><span className="stamp-lettering">{WORDS[kind]()}</span>
   </span>;
-  return <span className={`stamp stamp-${kind} is-art ${word ? 'has-word' : ''} ${className}`} aria-hidden="true">
-    <img src={`/assets/stamps/${kind}${word ? '-word' : ''}.webp`} alt="" draggable={false}/>
+  return <span className={`stamp stamp-${kind} is-art ${className}`} aria-hidden="true">
+    <img src={`/assets/stamps/${kind}.webp`} alt="" draggable={false}/>
   </span>;
 }
 

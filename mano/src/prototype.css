@@ -934,9 +934,9 @@
 .review-primary .review-monetization{margin:0 0 var(--cw-space-3)}
 /* Decision stamps in other languages: the same seal, the word set beside it
    between two wavy lines, in the decision's colour. */
-.stamp.is-composed{display:flex;align-items:center;justify-content:center;gap:4px}
-.stamp.is-composed img{flex:none;width:auto;height:58px}
-.stamp-lettering{--wave:var(--cw-turquoise);padding:2px 2px 6px;font:700 22px/1.25 var(--cw-font-brand);color:var(--cw-lettering);white-space:nowrap;
+.stamp.is-composed{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:fit-content;margin-inline:auto;padding:8px 14px 6px;border-radius:24px}
+.stamp.is-composed img{flex:none;width:118px;height:auto}
+.stamp-lettering{--wave:var(--cw-turquoise);padding:2px 4px 8px;font:700 24px/1.25 var(--cw-font-brand);color:var(--cw-lettering);white-space:nowrap;
   text-decoration-line:underline overline;text-decoration-style:wavy;text-decoration-color:var(--wave);text-decoration-thickness:2px;text-underline-offset:7px}
 .stamp-discard .stamp-lettering{--wave:var(--cw-graphite)}.stamp-favorite .stamp-lettering{--wave:var(--cw-wash)}.stamp-later .stamp-lettering{--wave:var(--cw-coconut-deep)}
 /* Introduction, card 3: the group counter and the two ways to zoom. */
@@ -986,10 +986,6 @@
 .status-actions.is-pair>button{flex:1 1 0;min-width:0;justify-content:center;padding:0 var(--cw-space-3);font-size:.9375rem;line-height:1.2;text-align:center}
 
 /* ================= 9.8.3 ================= */
-/* Decision bar: a large icon with its verb underneath (every language). */
-.decision-bar.is-stacked .bar-content{flex-direction:column;gap:2px}
-.decision-bar.is-stacked .bar-word{-webkit-text-stroke:2.5px var(--cw-outline);letter-spacing:.04em}
-.decision-bar.is-icon .bar-word{display:none}
 /* Summary after «Eliminar»: the amount waits in «Eliminado recientemente»;
    three short steps say how to free it, «Abrir Fotos» starts the first. */
 .freed-steps{display:grid;gap:4px;margin:var(--cw-space-2) 0 0;padding:var(--cw-space-2) var(--cw-space-3);border-radius:var(--cw-radius-md);background:var(--cw-paper);counter-reset:step;list-style:none;text-align:start;width:100%}
