@@ -2,6 +2,14 @@
 
 Actualizado: 2026-11-05, America/Bogota. Codex trabaja solo por indicación del usuario.
 
+## Desarrollo para pruebas: 9.8.2 / build 29 (Claude)
+
+CW-CL-039. Resumen fijo con «Vaciar en Fotos», pie fijo en «Una última mirada», cargador
+fluido, barra sin flechas, cancelar en Fotos sin error, Apoyo dorado. Rama
+`claude/cocowash-9.8.2`, IPA `C:/Users/Joaco/Downloads/CocoWash-9.8.2-build29-d41de6b.ipa`,
+[CI 42159044992](https://github.com/joacomino-dev/mano-iphone/actions/runs/42159044992) success.
+Siguiente: revisión con skills 9.8.3 ([plan](../ai-handoff/PLAN_983_SKILLS.md)). Sin merge ni Release.
+
 ## Desarrollo para pruebas: 9.8.1 / build 28 (Claude)
 
 CW-CL-038. Anuncios fijos en resumen y «Una última mirada» (sin validador), cada
