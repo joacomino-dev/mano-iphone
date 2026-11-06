@@ -370,3 +370,11 @@ Estado: completada local, pendiente de prueba física e integración.
 Base Git / commit: `claude/cocowash-9.8.6` desde `5ea584f` (9.8.5).
 Cambios realizados: controles sobre fotos y vídeos con un solo sistema (círculo 36 px con aro marfil, área 44 pt, 10 px desde la foto, 8 px entre ellos; chips de 28 px). Sin lupa ni selección: CSS global y `isTextInteractionEnabled = false` + `allowsLinkPreview = false` en el WebView. Resumen tras eliminar sin desplazamiento: Coqui y Memo, sello «Eliminado», cifra «por liberar», dónde están, «Para liberarlos ya» con 3 pasos, dos botones; tamaños según la altura (verificado 390×844 y 375×667). «Una última mirada»: todas las fotos primero (3 columnas), acciones al final de la lista, aviso «Desliza para ver todo…» hasta llegar, carta fija encima siempre (salvo pase).
 Validaciones: 119 Node, TypeScript, runtime 28; capturas `work/qa-986/`.
+
+### CW-CL-044 — 9.8.6 (34): alemán e italiano, Apoyo sin «pase», Restablecer discreto
+Fecha: 2026-11-06, America/Bogota
+Agente: Claude
+Estado: completada local, pendiente de prueba física e integración.
+Base Git / commit: `claude/cocowash-9.8.6` sobre `68688a2`; misma versión, build 34.
+Cambios realizados: alemán e italiano completos (427 textos, plurales, permisos `InfoPlist.strings`, `CFBundleLocalizations`, regiones de Xcode, selector de idioma). El usuario prohíbe «pase» en español (se malentiende): Apoyo dice «Quita los anuncios…», «Puedes quitarlos por un año o para siempre» y «Listo: ya no verás anuncios»; mismas frases en los demás idiomas. Filtros: «Restablecer» al final, centrado, contorno discreto de su propio color.
+Validaciones: 119 Node, TypeScript, runtime 28; capturas de/it en `work/qa-986b/`.

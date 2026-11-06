@@ -30,15 +30,15 @@ function bridge(opts) {
       return {};
     } };
 }
-for (const lang of ['es', 'en', 'fr', 'ar', 'ja']) {
+for (const lang of ['de', 'it']) {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
   await page.addInitScript(bridge, { lang });
   await page.goto(`${base}/tests/app-ui.html`);
   await page.locator('.hand-space article.front').first().waitFor({ timeout: 20000 });
   await page.locator('.splash').waitFor({ state: 'detached', timeout: 15000 }).catch(() => {});
   await page.waitForTimeout(800);
-  await page.locator('.decision-bar').screenshot({ path: `../work/qa-983/${lang}-bar.png` });
-  await page.locator('.archive-header').screenshot({ path: `../work/qa-983/${lang}-header.png` });
+  await page.locator('.decision-bar').screenshot({ path: `../work/qa-986b/${lang}-bar.png` });
+  await page.locator('.archive-header').screenshot({ path: `../work/qa-986b/${lang}-header.png` });
   await page.close();
 }
 await browser.close();

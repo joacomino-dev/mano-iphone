@@ -9,6 +9,8 @@ import en from '../src/locales/en.ts';
 import fr from '../src/locales/fr.ts';
 import ar from '../src/locales/ar.ts';
 import ja from '../src/locales/ja.ts';
+import de from '../src/locales/de.ts';
+import it from '../src/locales/it.ts';
 
 /** Every literal t('…') in the app: the Spanish source text is the key. */
 function sourceKeys() {
@@ -32,9 +34,9 @@ function sourceKeys() {
   return keys;
 }
 const placeholders = text => [...text.matchAll(/\{(\w+)\}/g)].map(m => m[1]).sort().join(',');
-const tables = { en, fr, ar, ja };
+const tables = { en, fr, de, it, ar, ja };
 
-test('every visible text exists in English, French, Arabic and Japanese, with the same placeholders', () => {
+test('every visible text exists in English, French, German, Italian, Arabic and Japanese, with the same placeholders', () => {
   const keys = sourceKeys();
   assert.ok(keys.size > 350, `found ${keys.size} keys`);
   for (const [lang, table] of Object.entries(tables)) {
@@ -63,11 +65,13 @@ test('counted phrases: every language has every key, its «other» form and the 
 
 test('language: a pinned choice wins, then the first supported iPhone language, else English', () => {
   assert.equal(detectLanguage(null, ['fr-CA', 'en-US']), 'fr');
-  assert.equal(detectLanguage(null, ['de-DE', 'pt-BR']), 'en');
+  assert.equal(detectLanguage(null, ['pt-BR', 'ru-RU']), 'en');
   assert.equal(detectLanguage(null, ['pt-BR', 'ar-EG']), 'ar');
   assert.equal(detectLanguage(null, ['ja_JP']), 'ja');
   assert.equal(detectLanguage(null, ['es-419']), 'es');
   assert.equal(detectLanguage('ja', ['es-ES']), 'ja');
   assert.equal(detectLanguage('xx', ['es-ES']), 'es');
+  assert.equal(detectLanguage(null, ['de-AT']), 'de');
+  assert.equal(detectLanguage(null, ['it-CH', 'en']), 'it');
   assert.equal(detectLanguage(null, []), 'en');
 });

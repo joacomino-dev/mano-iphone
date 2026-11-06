@@ -2,6 +2,11 @@
 
 Actualizado: 2026-11-05, America/Bogota. Codex trabaja solo por indicación del usuario.
 
+## Desarrollo para pruebas: 9.8.6 / build 34 (Claude)
+
+CW-CL-044. Build 33 + alemán e italiano, Apoyo sin la palabra «pase», «Restablecer»
+discreto en Filtros. Rama `claude/cocowash-9.8.6`. CI e IPA en esta entrada al terminar.
+
 ## Desarrollo para pruebas: 9.8.6 / build 33 (Claude)
 
 CW-CL-043. Controles de carta unificados, sin lupa de iOS, resumen sin desplazamiento con

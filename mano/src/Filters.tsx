@@ -57,7 +57,6 @@ export function Filters({filter,assets,state,apply,index,preview}: {filter:Filte
  const visionPending=(smart==='lowQuality'||smart==='text')&&index.analyzing&&index.analyzed<index.photos;
  const sizePending=(draft.order==='largest'||draft.order==='smallest')&&index.measuring&&index.sized<index.total;
  return <div className="filters-panel">
-  <div className="filter-intro"><button onClick={()=>{haptic('selection');setDraft({...initialFilter});}}><ArrowCounterClockwiseIcon size={16}/>{t('Restablecer')}</button></div>
   <fieldset><legend><BroomIcon size={18}/>{t('Limpieza rápida')}</legend>
    <div className="smart-chips" role="group" aria-label={t('Limpieza rápida')}>{SMART.map(({value,label,icon:Icon})=><button key={value} aria-pressed={smart===value} onClick={()=>update({smart:value})}><Icon size={20} weight={smart===value?'fill':'regular'}/><span>{label()}</span><span className="chip-count" aria-label={t('{n} en la pila',{n:counts[value]})}>{formatNumber(counts[value])}</span></button>)}</div>
    <p className="setting-note" role="status">{SMART.find(s=>s.value===smart)!.hint()}{visionPending&&<small>{t('Memo revisa tu fototeca en el iPhone: {done} de {total}. Irán apareciendo más.',{done:index.analyzed,total:index.photos})}</small>}</p>
@@ -81,6 +80,8 @@ export function Filters({filter,assets,state,apply,index,preview}: {filter:Filte
      : <li key={label}><strong>{ROMAN[i]}</strong>{sealRest(i + 1)}</li>)}</ul></details>
    <div className="settings-group">
    <label className="field">{t('Mostrar')}<select value={draft.seal} onChange={e=>update({seal:['all','none'].includes(e.target.value)?e.target.value as 'all'|'none':Number(e.target.value)})}><option value="all">{t('Todos los niveles')}</option><option value="none">{t('Sin sello: pendientes de descubrir')}</option>{LEVELS.map((l,i)=><option key={l} value={i+1}>{t('Sello {level}: {rest}',{level:ROMAN[i],rest:sealRest(i+1)})}</option>)}</select></label><label className="switch-field"><span>{t('Incluir las que descansan')}<small>{t('Las conservadas vuelven con menor frecuencia.')}</small></span><input type="checkbox" role="switch" checked={draft.includeWaiting} onChange={e=>update({includeWaiting:e.target.checked})}/></label></div></fieldset>
+  {/* 9.8.6: back to the base filters — centred, quiet, after the choices. */}
+  <div className="filter-reset"><button type="button" onClick={()=>{haptic('selection');setDraft({...initialFilter});}}><ArrowCounterClockwiseIcon size={16}/>{t('Restablecer')}</button></div>
   <div className="filter-apply"><span>{invalid?(!draft.from||!draft.to?t('Elige desde y hasta para aplicar'):t('La fecha inicial debe ir antes de la final')):<><AnimatedNumber value={count}/> {tn('pileTail',count)}</>}</span><button className="sheet-action" disabled={invalid} onClick={()=>apply({...draft,v:2})}>{t('Aplicar filtros')}</button></div>
  </div>;
 }

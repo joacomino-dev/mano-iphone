@@ -584,8 +584,6 @@
 .filters-panel legend{float:left;width:100%;display:flex;align-items:center;gap:var(--cw-space-2);padding:0;margin-bottom:var(--cw-space-3);font-size:var(--cw-text-lg);font-weight:600}
 .filters-panel legend svg{color:var(--cw-ink-soft)}
 .filters-panel fieldset>div,.filters-panel fieldset>label{clear:both}
-.filter-intro{display:flex;align-items:center;justify-content:flex-end;gap:var(--cw-space-3)}
-.filter-intro button{display:flex;align-items:center;gap:6px;min-height:var(--cw-touch);padding:0 var(--cw-space-2);border:0;background:none;color:var(--cw-ink);font-size:var(--cw-text-sm);font-weight:500}
 .filter-chips{display:flex;flex-wrap:wrap;gap:var(--cw-space-2)}
 .filter-chips button{min-height:var(--cw-touch);padding:0 var(--cw-space-4);border:1.5px solid var(--cw-line-strong);border-radius:var(--cw-radius-pill);background:var(--cw-field);color:var(--cw-ink);font-size:var(--cw-text-sm)}
 .filter-chips button[aria-pressed=true]{background:var(--cw-accent);border-color:var(--cw-accent);color:var(--cw-paper);font-weight:500}
@@ -1092,3 +1090,7 @@ input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;u
 @media (max-height:780px){.session-done.is-freed .freed-note{display:none}.session-done.is-freed .done-stamp{padding:6px 14px;font-size:var(--cw-text-md)}}
 @media (max-height:700px){.session-done.is-freed .freed-items{display:none}}
 @media (max-height:700px){.session-done.is-freed .character-pair img{height:44px}.session-done.is-freed .freed-amount{font-size:32px}.session-done.is-freed .freed-how{margin-top:var(--cw-space-2)}.session-done.is-freed>.done-body{gap:6px}}
+
+/* Filtros › Restablecer: a quiet outlined pill, centred, border in its own colour. */
+.filter-reset{display:flex;justify-content:center;margin:0 0 var(--cw-space-2)}
+.filter-reset button{display:inline-flex;align-items:center;gap:6px;min-height:var(--cw-touch);padding:0 var(--cw-space-4);border:1.5px solid currentColor;border-radius:var(--cw-radius-pill);background:transparent;color:var(--cw-ink-soft);font-size:var(--cw-text-sm);font-weight:500}

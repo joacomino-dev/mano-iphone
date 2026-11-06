@@ -1,0 +1,4 @@
+/* Permission texts shown by iOS, in the app's language. */
+"NSPhotoLibraryUsageDescription" = "CocoWash braucht Zugriff auf deine Mediathek, um Fotos und Videos zu vergleichen, Favoriten zu markieren, Alben zu ordnen und nur das zu löschen, was du bestätigst. Die Analyse läuft auf deinem iPhone.";
+"NSPhotoLibraryAddUsageDescription" = "CocoWash fügt die Fotos, die du auswählst, deinen Alben in Fotos hinzu.";
+"NSUserTrackingUsageDescription" = "Wenn du es erlaubst, kann Google die Werbe-ID nutzen, um dir passendere Werbung zu zeigen.";

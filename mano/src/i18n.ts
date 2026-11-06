@@ -2,20 +2,22 @@ import en from './locales/en.ts';
 import fr from './locales/fr.ts';
 import ar from './locales/ar.ts';
 import ja from './locales/ja.ts';
+import de from './locales/de.ts';
+import it from './locales/it.ts';
 import { PLURALS, type PluralKey } from './locales/plurals.ts';
 
-/** CocoWash speaks Spanish (the source text), English, French, Arabic and
- * Japanese. The language follows the iPhone (iOS resolves it per app: Settings ›
+/** CocoWash speaks Spanish (the source text), English, French, German,
+ * Italian, Arabic and Japanese. The language follows the iPhone (iOS resolves it per app: Settings ›
  * CocoWash › Language, then the device languages); anything else falls back to
  * English. Ajustes › Idioma can pin one; changing it restarts the web view so
  * every module reads one language. */
-export type Lang = 'es' | 'en' | 'fr' | 'ar' | 'ja';
+export type Lang = 'es' | 'en' | 'fr' | 'de' | 'it' | 'ar' | 'ja';
 export const LANGS: { id: Lang; name: string }[] = [
-  { id: 'es', name: 'Español' }, { id: 'en', name: 'English' }, { id: 'fr', name: 'Français' }, { id: 'ar', name: 'العربية' }, { id: 'ja', name: '日本語' },
+  { id: 'es', name: 'Español' }, { id: 'en', name: 'English' }, { id: 'fr', name: 'Français' }, { id: 'de', name: 'Deutsch' }, { id: 'it', name: 'Italiano' }, { id: 'ar', name: 'العربية' }, { id: 'ja', name: '日本語' },
 ];
 export const LANGUAGE_KEY = 'cocowash-language-v1';
 const SUPPORTED = LANGS.map(l => l.id);
-const TABLES: Record<Exclude<Lang, 'es'>, Record<string, string>> = { en, fr, ar, ja };
+const TABLES: Record<Exclude<Lang, 'es'>, Record<string, string>> = { en, fr, de, it, ar, ja };
 
 const base = (tag: unknown) => typeof tag === 'string' ? tag.toLowerCase().split(/[-_]/)[0] : '';
 /** Pinned choice, else the first supported language the iPhone prefers, else English. */

@@ -1,6 +1,7 @@
 /** Counted phrases, one entry per language with that language's own plural
  * categories (Intl.PluralRules): Spanish, English and French one/other (French
- * counts 0 as one), Arabic zero/one/two/few/many/other, Japanese other only.
+ * counts 0 as one), German and Italian one/other, Arabic zero/one/two/few/many/other,
+ * Japanese other only.
  * `{n}` is the number; `{amount}` is filled by the screen (i18n.ts parts). */
 type Forms = Partial<Record<Intl.LDMLPluralRule, string>> & { other: string };
 export type PluralKey = 'photos' | 'videos' | 'files' | 'pileTail' | 'laterWaiting' | 'pendingFree' | 'pendingFreeAtLeast' | 'similarGroups' | 'sentToDeleted' | 'selected' | 'createAndAdd';
@@ -71,4 +72,30 @@ const ja: Table = {
   selected: { other: '{n}件を選択中' },
   createAndAdd: { other: '作成して{n}件を追加' },
 };
-export const PLURALS = { es, en, fr, ar, ja };
+const de: Table = {
+  photos: { one: '{n} Foto', other: '{n} Fotos' },
+  videos: { one: '{n} Video', other: '{n} Videos' },
+  files: { one: '{n} Datei', other: '{n} Dateien' },
+  pileTail: { one: 'Datei im Stapel mit diesen Filtern', other: 'Dateien im Stapel mit diesen Filtern' },
+  laterWaiting: { one: '{n} für später: wartet am Ende des Stapels.', other: '{n} für später: warten am Ende des Stapels.' },
+  pendingFree: { one: 'Löschst du das Markierte, gibst du {amount} frei. Sonst bleibt es für die nächste Runde.', other: 'Löschst du die {n} markierten, gibst du {amount} frei. Sonst bleiben sie für die nächste Runde.' },
+  pendingFreeAtLeast: { one: 'Löschst du das Markierte, gibst du mindestens {amount} frei. Sonst bleibt es für die nächste Runde.', other: 'Löschst du die {n} markierten, gibst du mindestens {amount} frei. Sonst bleiben sie für die nächste Runde.' },
+  similarGroups: { one: '{n} Gruppe\nähnlicher Fotos', other: '{n} Gruppen\nähnlicher Fotos' },
+  sentToDeleted: { one: '{n} in „Zuletzt gelöscht“ verschoben', other: '{n} in „Zuletzt gelöscht“ verschoben' },
+  selected: { one: '{n} ausgewählt', other: '{n} ausgewählt' },
+  createAndAdd: { one: 'Erstellen und {n} Objekt hinzufügen', other: 'Erstellen und {n} Objekte hinzufügen' },
+};
+const it: Table = {
+  photos: { one: '{n} foto', other: '{n} foto' },
+  videos: { one: '{n} video', other: '{n} video' },
+  files: { one: '{n} file', other: '{n} file' },
+  pileTail: { one: 'file nella pila con questi filtri', other: 'file nella pila con questi filtri' },
+  laterWaiting: { one: '{n} per dopo: ti aspetta in fondo alla pila.', other: '{n} per dopo: ti aspettano in fondo alla pila.' },
+  pendingFree: { one: 'Se elimini ciò che hai segnato liberi {amount}. Altrimenti resta per il prossimo giro.', other: 'Se elimini le {n} segnate liberi {amount}. Altrimenti restano per il prossimo giro.' },
+  pendingFreeAtLeast: { one: 'Se elimini ciò che hai segnato liberi almeno {amount}. Altrimenti resta per il prossimo giro.', other: 'Se elimini le {n} segnate liberi almeno {amount}. Altrimenti restano per il prossimo giro.' },
+  similarGroups: { one: '{n} gruppo\ndi foto simili', other: '{n} gruppi\ndi foto simili' },
+  sentToDeleted: { one: '{n} spostata in «Eliminati di recente»', other: '{n} spostate in «Eliminati di recente»' },
+  selected: { one: '{n} selezionata', other: '{n} selezionate' },
+  createAndAdd: { one: 'Crea e aggiungi {n} elemento', other: 'Crea e aggiungi {n} elementi' },
+};
+export const PLURALS = { es, en, fr, ar, ja, de, it };

@@ -270,7 +270,7 @@ export function PurchaseOptions({ money }: { money: Monetization }) {
         <h3 id="support-title">{t('CocoWash es gratis')}</h3>
         <p>{status?.adFree
           ? (status.expires ? t('Sin anuncios hasta el {date}. Gracias por apoyarla.', { date: new Date(status.expires).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' }) }) : t('Sin anuncios para siempre. Gracias por apoyarla.'))
-          : t('De vez en cuando aparece un anuncio entre tus fotos. Con un pase, CocoWash queda sin anuncios.')}</p>
+          : t('De vez en cuando aparece un anuncio entre tus fotos. Puedes quitarlos por un año o para siempre.')}</p>
       </div>
     </header>
     <div className="support-stamps">{offers.map(offer => {
@@ -281,7 +281,7 @@ export function PurchaseOptions({ money }: { money: Monetization }) {
       const name = offer.name(), detail = offer.detail();
       return <button key={offer.id} type="button" className={`support-stamp tone-${offer.tone} ${owned ? 'is-owned' : ''} ${!product && !owned ? 'is-unpriced' : ''}`} disabled={busy || !product || owned}
         aria-label={`${name}. ${detail} ${owned ? t('Activo.') : product ? t('Precio {price}.', { price: product.price }) : t('Precio no disponible.')}`}
-        onClick={() => void perform(() => Store.buy({ id: offer.id }), coffee ? t('¡Gracias por el café!') : t('Listo: tu pase está activo.'))}>
+        onClick={() => void perform(() => Store.buy({ id: offer.id }), coffee ? t('¡Gracias por el café!') : t('Listo: ya no verás anuncios.'))}>
         <span className="stamp-perf" aria-hidden="true"><span className="stamp-face">
           <span className="stamp-art"><Icon size={30} weight={coffee ? 'fill' : 'duotone'}/></span>
           <span className="stamp-text"><strong>{name}</strong><small>{detail}</small></span>
