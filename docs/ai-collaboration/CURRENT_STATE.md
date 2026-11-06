@@ -2,6 +2,12 @@
 
 Actualizado: 2026-11-05, America/Bogota. Codex trabaja solo por indicación del usuario.
 
+## Siguiente: lanzamiento 1.0
+
+El usuario aprobó 9.8.6 (34) y pide ir a la App Store. Hoja de ruta con responsables y
+orden en [ROADMAP_APPSTORE](../ai-handoff/ROADMAP_APPSTORE.md). Pendiente del usuario: icono
+del basurero y otra imagen; cuentas (Apple, App Store Connect, AdMob) y web de privacidad.
+
 ## Desarrollo para pruebas: 9.8.6 / build 34 (Claude)
 
 CW-CL-044. Build 33 + alemán e italiano, Apoyo sin la palabra «pase», «Restablecer»
