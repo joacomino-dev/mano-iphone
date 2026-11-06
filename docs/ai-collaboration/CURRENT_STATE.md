@@ -11,7 +11,8 @@ OneDrive (con `main` y cambios ajenos sin confirmar) no se tocó: actualizarla c
 `git pull` cuando esos cambios estén a salvo. La CI de `main` es ahora
 `build-people-dev.yml`; `build-ios.yml` (AltStore antiguo) solo se lanza a mano.
 Borradores para la tienda en `docs/appstore/` (ficha en 7 idiomas, política de privacidad,
-notas para el revisor). CI e IPA en esta entrada al terminar.
+notas para el revisor). IPA `C:/Users/Joaco/Downloads/CocoWash-0.9.9.1-build35-c967dc6.ipa`,
+[CI 42242603847](https://github.com/joacomino-dev/mano-iphone/actions/runs/42242603847) success desde `main`.
 
 ## Siguiente: lanzamiento 1.0
 
