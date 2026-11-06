@@ -409,7 +409,6 @@ const table: Record<string, string> = {
   'De vez en cuando aparece un anuncio entre tus fotos. Puedes quitarlos por un año o para siempre.': 'من حين لآخر يظهر إعلان بين صورك. يمكنك إزالة الإعلانات لمدة سنة أو إلى الأبد.',
   'No se pudo abrir Fotos.': 'تعذّر فتح تطبيق الصور.',
   // 9.8.3
-  'Espacio por liberar': 'المساحة التي ستتحرّر',
   '{photos} y {videos} en «Eliminado recientemente»': '{photos} و{videos} في «المحذوفة مؤخرًا»',
   '{items} en «Eliminado recientemente»': '{items} في «المحذوفة مؤخرًا»',
   'Abre Fotos.': 'افتح تطبيق الصور.',
@@ -425,9 +424,6 @@ const table: Record<string, string> = {
   'Cómo funcionan los sellos': 'كيف تعمل الأختام',
   // 9.8.6
   'Eliminado': 'حُذف',
-  'por liberar': 'ستتحرّر',
-  'por liberar, como mínimo': 'ستتحرّر على الأقل',
-  'Para liberarlos ya': 'لتحريرها الآن',
   'O espera 30 días: Fotos lo vacía solo.': 'أو انتظر 30 يومًا: يفرغها تطبيق الصور تلقائيًا.',
   'Desliza para ver todo lo que vas a eliminar': 'مرّر لرؤية كل ما ستحذفه',
   'Ayuda': 'المساعدة',
@@ -437,5 +433,9 @@ const table: Record<string, string> = {
   'Modo developer': 'وضع المطوّر',
   'Anuncios': 'الإعلانات',
   'Apágalos para ver la app como quien pagó por quitarlos.': 'أوقفها لترى التطبيق كما يراه من دفع لإزالتها.',
+  'de espacio liberado': 'مساحة تم تحريرها',
+  'de espacio liberado, como mínimo': 'مساحة تم تحريرها على الأقل',
+  'Espacio liberado': 'المساحة المحرَّرة',
+  'Para vaciarlo ya': 'لإفراغه الآن',
 };
 export default table;

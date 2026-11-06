@@ -410,7 +410,6 @@ const table: Record<string, string> = {
   'De vez en cuando aparece un anuncio entre tus fotos. Puedes quitarlos por un año o para siempre.': 'De temps en temps, une pub apparaît entre tes photos. Tu peux les retirer pour un an ou pour toujours.',
   'No se pudo abrir Fotos.': 'Impossible d’ouvrir Photos.',
   // 9.8.3
-  'Espacio por liberar': 'Espace à libérer',
   '{photos} y {videos} en «Eliminado recientemente»': '{photos} et {videos} dans Suppressions récentes',
   '{items} en «Eliminado recientemente»': '{items} dans Suppressions récentes',
   'Abre Fotos.': 'Ouvre Photos.',
@@ -426,9 +425,6 @@ const table: Record<string, string> = {
   'Cómo funcionan los sellos': 'Comment marchent les tampons',
   // 9.8.6
   'Eliminado': 'Supprimé',
-  'por liberar': 'à libérer',
-  'por liberar, como mínimo': 'à libérer, au moins',
-  'Para liberarlos ya': 'Pour libérer l’espace maintenant',
   'O espera 30 días: Fotos lo vacía solo.': 'Ou attends 30 jours : Photos le vide tout seul.',
   'Desliza para ver todo lo que vas a eliminar': 'Fais défiler pour tout voir avant de supprimer',
   'Ayuda': 'Aide',
@@ -438,5 +434,9 @@ const table: Record<string, string> = {
   'Modo developer': 'Mode développeur',
   'Anuncios': 'Publicités',
   'Apágalos para ver la app como quien pagó por quitarlos.': 'Désactive-les pour voir l’app comme quelqu’un qui a payé pour les retirer.',
+  'de espacio liberado': 'd’espace libéré',
+  'de espacio liberado, como mínimo': 'd’espace libéré, au moins',
+  'Espacio liberado': 'Espace libéré',
+  'Para vaciarlo ya': 'Pour le vider maintenant',
 };
 export default table;

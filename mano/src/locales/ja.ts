@@ -409,7 +409,6 @@ const table: Record<string, string> = {
   'De vez en cuando aparece un anuncio entre tus fotos. Puedes quitarlos por un año o para siempre.': '写真の合間にときどき広告が表示されます。1年間、またはずっと広告をなくせます。',
   'No se pudo abrir Fotos.': '「写真」を開けませんでした。',
   // 9.8.3
-  'Espacio por liberar': '空けられる容量',
   '{photos} y {videos} en «Eliminado recientemente»': '{photos}と{videos}が「最近削除した項目」に',
   '{items} en «Eliminado recientemente»': '{items}が「最近削除した項目」に',
   'Abre Fotos.': '「写真」を開く。',
@@ -425,9 +424,6 @@ const table: Record<string, string> = {
   'Cómo funcionan los sellos': 'スタンプのしくみ',
   // 9.8.6
   'Eliminado': '削除済み',
-  'por liberar': '空けられます',
-  'por liberar, como mínimo': '少なくとも空けられます',
-  'Para liberarlos ya': '今すぐ容量を空けるには',
   'O espera 30 días: Fotos lo vacía solo.': 'または30日待てば「写真」が自動で空にします。',
   'Desliza para ver todo lo que vas a eliminar': 'スクロールして削除するものをすべて確認',
   'Ayuda': 'ヘルプ',
@@ -437,5 +433,9 @@ const table: Record<string, string> = {
   'Modo developer': '開発者モード',
   'Anuncios': '広告',
   'Apágalos para ver la app como quien pagó por quitarlos.': 'オフにすると、広告を外した人と同じ画面を確認できます。',
+  'de espacio liberado': '空き容量を確保しました',
+  'de espacio liberado, como mínimo': '以上の空き容量を確保しました',
+  'Espacio liberado': '確保した空き容量',
+  'Para vaciarlo ya': '今すぐ空にするには',
 };
 export default table;

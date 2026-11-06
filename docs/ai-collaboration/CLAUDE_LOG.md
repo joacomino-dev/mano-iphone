@@ -496,3 +496,18 @@ Cambios realizados:
 - Ramas: `main` vuelve a los IDs de muestra de Google; `release` lleva los reales y
   `DEVELOPER = false`, verificada por `verify-release.yml`.
 Validaciones: 119 Node, runtime 28, builds web y nativa.
+CI: `main` `42295971279` correcta tras limitar el tiempo de `simctl` y reintentar una vez
+(`d242a34`; dos ejecuciones previas se colgaron en el simulador del runner con la app ya
+compilada). `release` `42295976529` (`4e891af`, `main` fusionada) correcta: IDs reales, sin
+anuncios de prueba ni modo developer. IPA de desarrollo 0.9.9 (40), 6 810 184 bytes, sha256
+`825436ba…4624`, ID de app de muestra de Google y `CocoWashTestAds = true`.
+
+### CW-CL-051 — 0.9.9.1 (41): el resumen habla de lo ya hecho
+Fecha: 2026-11-06, America/Bogota
+Agente: Claude
+Estado: completada; pendiente de prueba física.
+Cambios realizados: tras «Eliminar», «263 MB / de espacio liberado» (o «…, como mínimo»);
+sin tamaños conocidos, «9 archivos / eliminados» (plural `freedFiles` en los 7 idiomas).
+«Para liberarlos ya» pasa a «Para vaciarlo ya»; la nota de 30 días sigue debajo. Claves
+antiguas retiradas de todas las traducciones. Fusionado también en `release`.
+Validaciones: 119 Node (incluida cobertura i18n), tsc; capturas es/en con y sin carta.
