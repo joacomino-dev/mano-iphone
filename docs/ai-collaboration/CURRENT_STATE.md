@@ -5,14 +5,16 @@ Actualizado: 2026-11-05, America/Bogota. Codex trabaja solo por indicación del 
 ## Desarrollo para pruebas: 9.8.5 / build 32 (Claude)
 
 CW-CL-042. 9.8.4 + Ajustes y Filtros rediseñados: menos texto, bloques agrupados, un solo
-ritmo de espaciado. Rama `claude/cocowash-9.8.5`. CI e IPA en esta entrada al terminar.
-Sin merge ni Release.
+ritmo de espaciado. Rama `claude/cocowash-9.8.5`, IPA
+`C:/Users/Joaco/Downloads/CocoWash-9.8.5-build32-3cdb985.ipa`,
+[CI 42219379233](https://github.com/joacomino-dev/mano-iphone/actions/runs/42219379233) success
+(9.8.4: [CI 42218631188](https://github.com/joacomino-dev/mano-iphone/actions/runs/42218631188), `CocoWash-9.8.4-build31-3bf4890.ipa`). Sin merge ni Release.
 
 ## Desarrollo para pruebas: 9.8.4 / build 31 (Claude)
 
 CW-CL-041. Estampas al deslizar con la palabra debajo, barra de decisión restaurada,
 nieve corregida, intro 3 bloqueada hasta ver el zoom, anuncios precargados.
-Rama `claude/cocowash-9.8.4`. CI e IPA en esta entrada al terminar. Sin merge ni Release.
+Rama `claude/cocowash-9.8.4`, CI 42218631188 success. Sin merge ni Release.
 
 ## Desarrollo para pruebas: 9.8.3 / build 30 (Claude)
 
