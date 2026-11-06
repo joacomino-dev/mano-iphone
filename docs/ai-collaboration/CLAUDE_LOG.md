@@ -471,3 +471,5 @@ bloque de prueba de Google (`CocoWashTestAds`), para no generar tráfico inváli
 iPhone del usuario; la CI comprueba los tres valores en el Info.plist empaquetado.
 Decisiones relevantes: los IDs van en el repositorio público porque no son secretos (viajan
 en cada IPA; el ID de editor está en `app-ads.txt`).
+CI `42286864081` correcta; IPA 0.9.9 (39) de `c94c8b1`, 6 808 429 bytes, sha256
+`22de91ea…ebab`; Info.plist con el ID de app y el bloque reales y `CocoWashTestAds = true`.
