@@ -27,7 +27,7 @@ if(!info.includes('NSPhotoLibraryUsageDescription'))info=info.replace('<key>LSRe
 // Only the development region is Spanish; CFBundleLocalizations keeps en (9.8.1).
 info=info.replace(/(<key>CFBundleDevelopmentRegion<\/key>\s*<string>)[^<]*(<\/string>)/,'$1es$2');
 info=info.replace(/(<key>CFBundleDisplayName<\/key>\s*<string>)[^<]*(<\/string>)/,'$1CocoWash$2').replaceAll('MemSwipe','CocoWash').replaceAll('Mano necesita','CocoWash necesita').replaceAll('Mano organiza','CocoWash organiza');
-project=fs.readFileSync(pbx,'utf8').replace(/MARKETING_VERSION = [^;]+;/g,'MARKETING_VERSION = 0.9.9;').replace(/CURRENT_PROJECT_VERSION = [^;]+;/g,'CURRENT_PROJECT_VERSION = 37;');
+project=fs.readFileSync(pbx,'utf8').replace(/MARKETING_VERSION = [^;]+;/g,'MARKETING_VERSION = 0.9.9;').replace(/CURRENT_PROJECT_VERSION = [^;]+;/g,'CURRENT_PROJECT_VERSION = 38;');
 fs.writeFileSync(pbx,project);
 // Landscape is intentionally unsupported for the card-hand UI in this first build.
 info=info.replace(/\s*<string>UIInterfaceOrientationLandscapeLeft<\/string>/g,'').replace(/\s*<string>UIInterfaceOrientationLandscapeRight<\/string>/g,'');

@@ -111,12 +111,16 @@ export function SessionDone({ stats, pending, pendingBytes, pendingPartial, agai
       <div className="is-favorite"><dt>{t('Favoritas')}</dt><dd><AnimatedNumber value={stats.favorite}/></dd></div>
     </motion.dl> : <motion.p {...rise(reduced, .18)}>{t('Tu progreso está a salvo. Sigue cuando quieras.')}</motion.p>}
     {stats.later > 0 && !freed && <motion.p {...rise(reduced, .2)} className="done-later"><ClockCountdownIcon size={18} weight="bold"/>{tn('laterWaiting', stats.later)}</motion.p>}
+    </div>
+    {/* 0.9.9.1 (38): the buttons live outside the body, between it and the letter,
+        so they are always whole and never under the ad; the body drops what does
+        not fit (prototype.css, container «done»). */}
     <motion.div {...rise(reduced, .24)} className={`status-actions ${freed && emptyDeleted ? 'is-pair' : ''}`}>
       {freed && emptyDeleted && <button className="danger-empty" onClick={emptyDeleted}><ArrowSquareOutIcon size={18} weight="bold"/>{t('Abrir Fotos')}</button>}
       {pending > 0 && <button className="primary-empty" onClick={review}><EyeIcon size={20} weight="bold"/>{t('Una última mirada ({n})', { n: pending })}</button>}
       <button className={pending > 0 ? 'secondary-empty' : 'primary-empty'} onClick={again}>{t('Seguir revisando')}<CaretRightIcon size={18} weight="bold" className="flip-rtl"/></button>
       {pending > 0 && <p className="status-hint">{pendingLabel ? parts(tn(pendingPartial ? 'pendingFreeAtLeast' : 'pendingFree', pending), { amount: <strong key="amount">{pendingLabel}</strong> }) : t('Lo marcado para eliminar se guarda para la próxima ronda si no eliminas ahora.')}</p>}
     </motion.div>
-    </div>{monetization}
+    {monetization}
   </main>;
 }

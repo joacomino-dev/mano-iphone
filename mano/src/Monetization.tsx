@@ -19,7 +19,7 @@ const Store = registerPlugin<{
   buy(input: { id: string }): Promise<Status & { outcome: Outcome }>;
   restore(): Promise<Status>;
   prepare(): Promise<{ ready: boolean }>;
-  show(input: { x: number; y: number; width: number; height: number; deck: boolean; style: 'deck' | 'inline'; hidden: boolean; labels: Record<string, string> }): Promise<{ shown: boolean }>;
+  show(input: { x: number; y: number; width: number; height: number; deck: boolean; style: 'deck' | 'inline'; hidden: boolean; labels: Record<string, string> }): Promise<{ shown: boolean; retry?: boolean }>;
   hide(): Promise<void>;
   privacy(): Promise<void>;
   addListener(event: 'purchaseChanged' | 'adDismissed', cb: () => void): Promise<{ remove(): Promise<void> }>;
@@ -58,6 +58,9 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
   };
   useEffect(() => {
     if (!available) return;
+    // 0.9.9.1 (38): a fresh page owns no letter. If iOS reloaded the page while
+    // one was on screen, take it away before anything else is drawn.
+    void Store.hide().catch(() => {});
     try { activeMs.current = Math.min(INTRO_MS, Math.max(0, Number(localStorage.getItem(key)) || 0)); } catch { /* optional */ }
     setLoadedTime(true);
     let alive = true;
@@ -175,6 +178,8 @@ export function AdSlot({ where, money }: { where: Placement; money: Monetization
       sent = key;
       void Store.show({ ...coords, labels }).then(result => {
         if (disposed) return;
+        // Not active yet (coming back from the background): ask again shortly.
+        if (!result.shown && result.retry) { window.setTimeout(() => { if (!disposed) { sent = ''; kick(); } }, 300); return; }
         if (!result.shown) { if (!hidden) latest.current.clear(); return; }
         if (!shown) { shown = true; latest.current.shown(where); setCovered(true); }
       }).catch(() => { if (!disposed) latest.current.clear(); }).finally(() => {
@@ -203,12 +208,15 @@ export function AdSlot({ where, money }: { where: Placement; money: Monetization
       if (!idleSince || now - idleSince < 300) frame = requestAnimationFrame(tick);
     };
     const kick = () => { idleSince = 0; if (!frame) frame = requestAnimationFrame(tick); };
+    // Back from the background the native letter was taken down (stashCard):
+    // send the frame again once the page has settled, even if it did not move.
+    const visibility = () => { sent = ''; stillSince = performance.now(); kick(); };
     frame = requestAnimationFrame(tick);
     const observer = new ResizeObserver(kick);
     if (node.current) observer.observe(node.current);
     window.addEventListener('scroll', kick, true);
     window.addEventListener('resize', kick);
-    document.addEventListener('visibilitychange', kick);
+    document.addEventListener('visibilitychange', visibility);
     const slow = window.setInterval(kick, 500);
     return () => {
       disposed = true;
@@ -217,7 +225,7 @@ export function AdSlot({ where, money }: { where: Placement; money: Monetization
       observer.disconnect();
       window.removeEventListener('scroll', kick, true);
       window.removeEventListener('resize', kick);
-      document.removeEventListener('visibilitychange', kick);
+      document.removeEventListener('visibilitychange', visibility);
       void Store.hide().catch(() => {});
     };
   }, [where]);

@@ -429,3 +429,27 @@ Validaciones: 119 Node, runtime 28, builds; Playwright: sección Ayuda sin desbo
 `openLink` con la URL correcta; web: 4 páginas, 22 preguntas, enlaces y anclas.
 CI `42254333901` correcta; IPA 0.9.9 (37) de `ff15abe`, 6 807 273 bytes, sha256
 `72104d7c…74cc`. Prompt para publicar la web: `docs/ai-handoff/PROMPT_WEB_DOMINIO.md`.
+
+### CW-CL-048 — 0.9.9.1 (38): resumen sin botones bajo el anuncio y sin anuncio huérfano
+Fecha: 2026-11-06, America/Bogota
+Agente: Claude
+Estado: completada; pendiente de prueba física.
+Base Git / commit: `main` (`cee57de`) → este commit.
+Problemas (usuario): (1) en el resumen tras «Eliminar» los botones quedaban debajo del
+anuncio; (2) tras cerrar la app en el resumen y volver, el anuncio flotaba sobre la pantalla
+principal.
+Causas: (1) los botones estaban dentro del cuerpo con `overflow:hidden` y el encaje dependía
+de `@media (max-height)` y `dvh`; en 375×812 el contenido medía 515 px para 500 y con texto
+grande peor. (2) En segundo plano iOS puede terminar el proceso WebContent; Capacitor recarga
+la página sin avisar a los plugins y la tarjeta nativa seguía en la vista.
+Cambios: (1) Botones fuera del cuerpo, entre él y la carta; el cuerpo es contenedor
+`done/size` y oculta por orden nota, línea de elementos, personajes, título de pasos y sello
+con umbrales en em; último recurso, desplazamiento, nunca recorte. El par de botones pasa a
+dos filas si no cabe (sin cortar etiquetas); en pantallas de 375 px se oculta la flecha para
+que quepan en una. (2) Nativo: al pasar a segundo plano la carta se retira y su anuncio se
+guarda; si la app no está activa, `show` oculta y pide reintento en vez de destruir el
+anuncio. Web: al arrancar llama a `hide`; al volver reenvía el marco y reintenta a los 300 ms.
+Validaciones: Playwright en SE, mini, 390, 393, Pro Max, texto 125 % y 150 %, en es, de, fr,
+it, ar y ja: nada se solapa con la carta, botones enteros y visibles, sin recortes. Puente
+simulado: `hide` al arrancar y reintento que vuelve a colocar la carta. 119 Node, runtime
+28, builds.

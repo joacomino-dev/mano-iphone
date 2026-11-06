@@ -970,7 +970,6 @@
 /* «Una última mirada»: letter and buttons in a fixed footer; only the photos scroll. */
 .native-sheet .sheet-footer{flex:none;padding:var(--cw-space-3) var(--cw-space-5) calc(env(safe-area-inset-bottom) + var(--cw-space-3));border-top:1px solid var(--cw-line);background:var(--cw-sheet-native)}
 /* Summary: fixed, never scrolls; the letter stays put. */
-@media (max-height:820px){.session-done.has-letter:not(.is-freed) .character-pair,.session-done.has-letter:not(.is-freed) .status-character{display:none}}
 .freed-note{max-width:30ch;font-weight:500;color:var(--cw-ink)!important}
 .status-actions.is-pair{flex-direction:row;flex-wrap:wrap;justify-content:center}
 .danger-empty{display:flex;align-items:center;gap:var(--cw-space-2);min-height:var(--cw-control);padding:0 var(--cw-space-5);border:0;border-radius:var(--cw-radius-pill);background:var(--cw-action-danger);color:var(--cw-on-action-danger);font-weight:600;box-shadow:var(--cw-shadow-press)}
@@ -987,7 +986,6 @@
 .freed-steps li::before{content:counter(step);display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--cw-action-danger);color:var(--cw-on-action-danger);font:600 12px/1 var(--cw-font);font-variant-numeric:tabular-nums}
 .session-done .done-freed{gap:2px}
 .session-done .freed-amount{font-size:36px}
-@media (max-height:740px){.session-done.has-letter .done-stats{display:none}}
 /* Summary: its content scrolls only if it must (small phone, large text);
    the fixed letter sits below, outside the scroll, and never moves. */
 .session-done>.done-body{flex:1 1 auto;min-height:0;width:100%;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;display:flex;flex-direction:column;align-items:center;justify-content:safe center;gap:var(--cw-space-3)}
@@ -1086,10 +1084,6 @@ input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;u
 .session-done.is-freed .done-freed{padding:var(--cw-space-2) var(--cw-space-4) 0}
 .session-done.is-freed .freed-how{margin-top:var(--cw-space-3);gap:4px;padding:10px 12px}
 .session-done.is-freed .freed-steps{gap:2px}
-.session-done.is-freed .status-actions{margin-top:var(--cw-space-2)}
-@media (max-height:780px){.session-done.is-freed .freed-note{display:none}.session-done.is-freed .done-stamp{padding:6px 14px;font-size:var(--cw-text-md)}}
-@media (max-height:700px){.session-done.is-freed .freed-items{display:none}}
-@media (max-height:700px){.session-done.is-freed .character-pair img{height:44px}.session-done.is-freed .freed-amount{font-size:32px}.session-done.is-freed .freed-how{margin-top:var(--cw-space-2)}.session-done.is-freed>.done-body{gap:6px}}
 
 /* Filtros › Restablecer: a quiet outlined pill, centred, border in its own colour. */
 .filter-reset{display:flex;justify-content:center;margin:0 0 var(--cw-space-2)}
@@ -1109,3 +1103,29 @@ input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;u
    must be reachable inside the app). Same quiet links as Apoyo. */
 .help-links{display:flex;flex-wrap:wrap;justify-content:center;gap:var(--cw-space-2) var(--cw-space-4)}
 .help-links .text-button{display:inline-flex;align-items:center;gap:6px;color:var(--cw-ink)}
+
+/* 0.9.9.1 (38): the summary cannot put anything under the ad. Three rows: the
+   body (only what fits), the buttons (always whole), the letter. The body
+   measures its own height (container «done»), so what it drops follows the real
+   room left — screen, letter and text size alike — instead of guessing from the
+   screen height. Thresholds are in em, so larger text drops parts sooner. As a
+   last resort it scrolls rather than cutting anything off. */
+.session-done>.done-body{container:done/size;overflow-x:hidden;overflow-y:auto}
+.session-done>.status-actions{flex:none;align-self:center;margin-top:var(--cw-space-3)}
+.session-done>.done-body{padding-block:var(--cw-space-3) var(--cw-space-1)}
+.session-done>.status-actions.is-pair{align-self:stretch;margin-inline:auto;flex-wrap:wrap}
+/* Each button keeps its whole label; when both do not fit on one row (larger
+   text, longer languages) the second drops to its own row, full width. */
+.session-done>.status-actions.is-pair>button{flex:1 1 auto;white-space:nowrap;padding-inline:var(--cw-space-4)}
+.session-done>.status-actions.is-pair{container:done-actions/inline-size}
+/* Narrow phones (SE, mini): the decorative arrow goes first so both fit on one row. */
+@container done-actions (max-width:20.6em){.status-actions.is-pair>button{padding-inline:var(--cw-space-3)}.status-actions.is-pair .flip-rtl{display:none}}
+.session-done.is-freed>.done-body{justify-content:safe center}
+.session-done.is-freed .character-pair img{height:clamp(44px,16cqh,112px)}
+.session-done.is-freed .freed-amount{font-size:clamp(30px,10cqh,52px)}
+.session-done:not(.is-freed) .character-pair img,.session-done:not(.is-freed) .status-character img{height:clamp(56px,22cqh,140px);width:auto}
+@container done (max-height:29.5em){.freed-note{display:none}.done-stamp{padding:6px 14px;font-size:var(--cw-text-md)}}
+@container done (max-height:25em){.freed-items{display:none}}
+@container done (max-height:20.5em){.character-pair,.status-character{display:none}}
+@container done (max-height:17.5em){.freed-how>strong{display:none}.done-later{display:none}}
+@container done (max-height:15em){.done-stats{display:none}.done-stamp{display:none}}

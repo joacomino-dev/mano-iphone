@@ -18,6 +18,7 @@ final class CocoMonetizationPlugin: CAPPlugin, CAPBridgedPlugin, NativeAdLoaderD
     private static let products = [annual, lifetime, coffee]
 
     private var updates: Task<Void, Never>?
+    private var lifecycle: Task<Void, Never>?
     private var loader: AdLoader?
     private var loadCall: CAPPluginCall?
     private var loadTracking = false
@@ -41,9 +42,27 @@ final class CocoMonetizationPlugin: CAPPlugin, CAPBridgedPlugin, NativeAdLoaderD
                 if state["adFree"] as? Bool == true { self.invalidateAd() }
             }
         }
+        // 0.9.9.1 (38): a letter never outlives its page. Going to the background
+        // takes it off the screen and keeps its ad; back in the foreground the page
+        // that still wants it places it again (show), while a page iOS reloaded in
+        // the meantime (WebContent process ended) never asks, so nothing is left
+        // floating over the main screen.
+        lifecycle = Task { @MainActor [weak self] in
+            for await _ in NotificationCenter.default.notifications(named: UIApplication.didEnterBackgroundNotification) {
+                guard let self else { return }
+                self.stashCard()
+            }
+        }
     }
 
-    deinit { updates?.cancel() }
+    deinit { updates?.cancel(); lifecycle?.cancel() }
+
+    @MainActor private func stashCard() {
+        guard let card else { return }
+        if prepared == nil { prepared = (card.ad, Date(), tracking) }
+        generation += 1
+        removeCard()
+    }
 
     @MainActor private func entitlements() async -> [String: Any] {
         var expiry: Date?
@@ -249,9 +268,16 @@ final class CocoMonetizationPlugin: CAPPlugin, CAPBridgedPlugin, NativeAdLoaderD
             let rect = CGRect(x: x, y: y, width: width, height: height)
             let inside = webView.bounds.insetBy(dx: -1, dy: -1).contains(rect)
             let hidden = call.getBool("hidden") == true || !inside
-            guard UIApplication.shared.applicationState == .active, ConsentInformation.shared.canRequestAds else {
+            guard ConsentInformation.shared.canRequestAds else {
                 invalidateAd()
                 call.resolve(["shown": false])
+                return
+            }
+            // Leaving or coming back (not active yet): keep the ad, keep the letter
+            // hidden, and let the page ask again in a moment.
+            guard UIApplication.shared.applicationState == .active else {
+                card?.conceal(true)
+                call.resolve(hidden ? ["shown": card != nil] : ["shown": false, "retry": true])
                 return
             }
             if let card {
@@ -400,7 +426,11 @@ final class CocoNativeAdCard: UIView {
         return UIColor(patternImage: image)
     }()
 
+    /// Kept so the letter can be stashed and placed again after the background.
+    let ad: NativeAd
+
     init(ad: NativeAd, style: Style, labels: Labels) {
+        self.ad = ad
         self.style = style
         self.labels = labels
         super.init(frame: .zero)
