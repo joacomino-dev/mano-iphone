@@ -20,3 +20,13 @@ export function readTestRounds(): number {
   try { const n = Number(localStorage.getItem(ROUNDS_KEY)); return Number.isInteger(n) && n > 0 ? Math.min(n, 500) : 0; } catch { return 0; }
 }
 export function saveTestRounds(rounds: number) { try { localStorage.setItem(ROUNDS_KEY, String(rounds)); } catch { /* optional */ } }
+
+/** «Modo developer › Anuncios» (development only): off shows the app as someone
+ * who paid to remove ads — no letters anywhere, Apoyo still there. */
+const ADS_OFF_KEY = 'cocowash-dev-ads-off-v1';
+export function readAdsOff(): boolean {
+  try { return localStorage.getItem(ADS_OFF_KEY) === '1'; } catch { return false; }
+}
+export function saveAdsOff(off: boolean) {
+  try { if (off) localStorage.setItem(ADS_OFF_KEY, '1'); else localStorage.removeItem(ADS_OFF_KEY); } catch { /* optional */ }
+}

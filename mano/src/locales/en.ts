@@ -68,7 +68,6 @@ const table: Record<string, string> = {
   'Automático': 'Automatic',
   'Biblioteca': 'Library',
   'Modo de prueba': 'Test mode',
-  'Practicar sin tocar Fotos': 'Practice without touching Photos',
   'Introducción': 'Introduction',
   'Ver la introducción de nuevo': 'Watch the introduction again',
   // Filters
@@ -448,5 +447,8 @@ const table: Record<string, string> = {
   'Preguntas frecuentes': 'Frequently asked questions',
   'Política de privacidad': 'Privacy policy',
   'No se pudo abrir el enlace.': 'Couldn’t open the link.',
+  'Modo developer': 'Developer mode',
+  'Anuncios': 'Ads',
+  'Apágalos para ver la app como quien pagó por quitarlos.': 'Turn them off to see the app as someone who paid to remove them.',
 };
 export default table;

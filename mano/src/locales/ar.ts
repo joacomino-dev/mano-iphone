@@ -64,7 +64,6 @@ const table: Record<string, string> = {
   'Automático': 'تلقائي',
   'Biblioteca': 'المكتبة',
   'Modo de prueba': 'وضع التجربة',
-  'Practicar sin tocar Fotos': 'تدرّب دون المساس بالصور',
   'Introducción': 'المقدمة',
   'Ver la introducción de nuevo': 'شاهد المقدمة مرة أخرى',
   'Elegir fecha': 'اختر تاريخًا',
@@ -435,5 +434,8 @@ const table: Record<string, string> = {
   'Preguntas frecuentes': 'الأسئلة الشائعة',
   'Política de privacidad': 'سياسة الخصوصية',
   'No se pudo abrir el enlace.': 'تعذّر فتح الرابط.',
+  'Modo developer': 'وضع المطوّر',
+  'Anuncios': 'الإعلانات',
+  'Apágalos para ver la app como quien pagó por quitarlos.': 'أوقفها لترى التطبيق كما يراه من دفع لإزالتها.',
 };
 export default table;

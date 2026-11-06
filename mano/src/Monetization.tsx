@@ -32,7 +32,8 @@ const PRELOAD_MS = 8_000;
 /** testing: «Modo de prueba» — same placements, much shorter cadence, separate counters.
  * `cleaning` counts active sorting time; `warm` also lets the next letter load
  * while the round summary or «Una última mirada» is open. */
-export function useMonetization(enabled: boolean, cleaning: boolean, testing = false, warm = false) {
+/** `off`: «Modo developer › Anuncios» switched off — no letter is offered or kept. */
+export function useMonetization(enabled: boolean, cleaning: boolean, testing = false, warm = false, off = false) {
   const rules = testing ? TEST_RULES : DEFAULT_RULES;
   const available = native && enabled;
   const [status, setStatus] = useState<Status>();
@@ -94,7 +95,7 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
       last = now;
       // 9.8.3: the next letter may load while a fixed one is on screen (the review
       // letter, then the summary one); only the pile letter waits for its turn.
-      if (document.hidden || !status || status.adFree || (activeMs.current < PRELOAD_MS && !wanted.current) || ready.current || loading.current || current.current === 'deck' || now < nextAttempt.current) return;
+      if (off || document.hidden || !status || status.adFree || (activeMs.current < PRELOAD_MS && !wanted.current) || ready.current || loading.current || current.current === 'deck' || now < nextAttempt.current) return;
       loading.current = true;
       nextAttempt.current = now + 30_000;
       void Store.prepare().then(value => {
@@ -105,10 +106,15 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
       }).catch(() => {}).finally(() => { loading.current = false; });
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [available, cleaning, warm, loadedTime, status, placement]);
+  }, [available, cleaning, warm, loadedTime, status, placement, off]);
 
+  useEffect(() => {
+    if (!available || !off) return;
+    clear();
+    void Store.hide().catch(() => {});
+  }, [available, off]);
   const offer = (where: Placement) => {
-    if (!ready.current || current.current || !status || status.adFree) return false;
+    if (off || !ready.current || current.current || !status || status.adFree) return false;
     ready.current = false;
     current.current = where;
     setPlacement(where);
@@ -117,13 +123,13 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
   return {
     available, placement, awaiting, status, setStatus, clear,
     review(ids: string[]) {
-      if (!available || status?.adFree) return;
+      if (!available || off || status?.adFree) return;
       cadence.review(ids);
       if (cadence.between(activeMs.current) && !offer('deck')) cadence.skipDeck();
     },
     /** «Una última mirada»: always a fixed letter under its buttons (9.8.3). */
     reviewing() {
-      if (!available || !status || status.adFree) return;
+      if (!available || off || !status || status.adFree) return;
       // A pile letter waiting behind the sheet is never seen: the review letter takes its turn.
       if (current.current === 'deck') { current.current = undefined; setPlacement(undefined); }
       if (current.current) return;
@@ -136,7 +142,7 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
     /** The «Espacio liberado» summary: always a fixed letter (9.8.3). */
     finish() {
       clear();
-      if (!available || !status || status.adFree) return;
+      if (!available || off || !status || status.adFree) return;
       if (!offer('finish')) want('finish');
     },
     shown(where: Placement) {

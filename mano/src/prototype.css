@@ -1126,6 +1126,46 @@ input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;u
 .session-done:not(.is-freed) .character-pair img,.session-done:not(.is-freed) .status-character img{height:clamp(56px,22cqh,140px);width:auto}
 @container done (max-height:29.5em){.freed-note{display:none}.done-stamp{padding:6px 14px;font-size:var(--cw-text-md)}}
 @container done (max-height:25em){.freed-items{display:none}}
-@container done (max-height:20.5em){.character-pair,.status-character{display:none}}
-@container done (max-height:17.5em){.freed-how>strong{display:none}.done-later{display:none}}
-@container done (max-height:15em){.done-stats{display:none}.done-stamp{display:none}}
+@container done (max-height:17em){.character-pair,.status-character{display:none}}
+@container done (max-height:21em){.freed-how>strong{display:none}.done-later{display:none}}
+@container done (max-height:14em){.done-stats{display:none}.done-stamp{display:none}}
+
+/* 0.9.9.1 (40): sheets close with a swipe down from the top (sheetDrag.ts). The
+   grabber says so; the header and the tabs take the drag instead of scrolling. */
+.sheet-grabber{position:absolute;top:6px;left:50%;z-index:2;width:36px;height:5px;margin-left:-18px;border-radius:3px;background:color-mix(in srgb,var(--cw-ink) 22%,transparent)}
+.sheet-grabber::after{content:'';position:absolute;inset:-6px -40px -10px}
+.native-sheet>header,.sheet-grabber,.native-sheet .sheet-tabs{touch-action:none}
+
+/* 0.9.9.1 (40): the summary after «Eliminar», redesigned. One headline — the
+   amount, in the brand's rounded face, number large and unit small — under
+   Coqui and Memo standing tall with the «Eliminado» stamp slapped across their
+   feet like a postmark. Every size follows one variable tied to the room the
+   body really has (--hero, in cqh), so with or without the letter the space is
+   used, never overflowed; the container queries above still drop parts last. */
+.session-done.is-freed>.done-body{--hero:min(clamp(64px,30cqh,212px),46cqw);gap:clamp(4px,1.4cqh,14px)}
+.session-done.is-freed .character-pair{gap:clamp(2px,3cqw,18px);margin:0;filter:drop-shadow(0 10px 14px rgba(6,29,32,.22))}
+.session-done.is-freed .character-pair img{height:var(--hero);width:auto}
+.session-done.is-freed .character-pair>:nth-child(2) img{height:calc(var(--hero) * .84)}
+.session-done.is-freed .done-stamp{position:relative;z-index:1;margin-top:calc(var(--hero) * -.2);padding:clamp(5px,1.2cqh,9px) clamp(14px,4cqw,22px);font-size:clamp(14px,2.8cqh,20px);box-shadow:0 4px 10px rgba(60,30,14,.22)}
+.session-done.is-freed .done-freed{width:100%;max-width:360px;padding:0}
+.session-done.is-freed .freed-amount{display:flex;align-items:baseline;justify-content:center;gap:.14em;margin-top:clamp(2px,1cqh,8px);
+  font:600 clamp(50px,15cqh,104px)/.92 var(--cw-font-brand);letter-spacing:-.025em;color:var(--cw-turquoise-deep);font-variant-numeric:tabular-nums}
+.session-done.is-freed .amount-unit{font-size:.4em;letter-spacing:.02em;color:var(--cw-turquoise)}
+.session-done.is-freed .freed-amount.is-plain .amount-num{font-size:.62em}
+.session-done.is-freed .freed-label{margin-top:clamp(2px,.8cqh,6px);font:600 clamp(15px,2.6cqh,19px)/1.2 var(--cw-font);color:var(--cw-ink)}
+.session-done.is-freed .freed-items{margin-top:2px;font-size:var(--cw-text-sm)}
+.session-done.is-freed .freed-how{margin-top:clamp(8px,2.4cqh,20px)}
+@container done (max-height:20em){
+  .session-done.is-freed .character-pair img{height:clamp(56px,24cqh,90px)}
+  .session-done.is-freed .character-pair>:nth-child(2) img{height:calc(clamp(56px,24cqh,90px) * .84)}
+  .session-done.is-freed .done-stamp{margin-top:calc(clamp(56px,24cqh,90px) * -.2)}
+  .session-done.is-freed .freed-how{margin-top:6px}
+}
+/* Coqui, Memo and the stamp are one block (.done-hero). Without the letter the
+   spare height is shared evenly around the three blocks instead of pooling
+   above the buttons. */
+.done-hero{display:flex;flex-direction:column;align-items:center}
+.session-done:not(.is-freed) .done-hero{gap:var(--cw-space-3)}
+.session-done.is-freed:not(.has-letter)>.done-body{justify-content:space-evenly}
+.session-done.is-freed:not(.has-letter) .freed-how{padding:10px var(--cw-space-4)}
+.session-done.is-freed:not(.has-letter) .freed-steps li{font-size:var(--cw-text-md)}

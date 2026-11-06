@@ -5,7 +5,7 @@ import { motion, useReducedMotion } from 'motion/react';
 export const SPLASH_MS = 1500;
 /** Shown faintly on the launch card; kept in step with scripts/configure-ios.mjs
  * (the bundle says 0.9.9: Apple allows three numbers; the fourth is ours). */
-export const APP_VERSION = '0.9.9.1 (39)';
+export const APP_VERSION = '0.9.9.1 (40)';
 
 /** Launch mark, like a studio card: the full CocoWash logo — Coqui washing Memo
  * with «CocoWash» to the right — centred, and the maker's mark (Zángano's

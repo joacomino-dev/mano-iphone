@@ -24,7 +24,9 @@ import { Onboarding } from './Onboarding';
 import { Splash } from './Splash';
 import { AccessScreen, PreparingScreen, LoadErrorScreen, SessionDone, EMPTY_STATS, readStats, readLifetime, saveLifetime, type RoundStats } from './Screens';
 import { AdRoom, AdSlot, PurchaseOptions, useMonetization } from './Monetization';
-import { readTestMode, setTestMode, readTestRounds, saveTestRounds } from './testMode';
+import { readTestMode, setTestMode, readTestRounds, saveTestRounds, readAdsOff, saveAdsOff } from './testMode';
+import { useSheetDrag } from './sheetDrag';
+import { DEVELOPER } from './channel';
 import { DisplaySettingsPanel } from './DisplaySettings';
 import { formatNumber, locale, parts, t, tn } from './i18n';
 /** Photos' own confirmation answered «No permitir» (PhotoLibrary.swift CANCELLED). */
@@ -130,6 +132,7 @@ function Seal({ level, hide }: { level: number; hide: () => void }) {
 }
 function Sheet({ open, close, title, description, children, error, returnTo, footer }: { open: boolean; close: () => void; title: string; description: string; children: ReactNode; error?: string; returnTo: string; footer?: ReactNode }) {
   const bodyRef=useRef<HTMLDivElement>(null); const previousDialog=useRef<Element|null>(null);
+  const [sheetNode,setSheetNode]=useState<HTMLDivElement|null>(null); useSheetDrag(sheetNode,open&&isNative,close);
   const restoreFocus=()=>document.getElementById(returnTo)?.focus({preventScroll:true});
   useEffect(()=>{
     if(isNative)return;
@@ -143,7 +146,7 @@ function Sheet({ open, close, title, description, children, error, returnTo, foo
   },[open,returnTo]);
   const content=<div className="mano-sheet-body" ref={bodyRef}>{error&&<p className="sheet-error" role="alert">{error}</p>}{children}{!isNative&&footer}</div>;
   if (!isNative) return <BottomSheet open={open} onOpenChange={v=>!v&&close()} title={title} description={description} snap={.85}>{content}</BottomSheet>;
-  return <Dialog.Root open={open} onOpenChange={v=>!v&&close()}><Dialog.Portal><Dialog.Overlay className="native-shade"/><Dialog.Content className="native-sheet" aria-describedby={undefined} onCloseAutoFocus={e=>{e.preventDefault();restoreFocus();}}><header><div><Dialog.Title asChild><h2>{title}</h2></Dialog.Title><p>{description}</p></div><Dialog.Close asChild><button aria-label={t('Cerrar')}><XIcon size={22}/></button></Dialog.Close></header>{content}{footer&&<div className="sheet-footer">{footer}</div>}</Dialog.Content></Dialog.Portal></Dialog.Root>;
+  return <Dialog.Root open={open} onOpenChange={v=>!v&&close()}><Dialog.Portal><Dialog.Overlay className="native-shade"/><Dialog.Content ref={setSheetNode} className="native-sheet" aria-describedby={undefined} onCloseAutoFocus={e=>{e.preventDefault();restoreFocus();}}><span className="sheet-grabber" aria-hidden="true"/><header><div><Dialog.Title asChild><h2>{title}</h2></Dialog.Title><p>{description}</p></div><Dialog.Close asChild><button aria-label={t('Cerrar')}><XIcon size={22}/></button></Dialog.Close></header>{content}{footer&&<div className="sheet-footer">{footer}</div>}</Dialog.Content></Dialog.Portal></Dialog.Root>;
 }
 function AlbumInput({value,change}:{value:string;change:(value:string)=>void}) {
   return isNative?<input value={value} onChange={e=>change(e.target.value)} maxLength={100} placeholder={t('Por ejemplo, Verano')}/>:<PreviewAlbumInput value={value} change={change}/>;
@@ -232,7 +235,9 @@ function useVideoStore(get: () => VideoStore, asset: Asset | undefined): VideoSt
 }
 export function ManoApp() {
   // «Modo de prueba» runs the phone demo on the iPhone, ads included (testMode.ts).
-  const [testMode]=useState(()=>isNative&&readTestMode());
+  const [testMode]=useState(()=>isNative&&DEVELOPER&&readTestMode());
+  // «Modo developer › Anuncios»: off previews the app without ads (testMode.ts).
+  const [adsOff,setAdsOff]=useState(()=>isNative&&readAdsOff());
   const demo = !isNative||testMode; const key = demo ? 'mano-demo-v1' : 'mano-library-v1';
   const sessionKey=demo?DEMO_SESSION_KEY:LIBRARY_SESSION_KEY;
   const [saved]=useState(()=>readSession(sessionKey));const resumeContext=useRef(saved?.active?saved.context:undefined);
@@ -392,7 +397,7 @@ export function ManoApp() {
   const openFilters=()=>{money.clear();setError('');setSheet('filters');};
   const active=hand[0]; const targetIds=selected.filter(id=>hand.some(a=>a.id===id)); const targets=targetIds.length?targetIds:active?[active.id]:[];
   // Ads (Monetization.tsx): only while cleaning, never over a sheet, the inspector or the splash.
-  const money=useMonetization(isNative,session&&!!active&&!sheet&&!inspect&&!splash,testMode,showDone||sheet==='review');
+  const money=useMonetization(isNative,session&&!!active&&!sheet&&!inspect&&!splash,testMode,showDone||sheet==='review',DEVELOPER&&adsOff);
   const deckAd=money.placement==='deck'&&!sheet&&!inspect&&!splash;
   // «Elegir las demás»: everything but the best shot, ready for «Eliminar».
   const others=(best?hand.filter(a=>a.id!==best):hand).map(a=>a.id);const allPicked=others.length>0&&targetIds.length===others.length&&others.every(id=>targetIds.includes(id));
@@ -684,7 +689,7 @@ export function ManoApp() {
       </div>
       {/* Mounted only when shown: measured while hidden (display:none), the VHS preview
           laid out at zero size and flashed when the tab opened. */}
-      <div hidden={sheetTab!=='settings'}>{sheetTab==='settings'&&<DisplaySettingsPanel display={display} change={setDisplay} geek={!!filter.geek} setGeek={value=>setFilter(f=>({...f,geek:value}))} library={libraryActions} replayIntro={()=>{setSheet(null);setOnboarded(false);haptic('selection');}} testing={isNative?{on:testMode,set:on=>setTestMode(on)}:undefined}/>}</div>
+      <div hidden={sheetTab!=='settings'}>{sheetTab==='settings'&&<DisplaySettingsPanel display={display} change={setDisplay} geek={!!filter.geek} setGeek={value=>setFilter(f=>({...f,geek:value}))} library={libraryActions} replayIntro={()=>{setSheet(null);setOnboarded(false);haptic('selection');}} testing={isNative&&DEVELOPER?{on:testMode,set:on=>setTestMode(on),ads:!adsOff,setAds:on=>{saveAdsOff(!on);setAdsOff(!on);haptic('selection');}}:undefined}/>}</div>
       {money.available&&<div hidden={sheetTab!=='support'}>{sheet==='filters'&&sheetTab==='support'&&<PurchaseOptions money={money}/>}</div>}
     </Sheet>
     <Sheet open={sheet==='albums'} close={()=>setSheet(null)} title={t('Guardar en un álbum')} description={t('Se conserva y pasa a la siguiente. También sigue en tu carrete.')} error={error} returnTo="album-trigger"><p className="sheet-intro">{parts(tn('selected',targets.length),{n:<strong key="n">{formatNumber(targets.length)}</strong>})}</p><button className="album-row album-new" onClick={()=>setCreatingAlbum(v=>!v)} disabled={busy}><span className="row-icon"><PlusIcon size={20} weight="bold"/></span>{t('Crear álbum nuevo')}</button>{creatingAlbum&&<div className="new-album"><label className="field">{t('Nombre del álbum')}<AlbumInput value={newAlbum} change={setNewAlbum}/></label><button className="sheet-action" onClick={createAlbum} disabled={busy||!newAlbum.trim()}>{tn('createAndAdd',targets.length)}</button></div>}{albums.map(a=><button className="album-row" key={a.id} onClick={()=>addAlbum(a)} disabled={busy}><span className="row-icon"><FolderOpenIcon size={20}/></span>{a.title}<CaretRightIcon size={16} weight="bold" className="flip-rtl"/></button>)}</Sheet>

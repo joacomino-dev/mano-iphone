@@ -49,7 +49,7 @@ export function DisplaySettingsPanel({ display, change, geek, setGeek, library, 
   display: DisplaySettings; change: (next: DisplaySettings) => void; geek: boolean; setGeek: (value: boolean) => void;
   library: ReactNode; replayIntro: () => void;
   /** iPhone only, until 1.0: «Modo de prueba» (testMode.ts). */
-  testing?: { on: boolean; set: (on: boolean) => void };
+  testing?: { on: boolean; set: (on: boolean) => void; ads: boolean; setAds: (on: boolean) => void };
 }) {
   const photo = display.photo, video = display.video;
   const setPhoto = (patch: Partial<typeof photo>) => change({ ...display, photo: { ...photo, ...patch } });
@@ -105,9 +105,10 @@ export function DisplaySettingsPanel({ display, change, geek, setGeek, library, 
     <Section icon={<BooksIcon size={18}/>} title={t('Biblioteca')}>
       <div className="settings-actions">{library}</div>
     </Section>
-    {testing && <Section icon={<FlaskIcon size={18}/>} title={t('Modo de prueba')} className="test-mode-field">
+    {testing && <Section icon={<FlaskIcon size={18}/>} title={t('Modo developer')} className="test-mode-field">
       <div className="settings-group">
-        <Switch label={t('Practicar sin tocar Fotos')} hint={t('Postales de ejemplo: nada toca tu biblioteca. Anuncios de prueba frecuentes.')} checked={testing.on} change={testing.set}/>
+        <Switch label={t('Modo de prueba')} hint={t('Postales de ejemplo: nada toca tu biblioteca. Anuncios de prueba frecuentes.')} checked={testing.on} change={testing.set}/>
+        <Switch label={t('Anuncios')} hint={t('Apágalos para ver la app como quien pagó por quitarlos.')} checked={testing.ads} change={testing.setAds}/>
       </div>
     </Section>}
     <Section icon={<GraduationCapIcon size={18}/>} title={t('Introducción')}>

@@ -37,10 +37,16 @@ Quién: **U** = usuario (cuentas, dinero, decisiones legales, arte), **C** = Cla
 1. ~~Fusionar las ramas 9.8.x en `main`~~ — hecho (0.9.9.1, autorizado por el usuario).
 2. **Retirar el modo de prueba**: sección en Ajustes, chip, `testMode.ts`, rondas de
    postales y el flag `CocoWashTestAds` del flujo de publicación.
-3. ~~IDs reales de AdMob~~ — en la configuración Release desde 0.9.9.1 (39): app
+3. ~~IDs reales de AdMob~~ — en la rama **`release`** desde 0.9.9.1 (40): app
    `ca-app-pub-5676353604168025~4587143429`, bloque nativo `…/8219266678` (no son secretos:
-   van en cada IPA y el ID de editor está en `app-ads.txt`). Las IPA de desarrollo siguen con
-   el bloque de prueba de Google (`CocoWashTestAds`); la CI lo comprueba.
+   van en cada IPA y el ID de editor está en `app-ads.txt`).
+
+   **Ramas (desde 0.9.9.1 (40)):** `main` es desarrollo — IDs de muestra y bloque de prueba
+   de Google, «Modo developer» en Ajustes (modo de prueba y anuncios sí/no), IPA en cada
+   push (`build-people-dev.yml`). `release` = `main` + un único commit de canal: IDs reales
+   y `DEVELOPER = false` en `mano/src/channel.ts`; `verify-release.yml` lo compila sin firmar
+   y comprueba IDs reales, sin anuncios de prueba ni modo developer. Para publicar: fusionar
+   `main` en `release` (esas dos líneas no se tocan en `main`), subir versión y firmar.
 4. ~~Manifiesto de privacidad~~ — hecho en 0.9.9.1: seguimiento declarado e
    identificador, datos de anuncios, interacción, ubicación aproximada y fallos para
    publicidad de terceros (revisar si cambian los formatos de anuncio).

@@ -64,7 +64,6 @@ const table: Record<string, string> = {
   'Automático': '自動',
   'Biblioteca': 'ライブラリ',
   'Modo de prueba': 'テストモード',
-  'Practicar sin tocar Fotos': '「写真」に触れずに練習',
   'Introducción': 'はじめに',
   'Ver la introducción de nuevo': 'はじめにをもう一度見る',
   'Elegir fecha': '日付を選択',
@@ -435,5 +434,8 @@ const table: Record<string, string> = {
   'Preguntas frecuentes': 'よくある質問',
   'Política de privacidad': 'プライバシーポリシー',
   'No se pudo abrir el enlace.': 'リンクを開けませんでした。',
+  'Modo developer': '開発者モード',
+  'Anuncios': '広告',
+  'Apágalos para ver la app como quien pagó por quitarlos.': 'オフにすると、広告を外した人と同じ画面を確認できます。',
 };
 export default table;

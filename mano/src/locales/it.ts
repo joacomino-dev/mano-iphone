@@ -64,7 +64,6 @@ const table: Record<string, string> = {
   'Automático': 'Automatica',
   'Biblioteca': 'Libreria',
   'Modo de prueba': 'Modalità prova',
-  'Practicar sin tocar Fotos': 'Esercitati senza toccare Foto',
   'Introducción': 'Introduzione',
   'Ver la introducción de nuevo': 'Rivedi l’introduzione',
   'Elegir fecha': 'Scegli una data',
@@ -431,5 +430,8 @@ const table: Record<string, string> = {
   'Preguntas frecuentes': 'Domande frequenti',
   'Política de privacidad': 'Informativa sulla privacy',
   'No se pudo abrir el enlace.': 'Impossibile aprire il link.',
+  'Modo developer': 'Modalità sviluppatore',
+  'Anuncios': 'Annunci',
+  'Apágalos para ver la app como quien pagó por quitarlos.': 'Disattivali per vedere l’app come chi ha pagato per toglierli.',
 };
 export default table;

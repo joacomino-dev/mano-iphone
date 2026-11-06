@@ -73,6 +73,14 @@ export function saveLifetime(key: string, value: Lifetime) { try { localStorage.
  * next round; with any pending, «Una última mirada» leads, since deletion only
  * happens there (Fotos confirms). «Cerrar» in that review comes back here.
  * After «Eliminar N», the reward leads: how much space this round freed. */
+/** «263 MB» → ['263', 'MB']; «9 archivos» → ['9', 'archivos']. Bidi isolates
+ * (Arabic) are dropped: the amount is laid out left to right on its own. */
+export function splitAmount(text: string): [string, string] {
+  const plain = text.replace(/[\u2066-\u2069]/g, '');
+  const match = plain.match(/^(\S+)\s+(.+)$/);
+  return match ? [match[1], match[2]] : [plain, ''];
+}
+
 export function SessionDone({ stats, pending, pendingBytes, pendingPartial, again, review, monetization, emptyDeleted }: { stats: RoundStats; pending: number; pendingBytes: number; pendingPartial: boolean; again: () => void; review: () => void; monetization?: ReactNode; emptyDeleted?: () => void }) {
   const reduced = useReducedMotion();
   const total = stats.keep + stats.discard + stats.favorite + stats.later;
@@ -81,15 +89,21 @@ export function SessionDone({ stats, pending, pendingBytes, pendingPartial, agai
   const pendingLabel = formatBytes(pendingBytes, locale);
   const items = [stats.freedPhotos ? tn('photos', stats.freedPhotos) : '', stats.freedVideos ? tn('videos', stats.freedVideos) : ''].filter(Boolean);
   const compact = !!monetization;
+  // 0.9.9.1 (40): the amount is the headline — the number large, its unit small.
+  const amount = splitAmount(freedLabel ? freedLabel : tn('files', stats.freedPhotos + stats.freedVideos));
   // 9.8.6: after «Eliminar» the screen never scrolls and reads top to bottom —
   // Coqui and Memo celebrate, the stamp says it, the amount leads, then the one
   // step left (Fotos empties «Eliminado recientemente»), then the two ways on.
   return <main className={`status-screen session-done ${compact ? 'has-letter' : ''} ${freed ? 'is-freed' : ''}`}><div className="done-body">
+    <div className="done-hero">
     {total || freed ? <div className="character-pair"><Character pose="coqui-cheer" height={compact ? 96 : 140} motion="hop"/><Character pose="memo-dance" height={compact ? 76 : 110} motion="hop" delay={.2}/></div>
       : <Character pose="memo-calm" height={compact ? 90 : 120} className="status-character" motion="sway"/>}
     <motion.div className="done-stamp" initial={reduced ? false : { scale: 1.6, opacity: 0, rotate: -14 }} animate={{ scale: 1, opacity: 1, rotate: -6 }} transition={{ type: 'spring', stiffness: 380, damping: 18, delay: .05 }} aria-hidden="true">{freed ? t('Eliminado') : t('Guardado')}</motion.div>
+    </div>
     {freed ? <motion.section {...rise(reduced, .12)} className="done-freed" aria-label={t('Espacio por liberar')}>
-      <motion.strong className="freed-amount" initial={reduced ? false : { scale: .6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 16, delay: .25 }}>{freedLabel ? freedLabel : tn('files', stats.freedPhotos + stats.freedVideos)}</motion.strong>
+      <motion.strong className={`freed-amount ${amount[1] ? '' : 'is-plain'}`} dir={freedLabel ? 'ltr' : undefined} initial={reduced ? false : { scale: .6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 16, delay: .25 }}>
+        <span className="amount-num">{amount[0]}</span>{amount[1] && <span className="amount-unit">{amount[1]}</span>}
+      </motion.strong>
       <span className="freed-label">{stats.freedPartial && freedLabel ? t('por liberar, como mínimo') : t('por liberar')}</span>
       <span className="freed-items">{items.length > 1 ? t('{photos} y {videos} en «Eliminado recientemente»', { photos: items[0], videos: items[1] }) : t('{items} en «Eliminado recientemente»', { items: items[0] ?? '' })}</span>
       {/* No API empties «Eliminado recientemente»: the person does it in Fotos (Face ID). */}

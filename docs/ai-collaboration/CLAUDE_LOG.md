@@ -473,3 +473,26 @@ Decisiones relevantes: los IDs van en el repositorio público porque no son secr
 en cada IPA; el ID de editor está en `app-ads.txt`).
 CI `42286864081` correcta; IPA 0.9.9 (39) de `c94c8b1`, 6 808 429 bytes, sha256
 `22de91ea…ebab`; Info.plist con el ID de app y el bloque reales y `CocoWashTestAds = true`.
+
+### CW-CL-050 — 0.9.9.1 (40): resumen rediseñado, modo developer, cerrar hojas deslizando, ramas
+Fecha: 2026-11-06, America/Bogota
+Agente: Claude
+Estado: completada; pendiente de prueba física.
+Base Git / commit: `main` (`6259a26`) → este commit; rama `release` creada encima.
+Cambios realizados:
+- Resumen tras «Eliminar» (frontend-design + ui-ux-pro-max): la cifra es el titular
+  (Fredoka 600, número grande y unidad pequeña, `splitAmount`), Coqui y Memo grandes con el
+  sello «Eliminado» sobre sus pies (`.done-hero`); todo escala con `--hero` (cqh, con tope
+  por ancho 46cqw). Sin carta, el alto sobrante se reparte entre bloques.
+  Medido con y sin carta en SE, mini, 390, 393, Pro Max y texto al 125/150 %, en es, de y ar:
+  nada bajo la carta, nada recortado, personajes dentro de la tarjeta.
+  Personajes de 68–165 px con carta y 125–169 px sin ella (antes 52–112); cifra de 50–104 px.
+- Ajustes › «Modo developer» (antes «Modo de prueba»): «Modo de prueba» y «Anuncios»; apagar
+  los anuncios simula a quien pagó por quitarlos (sin cartas, Apoyo visible). Clave
+  `cocowash-dev-ads-off-v1`. Solo con `DEVELOPER` (`src/channel.ts`).
+- Hojas: se cierran deslizando hacia abajo desde la barra de arrastre, la cabecera o las
+  pestañas (`sheetDrag.ts`, ref por callback porque Radix monta el contenido después);
+  probado: sigue al dedo, vuelve si es corto, cierra si es largo.
+- Ramas: `main` vuelve a los IDs de muestra de Google; `release` lleva los reales y
+  `DEVELOPER = false`, verificada por `verify-release.yml`.
+Validaciones: 119 Node, runtime 28, builds web y nativa.

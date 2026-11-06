@@ -1,0 +1,47 @@
+name: Verify CocoWash release
+# The `release` branch is `main` plus the App Store channel: real AdMob IDs and no
+# «Modo developer» (src/channel.ts). This compiles it unsigned and checks both,
+# with no artifact: an App Store build is signed and uploaded separately.
+on:
+  workflow_dispatch:
+  push:
+    branches: [release]
+permissions:
+  contents: read
+concurrency:
+  group: cocowash-release-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  release:
+    if: github.event.repository.private == false && github.ref == 'refs/heads/release'
+    runs-on: xcode-27
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
+    defaults:
+      run:
+        working-directory: mano
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+        timeout-minutes: 10
+      - name: App Store channel (no developer mode)
+        run: grep -q 'export const DEVELOPER = false;' src/channel.ts
+      - name: Verify logic and protected preview
+        run: npm test && npm run check:runtime
+      - name: Build and sync sources
+        run: npm run sync:ios
+      - name: Compile the App Store configuration (unsigned, no artifact)
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/ios CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' build
+          plist=build/ios/Build/Products/Release-iphoneos/App.app/Info.plist
+          test "$(/usr/libexec/PlistBuddy -c 'Print :GADApplicationIdentifier' "$plist")" = 'ca-app-pub-5676353604168025~4587143429'
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CocoNativeAdUnitID' "$plist")" = 'ca-app-pub-5676353604168025/8219266678'
+          if /usr/libexec/PlistBuddy -c 'Print :CocoWashTestAds' "$plist"; then echo 'Test ads flag in a release build'; exit 1; fi
+          if /usr/libexec/PlistBuddy -c 'Print :CocoWashDevelopmentReset' "$plist"; then echo 'Development reset in a release build'; exit 1; fi
+          echo 'RELEASE_OK: real AdMob IDs, no test ads, no developer mode'
