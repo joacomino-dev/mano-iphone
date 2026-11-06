@@ -16,14 +16,13 @@ Quién: **U** = usuario (cuentas, dinero, decisiones legales, arte), **C** = Cla
    gratis, porque vende compras dentro de la app).
 4. **DSA (UE)**: declarar si eres «comerciante». Como hay compras y anuncios, lo normal es
    que sí: tu dirección, teléfono y correo serán públicos en la ficha europea.
-5. **AdMob**: crear la app iOS, una unidad **nativa** y anotar el ID de app y el de unidad.
-   Configurar en «Privacidad y mensajes» el mensaje RGPD y el de estados de EE. UU. (la app
-   ya pide el permiso de rastreo por sí misma desde 0.9.9.1 (37) y limita los anuncios a G).
+5. ~~AdMob~~ — hecho el 2026-11-06 (Codex): app iOS sin publicar, bloque «CocoWash iOS
+   Nativo», clasificación máxima G, mensajes RGPD (6 idiomas) y estados de EE. UU. (inglés de
+   EE. UU., español, español latinoamericano) publicados. **Falta: perfil de pagos (U).**
 6. ~~Web de soporte y privacidad~~ — publicada el 2026-11-06 en
    https://joaquinmino.work/cocowash/ (idéntica a `web/cocowash/` de `3ff1b20`, comprobada).
    ~~Correo `cocowash@joaquinmino.work`~~ — operativo (SPF, DKIM y DMARC en pass).
-   Falta `app-ads.txt` en la raíz: necesita el ID de editor de AdMob (hoy esa ruta devuelve
-   la portada del portafolio con 200; mejor un 404 hasta tener el ID).
+   ~~`app-ads.txt`~~ — publicado en https://joaquinmino.work/app-ads.txt (200 text/plain).
 7. **Marca**: comprobar que «CocoWash» no choca con una marca registrada en tus mercados.
 
 ## Fase 2 · Arte (U)
@@ -38,9 +37,10 @@ Quién: **U** = usuario (cuentas, dinero, decisiones legales, arte), **C** = Cla
 1. ~~Fusionar las ramas 9.8.x en `main`~~ — hecho (0.9.9.1, autorizado por el usuario).
 2. **Retirar el modo de prueba**: sección en Ajustes, chip, `testMode.ts`, rondas de
    postales y el flag `CocoWashTestAds` del flujo de publicación.
-3. **IDs reales de AdMob** en `COCO_ADMOB_APP_ID` y `COCO_ADMOB_NATIVE_UNIT_ID` (hoy son
-   los de prueba de Google). Nunca en un repositorio público si decides que no deben verse;
-   como mínimo, fuera de los registros de la CI.
+3. ~~IDs reales de AdMob~~ — en la configuración Release desde 0.9.9.1 (39): app
+   `ca-app-pub-5676353604168025~4587143429`, bloque nativo `…/8219266678` (no son secretos:
+   van en cada IPA y el ID de editor está en `app-ads.txt`). Las IPA de desarrollo siguen con
+   el bloque de prueba de Google (`CocoWashTestAds`); la CI lo comprueba.
 4. ~~Manifiesto de privacidad~~ — hecho en 0.9.9.1: seguimiento declarado e
    identificador, datos de anuncios, interacción, ubicación aproximada y fallos para
    publicidad de terceros (revisar si cambian los formatos de anuncio).
@@ -91,8 +91,8 @@ Quién: **U** = usuario (cuentas, dinero, decisiones legales, arte), **C** = Cla
 
 1. Enviar a revisión (normalmente 1–3 días). Si rechazan, se responde o se corrige y se
    reenvía.
-2. Lanzamiento manual o programado; vincular la app publicada en AdMob (necesario para que
-   `app-ads.txt` se verifique).
+2. Lanzamiento manual o programado; vincular la app publicada en AdMob (URL de marketing
+   https://joaquinmino.work/cocowash/) y comprobar que `app-ads.txt` figura como verificado.
 
 ## Después del lanzamiento
 

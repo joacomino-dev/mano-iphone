@@ -456,3 +456,18 @@ simulado: `hide` al arrancar y reintento que vuelve a colocar la carta. 119 Node
 CI `42271272158`: el primer intento se colgó en `simctl io screenshot` (la app había
 arrancado bien, según la captura); relanzado, correcto. IPA 0.9.9 (38) de `2940785`,
 6 808 407 bytes, sha256 `3a0ec5f0…fa57`.
+
+### CW-CL-049 — 0.9.9.1 (39): IDs reales de AdMob
+Fecha: 2026-11-06, America/Bogota
+Agente: Claude
+Estado: completada; pendiente de prueba física.
+Base Git / commit: `main` (`6932fbe`) → este commit.
+Cambios realizados: con la cuenta creada por Codex (app sin publicar, bloque nativo, G,
+mensajes RGPD y de estados de EE. UU., `app-ads.txt` verificado), la configuración Release
+lleva `COCO_ADMOB_APP_ID = ca-app-pub-5676353604168025~4587143429` y
+`COCO_ADMOB_NATIVE_UNIT_ID = ca-app-pub-5676353604168025/8219266678`; Debug sigue con los de
+prueba. La IPA de desarrollo usa el ID de app real (carga los mensajes publicados) con el
+bloque de prueba de Google (`CocoWashTestAds`), para no generar tráfico inválido desde el
+iPhone del usuario; la CI comprueba los tres valores en el Info.plist empaquetado.
+Decisiones relevantes: los IDs van en el repositorio público porque no son secretos (viajan
+en cada IPA; el ID de editor está en `app-ads.txt`).
