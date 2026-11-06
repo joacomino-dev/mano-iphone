@@ -40,7 +40,7 @@ from pathlib import Path
 p=Path(os.environ['DATA']);stamp=p/'Library/Preferences/work.joaquin.mano.plist'
 for _ in range(120):
  try:
-  if plistlib.loads(stamp.read_bytes()).get('cocowash-development-data-build')=='9.8.1-28':break
+  if plistlib.loads(stamp.read_bytes()).get('cocowash-development-data-build')=='9.8.2-29':break
  except (OSError,ValueError):pass
  time.sleep(1)
 else:raise SystemExit('Reset did not commit build marker')

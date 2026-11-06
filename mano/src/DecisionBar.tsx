@@ -148,10 +148,9 @@ function pickVariant(room: number, rem: number): { variant: BarVariant; font: nu
   const icon = Math.round(rem * 1.25), arrow = Math.round(rem * .8125), gap = rem * .3125;
   // Arrows only while the word keeps at least 16 px (large iPhones); below
   // that the position and the swipe already say the direction.
-  for (const scale of [1, .94]) {
-    const px = rem * 1.0625 * scale;
-    if (word(px) + icon + arrow + gap * 2 <= room) return { variant: 'full', font: px, icon };
-  }
+  // 9.8.2: no arrow variant. Short words (English) got arrows and long ones
+  // (Spanish) did not; the bar now looks the same in every language.
+  void arrow;
   for (const scale of [1, .94, .88, .82]) {
     const px = rem * 1.0625 * scale;
     if (word(px) + icon + gap <= room) return { variant: 'compact', font: px, icon };

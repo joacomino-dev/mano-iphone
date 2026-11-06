@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
-import { GearSixIcon, ArrowClockwiseIcon, CaretRightIcon, ImagesIcon, EyeIcon, ClockCountdownIcon } from '@phosphor-icons/react';
+import { TrashIcon, GearSixIcon, ArrowClockwiseIcon, CaretRightIcon, ImagesIcon, EyeIcon, ClockCountdownIcon } from '@phosphor-icons/react';
 import { AnimatedNumber, CocoLoader } from './Loader';
 import type { PhotoPermission } from './library';
 import { Character } from './Characters';
@@ -73,7 +73,7 @@ export function saveLifetime(key: string, value: Lifetime) { try { localStorage.
  * next round; with any pending, «Una última mirada» leads, since deletion only
  * happens there (Fotos confirms). «Cerrar» in that review comes back here.
  * After «Eliminar N», the reward leads: how much space this round freed. */
-export function SessionDone({ stats, pending, pendingBytes, pendingPartial, lifetime, again, review, monetization }: { stats: RoundStats; pending: number; pendingBytes: number; pendingPartial: boolean; lifetime: number; again: () => void; review: () => void; monetization?: ReactNode }) {
+export function SessionDone({ stats, pending, pendingBytes, pendingPartial, lifetime, again, review, monetization, emptyDeleted }: { stats: RoundStats; pending: number; pendingBytes: number; pendingPartial: boolean; lifetime: number; again: () => void; review: () => void; monetization?: ReactNode; emptyDeleted?: () => void }) {
   const reduced = useReducedMotion();
   const total = stats.keep + stats.discard + stats.favorite + stats.later;
   const freed = stats.freedPhotos + stats.freedVideos > 0;
@@ -81,7 +81,7 @@ export function SessionDone({ stats, pending, pendingBytes, pendingPartial, life
   const pendingLabel = formatBytes(pendingBytes, locale);
   const items = [stats.freedPhotos ? tn('photos', stats.freedPhotos) : '', stats.freedVideos ? tn('videos', stats.freedVideos) : ''].filter(Boolean);
   // With the fixed letter below, the characters step back so everything fits.
-  const compact = !!monetization;
+  const compact = !!monetization || freed;
   return <main className={`status-screen session-done ${compact ? 'has-letter' : ''}`}>
     {total || freed ? <div className="character-pair"><Character pose="coqui-cheer" height={compact ? 88 : freed ? 120 : 140} motion="hop"/><Character pose="memo-dance" height={compact ? 70 : freed ? 96 : 110} motion="hop" delay={.2}/></div>
       : <Character pose="memo-calm" height={compact ? 90 : 120} className="status-character" motion="sway"/>}
@@ -92,7 +92,7 @@ export function SessionDone({ stats, pending, pendingBytes, pendingPartial, life
       <motion.strong className="freed-amount" initial={reduced ? false : { scale: .6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 16, delay: .3 }}>{freedLabel ? freedLabel : tn('files', stats.freedPhotos + stats.freedVideos)}</motion.strong>
       <span className="freed-items">{items.length > 1 ? t('{photos} y {videos} a «Eliminado recientemente»', { photos: items[0], videos: items[1] }) : t('{items} a «Eliminado recientemente»', { items: items[0] ?? '' })}</span>
       {lifetime > stats.freed && formatBytes(lifetime, locale) && <span className="freed-total">{t('Con CocoWash ya llevas {size}', { size: formatBytes(lifetime, locale)! })}</span>}
-      <small>{t('El espacio vuelve del todo cuando Fotos vacía «Eliminado recientemente» (30 días) o cuando lo vacías tú.')}</small>
+      <small className="freed-note">{t('Para recuperar el espacio ya, vacía «Eliminado recientemente» en Fotos. Si no, Fotos lo hace solo en 30 días.')}</small>
     </motion.section>}
     {total > 0 ? <motion.dl {...rise(reduced, .18)} className="done-stats">
       <div className="is-keep"><dt>{t('Conservadas')}</dt><dd><AnimatedNumber value={stats.keep}/></dd></div>
@@ -100,7 +100,8 @@ export function SessionDone({ stats, pending, pendingBytes, pendingPartial, life
       <div className="is-favorite"><dt>{t('Favoritas')}</dt><dd><AnimatedNumber value={stats.favorite}/></dd></div>
     </motion.dl> : !freed && <motion.p {...rise(reduced, .18)}>{t('Tu progreso está a salvo. Sigue cuando quieras.')}</motion.p>}
     {stats.later > 0 && <motion.p {...rise(reduced, .2)} className="done-later"><ClockCountdownIcon size={18} weight="bold"/>{tn('laterWaiting', stats.later)}</motion.p>}
-    <motion.div {...rise(reduced, .24)} className="status-actions">
+    <motion.div {...rise(reduced, .24)} className={`status-actions ${freed && emptyDeleted ? 'is-pair' : ''}`}>
+      {freed && emptyDeleted && <button className="danger-empty" onClick={emptyDeleted}><TrashIcon size={18} weight="bold"/>{t('Vaciar en Fotos')}</button>}
       {pending > 0 && <button className="primary-empty" onClick={review}><EyeIcon size={20} weight="bold"/>{t('Una última mirada ({n})', { n: pending })}</button>}
       <button className={pending > 0 ? 'secondary-empty' : 'primary-empty'} onClick={again}>{t('Seguir revisando')}<CaretRightIcon size={18} weight="bold" className="flip-rtl"/></button>
       {pending > 0 && <p className="status-hint">{pendingLabel ? parts(tn(pendingPartial ? 'pendingFreeAtLeast' : 'pendingFree', pending), { amount: <strong key="amount">{pendingLabel}</strong> }) : t('Lo marcado para eliminar se guarda para la próxima ronda si no eliminas ahora.')}</p>}

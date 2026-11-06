@@ -77,3 +77,6 @@
 .support-links .text-button { display: inline-flex; align-items: center; gap: 6px; color: var(--cw-ink); }
 @container (max-width: 380px) { .stamp-face { grid-template-columns: auto minmax(0, 1fr); } .stamp-value { grid-column: 2; justify-self: start; margin-top: var(--cw-space-2); } }
 @media (prefers-reduced-motion: reduce) { .support-stamp:not(:disabled):active { transform: none; } }
+/* 9.8.2: «para siempre» as a soft gold stamp (champagne, not brassy). */
+.support-stamp.tone-forever { --face: linear-gradient(140deg, #F1E3BC, #E2C988 55%, #D7BA72); --face-ink: #3B2A10; --face-soft: #5E4A26; --frame: #8E6A22; --art-bg: #F8EDCF; }
+.support-stamp.tone-forever .stamp-face { background: var(--face); box-shadow: inset 0 0 0 1.5px var(--frame), inset 0 0 0 4px #E6CF94, inset 0 0 0 5px rgba(142, 106, 34, .45); }

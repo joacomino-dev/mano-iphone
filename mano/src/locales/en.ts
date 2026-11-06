@@ -341,7 +341,6 @@ const table: Record<string, string> = {
   'CocoWash es gratis': 'CocoWash is free',
   'Sin anuncios hasta el {date}. Gracias por apoyarla.': 'No ads until {date}. Thanks for your support.',
   'Sin anuncios para siempre. Gracias por apoyarla.': 'No ads, forever. Thanks for your support.',
-  'De vez en cuando llega un anuncio entre tus fotos. Con un pase dejan de llegar.': 'Every now and then an ad turns up between your photos. With a pass, they stop.',
   'Activo.': 'Active.',
   'Precio {price}.': 'Price {price}.',
   'Precio no disponible.': 'Price unavailable.',
@@ -405,7 +404,6 @@ const table: Record<string, string> = {
   '{photos} y {videos} a «Eliminado recientemente»': '{photos} and {videos} to Recently Deleted',
   '{items} a «Eliminado recientemente»': '{items} to Recently Deleted',
   'Con CocoWash ya llevas {size}': 'With CocoWash you’re at {size} so far',
-  'El espacio vuelve del todo cuando Fotos vacía «Eliminado recientemente» (30 días) o cuando lo vacías tú.': 'The space comes back fully when Photos empties Recently Deleted (30 days) or when you empty it yourself.',
   'Conservadas': 'Kept',
   'Eliminadas': 'Deleted',
   'Para eliminar': 'To delete',
@@ -446,5 +444,13 @@ const table: Record<string, string> = {
   'Alguna foto ya no está disponible. Actualiza tu selección antes de crear el álbum.': 'A photo is no longer available. Update your selection before creating the album.',
   'Nada seleccionado.': 'Nothing selected.',
   'No se pudo preparar el archivo': 'Couldn’t prepare the file',
+  // 9.8.2
+  'No se borró nada\nSigue en tu cola': 'Nothing deleted\nStill in your queue',
+  'Modo de prueba\nFotos no se abre': 'Test mode\nPhotos stays closed',
+  'Fotos se abre\nen el iPhone': 'Photos opens\non iPhone',
+  'Para recuperar el espacio ya, vacía «Eliminado recientemente» en Fotos. Si no, Fotos lo hace solo en 30 días.': 'To get the space back now, empty Recently Deleted in Photos. Otherwise Photos does it on its own after 30 days.',
+  'Vaciar en Fotos': 'Empty in Photos',
+  'De vez en cuando aparece un anuncio entre tus fotos. Con un pase, CocoWash queda sin anuncios.': 'Every now and then an ad shows up between your photos. A pass makes CocoWash ad-free.',
+  'No se pudo abrir Fotos.': 'Couldn’t open Photos.',
 };
 export default table;

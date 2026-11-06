@@ -332,7 +332,6 @@ const table: Record<string, string> = {
   'CocoWash es gratis': 'CocoWash est gratuit',
   'Sin anuncios hasta el {date}. Gracias por apoyarla.': 'Sans pub jusqu’au {date}. Merci pour ton soutien.',
   'Sin anuncios para siempre. Gracias por apoyarla.': 'Sans pub pour toujours. Merci pour ton soutien.',
-  'De vez en cuando llega un anuncio entre tus fotos. Con un pase dejan de llegar.': 'De temps en temps, une pub arrive entre tes photos. Avec un pass, elles s’arrêtent.',
   'Activo.': 'Actif.',
   'Precio {price}.': 'Prix : {price}.',
   'Precio no disponible.': 'Prix indisponible.',
@@ -394,7 +393,6 @@ const table: Record<string, string> = {
   '{photos} y {videos} a «Eliminado recientemente»': '{photos} et {videos} dans Suppressions récentes',
   '{items} a «Eliminado recientemente»': '{items} dans Suppressions récentes',
   'Con CocoWash ya llevas {size}': 'Avec CocoWash, tu en es déjà à {size}',
-  'El espacio vuelve del todo cuando Fotos vacía «Eliminado recientemente» (30 días) o cuando lo vacías tú.': 'L’espace revient complètement quand Photos vide Suppressions récentes (30 jours) ou quand tu le vides toi-même.',
   'Conservadas': 'Gardées',
   'Eliminadas': 'Supprimées',
   'Para eliminar': 'À supprimer',
@@ -434,5 +432,13 @@ const table: Record<string, string> = {
   'Alguna foto ya no está disponible. Actualiza tu selección antes de crear el álbum.': 'Une photo n’est plus disponible. Mets ta sélection à jour avant de créer l’album.',
   'Nada seleccionado.': 'Rien n’est sélectionné.',
   'No se pudo preparar el archivo': 'Impossible de préparer le fichier',
+  // 9.8.2
+  'No se borró nada\nSigue en tu cola': 'Rien de supprimé\nToujours dans ta file',
+  'Modo de prueba\nFotos no se abre': 'Mode test\nPhotos reste fermé',
+  'Fotos se abre\nen el iPhone': 'Photos s’ouvre\nsur iPhone',
+  'Para recuperar el espacio ya, vacía «Eliminado recientemente» en Fotos. Si no, Fotos lo hace solo en 30 días.': 'Pour récupérer l’espace tout de suite, vide Suppressions récentes dans Photos. Sinon, Photos le fait tout seul au bout de 30 jours.',
+  'Vaciar en Fotos': 'Vider dans Photos',
+  'De vez en cuando aparece un anuncio entre tus fotos. Con un pase, CocoWash queda sin anuncios.': 'De temps en temps, une pub apparaît entre tes photos. Avec un pass, CocoWash passe sans pub.',
+  'No se pudo abrir Fotos.': 'Impossible d’ouvrir Photos.',
 };
 export default table;

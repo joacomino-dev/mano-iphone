@@ -975,3 +975,27 @@
 :is(:lang(ar),:lang(ja)) .brand-notice>span{line-height:1.35}
 /* Counts like 4/20 keep their order inside right-to-left text. */
 .pile-count,.finish-count,.chip-count,.ob-count,.dock-zoom,.video-time{unicode-bidi:isolate;direction:ltr}
+
+/* ================= 9.8.2 ================= */
+/* Loader: the whole ring turns as one compositor layer (smooth while busy). */
+.coco-rotor{display:block;width:100%;height:100%;will-change:transform}
+.coco-rotor svg{display:block;width:100%;height:100%}
+.coco-loader .coco-spin,.coco-loader .coco-arc,.coco-loader .coco-swirl{animation:none!important}
+.coco-loader:not(.is-known) .coco-rotor{animation:cw-turn 1.1s linear infinite}
+@media (prefers-reduced-motion:reduce){.coco-loader .coco-rotor{animation:none!important}}
+/* «Una última mirada»: letter and buttons in a fixed footer; only the photos scroll. */
+.native-sheet .sheet-footer{flex:none;padding:var(--cw-space-3) var(--cw-space-5) calc(env(safe-area-inset-bottom) + var(--cw-space-3));border-top:1px solid var(--cw-line);background:var(--cw-sheet-native)}
+.sheet-footer .review-primary{margin-top:0}
+.sheet-footer .review-primary .sheet-action{min-height:48px}
+.sheet-footer .review-primary .recover-all{margin-bottom:var(--cw-space-2)}
+/* Summary: fixed, never scrolls; the letter stays put. */
+.session-done{overflow:hidden}
+@media (max-height:820px){.session-done.has-letter .character-pair,.session-done.has-letter .status-character{display:none}}
+.freed-note{max-width:30ch;font-weight:500;color:var(--cw-ink)!important}
+.status-actions.is-pair{flex-direction:row;flex-wrap:wrap;justify-content:center}
+.danger-empty{display:flex;align-items:center;gap:var(--cw-space-2);min-height:var(--cw-control);padding:0 var(--cw-space-5);border:0;border-radius:var(--cw-radius-pill);background:var(--cw-action-danger);color:var(--cw-on-action-danger);font-weight:600;box-shadow:var(--cw-shadow-press)}
+.danger-empty:not(:disabled):active{background:#93201A}
+.status-actions.is-pair .primary-empty{padding:0 var(--cw-space-5)}
+.session-done.has-letter .done-freed small.freed-note{display:block}
+.status-actions.is-pair{flex-wrap:nowrap;width:100%;max-width:340px;gap:var(--cw-space-2)}
+.status-actions.is-pair>button{flex:1 1 0;min-width:0;justify-content:center;padding:0 var(--cw-space-3);font-size:.9375rem;line-height:1.2;text-align:center}

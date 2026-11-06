@@ -244,7 +244,7 @@ export function PurchaseOptions({ money }: { money: Monetization }) {
         <h3 id="support-title">{t('CocoWash es gratis')}</h3>
         <p>{status?.adFree
           ? (status.expires ? t('Sin anuncios hasta el {date}. Gracias por apoyarla.', { date: new Date(status.expires).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' }) }) : t('Sin anuncios para siempre. Gracias por apoyarla.'))
-          : t('De vez en cuando llega un anuncio entre tus fotos. Con un pase dejan de llegar.')}</p>
+          : t('De vez en cuando aparece un anuncio entre tus fotos. Con un pase, CocoWash queda sin anuncios.')}</p>
       </div>
     </header>
     <div className="support-stamps">{offers.map(offer => {

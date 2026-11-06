@@ -331,7 +331,6 @@ const table: Record<string, string> = {
   'CocoWash es gratis': 'CocoWashは無料です',
   'Sin anuncios hasta el {date}. Gracias por apoyarla.': '{date}まで広告なし。応援ありがとうございます。',
   'Sin anuncios para siempre. Gracias por apoyarla.': 'ずっと広告なし。応援ありがとうございます。',
-  'De vez en cuando llega un anuncio entre tus fotos. Con un pase dejan de llegar.': '写真の合間に、ときどき広告が届きます。パスがあれば届かなくなります。',
   'Activo.': '有効。',
   'Precio {price}.': '価格：{price}。',
   'Precio no disponible.': '価格は表示できません。',
@@ -393,7 +392,6 @@ const table: Record<string, string> = {
   '{photos} y {videos} a «Eliminado recientemente»': '{photos}と{videos}を「最近削除した項目」へ',
   '{items} a «Eliminado recientemente»': '{items}を「最近削除した項目」へ',
   'Con CocoWash ya llevas {size}': 'CocoWashでこれまでに{size}',
-  'El espacio vuelve del todo cuando Fotos vacía «Eliminado recientemente» (30 días) o cuando lo vacías tú.': '「写真」が「最近削除した項目」を空にしたとき（30日後）、または自分で空にしたときに、容量が完全に戻ります。',
   'Conservadas': '残した',
   'Eliminadas': '削除した',
   'Para eliminar': '削除予定',
@@ -433,5 +431,13 @@ const table: Record<string, string> = {
   'Alguna foto ya no está disponible. Actualiza tu selección antes de crear el álbum.': '一部の写真がもうありません。アルバムを作る前に選択を更新してください。',
   'Nada seleccionado.': '何も選択されていません。',
   'No se pudo preparar el archivo': 'ファイルを準備できませんでした',
+  // 9.8.2
+  'No se borró nada\nSigue en tu cola': '削除していません\nリストに残っています',
+  'Modo de prueba\nFotos no se abre': 'テストモードでは\n「写真」を開きません',
+  'Fotos se abre\nen el iPhone': '「写真」は\niPhoneで開きます',
+  'Para recuperar el espacio ya, vacía «Eliminado recientemente» en Fotos. Si no, Fotos lo hace solo en 30 días.': 'すぐに容量を空けるには、「写真」で「最近削除した項目」を空にしてください。そのままでも30日後に自動で削除されます。',
+  'Vaciar en Fotos': '「写真」で空にする',
+  'De vez en cuando aparece un anuncio entre tus fotos. Con un pase, CocoWash queda sin anuncios.': '写真の合間にときどき広告が表示されます。パスがあれば、CocoWashから広告がなくなります。',
+  'No se pudo abrir Fotos.': '「写真」を開けませんでした。',
 };
 export default table;

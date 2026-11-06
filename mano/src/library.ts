@@ -42,6 +42,7 @@ type LibraryPlugin = {
   addListener(event: 'mediaPreparationProgress', cb: (data: { requestId: string; phase?: 'download' | 'prepare'; progress: number }) => void): Promise<{ remove(): Promise<void> }>;
   permissionStatus(): Promise<{ status: string }>;
   openSettings(): Promise<void>;
+  openPhotos(): Promise<void>;
   manageLimitedAccess(): Promise<{ changed: boolean }>;
   haptic(options: { kind: HapticKind }): Promise<void>;
   place(options: { id: string }): Promise<Place & { retry?: string }>;

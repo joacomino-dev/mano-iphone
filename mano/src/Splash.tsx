@@ -4,7 +4,7 @@ import { motion, useReducedMotion } from 'motion/react';
 /** How long the launch mark stays before it fades (ms). The app loads behind it. */
 export const SPLASH_MS = 1500;
 /** Shown faintly on the launch card; kept in step with scripts/configure-ios.mjs. */
-export const APP_VERSION = '9.8.1 (28)';
+export const APP_VERSION = '9.8.2 (29)';
 
 /** Launch mark, like a studio card: the full CocoWash logo — Coqui washing Memo
  * with «CocoWash» to the right — centred, and the maker's mark (Zángano's

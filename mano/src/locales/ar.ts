@@ -331,7 +331,6 @@ const table: Record<string, string> = {
   'CocoWash es gratis': 'CocoWash مجاني',
   'Sin anuncios hasta el {date}. Gracias por apoyarla.': 'بلا إعلانات حتى {date}. شكرًا لدعمك.',
   'Sin anuncios para siempre. Gracias por apoyarla.': 'بلا إعلانات إلى الأبد. شكرًا لدعمك.',
-  'De vez en cuando llega un anuncio entre tus fotos. Con un pase dejan de llegar.': 'من حين لآخر يصل إعلان بين صورك. ومع الاشتراك تتوقف الإعلانات.',
   'Activo.': 'مفعّل.',
   'Precio {price}.': 'السعر {price}.',
   'Precio no disponible.': 'السعر غير متاح.',
@@ -393,7 +392,6 @@ const table: Record<string, string> = {
   '{photos} y {videos} a «Eliminado recientemente»': '{photos} و{videos} إلى «المحذوفة مؤخرًا»',
   '{items} a «Eliminado recientemente»': '{items} إلى «المحذوفة مؤخرًا»',
   'Con CocoWash ya llevas {size}': 'حرّرت حتى الآن {size} مع CocoWash',
-  'El espacio vuelve del todo cuando Fotos vacía «Eliminado recientemente» (30 días) o cuando lo vacías tú.': 'تعود المساحة كاملة عندما يُفرغ تطبيق الصور «المحذوفة مؤخرًا» (30 يومًا) أو عندما تُفرغه بنفسك.',
   'Conservadas': 'محتفَظ بها',
   'Eliminadas': 'محذوفة',
   'Para eliminar': 'للحذف',
@@ -433,5 +431,13 @@ const table: Record<string, string> = {
   'Alguna foto ya no está disponible. Actualiza tu selección antes de crear el álbum.': 'إحدى الصور لم تعد متاحة. حدّث اختيارك قبل إنشاء الألبوم.',
   'Nada seleccionado.': 'لم يُحدَّد شيء.',
   'No se pudo preparar el archivo': 'تعذّر تجهيز الملف',
+  // 9.8.2
+  'No se borró nada\nSigue en tu cola': 'لم يُحذف شيء\nما زال في قائمتك',
+  'Modo de prueba\nFotos no se abre': 'وضع التجربة\nلا يُفتح تطبيق الصور',
+  'Fotos se abre\nen el iPhone': 'تطبيق الصور\nيُفتح على iPhone',
+  'Para recuperar el espacio ya, vacía «Eliminado recientemente» en Fotos. Si no, Fotos lo hace solo en 30 días.': 'لاستعادة المساحة الآن، أفرغ «المحذوفة مؤخرًا» في تطبيق الصور. وإلا فسيفرغها التطبيق تلقائيًا بعد 30 يومًا.',
+  'Vaciar en Fotos': 'إفراغ في الصور',
+  'De vez en cuando aparece un anuncio entre tus fotos. Con un pase, CocoWash queda sin anuncios.': 'من حين لآخر يظهر إعلان بين صورك. مع الاشتراك يصبح CocoWash بلا إعلانات.',
+  'No se pudo abrir Fotos.': 'تعذّر فتح تطبيق الصور.',
 };
 export default table;

@@ -328,3 +328,12 @@ Cambios realizados: ver [COCOWASH_981](../ai-handoff/COCOWASH_981.md).
 Decisiones relevantes: el usuario pidió 9.8.1 con todas sus observaciones tras probar 9.8; iCloud pasa a descargar por defecto por su pedido.
 Validaciones: 119 Node, TypeScript, runtime 28, builds; capturas `work/qa-981/`; CI en CURRENT_STATE.
 Impacto para Codex: textos visibles pasan por `t()` (clave = español); cualquier texto nuevo debe añadirse a `src/locales/*` o `i18n.test.mjs` falla. Nuevos contratos nativos: `show` con `style/hidden/labels` y `window.CocoLocale`.
+
+### CW-CL-039 — 9.8.2: resumen fijo, pie fijo en revisión, cancelar sin error
+Fecha: 2026-11-05, America/Bogota
+Agente: Claude
+Estado: completada local, pendiente de prueba física e integración.
+Base Git / commit: `claude/cocowash-9.8.2` desde `f2d4102`.
+Cambios realizados: resumen sin desplazamiento con aviso claro y botón rojo «Vaciar en Fotos» (abre Fotos; no hay API para vaciar «Eliminado recientemente»); «Una última mirada» con carta y botones en pie fijo; cargador girando como capa del compositor; barra de decisión sin flechas en todos los idiomas; «No permitir» de Fotos (PHPhotosError 3072) ya no es un error; frase de Apoyo sin doble sentido; sello «para siempre» dorado suave. Plan de skills para 9.8.3 en [PLAN_983_SKILLS](../ai-handoff/PLAN_983_SKILLS.md).
+Validaciones: 120 Node, TypeScript; capturas `work/qa-982/`; CI en CURRENT_STATE.
+Impacto para Codex: nuevo método nativo `openPhotos` (`photos-redirect://`).

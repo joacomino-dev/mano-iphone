@@ -155,6 +155,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "cancelClassify", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "permissionStatus", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "openSettings", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "openPhotos", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "manageLimitedAccess", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "haptic", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "place", returnType: CAPPluginReturnPromise),
@@ -290,6 +291,14 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         DispatchQueue.main.async {
             guard let url = URL(string: UIApplication.openSettingsURLString) else { call.reject("No se pudo abrir Ajustes."); return }
             UIApplication.shared.open(url) { opened in opened ? call.resolve() : call.reject("No se pudo abrir Ajustes.") }
+        }
+    }
+    /// After a deletion: opens Photos so «Eliminado recientemente» can be emptied
+    /// there (no API empties it; only the person can, with Face ID).
+    @objc func openPhotos(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            guard let url = URL(string: "photos-redirect://") else { call.reject("No se pudo abrir Fotos."); return }
+            UIApplication.shared.open(url) { opened in opened ? call.resolve() : call.reject("No se pudo abrir Fotos.") }
         }
     }
     @objc func manageLimitedAccess(_ call: CAPPluginCall) {
@@ -533,6 +542,9 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         DispatchQueue.main.async {
             PHPhotoLibrary.shared().performChanges(block) { success, error in
                 if success { call.resolve(result) }
+                // «No permitir» in Photos' own confirmation (PHPhotosError 3072):
+                // a choice, not a failure — the web side keeps the queue quietly.
+                else if let error, (error as NSError).domain == PHPhotosErrorDomain, (error as NSError).code == PHPhotosError.Code.userCancelled.rawValue { call.reject("Cancelado", "CANCELLED") }
                 else { call.reject(error?.localizedDescription ?? "Fotos no confirmó el cambio. Tu cola se conserva.") }
             }
         }

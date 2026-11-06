@@ -27,6 +27,8 @@ import { AdSlot, PurchaseOptions, useMonetization } from './Monetization';
 import { readTestMode, setTestMode, readTestRounds, saveTestRounds } from './testMode';
 import { DisplaySettingsPanel } from './DisplaySettings';
 import { formatNumber, locale, parts, t, tn } from './i18n';
+/** Photos' own confirmation answered «No permitir» (PhotoLibrary.swift CANCELLED). */
+const cancelled=(e:unknown)=>(e as {code?:string})?.code==='CANCELLED';
 import { InspectorBoundary } from './Boundary';
 import { installErrorReporting } from './diagnostics';
 import { Stamp, DecisionStamp, DecisionIcon, ROMAN, type StampKind } from './Stamp';
@@ -126,7 +128,7 @@ function CardShare({ asset, sharing, share }: { asset: Asset; sharing: boolean; 
 function Seal({ level, hide }: { level: number; hide: () => void }) {
   return <button className="seal" aria-label={t('Conservada, sello {level} de {total}. Ocultar los sellos',{level:ROMAN[level-1],total:LEVELS.length})} onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();hide();}}><Stamp kind="keep" level={level}/></button>;
 }
-function Sheet({ open, close, title, description, children, error, returnTo }: { open: boolean; close: () => void; title: string; description: string; children: ReactNode; error?: string; returnTo: string }) {
+function Sheet({ open, close, title, description, children, error, returnTo, footer }: { open: boolean; close: () => void; title: string; description: string; children: ReactNode; error?: string; returnTo: string; footer?: ReactNode }) {
   const bodyRef=useRef<HTMLDivElement>(null); const previousDialog=useRef<Element|null>(null);
   const restoreFocus=()=>document.getElementById(returnTo)?.focus({preventScroll:true});
   useEffect(()=>{
@@ -139,9 +141,9 @@ function Sheet({ open, close, title, description, children, error, returnTo }: {
     observer.observe(dialog.parentElement??document.body,{childList:true});
     return()=>observer.disconnect();
   },[open,returnTo]);
-  const content=<div className="mano-sheet-body" ref={bodyRef}>{error&&<p className="sheet-error" role="alert">{error}</p>}{children}</div>;
+  const content=<div className="mano-sheet-body" ref={bodyRef}>{error&&<p className="sheet-error" role="alert">{error}</p>}{children}{!isNative&&footer}</div>;
   if (!isNative) return <BottomSheet open={open} onOpenChange={v=>!v&&close()} title={title} description={description} snap={.85}>{content}</BottomSheet>;
-  return <Dialog.Root open={open} onOpenChange={v=>!v&&close()}><Dialog.Portal><Dialog.Overlay className="native-shade"/><Dialog.Content className="native-sheet" aria-describedby={undefined} onCloseAutoFocus={e=>{e.preventDefault();restoreFocus();}}><header><div><Dialog.Title asChild><h2>{title}</h2></Dialog.Title><p>{description}</p></div><Dialog.Close asChild><button aria-label={t('Cerrar')}><XIcon size={22}/></button></Dialog.Close></header>{content}</Dialog.Content></Dialog.Portal></Dialog.Root>;
+  return <Dialog.Root open={open} onOpenChange={v=>!v&&close()}><Dialog.Portal><Dialog.Overlay className="native-shade"/><Dialog.Content className="native-sheet" aria-describedby={undefined} onCloseAutoFocus={e=>{e.preventDefault();restoreFocus();}}><header><div><Dialog.Title asChild><h2>{title}</h2></Dialog.Title><p>{description}</p></div><Dialog.Close asChild><button aria-label={t('Cerrar')}><XIcon size={22}/></button></Dialog.Close></header>{content}{footer&&<div className="sheet-footer">{footer}</div>}</Dialog.Content></Dialog.Portal></Dialog.Root>;
 }
 function AlbumInput({value,change}:{value:string;change:(value:string)=>void}) {
   return isNative?<input value={value} onChange={e=>change(e.target.value)} maxLength={100} placeholder={t('Por ejemplo, Verano')}/>:<PreviewAlbumInput value={value} change={change}/>;
@@ -392,7 +394,7 @@ export function ManoApp() {
   // is a lower bound («al menos») and the button does not state it.
   const freeLabel=formatBytes(reviewBytes.bytes,locale)??'';
   // Native refusals arrive in Spanish (PhotoLibrary.swift): they are keys too (nativeMessages.ts).
-  const messageError=(e:unknown)=>setError(e instanceof Error?t(e.message):t('No se pudo completar la acción. Inténtalo de nuevo.'));
+  const messageError=(e:unknown)=>cancelled(e)?undefined:setError(e instanceof Error?t(e.message):t('No se pudo completar la acción. Inténtalo de nuevo.'));
   const connect=useCallback(async()=>{setLoading(true);setError('');try{
     const access=await Library.authorize();setPermission(access.status as PhotoPermission);if(!['authorized','limited'].includes(access.status))return false;
     const result=await Library.assets();setAssets(savedGroups(result.assets));setState(s=>reconcileLibrary(s,result.assets));setLimited(result.status==='limited');setConnected(true);analysisStarted.current='';setPermission(result.status as PhotoPermission);return savedGroups(result.assets);
@@ -565,10 +567,11 @@ export function ManoApp() {
     setLifetime(p=>{const next={bytes:p.bytes+bytes,items:p.items+gone.length};saveLifetime(lifetimeKey,next);return next;});
     setState(s=>({...s,pending:s.pending.filter(id=>!result.deleted.includes(id)),removed:[...new Set([...s.removed,...result.deleted])],history:[]}));
     money.finish();cancelWarmup();setLock(NO_HAND);setSessionOpen(false);setSheet(null);setSession(false);setShowDone(true);haptic('success');if(demo)setNotice(t('Borrado simulado\nTus fotos, intactas'));else setSpoken(tn('sentToDeleted',result.deleted.length));
-  }catch(e){messageError(e);}finally{setBusy(false);}};
+  }catch(e){if(cancelled(e)){haptic('soft');setNotice(t('No se borró nada\nSigue en tu cola'));}else messageError(e);}finally{setBusy(false);}};
   const play=async(asset:Asset)=>{if(demo){setNotice(testMode?t('Modo de prueba\nsin pantalla completa'):t('Pantalla completa\nsolo en el iPhone'));return;}try{await Library.preview({id:asset.id});}catch(e){messageError(e);}};
   const requestAccess=async():Promise<PhotoPermission>=>{if(demo)return 'authorized';try{const {status}=await Library.authorize();setPermission(status as PhotoPermission);if(['authorized','limited'].includes(status)){initialLibrary.current=null;loadLibrary();}return status as PhotoPermission;}catch{return 'denied';}};
   const finishOnboarding=(status:PhotoPermission)=>{try{localStorage.setItem(ONBOARDING_KEY,'done');}catch{/* shown again next launch */}setOnboarded(true);haptic(['authorized','limited'].includes(status)?'success':'warning');};
+  const openPhotos=()=>{if(demo){setNotice(testMode?t('Modo de prueba\nFotos no se abre'):t('Fotos se abre\nen el iPhone'));return;}void Library.openPhotos().catch(e=>messageError(e));};
   const openSettings=()=>{void Library.openSettings().catch(()=>setError(t('Abre Ajustes › CocoWash › Fotos para permitir el acceso.')));};
   const manageLimited=async()=>{if(demo)return;try{const result=await Library.manageLimitedAccess();if(result.changed)await connect();}catch(e){messageError(e);}};
   const allowed=permission==='authorized'||permission==='limited';
@@ -607,7 +610,7 @@ export function ManoApp() {
   else if(permission==='unknown')screen=loadError?<LoadErrorScreen message={loadError} retry={()=>{initialLibrary.current=null;loadLibrary();}}/>:<PreparingScreen/>;
   else if(!allowed)screen=<AccessScreen status={permission} request={()=>void requestAccess()} openSettings={openSettings}/>;
   else if(loadError)screen=<LoadErrorScreen message={loadError} retry={()=>{initialLibrary.current=null;loadLibrary();}}/>;
-  else if(!session)screen=showDone&&sheet==='review'?<div className="session-content">{doneHeader}<main className="status-screen is-quiet"><Character pose="memo-cards" height={120} motion="still"/><p className="status-line">{t('Una última mirada antes de terminar.')}</p></main></div>:showDone?<div className="session-content">{doneHeader}<SessionDone stats={stats} pending={pending} pendingBytes={reviewBytes.bytes} pendingPartial={reviewBytes.partial} lifetime={lifetime.bytes} again={()=>{money.clear();setShowDone(false);setNotice('');}} review={()=>{money.clear();setError('');setSheet('review');}} monetization={money.available&&money.placement==='finish'&&<div className="finish-monetization"><AdSlot where="finish" money={money}/></div>}/></div>:<PreparingScreen cancel={()=>{cancelWarmup();setShowDone(true);}}/>;
+  else if(!session)screen=showDone&&sheet==='review'?<div className="session-content">{doneHeader}<main className="status-screen is-quiet"><Character pose="memo-cards" height={120} motion="still"/><p className="status-line">{t('Una última mirada antes de terminar.')}</p></main></div>:showDone?<div className="session-content">{doneHeader}<SessionDone stats={stats} pending={pending} pendingBytes={reviewBytes.bytes} pendingPartial={reviewBytes.partial} lifetime={lifetime.bytes} again={()=>{money.clear();setShowDone(false);setNotice('');}} emptyDeleted={openPhotos} review={()=>{money.clear();setError('');setSheet('review');}} monetization={money.available&&money.placement==='finish'&&<div className="finish-monetization"><AdSlot where="finish" money={money}/></div>}/></div>:<PreparingScreen cancel={()=>{cancelWarmup();setShowDone(true);}}/>;
   else screen=<div className="session-content" inert={pinnedInspect}>
     {/* «Terminar» ends the round: the summary keeps pending discards and offers the review. */}
     <header ref={noticeRoom} className="archive-header is-session">{filtersButton}{brand}<FinishButton pending={pending} busy={busy} announce={setSpoken} finish={()=>{cancel();setError('');setSheet('review');haptic('light');}}/></header>
@@ -676,9 +679,9 @@ export function ManoApp() {
       {money.available&&<div hidden={sheetTab!=='support'}>{sheet==='filters'&&sheetTab==='support'&&<PurchaseOptions money={money}/>}</div>}
     </Sheet>
     <Sheet open={sheet==='albums'} close={()=>setSheet(null)} title={t('Guardar en un álbum')} description={t('Se conserva y pasa a la siguiente. También sigue en tu carrete.')} error={error} returnTo="album-trigger"><p className="sheet-intro">{parts(tn('selected',targets.length),{n:<strong key="n">{formatNumber(targets.length)}</strong>})}</p><button className="album-row album-new" onClick={()=>setCreatingAlbum(v=>!v)} disabled={busy}><span className="row-icon"><PlusIcon size={20} weight="bold"/></span>{t('Crear álbum nuevo')}</button>{creatingAlbum&&<div className="new-album"><label className="field">{t('Nombre del álbum')}<AlbumInput value={newAlbum} change={setNewAlbum}/></label><button className="sheet-action" onClick={createAlbum} disabled={busy||!newAlbum.trim()}>{tn('createAndAdd',targets.length)}</button></div>}{albums.map(a=><button className="album-row" key={a.id} onClick={()=>addAlbum(a)} disabled={busy}><span className="row-icon"><FolderOpenIcon size={20}/></span>{a.title}<CaretRightIcon size={16} weight="bold" className="flip-rtl"/></button>)}</Sheet>
-    <Sheet open={sheet==='review'} close={()=>setSheet(null)} title={t('Una última mirada')} description={t('Recupera lo que quieras conservar antes de eliminar.')} error={error} returnTo={session?'review-trigger':'filter-trigger'}><p className="sheet-intro">{reviewAssets.length?parts(freeLabel?(reviewBytes.partial?t('{count}: liberarías al menos {size}. Aún no se ha borrado nada.'):t('{count}: liberarías {size}. Aún no se ha borrado nada.')):t('{count}. Aún no se ha borrado nada.'),{count:<strong key="count">{t('{n} para eliminar',{n:reviewAssets.length})}</strong>,size:<strong key="size">{freeLabel}</strong>}):t('No hay nada marcado para eliminar.')}</p>
-      {reviewAssets.length>0&&<><ReviewGrid assets={reviewAssets} open={sheet==='review'} recover={recoverReview}/>
-        <div className="review-primary">{money.available&&money.placement==='review'&&<div className="review-monetization"><AdSlot where="review" money={money}/></div>}<button className="sheet-action secondary recover-all" disabled={busy} onClick={recoverAll}><ArrowCounterClockwiseIcon size={20}/>{reviewAssets.length===1?t('Recuperar'):t('Recuperar todo ({n})',{n:reviewAssets.length})}</button><button className="sheet-action danger" onClick={commitDelete} disabled={busy} aria-busy={busy}><TrashIcon size={20}/>{busy?t('Esperando a Fotos…'):freeLabel&&!reviewBytes.partial?t('Eliminar {n} ({size})',{n:reviewAssets.length,size:freeLabel}):t('Eliminar {n}',{n:reviewAssets.length})}</button><p className="sheet-fine">{t('Fotos te pedirá confirmación; lo eliminado queda 30 días en «Eliminado recientemente», también en iCloud.')}</p></div></>}
+    <Sheet open={sheet==='review'} close={()=>setSheet(null)} footer={reviewAssets.length>0&&<div className="review-primary">{money.available&&money.placement==='review'&&<div className="review-monetization"><AdSlot where="review" money={money}/></div>}<button className="sheet-action secondary recover-all" disabled={busy} onClick={recoverAll}><ArrowCounterClockwiseIcon size={20}/>{reviewAssets.length===1?t('Recuperar'):t('Recuperar todo ({n})',{n:reviewAssets.length})}</button><button className="sheet-action danger" onClick={commitDelete} disabled={busy} aria-busy={busy}><TrashIcon size={20}/>{busy?t('Esperando a Fotos…'):freeLabel&&!reviewBytes.partial?t('Eliminar {n} ({size})',{n:reviewAssets.length,size:freeLabel}):t('Eliminar {n}',{n:reviewAssets.length})}</button><p className="sheet-fine">{t('Fotos te pedirá confirmación; lo eliminado queda 30 días en «Eliminado recientemente», también en iCloud.')}</p></div>} title={t('Una última mirada')} description={t('Recupera lo que quieras conservar antes de eliminar.')} error={error} returnTo={session?'review-trigger':'filter-trigger'}><p className="sheet-intro">{reviewAssets.length?parts(freeLabel?(reviewBytes.partial?t('{count}: liberarías al menos {size}. Aún no se ha borrado nada.'):t('{count}: liberarías {size}. Aún no se ha borrado nada.')):t('{count}. Aún no se ha borrado nada.'),{count:<strong key="count">{t('{n} para eliminar',{n:reviewAssets.length})}</strong>,size:<strong key="size">{freeLabel}</strong>}):t('No hay nada marcado para eliminar.')}</p>
+      {reviewAssets.length>0&&<ReviewGrid assets={reviewAssets} open={sheet==='review'} recover={recoverReview}/>}
     </Sheet>
+
   </div>;
 }
