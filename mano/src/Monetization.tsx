@@ -25,24 +25,16 @@ const Store = registerPlugin<{
   addListener(event: 'purchaseChanged' | 'adDismissed', cb: () => void): Promise<{ remove(): Promise<void> }>;
 }>('CocoMonetization');
 const key = 'cocowash-ad-active-ms-v1';
-const finishKey = 'cocowash-finish-ads-v1';
 
 /** testing: «Modo de prueba» — same placements, much shorter cadence, separate counters.
  * `cleaning` counts active sorting time; `warm` also lets the next letter load
  * while the round summary or «Una última mirada» is open. */
 export function useMonetization(enabled: boolean, cleaning: boolean, testing = false, warm = false) {
   const rules = testing ? TEST_RULES : DEFAULT_RULES;
-  const finishStore = testing ? finishKey + '-test' : finishKey;
   const available = native && enabled;
   const [status, setStatus] = useState<Status>();
   const [placement, setPlacement] = useState<Placement>();
-  const [cadence] = useState(() => {
-    try { return new AdCadence(Math.random, JSON.parse(localStorage.getItem(finishStore) ?? 'null'), rules); }
-    catch { return new AdCadence(Math.random, undefined, rules); }
-  });
-  const saveFinishes = () => {
-    try { localStorage.setItem(finishStore, JSON.stringify(cadence.finishSnapshot())); } catch { /* optional */ }
-  };
+  const [cadence] = useState(() => new AdCadence(Math.random, rules));
   const activeMs = useRef(0);
   const ready = useRef(false);
   const loading = useRef(false);
@@ -50,12 +42,10 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
   const current = useRef<Placement | undefined>(undefined);
   const [loadedTime, setLoadedTime] = useState(false);
 
-  const finishShown = useRef(false);
+  /** A fixed letter asked for before an ad was ready: shown as soon as one is. */
+  const wanted = useRef<Placement | undefined>(undefined);
   const clear = () => {
-    if (current.current === 'finish' && !finishShown.current) {
-      cadence.missedFinish();
-      saveFinishes();
-    }
+    wanted.current = undefined;
     current.current = undefined;
     setPlacement(undefined);
   };
@@ -82,7 +72,7 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
   }, [available]);
 
   useEffect(() => {
-    if (!available || !loadedTime || !(cleaning || warm)) return;
+    if (!available || !loadedTime || !(cleaning || warm || wanted.current)) return;
     let last = performance.now();
     const timer = window.setInterval(() => {
       const now = performance.now();
@@ -92,19 +82,25 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
         if (previous < INTRO_MS) try { localStorage.setItem(key, String(Math.floor(activeMs.current))); } catch { /* optional */ }
       }
       last = now;
-      if (document.hidden || !status || status.adFree || activeMs.current < rules.introMs || ready.current || loading.current || current.current || now < nextAttempt.current) return;
+      // 9.8.3: the next letter may load while a fixed one is on screen (the review
+      // letter, then the summary one); only the pile letter waits for its turn.
+      if (document.hidden || !status || status.adFree || (activeMs.current < rules.introMs && !wanted.current) || ready.current || loading.current || current.current === 'deck' || now < nextAttempt.current) return;
       loading.current = true;
       nextAttempt.current = now + 30_000;
-      void Store.prepare().then(value => { ready.current = value.ready; }).catch(() => {}).finally(() => { loading.current = false; });
+      void Store.prepare().then(value => {
+        ready.current = value.ready;
+        if (value.ready) nextAttempt.current = 0;
+        const want = wanted.current;
+        if (value.ready && want && !current.current) { wanted.current = undefined; offer(want); }
+      }).catch(() => {}).finally(() => { loading.current = false; });
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [available, cleaning, warm, loadedTime, status]);
+  }, [available, cleaning, warm, loadedTime, status, placement]);
 
   const offer = (where: Placement) => {
     if (!ready.current || current.current || !status || status.adFree) return false;
     ready.current = false;
     current.current = where;
-    finishShown.current = false;
     setPlacement(where);
     return true;
   };
@@ -115,25 +111,27 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
       cadence.review(ids);
       if (cadence.between(activeMs.current) && !offer('deck')) cadence.skipDeck();
     },
-    /** «Una última mirada»: a fixed letter above «Recuperar todo» whenever one is ready. */
+    /** «Una última mirada»: always a fixed letter under its buttons (9.8.3). */
     reviewing() {
-      if (!available || !status || status.adFree || current.current || activeMs.current < rules.introMs) return;
-      if (cadence.finishDue(activeMs.current, new Date().toLocaleDateString('sv'))) return;
-      offer('review');
+      if (!available || !status || status.adFree) return;
+      // A pile letter waiting behind the sheet is never seen: the review letter takes its turn.
+      if (current.current === 'deck') { current.current = undefined; setPlacement(undefined); }
+      if (current.current) return;
+      if (!offer('review')) wanted.current = 'review';
     },
+    /** Leaving a screen: drop its letter, shown or still awaited. */
+    release(where: Placement) {
+      if (current.current === where || wanted.current === where) clear();
+    },
+    /** The «Espacio liberado» summary: always a fixed letter (9.8.3). */
     finish() {
       clear();
       if (!available || !status || status.adFree) return;
-      if (cadence.finish(activeMs.current, new Date().toLocaleDateString('sv')) && !offer('finish')) cadence.missedFinish();
-      saveFinishes();
+      if (!offer('finish')) wanted.current = 'finish';
     },
     shown(where: Placement) {
       if (current.current !== where) return;
       cadence.shown(activeMs.current, where);
-      if (where === 'finish') {
-        finishShown.current = true;
-        saveFinishes();
-      }
     },
   };
 }
@@ -177,26 +175,42 @@ export function AdSlot({ where, money }: { where: Placement; money: Monetization
         if (again) { again = false; sent = ''; }
       });
     };
+    // Measured every frame only while something may be moving (mount, scroll,
+    // resize, a sheet settling); idle once still and placed. A slow interval
+    // catches anything else (a transition elsewhere on the page).
+    let idleSince = 0;
     const tick = () => {
-      frame = requestAnimationFrame(tick);
+      frame = 0;
       const rect = node.current?.getBoundingClientRect();
       if (!rect) return;
       const now = performance.now();
       const key = `${Math.round(rect.x)},${Math.round(rect.y)},${Math.round(rect.width)},${Math.round(rect.height)}`;
-      if (key !== previous) { previous = key; stillSince = now; }
+      if (key !== previous) { previous = key; stillSince = now; idleSince = 0; }
       const onScreen = !document.hidden && rect.top >= 0 && rect.bottom <= window.innerHeight && rect.left >= 0 && rect.right <= window.innerWidth;
       const visible = onScreen && now - stillSince > 120 && now - started > (deck ? 320 : 380);
       if (!shown && !visible) {
         // The deck letter appears right away or not at all; fixed letters wait.
-        if (deck && now - started > 1200) latest.current.clear();
-        return;
-      }
-      send(rect, !visible);
+        if (deck && now - started > 1200) { latest.current.clear(); return; }
+      } else send(rect, !visible);
+      if (visible && !idleSince) idleSince = now;
+      if (!idleSince || now - idleSince < 300) frame = requestAnimationFrame(tick);
     };
+    const kick = () => { idleSince = 0; if (!frame) frame = requestAnimationFrame(tick); };
     frame = requestAnimationFrame(tick);
+    const observer = new ResizeObserver(kick);
+    if (node.current) observer.observe(node.current);
+    window.addEventListener('scroll', kick, true);
+    window.addEventListener('resize', kick);
+    document.addEventListener('visibilitychange', kick);
+    const slow = window.setInterval(kick, 500);
     return () => {
       disposed = true;
-      cancelAnimationFrame(frame);
+      if (frame) cancelAnimationFrame(frame);
+      window.clearInterval(slow);
+      observer.disconnect();
+      window.removeEventListener('scroll', kick, true);
+      window.removeEventListener('resize', kick);
+      document.removeEventListener('visibilitychange', kick);
       void Store.hide().catch(() => {});
     };
   }, [where]);

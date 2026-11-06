@@ -37,8 +37,8 @@ for (const lang of ['es', 'en', 'fr', 'ar', 'ja']) {
   await page.locator('.hand-space article.front').first().waitFor({ timeout: 20000 });
   await page.locator('.splash').waitFor({ state: 'detached', timeout: 15000 }).catch(() => {});
   await page.waitForTimeout(800);
-  await page.locator('.decision-bar').screenshot({ path: `../work/qa-981/${lang}-bar.png` });
-  await page.locator('.archive-header').screenshot({ path: `../work/qa-981/${lang}-header.png` });
+  await page.locator('.decision-bar').screenshot({ path: `../work/qa-983/${lang}-bar.png` });
+  await page.locator('.archive-header').screenshot({ path: `../work/qa-983/${lang}-header.png` });
   await page.close();
 }
 await browser.close();

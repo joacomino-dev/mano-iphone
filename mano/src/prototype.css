@@ -403,7 +403,6 @@
 .bar-icon{flex-shrink:0;width:var(--bar-icon);height:var(--bar-icon);overflow:visible}
 .bar-icon :is(path,rect){fill:var(--cw-cream);stroke:var(--cw-outline);stroke-width:3px;stroke-linejoin:round;paint-order:stroke fill}
 .bar-icon .ink{fill:none;stroke-width:1.9px;stroke-linecap:round}
-.bar-arrow{width:.8125rem;height:.8125rem}
 /* Press: the face sinks onto its base at once and settles back with a small,
    damped follow-through. Reduce Motion drops the travel (rule below). */
 .piece-face,.bar-content{transition:transform var(--cw-slow) var(--cw-ease-settle),opacity var(--cw-base) var(--cw-ease)}
@@ -453,13 +452,11 @@
 .coco-track{fill:none;stroke:currentColor;stroke-opacity:.16;stroke-width:3.5}
 .coco-arc{fill:none;stroke:currentColor;stroke-width:3.5;stroke-linecap:round;transform-origin:50% 50%;transform:rotate(-90deg);transition:stroke-dasharray var(--cw-base) var(--cw-ease)}
 .coco-swirl{fill:none;stroke:var(--cw-pink,#EF9A98);stroke-width:3;stroke-linecap:round;stroke-dasharray:18 100;transform-origin:50% 50%}
-.coco-spin{transform-origin:50% 50%}
-.coco-loader:not(.is-known) .coco-spin{animation:cw-turn 1.6s linear infinite}
-.coco-loader:not(.is-known) .coco-arc{animation:cw-stretch 1.6s cubic-bezier(.45,.05,.55,.95) infinite}
-.coco-loader:not(.is-known) .coco-swirl{animation:cw-counter 1.1s cubic-bezier(.4,0,.6,1) infinite}
+/* The ring turns as one compositor layer (smooth while the page is busy). */
+.coco-rotor{display:block;width:100%;height:100%;will-change:transform}
+.coco-rotor svg{display:block;width:100%;height:100%}
+.coco-loader:not(.is-known) .coco-rotor{animation:cw-turn 1.1s linear infinite}
 @keyframes cw-turn{to{transform:rotate(360deg)}}
-@keyframes cw-stretch{0%{stroke-dasharray:6 100;stroke-dashoffset:0}50%{stroke-dasharray:58 100;stroke-dashoffset:-12}100%{stroke-dasharray:6 100;stroke-dashoffset:-94}}
-@keyframes cw-counter{to{transform:rotate(-540deg)}}
 .mano-sheet-body .coco-loader{color:var(--cw-turquoise)}
 
 /* ---------- Inspector ---------- */
@@ -485,7 +482,6 @@
 .inspection-dock.is-pinned{background:var(--cw-teal-800);box-shadow:inset 0 0 0 1px var(--cw-line-on-bg),var(--cw-shadow-2)}
 .inspection-dock.is-pinned button{min-width:var(--cw-touch);min-height:var(--cw-touch);display:flex;align-items:center;justify-content:center;gap:var(--cw-icon-gap);border:0;border-radius:var(--cw-radius-pill);background:transparent;color:var(--cw-white)}
 .dock-state{display:flex;align-items:center;gap:var(--cw-icon-gap);padding:0 var(--cw-space-2) 0 var(--cw-space-3);font-size:var(--cw-text-sm);font-weight:600;color:var(--cw-white)}
-.dock-zoom{min-width:44px;text-align:center;font:500 var(--cw-text-xs) var(--cw-font-mono);font-variant-numeric:tabular-nums}
 .inspection-dock .inspection-close{padding:0 var(--cw-space-4)!important;background:var(--cw-paper)!important;color:var(--cw-ink)!important;font-weight:600}
 .geek-panel{position:absolute;left:var(--cw-space-3);right:var(--cw-space-3);bottom:calc(var(--cw-space-6) + 72px);overflow:auto;box-sizing:border-box;padding:var(--cw-space-3) var(--cw-space-4);border-radius:var(--cw-radius-md);background:var(--cw-teal-800);box-shadow:inset 0 0 0 1px var(--cw-line-on-bg);color:var(--cw-white);font-size:var(--cw-text-xs)}
 .on-device .geek-panel{bottom:calc(env(safe-area-inset-bottom) + 84px)}
@@ -551,7 +547,7 @@
 .sheet-action.quiet{background:transparent;color:var(--cw-ink);min-height:var(--cw-touch);font-weight:500}
 /* The only red in the app: irreversible, and only after Fotos confirms. */
 .sheet-action.danger{background:var(--cw-action-danger);color:var(--cw-on-action-danger)}
-.sheet-action.danger:not(:disabled):active{background:#93201A}
+.sheet-action.danger:not(:disabled):active{background:var(--cw-action-danger-pressed)}
 .sheet-action.secondary:not(:disabled):active{background:var(--cw-paper)}
 .sheet-action:disabled{opacity:.45}
 .sheet-action[aria-busy=true]{opacity:.7}
@@ -730,12 +726,11 @@
 .status-hint{font-size:var(--cw-text-sm)}
 .status-actions{display:flex;flex-direction:column;align-items:center;gap:var(--cw-space-2);margin-top:var(--cw-space-3)}
 .status-actions .primary-empty{display:flex;align-items:center;gap:var(--cw-space-2)}
-.session-done{padding-bottom:var(--cw-space-8)}
 /* End of round on a paper card (like the tour): paper dominant, teal frame,
    decision inks as accents — the 62 / 24 / 14 balance the chrome aims for. */
 /* Celebration / «Revisión guardada»: the one place where the paper may be felt —
    the warm textured sheet (paper.png). */
-.session-done{flex:1 1 auto;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;justify-content:safe center;margin:var(--cw-space-2) 0 0;padding:var(--cw-space-6) var(--cw-space-5);border-radius:var(--cw-radius-xl);background:linear-gradient(color-mix(in srgb,var(--cw-paper) 30%,transparent),color-mix(in srgb,var(--cw-paper) 30%,transparent)),url('/assets/paper.png') center/480px;background-color:var(--cw-paper);box-shadow:var(--cw-shadow-2);color:var(--cw-ink)}
+.session-done{flex:1 1 auto;display:flex;flex-direction:column;overflow:hidden;margin:var(--cw-space-2) 0 0;padding:var(--cw-space-6) var(--cw-space-5);border-radius:var(--cw-radius-xl);background:linear-gradient(color-mix(in srgb,var(--cw-paper) 30%,transparent),color-mix(in srgb,var(--cw-paper) 30%,transparent)),url('/assets/paper.png') center/480px;background-color:var(--cw-paper);box-shadow:var(--cw-shadow-2);color:var(--cw-ink)}
 .session-done h1{color:var(--cw-ink)}.session-done p,.session-done .status-hint{color:var(--cw-ink-soft)}
 .session-done .primary-empty{background:var(--cw-action-primary);color:var(--cw-on-action-primary)!important;box-shadow:var(--cw-shadow-press)}
 .session-done .secondary-empty{border-color:var(--cw-line-strong);color:var(--cw-ink)!important}
@@ -800,7 +795,7 @@
   /* The rinse holds still as a partial ring; the OSD appears without flicker,
      grain freezes, jitter stops. Progress fill still updates (no motion). */
   .coco-loader:not(.is-known) .coco-arc{stroke-dasharray:30 100}
-  .coco-loader .coco-spin,.coco-loader .coco-arc,.coco-loader .coco-swirl{animation:none!important}
+  .coco-loader .coco-rotor{animation:none!important}
   .vhs-osd,.pixel-text{animation:none!important}
 }
 
@@ -828,11 +823,11 @@
 .cloud-ring>.cloud-progress-ring{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
 .cloud-ring-track{fill:none;stroke:currentColor;stroke-opacity:.28;stroke-width:2}
 .cloud-ring-arc{fill:none;stroke:var(--cw-turquoise-light);stroke-width:2;stroke-linecap:round;transition:stroke-dasharray var(--cw-base) linear}
-.cloud-ring-spin{transform-origin:50% 50%}
-.cloud-ring.is-busy:not(.is-known) .cloud-ring-spin{animation:cw-spin 1.1s linear infinite}
+.cloud-ring.is-busy:not(.is-known)>.cloud-progress-ring{animation:cw-ring 1.1s linear infinite;will-change:transform}
+@keyframes cw-ring{from{transform:rotate(-90deg)}to{transform:rotate(270deg)}}
 .photo-loading.is-cloud .cloud-ring-arc{stroke:var(--cw-turquoise)}
 .photo-loading.is-cloud>span[role=status]{font-variant-numeric:tabular-nums}
-@media (prefers-reduced-motion:reduce){.cloud-ring.is-busy:not(.is-known) .cloud-ring-spin{animation:none}.cloud-ring.is-busy:not(.is-known) .cloud-ring-arc{stroke-dasharray:3 3}}
+@media (prefers-reduced-motion:reduce){.cloud-ring.is-busy:not(.is-known)>.cloud-progress-ring{animation:none}.cloud-ring.is-busy:not(.is-known) .cloud-ring-arc{stroke-dasharray:3 3}}
 .photo-loading.is-cloud{color:var(--cw-on-bg)}
 /* Anchored view: the same indicator, centred above the photo. */
 .cloud-chip.cloud-download{left:0;right:0;bottom:auto;top:var(--cw-space-3);width:fit-content;margin-inline:auto;z-index:3}
@@ -927,16 +922,13 @@
 .caption-where,.caption-when{padding-block:.14em}
 .cloud-chip.is-ring{padding:3px}
 /* The heart is the pink of «Wash» in the logo, with a base of the same hue. */
-:root{--cw-wash:#F17472;--cw-wash-deep:#B8444B}
+:root{--cw-wash:#F17472;--cw-wash-deep:#B8444B;--cw-lettering:#3B1E10;--cw-action-danger-pressed:#93201A}
 .bar-heart .piece-fill{fill:var(--cw-wash)}
 .bar-heart .piece-base{fill:var(--cw-wash-deep);stroke:var(--cw-wash-deep)}
 .bar-heart .heart-inner{stroke:var(--cw-wash-deep)}
 /* Version, barely there, under Zángano Studio. */
 .splash-version{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 12px);text-align:center;font:500 11px/1.3 var(--cw-font);letter-spacing:.06em;color:rgba(37,58,58,.26);font-variant-numeric:tabular-nums}
 /* Summary with its fixed letter: tighter so the letter sits inside the card. */
-.session-done::-webkit-scrollbar{display:none}
-.session-done.has-letter{gap:var(--cw-space-2);padding-top:var(--cw-space-4);padding-bottom:var(--cw-space-4)}
-.session-done.has-letter .done-freed small{display:none}
 .session-done .finish-monetization{margin-top:var(--cw-space-3)}
 /* Review sheet: the fixed letter sits right above «Recuperar todo». */
 .review-primary .review-monetization{margin:0 0 var(--cw-space-3)}
@@ -944,7 +936,7 @@
    between two wavy lines, in the decision's colour. */
 .stamp.is-composed{display:flex;align-items:center;justify-content:center;gap:4px}
 .stamp.is-composed img{flex:none;width:auto;height:58px}
-.stamp-lettering{--wave:var(--cw-turquoise);padding:2px 2px 6px;font:700 22px/1.25 var(--cw-font-brand);color:#3B1E10;white-space:nowrap;
+.stamp-lettering{--wave:var(--cw-turquoise);padding:2px 2px 6px;font:700 22px/1.25 var(--cw-font-brand);color:var(--cw-lettering);white-space:nowrap;
   text-decoration-line:underline overline;text-decoration-style:wavy;text-decoration-color:var(--wave);text-decoration-thickness:2px;text-underline-offset:7px}
 .stamp-discard .stamp-lettering{--wave:var(--cw-graphite)}.stamp-favorite .stamp-lettering{--wave:var(--cw-wash)}.stamp-later .stamp-lettering{--wave:var(--cw-coconut-deep)}
 /* Introduction, card 3: the group counter and the two ways to zoom. */
@@ -974,28 +966,51 @@
 :is(:lang(ar),:lang(ja)) .bar-word{text-transform:none;letter-spacing:0}
 :is(:lang(ar),:lang(ja)) .brand-notice>span{line-height:1.35}
 /* Counts like 4/20 keep their order inside right-to-left text. */
-.pile-count,.finish-count,.chip-count,.ob-count,.dock-zoom,.video-time{unicode-bidi:isolate;direction:ltr}
+.pile-count,.finish-count,.chip-count,.ob-count,.video-time{unicode-bidi:isolate;direction:ltr}
 
 /* ================= 9.8.2 ================= */
 /* Loader: the whole ring turns as one compositor layer (smooth while busy). */
-.coco-rotor{display:block;width:100%;height:100%;will-change:transform}
-.coco-rotor svg{display:block;width:100%;height:100%}
-.coco-loader .coco-spin,.coco-loader .coco-arc,.coco-loader .coco-swirl{animation:none!important}
-.coco-loader:not(.is-known) .coco-rotor{animation:cw-turn 1.1s linear infinite}
-@media (prefers-reduced-motion:reduce){.coco-loader .coco-rotor{animation:none!important}}
 /* «Una última mirada»: letter and buttons in a fixed footer; only the photos scroll. */
 .native-sheet .sheet-footer{flex:none;padding:var(--cw-space-3) var(--cw-space-5) calc(env(safe-area-inset-bottom) + var(--cw-space-3));border-top:1px solid var(--cw-line);background:var(--cw-sheet-native)}
 .sheet-footer .review-primary{margin-top:0}
 .sheet-footer .review-primary .sheet-action{min-height:48px}
 .sheet-footer .review-primary .recover-all{margin-bottom:var(--cw-space-2)}
 /* Summary: fixed, never scrolls; the letter stays put. */
-.session-done{overflow:hidden}
 @media (max-height:820px){.session-done.has-letter .character-pair,.session-done.has-letter .status-character{display:none}}
 .freed-note{max-width:30ch;font-weight:500;color:var(--cw-ink)!important}
 .status-actions.is-pair{flex-direction:row;flex-wrap:wrap;justify-content:center}
 .danger-empty{display:flex;align-items:center;gap:var(--cw-space-2);min-height:var(--cw-control);padding:0 var(--cw-space-5);border:0;border-radius:var(--cw-radius-pill);background:var(--cw-action-danger);color:var(--cw-on-action-danger);font-weight:600;box-shadow:var(--cw-shadow-press)}
-.danger-empty:not(:disabled):active{background:#93201A}
+.danger-empty:not(:disabled):active{background:var(--cw-action-danger-pressed)}
 .status-actions.is-pair .primary-empty{padding:0 var(--cw-space-5)}
-.session-done.has-letter .done-freed small.freed-note{display:block}
 .status-actions.is-pair{flex-wrap:nowrap;width:100%;max-width:340px;gap:var(--cw-space-2)}
 .status-actions.is-pair>button{flex:1 1 0;min-width:0;justify-content:center;padding:0 var(--cw-space-3);font-size:.9375rem;line-height:1.2;text-align:center}
+
+/* ================= 9.8.3 ================= */
+/* Decision bar: a large icon with its verb underneath (every language). */
+.decision-bar.is-stacked .bar-content{flex-direction:column;gap:2px}
+.decision-bar.is-stacked .bar-word{-webkit-text-stroke:2.5px var(--cw-outline);letter-spacing:.04em}
+.decision-bar.is-icon .bar-word{display:none}
+/* Summary after «Eliminar»: the amount waits in «Eliminado recientemente»;
+   three short steps say how to free it, «Abrir Fotos» starts the first. */
+.freed-steps{display:grid;gap:4px;margin:var(--cw-space-2) 0 0;padding:var(--cw-space-2) var(--cw-space-3);border-radius:var(--cw-radius-md);background:var(--cw-paper);counter-reset:step;list-style:none;text-align:start;width:100%}
+.freed-steps li{counter-increment:step;display:grid;grid-template-columns:20px 1fr;align-items:baseline;gap:6px;font-size:var(--cw-text-sm);line-height:1.35;color:var(--cw-ink)}
+.freed-steps li::before{content:counter(step);display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--cw-action-danger);color:var(--cw-on-action-danger);font:600 12px/1 var(--cw-font);font-variant-numeric:tabular-nums}
+.session-done .done-freed{gap:2px}
+.session-done .freed-amount{font-size:36px}
+@media (max-height:740px){.session-done.has-letter .done-stats{display:none}}
+/* Summary: its content scrolls only if it must (small phone, large text);
+   the fixed letter sits below, outside the scroll, and never moves. */
+.session-done>.done-body{flex:1 1 auto;min-height:0;width:100%;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;display:flex;flex-direction:column;align-items:center;justify-content:safe center;gap:var(--cw-space-3)}
+.session-done>.done-body::-webkit-scrollbar{display:none}
+.session-done.has-letter>.done-body{gap:var(--cw-space-2)}
+.session-done>.finish-monetization{flex:none}
+/* Review footer: the two actions share a row so the photos keep their room. */
+.sheet-footer .review-primary{display:grid;grid-template-columns:1fr 1fr;gap:var(--cw-space-2)}
+.sheet-footer .review-primary .recover-all{margin:0}
+.sheet-footer .review-primary .sheet-action{margin:0;padding:0 var(--cw-space-2);font-size:var(--cw-text-sm);line-height:1.2}
+.sheet-footer .review-primary .sheet-fine,.sheet-footer .review-primary .review-monetization{grid-column:1/-1}
+.sheet-footer .review-primary .review-monetization{margin:var(--cw-space-2) 0 0}
+@media (max-height:740px){.sheet-footer .review-primary .sheet-fine{display:none}}
+/* Small chips keep their look but get a 44 pt touch area. */
+.access-indicator::after{content:'';position:absolute;inset:-9px -4px}
+.status-actions.is-pair>button{white-space:nowrap;font-size:.875rem}

@@ -150,7 +150,7 @@ final class CocoMonetizationPlugin: CAPPlugin, CAPBridgedPlugin, NativeAdLoaderD
             let entitlement = await entitlements()
             guard let unitID, let controller = bridge?.viewController, controller.presentedViewController == nil,
                   UIApplication.shared.applicationState == .active, !preparing, !refreshingPrivacy,
-                  loader == nil, card == nil, entitlement["adFree"] as? Bool == false else {
+                  loader == nil, entitlement["adFree"] as? Bool == false else {
                 call.resolve(["ready": false])
                 return
             }
@@ -409,7 +409,8 @@ final class CocoNativeAdCard: UIView {
         let headline = UILabel()
         headline.text = ad.headline
         headline.textColor = Self.ink
-        headline.font = Self.font(inline ? 15 : 17, .semibold, .headline, maximum: inline ? 20 : nil)
+        // Capped so the largest accessibility sizes still leave the 120 pt media (AdMob minimum) its room.
+        headline.font = Self.font(inline ? 15 : 17, .semibold, .headline, maximum: inline ? 20 : 26)
         headline.adjustsFontForContentSizeCategory = true
         headline.numberOfLines = 2
 
@@ -428,7 +429,7 @@ final class CocoNativeAdCard: UIView {
         config.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 14, bottom: 6, trailing: 14)
         config.titleLineBreakMode = .byTruncatingTail
         config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attributes in
-            var next = attributes; next.font = Self.font(inline ? 14 : 15, .semibold, .subheadline, maximum: inline ? 19 : nil); return next
+            var next = attributes; next.font = Self.font(inline ? 14 : 15, .semibold, .subheadline, maximum: inline ? 19 : 22); return next
         }
         let action = UIButton(configuration: config)
         action.setTitle(ad.callToAction, for: .normal)
@@ -467,7 +468,7 @@ final class CocoNativeAdCard: UIView {
         } else {
             let greeting = UILabel()
             greeting.text = labels.greeting
-            greeting.font = Self.font(13, .medium, .footnote)
+            greeting.font = Self.font(13, .medium, .footnote, maximum: 19)
             greeting.adjustsFontForContentSizeCategory = true
             greeting.textColor = Self.inkSoft
             greeting.numberOfLines = 2
@@ -540,12 +541,12 @@ final class CocoNativeAdCard: UIView {
             band.trailingAnchor.constraint(equalTo: paperClip.trailingAnchor).isActive = true
         }
         if inline {
-            creative.accessibilityLabel = labels.spokenInline
+            // VoiceOver reads the stamp («Publicidad») first, then the ad's own assets.
             accessibilityElements = [creative]
             return
         }
         hint.text = labels.hint
-        hint.font = Self.font(13, .medium, .footnote)
+        hint.font = Self.font(13, .medium, .footnote, maximum: 19)
         hint.adjustsFontForContentSizeCategory = true
         hint.textColor = Self.inkSoft
         hint.textAlignment = .center

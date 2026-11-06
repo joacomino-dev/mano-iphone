@@ -1,3 +1,5 @@
+/* Stamp palette (Apoyo). Gold is champagne, never brassy. */
+:root { --cw-stamp-paper: #FFFDF8; --cw-stamp-coffee: #F6E9D8; --cw-stamp-coffee-art: #FFF8EE; --cw-gold-100: #F1E3BC; --cw-gold-300: #E2C988; --cw-gold-400: #D7BA72; --cw-gold-200: #E6CF94; --cw-gold-50: #F8EDCF; --cw-gold-700: #8E6A22; --cw-gold-ink-soft: #5E4A26; --cw-gold-ink: #3B2A10; }
 /* Monetization in the CocoWash paper language.
    Ads are letters (airmail edge, postage-stamp «Publicidad»); purchases are
    perforated stamps. The native ad card (CocoMonetization.swift) draws over
@@ -31,7 +33,7 @@
    punched by four masks — one row of holes per side, evenly spaced (round) so
    every side ends cleanly at the corners; .stamp-face is the printed design
    with its fine frame. */
-.support-stamp { --hole: 3.6px; --pitch: 13px; --stamp-paper: #FFFDF8;
+.support-stamp { --hole: 3.6px; --pitch: 13px; --stamp-paper: var(--cw-stamp-paper);
   --face: var(--cw-paper-light); --face-ink: var(--cw-ink); --face-soft: var(--cw-ink-soft); --frame: var(--cw-turquoise-deep); --art-bg: var(--cw-surface);
   position: relative; display: block; width: 100%; padding: 0; border: 0; background: none; text-align: start; color: var(--face-ink);
   filter: drop-shadow(0 1px 0 rgba(37, 58, 58, .12)) drop-shadow(0 6px 10px rgba(37, 58, 58, .14));
@@ -63,7 +65,7 @@
 .stamp-value-wait { display: block; width: 3.2em; height: .8em; margin-top: .25em; border-radius: 3px; background: color-mix(in srgb, var(--frame) 22%, transparent); }
 .support-stamp.is-unpriced .stamp-value { font: 500 var(--cw-text-xs)/1.3 var(--cw-font); color: var(--face-soft); letter-spacing: 0; }
 .support-stamp.tone-forever { --face: var(--cw-teal-800); --face-ink: var(--cw-paper); --face-soft: var(--cw-on-dark-soft); --frame: var(--cw-pink); --art-bg: var(--cw-teal-700); }
-.support-stamp.tone-coffee { --face: #F6E9D8; --frame: var(--cw-coconut-deep); --art-bg: #FFF8EE; }
+.support-stamp.tone-coffee { --face: var(--cw-stamp-coffee); --frame: var(--cw-coconut-deep); --art-bg: var(--cw-stamp-coffee-art); }
 .support-stamp:not(:disabled):active { transform: scale(.985) rotate(-.6deg); }
 .support-stamp:disabled { opacity: 1; cursor: default; }
 /* Active pass: a round postmark with wavy cancellation lines across the stamp. */
@@ -78,5 +80,5 @@
 @container (max-width: 380px) { .stamp-face { grid-template-columns: auto minmax(0, 1fr); } .stamp-value { grid-column: 2; justify-self: start; margin-top: var(--cw-space-2); } }
 @media (prefers-reduced-motion: reduce) { .support-stamp:not(:disabled):active { transform: none; } }
 /* 9.8.2: «para siempre» as a soft gold stamp (champagne, not brassy). */
-.support-stamp.tone-forever { --face: linear-gradient(140deg, #F1E3BC, #E2C988 55%, #D7BA72); --face-ink: #3B2A10; --face-soft: #5E4A26; --frame: #8E6A22; --art-bg: #F8EDCF; }
-.support-stamp.tone-forever .stamp-face { background: var(--face); box-shadow: inset 0 0 0 1.5px var(--frame), inset 0 0 0 4px #E6CF94, inset 0 0 0 5px rgba(142, 106, 34, .45); }
+.support-stamp.tone-forever { --face: linear-gradient(140deg, var(--cw-gold-100), var(--cw-gold-300) 55%, var(--cw-gold-400)); --face-ink: var(--cw-gold-ink); --face-soft: var(--cw-gold-ink-soft); --frame: var(--cw-gold-700); --art-bg: var(--cw-gold-50); }
+.support-stamp.tone-forever .stamp-face { background: var(--face); box-shadow: inset 0 0 0 1.5px var(--frame), inset 0 0 0 4px var(--cw-gold-200), inset 0 0 0 5px color-mix(in srgb, var(--cw-gold-700) 45%, transparent); }

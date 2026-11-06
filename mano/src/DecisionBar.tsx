@@ -58,7 +58,7 @@ function glossPath(cx: number, top: number, s: number) {
 }
 
 /* ---------- Layout ---------- */
-export type BarVariant = 'full' | 'compact' | 'icon';
+export type BarVariant = 'stacked' | 'icon';
 type Box = { x: number; y: number; w: number; h: number };
 type Piece = { box: Box; d: string };
 type Geometry = { width: number; height: number; heart: Piece & { gloss: string; inner: string }; discard: Piece & { content: Box }; keep: Piece & { content: Box } };
@@ -122,10 +122,9 @@ const ICONS = {
     <path className="ink" d="M9.8 12.4v6.4M14.2 12.4v6.4"/>
   </>,
   bookmark: <><path d="M6.6 2.8h10.8c.9 0 1.6.7 1.6 1.6v16.4c0 .55-.6.85-1.05.55L12 17.6l-5.95 3.75c-.45.3-1.05 0-1.05-.55V4.4c0-.9.7-1.6 1.6-1.6Z"/></>,
-  arrow: <><path d="M2.6 12 10 4.9c.5-.5 1.3-.15 1.3.55V9h8.2c.85 0 1.5.65 1.5 1.5v3c0 .85-.65 1.5-1.5 1.5h-8.2v3.55c0 .7-.8 1.05-1.3.55Z"/></>,
 };
-function BarIcon({ name, flip = false, className }: { name: keyof typeof ICONS; flip?: boolean; className: string }) {
-  return <svg className={`bar-icon ${className}`} viewBox="0 0 24 24" aria-hidden="true" focusable="false" style={flip ? { transform: 'scaleX(-1)' } : undefined}>{ICONS[name]}</svg>;
+function BarIcon({ name, className }: { name: keyof typeof ICONS; className: string }) {
+  return <svg className={`bar-icon ${className}`} viewBox="0 0 24 24" aria-hidden="true" focusable="false">{ICONS[name]}</svg>;
 }
 
 /* ---------- Sizing ---------- */
@@ -140,22 +139,16 @@ function textWidth(text: string, px: number) {
   ctx.font = `400 ${px}px ${barFont()}`;
   return ctx.measureText(text.toUpperCase()).width + text.length * px * .02;
 }
-/** The richest variant whose longer label fits, at the size Dynamic Type asks
- * for (rem); both sides always use the same variant, for symmetry. */
-function pickVariant(room: number, rem: number): { variant: BarVariant; font: number; icon: number } {
-  // Both sides share one variant: measure the longer word (it changes by language).
+/** 9.8.3: a large icon with its verb underneath, the same in every language.
+ * The word shrinks until the longer of both fits the room; the icon takes the
+ * height left. Only when no legible word fits does the bar show icons alone. */
+function pickVariant(room: number, rem: number, height: number): { variant: BarVariant; font: number; icon: number } {
   const word = (px: number) => Math.max(textWidth(LABELS.keep(), px), textWidth(LABELS.discard(), px));
-  const icon = Math.round(rem * 1.25), arrow = Math.round(rem * .8125), gap = rem * .3125;
-  // Arrows only while the word keeps at least 16 px (large iPhones); below
-  // that the position and the swipe already say the direction.
-  // 9.8.2: no arrow variant. Short words (English) got arrows and long ones
-  // (Spanish) did not; the bar now looks the same in every language.
-  void arrow;
-  for (const scale of [1, .94, .88, .82]) {
-    const px = rem * 1.0625 * scale;
-    if (word(px) + icon + gap <= room) return { variant: 'compact', font: px, icon };
+  for (const scale of [1, .92, .84, .76]) {
+    const px = rem * .8125 * scale;
+    if (word(px) <= room) return { variant: 'stacked', font: px, icon: Math.round(Math.max(rem * 1.25, Math.min(rem * 1.75, height - px - 6))) };
   }
-  return { variant: 'icon', font: rem, icon: Math.round(rem * 1.75) };
+  return { variant: 'icon', font: rem, icon: Math.round(Math.min(rem * 1.875, height - 6)) };
 }
 
 type Props = {
@@ -191,7 +184,7 @@ export function DecisionBar({ count, disabled, favoriteOn, armed, onDiscard, onF
   }, []);
   useEffect(() => { if (fontReady) return; let alive = true; document.fonts?.load(`16px ${barFont()}`).then(() => { if (alive) setFontReady(true); }).catch(() => {}); return () => { alive = false; }; }, [fontReady]);
   const geometry = useMemo(() => size.width ? barGeometry(size.width, size.button, size.heart) : null, [size.width, size.button, size.heart]);
-  const fit = useMemo(() => geometry ? pickVariant(geometry.discard.content.w, size.rem) : null, [geometry, size.rem, fontReady]);
+  const fit = useMemo(() => geometry ? pickVariant(geometry.discard.content.w, size.rem, geometry.discard.content.h) : null, [geometry, size.rem, fontReady]);
   const style = { '--bar-height': geometry ? `${geometry.height}px` : undefined } as CSSProperties;
   return <div ref={host} className={`decision-bar ${armed ? `armed-${armed}` : ''} ${favoriteOn ? 'is-favorites' : ''} ${fit ? `is-${fit.variant}` : ''}`} style={style}>
     {geometry && fit && <>
@@ -222,7 +215,6 @@ const view = (box: Box) => `${f(box.x)} ${f(box.y)} ${f(box.w)} ${f(box.h)}`;
 function SideButton({ kind, piece, fit, disabled, label, onClick }: { kind: 'discard' | 'keep'; piece: Piece & { content: Box }; fit: { variant: BarVariant; font: number; icon: number }; disabled: boolean; label: string; onClick: () => void }) {
   const { box, content } = piece;
   const icon = <BarIcon name={kind === 'discard' ? 'trash' : 'bookmark'} className="bar-symbol"/>;
-  const arrow = fit.variant === 'full' && <BarIcon name="arrow" flip={kind === 'keep'} className="bar-arrow"/>;
   const word = fit.variant !== 'icon' && <span className="bar-word" aria-hidden="true">{LABELS[kind]()}</span>;
   return <button type="button" className={`bar-piece bar-side bar-${kind}`} disabled={disabled} onClick={onClick} aria-label={label} style={place(box)}>
     <svg viewBox={view(box)} aria-hidden="true" focusable="false">
@@ -235,7 +227,7 @@ function SideButton({ kind, piece, fit, disabled, label, onClick }: { kind: 'dis
       </g>
     </svg>
     <span className="bar-content" style={{ left: content.x - box.x, top: content.y - box.y, width: content.w, height: content.h, fontSize: fit.font, '--bar-icon': `${fit.icon}px` } as CSSProperties}>
-      {kind === 'discard' ? <>{arrow}{icon}{word}</> : <>{icon}{word}{arrow}</>}
+      {icon}{word}
     </span>
   </button>;
 }

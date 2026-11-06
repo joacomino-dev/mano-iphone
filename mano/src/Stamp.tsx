@@ -43,33 +43,6 @@ export function DecisionIcon({ kind, size = 22, className = '' }: { kind: StampK
     <path d={ICON[kind]} fill={kind === 'favorite' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>;
 }
-function DiscardTicket() {
-  return <svg viewBox="0 0 148 60" aria-hidden="true" focusable="false">
-    <rect x="2.5" y="2.5" width="143" height="55" rx="9" fill="var(--stamp-fill, none)" stroke="currentColor" strokeWidth="3" strokeDasharray="8 5"/>
-    <g transform="translate(12 13) scale(1.42)"><path d={ICON.discard} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></g>
-    <text className="stamp-word" x="54" y="36">ELIMINAR</text>
-  </svg>;
-}
-function FavoriteHeart() {
-  return <svg viewBox="0 0 100 92" aria-hidden="true" focusable="false">
-    <path d="M50 86C20 64 5 48 5 30 5 16 16 5 30 5c9 0 16 5 20 12 4-7 11-12 20-12 14 0 25 11 25 25 0 18-15 34-45 56z" fill="currentColor"/>
-    <path d="M50 76C26 58 14 45 14 31c0-9 7-17 16-17 8 0 14 5 20 14 6-9 12-14 20-14 9 0 16 8 16 17 0 14-12 27-36 45z" fill="none" stroke="var(--stamp-line, #FAF6EE)" strokeWidth="2"/>
-    <text className="stamp-word on-fill" x="50" y="46" textAnchor="middle">FAVORITA</text>
-  </svg>;
-}
-
-function LaterPostmark() {
-  return <svg viewBox="0 0 160 64" aria-hidden="true" focusable="false">
-    <circle cx="32" cy="32" r="27" fill="var(--stamp-fill, none)" stroke="currentColor" strokeWidth="3.5"/>
-    <circle cx="32" cy="32" r="20" fill="none" stroke="currentColor" strokeWidth="1.5"/>
-    <path d="M32 19v13l9 6" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
-    {/* A white wavy band between the cancel lines keeps the word legible on any photo. */}
-    <path d="M64 14c8-5 16 5 24 0s16 5 24 0 16 5 24 0 16 5 20 2V52c-4-3-12 3-20-2s-16 5-24 0-16 5-24 0-16 5-24 0Z" fill="var(--stamp-band, #FFFFFF)"/>
-    <path d="M64 14c8-5 16 5 24 0s16 5 24 0 16 5 24 0 16 5 20 2M64 50c8-5 16 5 24 0s16 5 24 0 16 5 24 0 16 5 20 2" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
-    <text className="stamp-word" x="67" y="37">MÁS TARDE</text>
-  </svg>;
-}
-
 /** 0.9.6: the decision stamps are the illustrated ones (public/assets/stamps,
  * cut from mano/brand/stamps/*-source.webp by cut-stamps.py, transparent
  * background). `word`: the stamp with its word to the right (on the cards, over
@@ -80,15 +53,14 @@ export function Stamp({ kind, level, word = false, className = '' }: { kind: Sta
   if (level) return <span className={`stamp stamp-${kind} ${className}`} aria-hidden="true"><KeepSeal level={level}/></span>;
   // The illustrated word is lettered in Spanish: other languages set the same
   // seal next to their own word, between the same wavy lines.
-  if (word && lang !== 'es') return <span className={`stamp stamp-${kind} is-art has-word is-composed ${className}`} aria-hidden="true">
+  // 9.8.3: the new trash can for «Eliminar» has no lettered version: its word is set beside it too.
+  if (word && (lang !== 'es' || kind === 'discard')) return <span className={`stamp stamp-${kind} is-art has-word is-composed ${className}`} aria-hidden="true">
     <img src={`/assets/stamps/${kind}.webp`} alt="" draggable={false}/><span className="stamp-lettering">{WORDS[kind]()}</span>
   </span>;
   return <span className={`stamp stamp-${kind} is-art ${word ? 'has-word' : ''} ${className}`} aria-hidden="true">
     <img src={`/assets/stamps/${kind}${word ? '-word' : ''}.webp`} alt="" draggable={false}/>
   </span>;
 }
-/** The drawn stamps before 0.9.6, kept for reference and a possible fallback. */
-export const DRAWN_STAMPS = { DiscardTicket, LaterPostmark, FavoriteHeart };
 
 /** A decision lands: the stamp hits the table, then follows the card out. It is
  * pure decoration over the stack (no pointer events, no state), so it never

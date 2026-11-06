@@ -337,3 +337,12 @@ Base Git / commit: `claude/cocowash-9.8.2` desde `f2d4102`.
 Cambios realizados: resumen sin desplazamiento con aviso claro y botón rojo «Vaciar en Fotos» (abre Fotos; no hay API para vaciar «Eliminado recientemente»); «Una última mirada» con carta y botones en pie fijo; cargador girando como capa del compositor; barra de decisión sin flechas en todos los idiomas; «No permitir» de Fotos (PHPhotosError 3072) ya no es un error; frase de Apoyo sin doble sentido; sello «para siempre» dorado suave. Plan de skills para 9.8.3 en [PLAN_983_SKILLS](../ai-handoff/PLAN_983_SKILLS.md).
 Validaciones: 120 Node, TypeScript; capturas `work/qa-982/`; CI en CURRENT_STATE.
 Impacto para Codex: nuevo método nativo `openPhotos` (`photos-redirect://`).
+
+### CW-CL-040 — 9.8.3: revisión con skills y mejoras del usuario
+Fecha: 2026-11-06, America/Bogota
+Agente: Claude
+Estado: completada local, pendiente de prueba física e integración.
+Base Git / commit: `claude/cocowash-9.8.3` desde `0d08e83`.
+Cambios realizados: nuevo basurero ilustrado como sello «Eliminar» (fuente en `brand/stamps/discard-trash-source.webp`); barra de decisión con icono grande y verbo debajo en todos los idiomas; cartas fijas siempre en «Una última mirada» (bajo los botones) y en el resumen (la siguiente se prepara mientras se ve una); resumen que explica que el espacio se libera al vaciar «Eliminado recientemente», con pasos y «Abrir Fotos»; postales de demostración 1–6 redibujadas. Revisión: `/code-review` high (7 corregidos, 1 omitido), checklist de `ui-ux-pro-max` con `tests/qa-a11y-audit.mjs` (área táctil del chip), lint manual de `styleseed` (hex a tokens), `swiftui-pro` (topes de Dynamic Type en la carta nativa), `/simplify` (cadencia de cierre, variantes con flecha, sellos dibujados y CSS por capas eliminados).
+Validaciones: 119 Node, TypeScript; capturas `work/qa-983/`; CI en CURRENT_STATE.
+Pendiente del plan: Nickture, unslop y asodev no están instalados (revisión de traducciones y fichas de tienda); `frontend-design` solo con pantallas elegidas por el usuario.
