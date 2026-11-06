@@ -56,7 +56,12 @@ limpia y cierre tocando fuera; todo para la App Store mundial.
 native-web. Edge con puente simulado: 82 capturas en `work/qa-981/` (5 idiomas,
 iPhone SE 130 %), sin errores JS; foto anclada cerrada tocando fuera en los 5;
 carta del resumen dentro de la tarjeta sin scroll. La carta nativa solo se ve en
-el iPhone. CI e IPA: ver CURRENT_STATE.
+el iPhone.
+[CI 42153652260](https://github.com/joacomino-dev/mano-iphone/actions/runs/42153652260) **success** (Swift, Release con
+GoogleMobileAds, arranque). IPA de fuente `49f416b`: `C:/Users/Joaco/Downloads/CocoWash-9.8.1-build28-49f416b.ipa`,
+7.050.697 bytes, SHA-256 `a79df37dbe23bacea0ed0ec7aebca4efa28deb44799b991dca574cf8617a96af`; 9.8.1 (28), sin reset,
+anuncios de prueba, validador desactivado, `CFBundleLocalizations` es/en/fr/ar/ja y sus `InfoPlist.strings`.
+La CI anterior (`b207c04`) dejó `en` fuera por `configure-ios.mjs`; corregido en `49f416b`.
 
 ## Pendiente
 

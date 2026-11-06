@@ -8,7 +8,8 @@ CW-CL-038. Anuncios fijos en resumen y «Una última mirada» (sin validador), c
 20–30 fotos, modo de prueba infinito, cinco idiomas (es, en, fr, ar, ja), rejillas
 en Ajustes/Filtros, sellos de Apoyo, corazón rosa Wash, iCloud anticipado, intro de
 zoom y foto anclada más limpia. Rama `claude/cocowash-9.8.1`.
-[Informe](../ai-handoff/COCOWASH_981.md). CI e IPA pendientes de esta entrada. Sin merge ni Release.
+[Informe](../ai-handoff/COCOWASH_981.md). IPA `C:/Users/Joaco/Downloads/CocoWash-9.8.1-build28-49f416b.ipa`,
+[CI 42153652260](https://github.com/joacomino-dev/mano-iphone/actions/runs/42153652260) success. Sin merge ni Release.
 
 ## Desarrollo para pruebas: 9.8 / build 27 (Claude)
 
