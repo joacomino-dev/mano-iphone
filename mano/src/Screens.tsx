@@ -5,6 +5,7 @@ import { AnimatedNumber, CocoLoader } from './Loader';
 import type { PhotoPermission } from './library';
 import { Character } from './Characters';
 import { formatBytes } from './meta';
+import { locale, parts, t, tn } from './i18n';
 
 const rise = (reduced: boolean | null, delay = 0) => reduced ? { initial: false as const } : { initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 }, transition: { type: 'spring' as const, stiffness: 320, damping: 32, delay } };
 
@@ -14,11 +15,11 @@ export function AccessScreen({ status, request, openSettings }: { status: PhotoP
   const denied = status === 'denied';
   return <main className="status-screen">
     <Character pose={denied ? 'coqui-think' : 'coqui-point'} height={150} className="status-character" motion={denied ? 'sway' : 'idle'}/>
-    <motion.h1 {...rise(reduced, .05)}>CocoWash necesita tus fotos</motion.h1>
-    <motion.p {...rise(reduced, .1)}>{denied ? 'Sin acceso a Fotos no podemos mostrarte tu carrete. Actívalo en Ajustes › CocoWash › Fotos y vuelve aquí.' : 'Para empezar, permite el acceso a Fotos. Todo se queda en tu iPhone.'}</motion.p>
+    <motion.h1 {...rise(reduced, .05)}>{t('CocoWash necesita tus fotos')}</motion.h1>
+    <motion.p {...rise(reduced, .1)}>{denied ? t('Sin acceso a Fotos no podemos mostrarte tu carrete. Actívalo en Ajustes › CocoWash › Fotos y vuelve aquí.') : t('Para empezar, permite el acceso a Fotos. Todo se queda en tu iPhone.')}</motion.p>
     <motion.div {...rise(reduced, .15)} className="status-actions">
-      {denied ? <button className="primary-empty" onClick={openSettings}><GearSixIcon size={20} weight="bold"/>Abrir Ajustes</button>
-        : <button className="primary-empty" onClick={request}><ImagesIcon size={20} weight="bold"/>Permitir acceso a Fotos</button>}
+      {denied ? <button className="primary-empty" onClick={openSettings}><GearSixIcon size={20} weight="bold"/>{t('Abrir Ajustes')}</button>
+        : <button className="primary-empty" onClick={request}><ImagesIcon size={20} weight="bold"/>{t('Permitir acceso a Fotos')}</button>}
     </motion.div>
   </main>;
 }
@@ -30,10 +31,10 @@ export function PreparingScreen({ progress, cancel }: { progress?: number; cance
   useEffect(() => { const t = setTimeout(() => setSlow(true), 7000); return () => clearTimeout(t); }, []);
   return <main className="status-screen is-quiet" aria-busy="true">
     <div className="character-pair"><Character pose="coqui-photos" height={140}/><Character pose="memo-cards" height={112} delay={.15}/></div>
-    <CocoLoader size={44} progress={progress} label="Preparando tus fotos"/>
-    <p role="status" className="status-line">Coqui está preparando tus fotos…</p>
-    {slow && <motion.p className="status-hint" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>Si están en iCloud puede tardar un poco más.</motion.p>}
-    {slow && cancel && <button className="text-button" onClick={cancel}>Cancelar</button>}
+    <CocoLoader size={44} progress={progress} label={t('Preparando tus fotos')}/>
+    <p role="status" className="status-line">{t('Coqui está preparando tus fotos…')}</p>
+    {slow && <motion.p className="status-hint" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>{t('Si están en iCloud puede tardar un poco más.')}</motion.p>}
+    {slow && cancel && <button className="text-button" onClick={cancel}>{t('Cancelar')}</button>}
   </main>;
 }
 
@@ -41,9 +42,9 @@ export function PreparingScreen({ progress, cancel }: { progress?: number; cance
 export function LoadErrorScreen({ message, retry }: { message: string; retry: () => void }) {
   return <main className="status-screen" role="alert">
     <Character pose="coqui-shrug" height={130} className="status-character" motion="still"/>
-    <h1>No pudimos abrir tu carrete</h1>
-    <p>{message}</p>
-    <div className="status-actions"><button className="primary-empty" onClick={retry}><ArrowClockwiseIcon size={20} weight="bold"/>Reintentar</button></div>
+    <h1>{t('No pudimos abrir tu carrete')}</h1>
+    <p>{t(message)}</p>
+    <div className="status-actions"><button className="primary-empty" onClick={retry}><ArrowClockwiseIcon size={20} weight="bold"/>{t('Reintentar')}</button></div>
   </main>;
 }
 
@@ -67,7 +68,6 @@ export function readLifetime(key: string): Lifetime {
   catch { return { bytes: 0, items: 0 }; }
 }
 export function saveLifetime(key: string, value: Lifetime) { try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* optional */ } }
-const plural = (n: number, one: string, many: string) => `${n.toLocaleString('es')} ${n === 1 ? one : many}`;
 
 /** End of a round («Terminar»): a stamped summary. Pending discards stay for the
  * next round; with any pending, «Una última mirada» leads, since deletion only
@@ -77,31 +77,33 @@ export function SessionDone({ stats, pending, pendingBytes, pendingPartial, life
   const reduced = useReducedMotion();
   const total = stats.keep + stats.discard + stats.favorite + stats.later;
   const freed = stats.freedPhotos + stats.freedVideos > 0;
-  const freedLabel = formatBytes(stats.freed);
-  const pendingLabel = formatBytes(pendingBytes);
-  const items = [stats.freedPhotos ? plural(stats.freedPhotos, 'foto', 'fotos') : '', stats.freedVideos ? plural(stats.freedVideos, 'vídeo', 'vídeos') : ''].filter(Boolean).join(' y ');
-  return <main className="status-screen session-done">
-    {total || freed ? <div className="character-pair"><Character pose="coqui-cheer" height={freed ? 120 : 140} motion="hop"/><Character pose="memo-dance" height={freed ? 96 : 110} motion="hop" delay={.2}/></div>
-      : <Character pose="memo-calm" height={120} className="status-character" motion="sway"/>}
-    <motion.div className="done-stamp" initial={reduced ? false : { scale: 1.6, opacity: 0, rotate: -14 }} animate={{ scale: 1, opacity: 1, rotate: -6 }} transition={{ type: 'spring', stiffness: 380, damping: 18, delay: .05 }} aria-hidden="true">{freed ? 'Liberado' : 'Guardado'}</motion.div>
-    <motion.h1 {...rise(reduced, .12)}>{freed ? 'Espacio recuperado.' : total ? 'Buena ronda.' : 'Revisión guardada.'}</motion.h1>
-    {freed && <motion.section {...rise(reduced, .16)} className="done-freed" aria-label="Espacio liberado">
-      <span className="freed-label">{stats.freedPartial && freedLabel ? 'Liberaste al menos' : 'Liberaste'}</span>
-      <motion.strong className="freed-amount" initial={reduced ? false : { scale: .6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 16, delay: .3 }}>{freedLabel ? freedLabel : plural(stats.freedPhotos + stats.freedVideos, 'archivo', 'archivos')}</motion.strong>
-      <span className="freed-items">{items} a «Eliminado recientemente»</span>
-      {lifetime > stats.freed && formatBytes(lifetime) && <span className="freed-total">Con CocoWash ya llevas {formatBytes(lifetime)}</span>}
-      <small>El espacio vuelve del todo cuando Fotos vacía «Eliminado recientemente» (30 días) o cuando lo vacías tú.</small>
+  const freedLabel = formatBytes(stats.freed, locale);
+  const pendingLabel = formatBytes(pendingBytes, locale);
+  const items = [stats.freedPhotos ? tn('photos', stats.freedPhotos) : '', stats.freedVideos ? tn('videos', stats.freedVideos) : ''].filter(Boolean);
+  // With the fixed letter below, the characters step back so everything fits.
+  const compact = !!monetization;
+  return <main className={`status-screen session-done ${compact ? 'has-letter' : ''}`}>
+    {total || freed ? <div className="character-pair"><Character pose="coqui-cheer" height={compact ? 88 : freed ? 120 : 140} motion="hop"/><Character pose="memo-dance" height={compact ? 70 : freed ? 96 : 110} motion="hop" delay={.2}/></div>
+      : <Character pose="memo-calm" height={compact ? 90 : 120} className="status-character" motion="sway"/>}
+    <motion.div className="done-stamp" initial={reduced ? false : { scale: 1.6, opacity: 0, rotate: -14 }} animate={{ scale: 1, opacity: 1, rotate: -6 }} transition={{ type: 'spring', stiffness: 380, damping: 18, delay: .05 }} aria-hidden="true">{freed ? t('Liberado') : t('Guardado')}</motion.div>
+    <motion.h1 {...rise(reduced, .12)}>{freed ? t('Espacio recuperado.') : total ? t('Buena ronda.') : t('Revisión guardada.')}</motion.h1>
+    {freed && <motion.section {...rise(reduced, .16)} className="done-freed" aria-label={t('Espacio liberado')}>
+      <span className="freed-label">{stats.freedPartial && freedLabel ? t('Liberaste al menos') : t('Liberaste')}</span>
+      <motion.strong className="freed-amount" initial={reduced ? false : { scale: .6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 16, delay: .3 }}>{freedLabel ? freedLabel : tn('files', stats.freedPhotos + stats.freedVideos)}</motion.strong>
+      <span className="freed-items">{items.length > 1 ? t('{photos} y {videos} a «Eliminado recientemente»', { photos: items[0], videos: items[1] }) : t('{items} a «Eliminado recientemente»', { items: items[0] ?? '' })}</span>
+      {lifetime > stats.freed && formatBytes(lifetime, locale) && <span className="freed-total">{t('Con CocoWash ya llevas {size}', { size: formatBytes(lifetime, locale)! })}</span>}
+      <small>{t('El espacio vuelve del todo cuando Fotos vacía «Eliminado recientemente» (30 días) o cuando lo vacías tú.')}</small>
     </motion.section>}
     {total > 0 ? <motion.dl {...rise(reduced, .18)} className="done-stats">
-      <div className="is-keep"><dt>Conservadas</dt><dd><AnimatedNumber value={stats.keep}/></dd></div>
-      <div className="is-discard"><dt>{freed ? 'Eliminadas' : 'Para eliminar'}</dt><dd><AnimatedNumber value={stats.discard}/></dd></div>
-      <div className="is-favorite"><dt>Favoritas</dt><dd><AnimatedNumber value={stats.favorite}/></dd></div>
-    </motion.dl> : !freed && <motion.p {...rise(reduced, .18)}>Tu progreso está a salvo. Sigue cuando quieras.</motion.p>}
-    {stats.later > 0 && <motion.p {...rise(reduced, .2)} className="done-later"><ClockCountdownIcon size={18} weight="bold"/>{stats.later.toLocaleString('es')} para más tarde: {stats.later === 1 ? 'te espera' : 'te esperan'} al final de la pila.</motion.p>}
+      <div className="is-keep"><dt>{t('Conservadas')}</dt><dd><AnimatedNumber value={stats.keep}/></dd></div>
+      <div className="is-discard"><dt>{freed ? t('Eliminadas') : t('Para eliminar')}</dt><dd><AnimatedNumber value={stats.discard}/></dd></div>
+      <div className="is-favorite"><dt>{t('Favoritas')}</dt><dd><AnimatedNumber value={stats.favorite}/></dd></div>
+    </motion.dl> : !freed && <motion.p {...rise(reduced, .18)}>{t('Tu progreso está a salvo. Sigue cuando quieras.')}</motion.p>}
+    {stats.later > 0 && <motion.p {...rise(reduced, .2)} className="done-later"><ClockCountdownIcon size={18} weight="bold"/>{tn('laterWaiting', stats.later)}</motion.p>}
     <motion.div {...rise(reduced, .24)} className="status-actions">
-      {pending > 0 && <button className="primary-empty" onClick={review}><EyeIcon size={20} weight="bold"/>Una última mirada ({pending})</button>}
-      <button className={pending > 0 ? 'secondary-empty' : 'primary-empty'} onClick={again}>Seguir revisando<CaretRightIcon size={18} weight="bold"/></button>
-      {pending > 0 && <p className="status-hint">{pendingLabel ? <>Si eliminas {pending === 1 ? 'lo marcado' : `las ${pending} marcadas`} liberas {pendingPartial ? 'al menos ' : ''}<strong>{pendingLabel}</strong>. Si no, se guardan para la próxima ronda.</> : <>Lo marcado para eliminar se guarda para la próxima ronda si no eliminas ahora.</>}</p>}
+      {pending > 0 && <button className="primary-empty" onClick={review}><EyeIcon size={20} weight="bold"/>{t('Una última mirada ({n})', { n: pending })}</button>}
+      <button className={pending > 0 ? 'secondary-empty' : 'primary-empty'} onClick={again}>{t('Seguir revisando')}<CaretRightIcon size={18} weight="bold" className="flip-rtl"/></button>
+      {pending > 0 && <p className="status-hint">{pendingLabel ? parts(tn(pendingPartial ? 'pendingFreeAtLeast' : 'pendingFree', pending), { amount: <strong key="amount">{pendingLabel}</strong> }) : t('Lo marcado para eliminar se guarda para la próxima ronda si no eliminas ahora.')}</p>}
     </motion.div>
     {monetization}
   </main>;

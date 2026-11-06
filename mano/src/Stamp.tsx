@@ -1,6 +1,7 @@
 import { useId } from 'react';
 import { motion } from 'motion/react';
 import { DAYS } from './domain';
+import { lang, t } from './i18n';
 
 /** The four decision marks. Each one differs by colour, shape, icon and word,
  * so no decision depends on colour alone, and the same icon (DecisionIcon) is
@@ -16,7 +17,7 @@ export const ROMAN = ['I', 'II', 'III', 'IV', 'V'];
 /** What a kept seal level means for the person: when the photo comes back. */
 export function sealRest(level: number) {
   const days = DAYS[Math.min(DAYS.length, Math.max(1, level)) - 1];
-  return Number.isFinite(days) ? `vuelve en ${days} días` : 'se queda guardada hasta que la pidas';
+  return Number.isFinite(days) ? t('vuelve en {days} días', { days }) : t('se queda guardada hasta que la pidas');
 }
 
 function KeepSeal({ level }: { level?: number }) {
@@ -74,8 +75,14 @@ function LaterPostmark() {
  * background). `word`: the stamp with its word to the right (on the cards, over
  * a cream plate so it reads on any photo); without it, the icon alone (tour).
  * A kept item's seal level (I–VIII) stays the drawn seal. */
+const WORDS: Record<StampKind, () => string> = { keep: () => t('Conservar'), discard: () => t('Eliminar'), favorite: () => t('Favorita'), later: () => t('Más tarde') };
 export function Stamp({ kind, level, word = false, className = '' }: { kind: StampKind; level?: number; word?: boolean; className?: string }) {
   if (level) return <span className={`stamp stamp-${kind} ${className}`} aria-hidden="true"><KeepSeal level={level}/></span>;
+  // The illustrated word is lettered in Spanish: other languages set the same
+  // seal next to their own word, between the same wavy lines.
+  if (word && lang !== 'es') return <span className={`stamp stamp-${kind} is-art has-word is-composed ${className}`} aria-hidden="true">
+    <img src={`/assets/stamps/${kind}.webp`} alt="" draggable={false}/><span className="stamp-lettering">{WORDS[kind]()}</span>
+  </span>;
   return <span className={`stamp stamp-${kind} is-art ${word ? 'has-word' : ''} ${className}`} aria-hidden="true">
     <img src={`/assets/stamps/${kind}${word ? '-word' : ''}.webp`} alt="" draggable={false}/>
   </span>;

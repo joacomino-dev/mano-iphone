@@ -3,7 +3,7 @@ import type { Place } from './library.ts';
 import { normalizeQuality, type PreviewQuality } from './preview.ts';
 
 /** Display preferences only. They never change which files enter a session. */
-export type DateFormat = 'dmy' | 'd-mon-y' | 'mon-d-y' | 'iso';
+export type DateFormat = 'dmy' | 'mdy' | 'iso' | 'd-mon-y' | 'mon-d-y' | 'mon-y';
 /** `seal`: show the keep seal on cards. `osd`: show the VHS letters at all;
  * `osdSize`: their size (s / m / l), applied on top of the frame fit. */
 export type OsdSize = 's' | 'm' | 'l';
@@ -11,21 +11,23 @@ export const OSD_SIZES: OsdSize[] = ['s', 'm', 'l'];
 export const OSD_SCALE: Record<OsdSize, number> = { s: .6, m: .8, l: 1 };
 export type PhotoMeta = { date: boolean; time: boolean; location: boolean; seal: boolean; dateFormat: DateFormat; hour12: boolean };
 export type VideoMeta = { date: boolean; time: boolean; location: boolean; duration: boolean; size: boolean; osd: boolean; osdSize: OsdSize; dateFormat: DateFormat; hour12: boolean };
-/** iCloud originals: `save` shows what is already on the iPhone and downloads
- * only on request (anchor, zoom, «Descargar y ver»); `always` downloads as needed. */
+/** iCloud originals: `always` (9.8.1 default) downloads each card as it reaches
+ * the pile and the next ones in line; `save` shows what is already on the iPhone
+ * and downloads only on request (anchor, zoom). */
 export type CloudMode = 'save' | 'always';
 export type DisplaySettings = { photo: PhotoMeta; video: VideoMeta; haptics: boolean; quality: PreviewQuality; cloud: CloudMode };
 export const DISPLAY_KEY = 'cocowash-display-v1';
 /** v2 (0.8): the tour shows once more after updating, so it can be seen with
  * the new main screen; later launches skip it («Ver la introducción» in Ajustes). */
 export const ONBOARDING_KEY = 'cocowash-onboarding-v2';
-export const DATE_FORMATS: DateFormat[] = ['dmy', 'd-mon-y', 'mon-d-y', 'iso'];
+/** Two rows of three in Ajustes: numeric first, then with the month's name. */
+export const DATE_FORMATS: DateFormat[] = ['dmy', 'mdy', 'iso', 'd-mon-y', 'mon-d-y', 'mon-y'];
 export const defaultDisplay: DisplaySettings = {
   photo: { date: true, time: false, location: true, seal: true, dateFormat: 'd-mon-y', hour12: false },
   video: { date: true, time: true, location: true, duration: true, size: true, osd: true, osdSize: 'm', dateFormat: 'mon-d-y', hour12: true },
   haptics: true,
   quality: 'balanced',
-  cloud: 'save',
+  cloud: 'always',
 };
 
 export function normalizeDisplay(value: unknown): DisplaySettings {
@@ -43,14 +45,16 @@ export function normalizeDisplay(value: unknown): DisplaySettings {
   };
   return { photo: pick(input.photo, defaultDisplay.photo), video: pick(input.video, defaultDisplay.video),
     haptics: typeof input.haptics === 'boolean' ? input.haptics : defaultDisplay.haptics,
-    quality: normalizeQuality(input.quality), cloud: input.cloud === 'always' ? 'always' : 'save' };
+    quality: normalizeQuality(input.quality), cloud: input.cloud === 'save' ? 'save' : 'always' };
 }
 export function readDisplay(storage?: Pick<Storage, 'getItem'>): DisplaySettings {
-  try { return normalizeDisplay(JSON.parse((storage ?? localStorage).getItem(DISPLAY_KEY) || 'null')); }
+  // 9.8.1 stores the iCloud choice as `icloud`: the old `cloud: 'save'` was the
+  // default almost everyone kept, so it is not carried over.
+  try { const raw = JSON.parse((storage ?? localStorage).getItem(DISPLAY_KEY) || 'null'); return normalizeDisplay(raw && typeof raw === 'object' ? { ...raw, cloud: raw.icloud } : raw); }
   catch { return normalizeDisplay(null); }
 }
 export function saveDisplay(settings: DisplaySettings, storage?: Pick<Storage, 'setItem'>): boolean {
-  try { (storage ?? localStorage).setItem(DISPLAY_KEY, JSON.stringify(normalizeDisplay(settings))); return true; }
+  try { const value = normalizeDisplay(settings); (storage ?? localStorage).setItem(DISPLAY_KEY, JSON.stringify({ ...value, icloud: value.cloud })); return true; }
   catch { return false; }
 }
 
@@ -61,18 +65,33 @@ export function monthShort(date: Date, locale: string): string {
   try { return new Intl.DateTimeFormat(locale, { month: 'short' }).format(date).replace(/\./g, '').trim(); }
   catch { return ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'][date.getMonth()]; }
 }
+/** Scripts whose month names are not written «17 jun 2021»: Intl composes them. */
+const composed = (locale: string) => /^(ja|ar|zh|ko)/.test(locale);
 export function formatDate(ms: number | undefined, format: DateFormat, locale = 'es', upper = false): string | undefined {
   if (!hasDate(ms)) return undefined;
   const date = new Date(ms);
   const d = pad(date.getDate()), m = pad(date.getMonth() + 1), y = String(date.getFullYear());
-  const month = upper ? monthShort(date, locale).toLocaleUpperCase(locale) : monthShort(date, locale);
   switch (format) {
     case 'dmy': return `${d}/${m}/${y}`;
+    case 'mdy': return `${m}/${d}/${y}`;
     case 'iso': return `${y}-${m}-${d}`;
-    case 'mon-d-y': return `${month}. ${d} ${y}`;
+  }
+  // The VHS letters only exist in Latin capitals: camcorders spoke English.
+  const lang = upper && composed(locale) ? 'en' : locale;
+  if (composed(lang)) {
+    const options: Intl.DateTimeFormatOptions = format === 'mon-y' ? { year: 'numeric', month: 'short' } : format === 'mon-d-y' ? { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' } : { year: 'numeric', month: 'short', day: 'numeric' };
+    try { return new Intl.DateTimeFormat(lang, options).format(date); } catch { /* numeric below */ }
+    return `${y}-${m}-${d}`;
+  }
+  const month = upper ? monthShort(date, lang).toLocaleUpperCase(lang) : monthShort(date, lang);
+  switch (format) {
+    case 'mon-d-y': return `${month} ${Number(d)}, ${y}`;
+    case 'mon-y': return `${month} ${y}`;
     default: return `${d} ${month} ${y}`;
   }
 }
+/** The VHS letters draw Latin capitals, digits and a few signs: other scripts drop out. */
+export const osdWritable = (text: string | undefined) => !!text && /^[\p{Script=Latin}\d\s.,:'\/-]+$/u.test(text);
 /** `vhs` puts the meridiem first, as camcorder OSDs did (AM 02:25). */
 export function formatTime(ms: number | undefined, hour12: boolean, vhs = false): string | undefined {
   if (!hasDate(ms)) return undefined;
@@ -114,16 +133,21 @@ export function formatBytes(bytes: number | undefined, locale = 'es'): string | 
   const [unit, size] = bytes >= 999.5e6 ? ['GB', 1e9] : bytes >= 999.5e3 ? ['MB', 1e6] : ['KB', 1e3];
   const value = Math.max(unit === 'KB' ? 1 : 0, bytes / size);
   const digits = unit !== 'KB' && value < 10 ? 1 : 0;
-  return `${new Intl.NumberFormat(locale, { maximumFractionDigits: digits }).format(value)} ${unit}`;
+  // French writes octets (Ko, Mo, Go); in Arabic the Latin unit is isolated so
+  // the bidi algorithm keeps «8.2 MB» together inside right-to-left text.
+  const text = `${new Intl.NumberFormat(locale, { maximumFractionDigits: digits }).format(value)} ${/^fr/.test(locale) ? unit.replace('B', 'o') : unit}`;
+  return /^ar/.test(locale) ? `\u2066${text}\u2069` : text;
 }
 
 /** VHS OSD: a top-left stack (time, date, place) and a right column with the
  * duration and the weight (what deleting the video would free). */
-export function vhsLayout(asset: Asset, place: Place | undefined, settings: VideoMeta, locale = 'es') {
+export function vhsLayout(asset: Asset, place: Place | undefined, settings: VideoMeta, appLocale = 'es') {
+  // The VHS letters are Latin capitals: Arabic and Japanese read them in English.
+  const locale = /^(ar|ja)/.test(appLocale) ? 'en' : appLocale;
   const lines = [
     settings.time ? formatTime(asset.date, settings.hour12, true) : undefined,
     settings.date ? formatDate(asset.date, settings.dateFormat, locale, true) : undefined,
-    settings.location ? placeLabel(place, true, 22) : undefined,
+    settings.location && osdWritable(placeLabel(place, true, 22)) ? placeLabel(place, true, 22) : undefined,
   ].filter((line): line is string => !!line);
   const duration = settings.duration ? formatDuration(asset.duration) : undefined;
   const size = settings.size ? formatBytes(asset.bytes, locale)?.toLocaleUpperCase(locale) : undefined;

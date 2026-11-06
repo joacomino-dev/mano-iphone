@@ -8,6 +8,7 @@ import { formatBytes, type VideoMeta } from './meta';
 import { CocoLoader, Deferred } from './Loader';
 import { VhsOverlay } from './Vhs';
 import { haptic } from './haptics';
+import { locale, t } from './i18n';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const clock = (seconds: number) => { const t = Math.max(0, Math.floor(seconds || 0)), h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60); return h ? `${h}:${pad(m)}:${pad(t % 60)}` : `${m}:${pad(t % 60)}`; };
@@ -165,7 +166,7 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
 
   return <div className={`inline-media ${shown ? 'is-started' : ''} ${playing ? 'is-playing' : ''} ${frame ? 'has-frame' : ''}`}>
     {children}
-    {url && <video data-testid="inline-video" ref={player} src={url} playsInline muted={muted} loop={!full} preload={card ? 'metadata' : 'auto'} aria-label="Vídeo de tu biblioteca"
+    {url && <video data-testid="inline-video" ref={player} src={url} playsInline muted={muted} loop={!full} preload={card ? 'metadata' : 'auto'} aria-label={t('Vídeo de tu biblioteca')}
       onLoadedData={() => setFrame(true)}
       onLoadedMetadata={e => { const v = e.currentTarget, d = v.duration; if (Number.isFinite(d) && d > 0) setLength(d);
         // Same moment as the view it came from (card ↔ held ↔ anchored).
@@ -179,8 +180,8 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
     {card && (onSound || onOsd || tools) && <div className="video-toggles">
       {/* The icon follows what really plays: iOS may refuse sound and fall back
           to silent. A tap asks for the opposite inside the gesture itself. */}
-      {onSound && <button onPointerDown={stop} onClick={e => { e.stopPropagation(); toggleSound(); }} aria-pressed={!muted} aria-label={muted ? 'Activar sonido' : 'Silenciar'}>{muted ? <SpeakerSlashIcon size={18} weight="bold"/> : <SpeakerHighIcon size={18} weight="bold"/>}</button>}
-      {onOsd && <button onPointerDown={stop} onClick={e => { e.stopPropagation(); haptic('selection'); onOsd(); }} aria-pressed={meta?.osd !== false} aria-label={meta?.osd !== false ? 'Ocultar letras VHS' : 'Mostrar letras VHS'}>{meta?.osd !== false ? <EyeIcon size={18} weight="bold"/> : <EyeSlashIcon size={18} weight="bold"/>}</button>}
+      {onSound && <button onPointerDown={stop} onClick={e => { e.stopPropagation(); toggleSound(); }} aria-pressed={!muted} aria-label={muted ? t('Activar sonido') : t('Silenciar')}>{muted ? <SpeakerSlashIcon size={18} weight="bold"/> : <SpeakerHighIcon size={18} weight="bold"/>}</button>}
+      {onOsd && <button onPointerDown={stop} onClick={e => { e.stopPropagation(); haptic('selection'); onOsd(); }} aria-pressed={meta?.osd !== false} aria-label={meta?.osd !== false ? t('Ocultar letras VHS') : t('Mostrar letras VHS')}>{meta?.osd !== false ? <EyeIcon size={18} weight="bold"/> : <EyeSlashIcon size={18} weight="bold"/>}</button>}
       {tools}
     </div>}
 
@@ -191,29 +192,29 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
       {mode !== 'peek' && (loading || chip) && <motion.div key="center" className="video-center"
         initial={reduced ? false : { opacity: 0, scale: .9 }} animate={{ opacity: 1, scale: 1 }} exit={reduced ? { opacity: 0, transition: { duration: 0 } } : { opacity: 0, scale: .92 }}
         transition={{ type: 'spring', stiffness: 460, damping: 34 }}>
-        {loading ? <Deferred><span className="video-preparing" role="status"><CocoLoader progress={progress} size={56} label={fetching ? `Descargando de iCloud, ${percent} %` : percent ? `Preparando vídeo, ${percent} %` : 'Preparando vídeo'}/>
-          <span>{fetching ? `Descargando de iCloud… ${percent} %` : percent ? `Preparando… ${percent} %` : 'Preparando vídeo…'}</span></span></Deferred>
-          : <button className="video-chip" onClick={choose} aria-label={`Reintentar reproducción de vídeo de ${clock(length)}`}><PlayIcon weight="fill" size={18}/>Reintentar reproducción</button>}
+        {loading ? <Deferred><span className="video-preparing" role="status"><CocoLoader progress={progress} size={56} label={fetching ? t('Descargando de iCloud: {percent} %', { percent }) : percent ? t('Preparando vídeo: {percent} %', { percent }) : t('Preparando vídeo')}/>
+          <span>{fetching ? t('Descargando de iCloud: {percent} %', { percent }) : percent ? t('Preparando… {percent} %', { percent }) : t('Preparando vídeo…')}</span></span></Deferred>
+          : <button className="video-chip" onClick={choose} aria-label={t('Reintentar la reproducción del vídeo de {length}', { length: clock(length) })}><PlayIcon weight="fill" size={18}/>{t('Reintentar reproducción')}</button>}
       </motion.div>}
     </AnimatePresence>
 
     {waiting && playing && <span className="video-buffering" aria-hidden="true"><CocoLoader size={44}/></span>}
 
     {full && !failure && url && <div className="video-controls" onPointerDown={stop} onClick={stop}>
-      <button onClick={playing ? pause : choose} aria-label={playing ? 'Pausar' : 'Reproducir'}>{playing ? <PauseIcon weight="fill" size={20}/> : <PlayIcon weight="fill" size={20}/>}</button>
-      <input type="range" min={0} max={length || 1} step={.05} value={Math.min(time, length || 1)} aria-label="Posición del vídeo" aria-valuetext={`${clock(time)} de ${clock(length)}`}
+      <button onClick={playing ? pause : choose} aria-label={playing ? t('Pausar') : t('Reproducir')}>{playing ? <PauseIcon weight="fill" size={20}/> : <PlayIcon weight="fill" size={20}/>}</button>
+      <input type="range" min={0} max={length || 1} step={.05} value={Math.min(time, length || 1)} aria-label={t('Posición del vídeo')} aria-valuetext={t('{time} de {length}', { time: clock(time), length: clock(length) })}
         style={{ '--fill': `${length ? Math.min(100, time / length * 100) : 0}%` } as CSSProperties} onChange={e => seek(Number(e.currentTarget.value))}/>
       <span className="video-time"><span>{clock(time)}</span> / {clock(length)}</span>
-      <button onClick={toggleSound} aria-label={muted ? 'Activar sonido' : 'Silenciar'}>{muted ? <SpeakerSlashIcon size={20} weight="bold"/> : <SpeakerHighIcon size={20} weight="bold"/>}</button>
-      <button onClick={enterFullscreen} aria-label="Pantalla completa"><CornersOutIcon size={20} weight="bold"/></button>
+      <button onClick={toggleSound} aria-label={muted ? t('Activar sonido') : t('Silenciar')}>{muted ? <SpeakerSlashIcon size={20} weight="bold"/> : <SpeakerHighIcon size={20} weight="bold"/>}</button>
+      <button onClick={enterFullscreen} aria-label={t('Pantalla completa')}><CornersOutIcon size={20} weight="bold"/></button>
     </div>}
 
     {copy && mode !== 'peek' && <div className={`video-error ${copy.action === 'download' ? 'is-cloud' : ''}`} role={copy.action === 'download' ? 'status' : 'alert'}>
-      <span>{copy.message}</span>
-      {copy.action === 'download' && <button onPointerDown={stop} onClick={e => { e.stopPropagation(); haptic('light'); setFetching(true); download(); }}><CloudArrowDownIcon size={18} weight="bold"/>Descargar y ver{formatBytes(asset.bytes) ? ` · ${formatBytes(asset.bytes)}` : ''}</button>}
-      {copy.action === 'retry' && <button onClick={() => { setPlayError(false); retry(); }}><ArrowClockwiseIcon size={18} weight="bold"/>Reintentar</button>}
-      {copy.action === 'fullscreen' && <button onClick={fullscreen}><CornersOutIcon size={18} weight="bold"/>Ver en pantalla completa</button>}
-      {copy.action === 'settings' && <button onClick={openSettings}><GearSixIcon size={18} weight="bold"/>Abrir Ajustes</button>}
+      <span>{t(copy.message)}</span>
+      {copy.action === 'download' && <button onPointerDown={stop} onClick={e => { e.stopPropagation(); haptic('light'); setFetching(true); download(); }}><CloudArrowDownIcon size={18} weight="bold"/>{formatBytes(asset.bytes, locale) ? t('Descargar y ver ({size})', { size: formatBytes(asset.bytes, locale)! }) : t('Descargar y ver')}</button>}
+      {copy.action === 'retry' && <button onClick={() => { setPlayError(false); retry(); }}><ArrowClockwiseIcon size={18} weight="bold"/>{t('Reintentar')}</button>}
+      {copy.action === 'fullscreen' && <button onClick={fullscreen}><CornersOutIcon size={18} weight="bold"/>{t('Ver en pantalla completa')}</button>}
+      {copy.action === 'settings' && <button onClick={openSettings}><GearSixIcon size={18} weight="bold"/>{t('Abrir Ajustes')}</button>}
     </div>}
   </div>;
 }

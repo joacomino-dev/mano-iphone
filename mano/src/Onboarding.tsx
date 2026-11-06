@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { CaretRightIcon, LockSimpleIcon, PushPinIcon, SlidersHorizontalIcon, HandTapIcon, ArrowsOutSimpleIcon } from '@phosphor-icons/react';
+import { CaretRightIcon, LockSimpleIcon, PushPinIcon, SlidersHorizontalIcon, HandTapIcon, MagnifyingGlassPlusIcon } from '@phosphor-icons/react';
 import type { PhotoPermission } from './library';
 import { CocoLoader } from './Loader';
 import { haptic } from './haptics';
@@ -8,20 +8,24 @@ import { Stamp } from './Stamp';
 import { Character } from './Characters';
 import { Wordmark } from './Chrome';
 import { ONBOARDING_KEY } from './meta';
+import { t } from './i18n';
 
 /* CocoWash's own generated postcards: no stock photos, no people, and no
    character presented as final (character scenes come later). */
 const PHOTO = '/assets/demo/postcard-1.svg';
 const NEXT = '/assets/demo/postcard-6.svg';
+const THIRD = '/assets/demo/postcard-3.svg';
+/** Card 3's group of similar photos: each tap brings the next one to the front. */
+const GROUP = [PHOTO, NEXT, THIRD];
 const FAN = ['/assets/demo/postcard-2.svg', PHOTO, '/assets/demo/postcard-5.svg'];
 
 /** The empty main screen behind the tour: header and an empty pile, inert. */
 function Ghost() {
   return <div className="ob-ghost" aria-hidden="true" inert>
     <div className="archive-header">
-      <span className="header-action header-filters"><SlidersHorizontalIcon size={18}/>Filtros</span>
+      <span className="header-action header-filters"><SlidersHorizontalIcon size={18}/>{t('Filtros')}</span>
       <span className="header-brand"><span className="brand-wordmark"><Wordmark/></span></span>
-      <span className="header-action finish">Terminar</span>
+      <span className="header-action finish">{t('Terminar')}</span>
     </div>
     <div className="ob-ghost-pile"/>
     <div className="ob-ghost-buttons"><span/><span/></div>
@@ -47,8 +51,11 @@ export const GESTURE_ROUND_MS = STEP_MS * 4;
 /** Cards 2–3: the photo is already in place when the card arrives, and the demo
  * starts only after this pause (the card's own transition has settled). */
 const DEMO_DELAY_MS = 700;
-/** Card 3: each of tap / anchor / pinch plays this long. */
-const PHASE_MS = 3200;
+/** Card 3, 9.8.1: «Toca» leads and stays longest (two taps through a group of
+ * three), then «Zoom» shows its two ways: hold and drag to «Anclar», or pinch. */
+const PHASE_MS: Record<Phase, number> = { tap: 5200, hold: 3800, pinch: 3600 };
+/** Within the tap phase: when each tap lands (s). */
+const TAPS = [1.1, 3.0];
 type Step = 'keep' | 'discard' | 'favorite' | 'later';
 const STEPS: Step[] = ['keep', 'discard', 'favorite', 'later'];
 const OUT: Record<Step, { x: number; y: number; rotate: number }> = {
@@ -58,34 +65,46 @@ const OUT: Record<Step, { x: number; y: number; rotate: number }> = {
  * would jump straight to the last keyframe and nothing would move). */
 const REST = { x: 0, y: 0, rotate: 0, opacity: 1, scale: 1 };
 const ARROW: Record<Step, string> = { keep: '→', discard: '←', favorite: '↑', later: '↓' };
-type Phase = 'tap' | 'anchor' | 'zoom';
-const PHASES: Phase[] = ['tap', 'anchor', 'zoom'];
+type Phase = 'tap' | 'hold' | 'pinch';
+const PHASES: Phase[] = ['tap', 'hold', 'pinch'];
 
-/** Cards 2 and 3 share this one photo: it acts out the three decisions, then
- * stays on screen to show the tap in a group, Anclar and Ampliar. */
+/** Cards 2 and 3 share this one photo: it acts out the four decisions, then
+ * stays on screen for card 3 — the tap through a group, and the two ways to zoom. */
 function PhotoDemo({ step, still, waiting, phase, gesture, turn }: { step: 1 | 2; still: boolean; waiting: boolean; phase: Phase; gesture: Step; turn: number }) {
   const gestures = step === 1 && !still && !waiting;
   const acting = step === 2 && !still && !waiting;
-  const D = PHASE_MS / 1000 - .2;
+  const D = PHASE_MS[phase] / 1000 - .2;
   const out = OUT[gesture];
   const group = step === 2;
+  // Tap phase: which photo of the group is in front (0 → 1 → 2), one per tap.
+  const [shown, setShown] = useState(0);
+  useEffect(() => {
+    setShown(0);
+    if (!acting || phase !== 'tap') return;
+    const timers = TAPS.map((at, i) => setTimeout(() => setShown(i + 1), at * 1000 + 120));
+    return () => timers.forEach(clearTimeout);
+  }, [acting, phase]);
+  const front = group && phase === 'tap' ? (still ? 1 : shown) : 0;
   // One step: out (finger on), hold with the stamp, back (faint, finger off).
   const card = gestures ? { x: [0, out.x, out.x, 0, 0], y: [0, out.y, out.y, 0, 0], rotate: [0, out.rotate, out.rotate, 0, 0], opacity: [1, 1, 1, .45, 1], scale: out.y ? [1, .92, .92, 1, 1] : 1 }
     : !acting ? { x: 0, y: 0, rotate: 0, opacity: 1, scale: 1 }
-    // Anchor: hold (lift), drag down onto «Anclar», let go: the photo comes back
-    // up open and larger, fully opaque, and stays — that is what anchoring does.
-    : phase === 'anchor' ? { x: 0, y: [0, 0, 0, 58, 58, 0, 0], rotate: 0, opacity: 1, scale: [1, 1.04, 1.04, .9, .9, 1.12, 1.12] }
-    // Pinch does the same: it opens the photo large, and stays.
-    : phase === 'zoom' ? { x: 0, y: 0, rotate: 0, opacity: 1, scale: [1, 1, 1.22, 1.22] }
-    // Tap: a visible press, then the next photo of the group takes its place.
-    : { x: 0, y: 0, rotate: 0, opacity: 1, scale: [1, 1, .95, 1, 1] };
+    // Hold: lift, drag down onto «Anclar», let go: the photo comes back up open
+    // and larger, and stays — that is anchoring.
+    : phase === 'hold' ? { x: 0, y: [0, 0, 0, 58, 58, 0, 0], rotate: 0, opacity: 1, scale: [1, 1.05, 1.05, .9, .9, 1.14, 1.14] }
+    // Pinch: the photo opens large, then the picture itself zooms in.
+    : phase === 'pinch' ? { x: 0, y: 0, rotate: 0, opacity: 1, scale: [1, 1, 1.14, 1.14] }
+    // Tap: a visible press at each tap.
+    : { x: 0, y: 0, rotate: 0, opacity: 1, scale: [1, 1, .95, 1, 1, .95, 1, 1] };
+  const tapTimes = [0, TAPS[0] / D - .03, TAPS[0] / D, TAPS[0] / D + .05, TAPS[1] / D - .03, TAPS[1] / D, TAPS[1] / D + .05, 1];
   const timing = gestures ? { duration: STEP_MS / 1000, times: [0, .36, .66, .86, 1], ease: 'easeInOut' as const }
-    : acting ? { duration: D, times: phase === 'anchor' ? [0, .1, .22, .46, .56, .72, 1] : phase === 'zoom' ? [0, .12, .5, 1] : [0, .14, .26, .4, 1], ease: 'easeInOut' as const } : { duration: .2 };
+    : acting ? { duration: D, times: phase === 'hold' ? [0, .14, .28, .5, .6, .74, 1] : phase === 'pinch' ? [0, .12, .4, 1] : [0, tapTimes[1], tapTimes[2], tapTimes[3], tapTimes[4], tapTimes[5], tapTimes[6], 1], ease: 'easeInOut' as const } : { duration: .2 };
   return <div className={`ob-demo ob-photo ${group ? 'is-group' : ''}`} aria-hidden="true">
-    {group && <><span className="ob-behind paper is-a"><img src={NEXT} alt="" draggable={false}/></span><span className="ob-behind paper is-b"><img src="/assets/demo/postcard-3.svg" alt="" draggable={false}/></span></>}
+    {group && <><span className="ob-behind paper is-a"><img src={GROUP[(front + 1) % 3]} alt="" draggable={false}/></span><span className="ob-behind paper is-b"><img src={GROUP[(front + 2) % 3]} alt="" draggable={false}/></span></>}
+    {group && phase === 'tap' && <span className="ob-count">{t('{n} de {total}', { n: front + 1, total: 3 })}</span>}
     <motion.span key={step === 1 ? `1-${turn}` : `2-${phase}`} className={`ob-card paper ${step === 1 ? 'is-gesture' : ''}`} initial={still ? false : REST} animate={card} transition={timing}>
-      <span className="ob-card-photo"><img src={PHOTO} alt="" draggable={false}/>
-        {group && phase === 'tap' && (still || acting) && <motion.img className="is-next" src={NEXT} alt="" draggable={false} initial={{ opacity: 0 }} animate={{ opacity: still ? 1 : [0, 0, 1, 1] }} transition={still ? { duration: 0 } : { duration: D, times: [0, .3, .5, 1] }}/>}
+      <span className="ob-card-photo">
+        <AnimatePresence initial={false}><motion.img key={GROUP[front]} src={GROUP[front]} alt="" draggable={false} initial={{ opacity: 0, scale: 1.04 }} animate={phase === 'pinch' && acting ? { opacity: 1, scale: [1, 1, 1, 1.7] } : { opacity: 1, scale: 1 }}
+          exit={{ opacity: 0 }} transition={phase === 'pinch' && acting ? { duration: D, times: [0, .4, .5, .9] } : { duration: .22 }}/></AnimatePresence>
       </span>
       {step === 1 && (still || gestures) && <motion.span key={`stamp-${turn}`} className={`ob-stamp is-${gesture}`} initial={{ opacity: 0 }}
         animate={{ opacity: still ? 1 : [0, 0, 1, 1, 0] }} transition={still ? { duration: .2 } : { duration: STEP_MS / 1000, times: [0, .3, .42, .8, 1] }}><Stamp kind={gesture}/></motion.span>}
@@ -93,10 +112,11 @@ function PhotoDemo({ step, still, waiting, phase, gesture, turn }: { step: 1 | 2
     {gestures && <motion.span key={`finger-${turn}`} className="ob-finger" initial={{ x: 0, y: 0, opacity: 0 }} animate={{ x: [0, out.x, out.x, 0], y: [0, out.y, out.y, 0], opacity: [0, 1, .9, 0] }} transition={{ duration: STEP_MS / 1000, times: [0, .38, .7, .85] }}/>}
     {/* Reduce Motion: no travel — the stamp lands in place and an arrow says which way. */}
     {step === 1 && still && <span className={`ob-arrow is-${gesture}`}>{ARROW[gesture]}</span>}
-    {acting && phase === 'tap' && <motion.span key="tap" className="ob-finger is-tap" initial={{ opacity: 0, scale: 1 }} animate={{ opacity: [0, 1, 1, 1, 0], scale: [1, 1, .82, 1, 1] }} transition={{ duration: D, times: [0, .1, .24, .34, .5] }}/>}
-    {acting && phase === 'anchor' && <motion.span key="hold" className="ob-finger" initial={{ opacity: 0, y: 0 }} animate={{ opacity: [0, 1, 1, 1, 0, 0], y: [0, 0, 0, 58, 58, 58] }} transition={{ duration: D, times: [0, .1, .22, .46, .56, 1] }}/>}
-    {acting && phase === 'zoom' && <><motion.span key="z1" className="ob-finger is-pinch" initial={{ opacity: 0, x: -10, y: 10 }} animate={{ opacity: [0, 1, 1, 0], x: [-10, -10, -46, -46], y: [10, 10, 34, 34] }} transition={{ duration: D, times: [0, .1, .5, .62] }}/><motion.span key="z2" className="ob-finger is-pinch" initial={{ opacity: 0, x: 10, y: -10 }} animate={{ opacity: [0, 1, 1, 0], x: [10, 10, 46, 46], y: [-10, -10, -34, -34] }} transition={{ duration: D, times: [0, .1, .5, .62] }}/></>}
-    {group && <span className={`ob-dock ${phase === 'anchor' ? 'is-on' : ''}`}><PushPinIcon size={16} weight={phase === 'anchor' ? 'fill' : 'regular'}/>{phase === 'anchor' ? 'Anclada' : 'Anclar'}</span>}
+    {acting && phase === 'tap' && <motion.span key="tap" className="ob-finger is-tap" initial={{ opacity: 0, scale: 1 }}
+      animate={{ opacity: [0, 1, 1, 1, 1, 1, 1, 0], scale: [1, 1, .78, 1, 1, .78, 1, 1] }} transition={{ duration: D, times: tapTimes }}/>}
+    {acting && phase === 'hold' && <motion.span key="hold" className="ob-finger is-hold" initial={{ opacity: 0, y: 0 }} animate={{ opacity: [0, 1, 1, 1, 0, 0], y: [0, 0, 0, 58, 58, 58] }} transition={{ duration: D, times: [0, .12, .28, .5, .6, 1] }}/>}
+    {acting && phase === 'pinch' && <><motion.span key="z1" className="ob-finger is-pinch" initial={{ opacity: 0, x: -10, y: 10 }} animate={{ opacity: [0, 1, 1, 0], x: [-10, -10, -46, -46], y: [10, 10, 34, 34] }} transition={{ duration: D, times: [0, .1, .4, .5] }}/><motion.span key="z2" className="ob-finger is-pinch" initial={{ opacity: 0, x: 10, y: -10 }} animate={{ opacity: [0, 1, 1, 0], x: [10, 10, 46, 46], y: [-10, -10, -34, -34] }} transition={{ duration: D, times: [0, .1, .4, .5] }}/></>}
+    {group && phase !== 'tap' && <span className={`ob-dock ${phase === 'hold' ? 'is-on' : ''}`}><PushPinIcon size={16} weight={phase === 'hold' ? 'fill' : 'regular'}/>{t('Anclar')}</span>}
   </div>;
 }
 
@@ -112,11 +132,11 @@ function Row({ art, title, children, on }: { art: ReactNode; title: ReactNode; c
   return <li className={`ob-row ${on ? 'is-on' : ''}`}><span className="ob-row-art" aria-hidden="true">{art}</span><span><strong>{title}</strong><span>{children}</span></span></li>;
 }
 
-const cards = [
-  { key: 'meet', title: 'Lo que importa, se queda.', text: 'Coqui y Memo te ayudan a ordenar tu carrete con decisiones rápidas. Tú eliges qué se queda.' },
-  { key: 'how', title: 'Desliza y sella.', text: 'Al soltar, el sello confirma tu decisión.' },
-  { key: 'group', title: 'Toca, ancla y amplía.', text: '' },
-  { key: 'privacy', title: 'Tus fotos no salen de tu iPhone.', text: 'CocoWash necesita acceso a Fotos para mostrarte tu carrete. No sube ni comparte nada, y solo se borra lo que confirmes en Fotos.' },
+const cards = () => [
+  { key: 'meet', title: t('Lo que importa, se queda.'), text: t('Coqui y Memo te ayudan a ordenar tu carrete con decisiones rápidas. Tú eliges qué se queda.') },
+  { key: 'how', title: t('Desliza y sella.'), text: t('Al soltar, el sello confirma tu decisión.') },
+  { key: 'group', title: t('Toca y haz zoom.'), text: '' },
+  { key: 'privacy', title: t('Tus fotos no salen de tu iPhone.'), text: t('CocoWash necesita acceso a Fotos para mostrarte tu carrete. No sube ni comparte nada, y solo se borra lo que confirmes en Fotos.') },
 ];
 
 /** First-launch tour over the empty main screen. Paced by the person
@@ -132,6 +152,7 @@ export function Onboarding({ requestAccess, finish, granted = false }: { request
   const reduced = useReducedMotion();
   const still = !!reduced;
   const [index, setIndex] = useState(0);
+  const [deck] = useState(cards);
   const [direction, setDirection] = useState(1);
   const [asking, setAsking] = useState(false);
   // Seen before (tour opened again from Ajustes): the demo plays, nothing waits.
@@ -142,8 +163,8 @@ export function Onboarding({ requestAccess, finish, granted = false }: { request
   const [turn, setTurn] = useState(0);
   const gesture = STEPS[turn % STEPS.length];
   const heading = useRef<HTMLHeadingElement>(null);
-  const card = cards[index];
-  const last = index === cards.length - 1;
+  const card = deck[index];
+  const last = index === deck.length - 1;
   const locked = index === 1 && !seen;
   // Cards 2–3 arrive with the photo at rest; the demo starts after a pause.
   const [waiting, setWaiting] = useState(true);
@@ -152,8 +173,10 @@ export function Onboarding({ requestAccess, finish, granted = false }: { request
   // «Continuar» waits for one full round of the four swipes, the first time only
   // (the same round with Reduce Motion: stamps in place and arrows).
   useEffect(() => { if (index !== 1 || seen) return; const t = setTimeout(() => setSeen(true), DEMO_DELAY_MS + GESTURE_ROUND_MS); return () => clearTimeout(t); }, [index, seen]);
-  useEffect(() => { if (index !== 2 || waiting) return; setPhase('tap'); const t = setInterval(() => setPhase(p => PHASES[(PHASES.indexOf(p) + 1) % PHASES.length]), PHASE_MS); return () => clearInterval(t); }, [index, waiting]);
-  const go = (next: number) => { if (next < 0 || next >= cards.length || asking || (next > index && locked)) return; setDirection(next > index ? 1 : -1); setIndex(next); haptic('selection'); };
+  // Card 3 cycles tap → hold → pinch, each phase for its own time.
+  useEffect(() => { if (index !== 2 || waiting) return; setPhase('tap'); }, [index, waiting]);
+  useEffect(() => { if (index !== 2 || waiting) return; const timer = setTimeout(() => setPhase(p => PHASES[(PHASES.indexOf(p) + 1) % PHASES.length]), PHASE_MS[phase]); return () => clearTimeout(timer); }, [index, waiting, phase]);
+  const go = (next: number) => { if (next < 0 || next >= deck.length || asking || (next > index && locked)) return; setDirection(next > index ? 1 : -1); setIndex(next); haptic('selection'); };
   useEffect(() => { heading.current?.focus({ preventScroll: true }); }, [index]);
   useEffect(() => {
     const key = (e: KeyboardEvent) => { if (e.key === 'ArrowRight' && !last) go(index + 1); if (e.key === 'ArrowLeft') go(index - 1); };
@@ -164,11 +187,11 @@ export function Onboarding({ requestAccess, finish, granted = false }: { request
     try { finish(await requestAccess()); } finally { setAsking(false); }
   };
   const demo = index === 0 ? <MeetDemo still={still}/> : index === 3 ? <PrivacyDemo still={still}/> : <PhotoDemo step={index as 1 | 2} still={still} waiting={waiting} phase={phase} gesture={gesture} turn={turn}/>;
-  return <main className="onboarding" aria-roledescription="Introducción">
+  return <main className="onboarding" aria-roledescription={t('Introducción')}>
     <Ghost/>
     <div className="ob-sheet paper">
-      <div className="ob-progress" role="progressbar" aria-label="Progreso de la introducción" aria-valuemin={1} aria-valuemax={cards.length} aria-valuenow={index + 1} aria-valuetext={`Paso ${index + 1} de ${cards.length}`}>
-        {cards.map((c, i) => <span key={c.key}><motion.i initial={false} animate={{ scaleX: i <= index ? 1 : 0 }} transition={reduced ? { duration: 0 } : { type: 'spring', stiffness: 300, damping: 32 }}/></span>)}
+      <div className="ob-progress" role="progressbar" aria-label={t('Progreso de la introducción')} aria-valuemin={1} aria-valuemax={deck.length} aria-valuenow={index + 1} aria-valuetext={t('Paso {n} de {total}', { n: index + 1, total: deck.length })}>
+        {deck.map((c, i) => <span key={c.key}><motion.i initial={false} animate={{ scaleX: i <= index ? 1 : 0 }} transition={reduced ? { duration: 0 } : { type: 'spring', stiffness: 300, damping: 32 }}/></span>)}
       </div>
       {/* One composition for every card: illustration zone and copy as one block,
           centred between the progress and the buttons; the illustration is
@@ -186,29 +209,30 @@ export function Onboarding({ requestAccess, finish, granted = false }: { request
             <h1 ref={heading} tabIndex={-1}>{card.title}</h1>
             {card.text && <p>{card.text}</p>}
             {card.key === 'how' && <ul className="ob-rows">
-              <Row on={gesture === 'keep'} art={<Stamp kind="keep"/>} title={<>Conservar <small>→ derecha</small></>}>Se queda; vuelve luego con más sello.</Row>
-              <Row on={gesture === 'discard'} art={<Stamp kind="discard"/>} title={<>Eliminar <small>← izquierda</small></>}>Se borra al final, solo si confirmas.</Row>
-              <Row on={gesture === 'favorite'} art={<Stamp kind="favorite"/>} title={<>Favorita <small>↑ arriba</small></>}>Se queda y es favorita en Fotos.</Row>
-              <Row on={gesture === 'later'} art={<Stamp kind="later"/>} title={<>Más tarde <small>↓ abajo</small></>}>¿Dudas? Vuelve al final de la pila.</Row>
+              <Row on={gesture === 'keep'} art={<Stamp kind="keep"/>} title={<>{t('Conservar')} <small><bdi>→</bdi> {t('derecha')}</small></>}>{t('Se queda; vuelve luego con más sello.')}</Row>
+              <Row on={gesture === 'discard'} art={<Stamp kind="discard"/>} title={<>{t('Eliminar')} <small><bdi>←</bdi> {t('izquierda')}</small></>}>{t('Se borra al final, solo si confirmas.')}</Row>
+              <Row on={gesture === 'favorite'} art={<Stamp kind="favorite"/>} title={<>{t('Favorita')} <small>↑ {t('arriba')}</small></>}>{t('Se queda y es favorita en Fotos.')}</Row>
+              <Row on={gesture === 'later'} art={<Stamp kind="later"/>} title={<>{t('Más tarde')} <small>↓ {t('abajo')}</small></>}>{t('¿Dudas? Vuelve al final de la pila.')}</Row>
             </ul>}
             {card.key === 'group' && <ul className="ob-rows">
-              <Row on={phase === 'tap'} art={<HandTapIcon size={22} weight="bold"/>} title="Toca la foto">En un grupo de parecidas, pasa a la siguiente al instante.</Row>
-              <Row on={phase === 'anchor'} art={<PushPinIcon size={22} weight="bold"/>} title="Mantén y arrastra abajo">La foto queda anclada: abierta en grande, para mirarla con calma.</Row>
-              <Row on={phase === 'zoom'} art={<ArrowsOutSimpleIcon size={22} weight="bold"/>} title="O pellízcala">Hace lo mismo: la ancla, y puedes ampliar los detalles.</Row>
+              <Row on={phase === 'tap'} art={<HandTapIcon size={26} weight="bold"/>} title={t('Toca la foto')}>{t('En un grupo de parecidas, cada toque trae la siguiente al frente.')}</Row>
+              <Row on={phase !== 'tap'} art={<MagnifyingGlassPlusIcon size={26} weight="bold"/>} title={t('Zoom')}>
+                <span className="ob-ways"><span className={phase === 'hold' ? 'is-on' : ''}><PushPinIcon size={14} weight="bold"/>{t('Mantén y arrastra hasta Anclar')}</span><span className={phase === 'pinch' ? 'is-on' : ''}><MagnifyingGlassPlusIcon size={14} weight="bold"/>{t('O pellizca la foto')}</span></span>
+                {t('Se queda abierta en grande y puedes ampliar los detalles.')}</Row>
             </ul>}
           </motion.section>
         </AnimatePresence>
       </div>
       </div>
       <footer className="ob-actions">
-        <button className="ob-back" onClick={() => go(index - 1)} disabled={index === 0 || asking} aria-hidden={index === 0} tabIndex={index === 0 ? -1 : 0}>Atrás</button>
-        {last ? <button className="ob-next" onClick={allow} disabled={asking} aria-busy={asking}>{asking ? <><CocoLoader size={24}/>Esperando permiso…</> : <>{granted ? 'Empezar' : 'Permitir acceso a Fotos'}</>}</button>
+        <button className="ob-back" onClick={() => go(index - 1)} disabled={index === 0 || asking} aria-hidden={index === 0} tabIndex={index === 0 ? -1 : 0}>{t('Atrás')}</button>
+        {last ? <button className="ob-next" onClick={allow} disabled={asking} aria-busy={asking}>{asking ? <><CocoLoader size={24}/>{t('Esperando permiso…')}</> : <>{granted ? t('Empezar') : t('Permitir acceso a Fotos')}</>}</button>
           : <button className={`ob-next ${locked ? 'is-waiting' : ''}`} onClick={() => go(index + 1)} aria-disabled={locked || undefined} aria-describedby={locked ? 'ob-wait' : undefined}>
             {/* While the first round plays, the button fills with it: waiting, not broken. Same size and label throughout. */}
             {locked && <motion.span key="fill" className="ob-next-fill" aria-hidden="true" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: DEMO_DELAY_MS / 1000, duration: GESTURE_ROUND_MS / 1000, ease: 'linear' }}/>}
-            <span className="ob-next-label">Continuar<CaretRightIcon size={18} weight="bold"/></span></button>}
+            <span className="ob-next-label">{t('Continuar')}<CaretRightIcon size={18} weight="bold" className="flip-rtl"/></span></button>}
       </footer>
-      <p id="ob-wait" className={`ob-wait ${locked ? 'is-on' : ''}`} aria-live="polite">{index === 1 ? (locked ? 'Mira las cuatro direcciones una vez.' : replay ? '' : 'Ya puedes continuar.') : ''}</p>
+      <p id="ob-wait" className={`ob-wait ${locked ? 'is-on' : ''}`} aria-live="polite">{index === 1 ? (locked ? t('Mira las cuatro direcciones una vez.') : replay ? '' : t('Ya puedes continuar.')) : ''}</p>
     </div>
   </main>;
 }

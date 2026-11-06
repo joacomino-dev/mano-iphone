@@ -13,3 +13,10 @@ export function setTestMode(on: boolean, reload: () => void = () => location.rel
   try { if (on) localStorage.setItem(TEST_MODE_KEY, '1'); else localStorage.removeItem(TEST_MODE_KEY); } catch { return; }
   reload();
 }
+
+/** How many extra rounds of postcards «Modo de prueba» has dealt (library.ts demoRound). */
+const ROUNDS_KEY = 'cocowash-test-rounds-v1';
+export function readTestRounds(): number {
+  try { const n = Number(localStorage.getItem(ROUNDS_KEY)); return Number.isInteger(n) && n > 0 ? Math.min(n, 500) : 0; } catch { return 0; }
+}
+export function saveTestRounds(rounds: number) { try { localStorage.setItem(ROUNDS_KEY, String(rounds)); } catch { /* optional */ } }

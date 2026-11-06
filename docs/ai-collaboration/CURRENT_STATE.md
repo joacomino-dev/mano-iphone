@@ -2,6 +2,14 @@
 
 Actualizado: 2026-11-05, America/Bogota. Codex trabaja solo por indicación del usuario.
 
+## Desarrollo para pruebas: 9.8.1 / build 28 (Claude)
+
+CW-CL-038. Anuncios fijos en resumen y «Una última mirada» (sin validador), cada
+20–30 fotos, modo de prueba infinito, cinco idiomas (es, en, fr, ar, ja), rejillas
+en Ajustes/Filtros, sellos de Apoyo, corazón rosa Wash, iCloud anticipado, intro de
+zoom y foto anclada más limpia. Rama `claude/cocowash-9.8.1`.
+[Informe](../ai-handoff/COCOWASH_981.md). CI e IPA pendientes de esta entrada. Sin merge ni Release.
+
 ## Desarrollo para pruebas: 9.8 / build 27 (Claude)
 
 CW-CL-037. Decisión del usuario: Personas y Breakup Mode salen por completo; los datos

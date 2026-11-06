@@ -93,7 +93,8 @@ export const inCloudError = (error: unknown) => (error as { code?: string })?.co
 // similar-photo groups share one postcard so they read as «parecidas». Two
 // extra cards stand for the clean-up sets: a receipt and a chat screenshot.
 const POSTCARDS: [number, number][] = [[1000, 1500], [1500, 1000], [1000, 1500], [1200, 1200], [1500, 1000], [1000, 1500], [1000, 1500], [900, 1950]];
-const demoIndex = (asset: Pick<Asset, 'id'>) => Number(asset.id.replace(/\D/g, '')) || 0;
+// `demo-12` and its later rounds in «Modo de prueba» (`demo-12~3`) share postcard 12.
+const demoIndex = (asset: Pick<Asset, 'id'>) => Number(/\d+/.exec(asset.id)?.[0]) || 0;
 const RECEIPTS = [7, 16], SCREENSHOTS = [8, 18], LOW = [12, 17];
 const postcardOf = (i: number) => RECEIPTS.includes(i) ? 6 : SCREENSHOTS.includes(i) ? 7 : i < 4 ? 0 : i >= 10 && i < 14 ? 4 : i % 6;
 export const demoPostcard = (asset: Pick<Asset, 'id'>) => `/assets/demo/postcard-${postcardOf(demoIndex(asset)) + 1}.svg`;
@@ -107,5 +108,12 @@ export const demoAssets: Asset[] = Array.from({ length: 20 }, (_, i) => { const 
     bytes: demoBytes(i, kind), screenshot: SCREENSHOTS.includes(i), low: LOW.includes(i), text: RECEIPTS.includes(i) || SCREENSHOTS.includes(i) ? 1 : 0, cloud: i === 4 || i === 5,
     // Similar groups get a clear best shot (demo-2, demo-11) to show «Mejor toma».
     quality: i === 2 || i === 11 ? .62 : LOW.includes(i) ? -.6 : .2 - (i % 4) * .05 }; });
-const demoPlaces: Place[] = [{ locality: 'Quito', country: 'Ecuador' }, { locality: 'Cartagena', country: 'Colombia' }, { locality: 'Lisboa', country: 'Portugal' }];
+/** «Modo de prueba» never runs out: round n repeats the twenty postcards as new
+ * items (own ids, groups and older dates), so sorting, deleting and ads can be
+ * tried for as long as wanted. Nothing here touches Fotos. */
+export function demoRound(round: number): Asset[] {
+  if (round <= 0) return demoAssets;
+  return demoAssets.map(asset => ({ ...asset, id: `${asset.id}~${round}`, group: asset.group ? `${asset.group}~${round}` : undefined, date: asset.date - round * 41 * 86400000 }));
+}
+const demoPlaces: Place[] = [{ locality: 'Quito', country: 'Ecuador' }, { locality: 'Cartagena', country: 'Colombia' }, { locality: 'Lisboa', country: 'Portugal' }, { locality: 'Zaragoza', country: 'España' }];
 export function demoPlace(asset: Asset): Place { return asset.hasLocation ? demoPlaces[demoIndex(asset) % demoPlaces.length] : {}; }

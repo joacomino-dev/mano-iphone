@@ -3,9 +3,12 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowCounterClockwiseIcon, CalendarCheckIcon, CoffeeIcon, InfinityIcon, ShieldCheckIcon } from '@phosphor-icons/react';
 import { AdCadence, DEFAULT_RULES, TEST_RULES, INTRO_MS } from './adCadence';
 import { Character } from './Characters';
+import { t, locale } from './i18n';
 import './monetization.css';
 
-type Placement = 'deck' | 'finish';
+/** deck: the full letter in the pile (dismissed by swiping). finish / review:
+ * the compact letter fixed in the round summary and in «Una última mirada». */
+type Placement = 'deck' | 'finish' | 'review';
 type Product = { id: string; price: string };
 type Status = { adFree: boolean; expires?: number | null; products?: Product[] };
 type Outcome = 'purchased' | 'pending' | 'cancelled';
@@ -16,7 +19,7 @@ const Store = registerPlugin<{
   buy(input: { id: string }): Promise<Status & { outcome: Outcome }>;
   restore(): Promise<Status>;
   prepare(): Promise<{ ready: boolean }>;
-  show(input: { x: number; y: number; width: number; height: number; deck: boolean }): Promise<{ shown: boolean }>;
+  show(input: { x: number; y: number; width: number; height: number; deck: boolean; style: 'deck' | 'inline'; hidden: boolean; labels: Record<string, string> }): Promise<{ shown: boolean }>;
   hide(): Promise<void>;
   privacy(): Promise<void>;
   addListener(event: 'purchaseChanged' | 'adDismissed', cb: () => void): Promise<{ remove(): Promise<void> }>;
@@ -24,8 +27,10 @@ const Store = registerPlugin<{
 const key = 'cocowash-ad-active-ms-v1';
 const finishKey = 'cocowash-finish-ads-v1';
 
-/** testing: «Modo de prueba» — same placements, much shorter cadence, separate counters. */
-export function useMonetization(enabled: boolean, cleaning: boolean, testing = false) {
+/** testing: «Modo de prueba» — same placements, much shorter cadence, separate counters.
+ * `cleaning` counts active sorting time; `warm` also lets the next letter load
+ * while the round summary or «Una última mirada» is open. */
+export function useMonetization(enabled: boolean, cleaning: boolean, testing = false, warm = false) {
   const rules = testing ? TEST_RULES : DEFAULT_RULES;
   const finishStore = testing ? finishKey + '-test' : finishKey;
   const available = native && enabled;
@@ -77,11 +82,11 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
   }, [available]);
 
   useEffect(() => {
-    if (!available || !loadedTime || !cleaning) return;
+    if (!available || !loadedTime || !(cleaning || warm)) return;
     let last = performance.now();
     const timer = window.setInterval(() => {
       const now = performance.now();
-      if (!document.hidden && !current.current) {
+      if (cleaning && !document.hidden && !current.current) {
         const previous = activeMs.current;
         activeMs.current += Math.min(now - last, 1500);
         if (previous < INTRO_MS) try { localStorage.setItem(key, String(Math.floor(activeMs.current))); } catch { /* optional */ }
@@ -93,7 +98,7 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
       void Store.prepare().then(value => { ready.current = value.ready; }).catch(() => {}).finally(() => { loading.current = false; });
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [available, cleaning, loadedTime, status]);
+  }, [available, cleaning, warm, loadedTime, status]);
 
   const offer = (where: Placement) => {
     if (!ready.current || current.current || !status || status.adFree) return false;
@@ -109,6 +114,12 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
       if (!available || status?.adFree) return;
       cadence.review(ids);
       if (cadence.between(activeMs.current) && !offer('deck')) cadence.skipDeck();
+    },
+    /** «Una última mirada»: a fixed letter above «Recuperar todo» whenever one is ready. */
+    reviewing() {
+      if (!available || !status || status.adFree || current.current || activeMs.current < rules.introMs) return;
+      if (cadence.finishDue(activeMs.current, new Date().toLocaleDateString('sv'))) return;
+      offer('review');
     },
     finish() {
       clear();
@@ -128,81 +139,87 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
 }
 
 type Monetization = ReturnType<typeof useMonetization>;
-/** Web placeholder under the native ad card. It reserves the exact frame the
- * native view covers, looks like a blank Polaroid while the creative arrives
- * and only asks for the native view once its entrance has settled, so the
- * card never jumps between frames. */
+/** Texts of the native letter, in the app's language. */
+const letterLabels = () => ({
+  stamp: t('Publicidad'), greeting: t('Esta carta mantiene CocoWash gratis'), hint: t('‹  Desliza para seguir  ›'),
+  again: t('Una vez más y seguimos'), againSpoken: t('Desliza otra vez para seguir'), spokenDeck: t('Anuncio. Desliza dos veces para volver a tus fotos.'),
+  spokenInline: t('Anuncio'), skip: t('Seguir sin el anuncio'),
+});
+/** Web placeholder under the native letter. It reserves the exact frame the
+ * native view covers and looks like a blank letter while the creative arrives.
+ * Every frame it measures itself: while it moves (an entrance, a sheet opening,
+ * the page scrolling) or is not fully on screen, the native letter is hidden —
+ * never dragged behind late — and it comes back on the same frame once still. */
 export function AdSlot({ where, money }: { where: Placement; money: Monetization }) {
   const node = useRef<HTMLDivElement>(null);
   const latest = useRef(money);
   const [covered, setCovered] = useState(false);
   latest.current = money;
   useEffect(() => {
-    let disposed = false;
-    let shown = false;
-    let inFlight = false;
-    let started = false;
-    let frame = '';
-    const draw = () => {
-      if (disposed || inFlight || !started) return;
+    let disposed = false, shown = false, inFlight = false, again = false;
+    let sent = '', previous = '', stillSince = performance.now(), frame = 0;
+    const deck = where === 'deck';
+    const labels = letterLabels();
+    const started = performance.now();
+    const send = (rect: DOMRect, hidden: boolean) => {
+      const coords = { x: rect.x, y: rect.y, width: rect.width, height: rect.height, deck, style: deck ? 'deck' as const : 'inline' as const, hidden };
+      const key = JSON.stringify(coords);
+      if (key === sent) return;
+      if (inFlight) { again = true; return; }
+      inFlight = true;
+      sent = key;
+      void Store.show({ ...coords, labels }).then(result => {
+        if (disposed) return;
+        if (!result.shown) { if (!hidden) latest.current.clear(); return; }
+        if (!shown) { shown = true; latest.current.shown(where); setCovered(true); }
+      }).catch(() => { if (!disposed) latest.current.clear(); }).finally(() => {
+        inFlight = false;
+        if (again) { again = false; sent = ''; }
+      });
+    };
+    const tick = () => {
+      frame = requestAnimationFrame(tick);
       const rect = node.current?.getBoundingClientRect();
-      if (!rect || document.hidden || rect.top < 0 || rect.bottom > window.innerHeight || rect.width < 220 || rect.height < 220) {
-        if (shown || document.hidden) latest.current.clear();
+      if (!rect) return;
+      const now = performance.now();
+      const key = `${Math.round(rect.x)},${Math.round(rect.y)},${Math.round(rect.width)},${Math.round(rect.height)}`;
+      if (key !== previous) { previous = key; stillSince = now; }
+      const onScreen = !document.hidden && rect.top >= 0 && rect.bottom <= window.innerHeight && rect.left >= 0 && rect.right <= window.innerWidth;
+      const visible = onScreen && now - stillSince > 120 && now - started > (deck ? 320 : 380);
+      if (!shown && !visible) {
+        // The deck letter appears right away or not at all; fixed letters wait.
+        if (deck && now - started > 1200) latest.current.clear();
         return;
       }
-      const coords = { x: rect.x, y: rect.y, width: rect.width, height: rect.height, deck: where === 'deck' };
-      const next = JSON.stringify(coords);
-      if (next === frame) return;
-      frame = next;
-      inFlight = true;
-      void Store.show(coords).then(result => {
-        if (disposed) return;
-        if (!result.shown) { latest.current.clear(); return; }
-        if (!shown) { latest.current.shown(where); setCovered(true); }
-        shown = true;
-      }).catch(() => { if (!disposed) latest.current.clear(); }).finally(() => { inFlight = false; });
+      send(rect, !visible);
     };
-    const observer = new ResizeObserver(draw);
-    if (node.current) observer.observe(node.current);
-    window.addEventListener('scroll', draw, true);
-    window.addEventListener('resize', draw);
-    document.addEventListener('visibilitychange', draw);
-    // Wait for the web entrance (ad-stage in ManoApp, 300 ms) before the native frame is placed.
-    const begin = window.setTimeout(() => { started = true; draw(); }, where === 'deck' ? 320 : 0);
-    const settle = window.setTimeout(() => {
-      draw();
-      if (where === 'deck' && !shown && !inFlight) latest.current.clear();
-    }, 900);
-    const track = window.setInterval(draw, 250);
+    frame = requestAnimationFrame(tick);
     return () => {
-      window.clearTimeout(begin);
-      window.clearTimeout(settle);
-      window.clearInterval(track);
       disposed = true;
-      observer.disconnect();
-      window.removeEventListener('scroll', draw, true);
-      window.removeEventListener('resize', draw);
-      document.removeEventListener('visibilitychange', draw);
+      cancelAnimationFrame(frame);
       void Store.hide().catch(() => {});
     };
   }, [where]);
-  return <div ref={node} className={'cw-ad-slot cw-ad-' + where + (covered ? ' is-covered' : '')} role="region" aria-label="Publicidad">
+  return <div ref={node} className={'cw-ad-slot cw-ad-' + where + (covered ? ' is-covered' : '')} role="region" aria-label={t('Publicidad')}>
     <span className="cw-ad-blank" aria-hidden="true"/>
   </div>;
 }
 
 const offers = [
-  { id: 'work.joaquin.mano.noads.year', name: 'Un año sin anuncios', detail: 'Pago único. Dura un año y no se renueva solo.', icon: CalendarCheckIcon, tone: 'year' },
-  { id: 'work.joaquin.mano.noads.lifetime', name: 'Sin anuncios para siempre', detail: 'Pago único, sin vencimiento.', icon: InfinityIcon, tone: 'forever' },
-  { id: 'work.joaquin.mano.coffee', name: 'Invítame un café', detail: 'CocoWash lo hace una sola persona. El café no quita anuncios: es un gracias.', icon: CoffeeIcon, tone: 'coffee' },
+  { id: 'work.joaquin.mano.noads.year', name: () => t('Un año sin anuncios'), detail: () => t('Pago único. Dura un año y no se renueva solo.'), icon: CalendarCheckIcon, tone: 'year' },
+  { id: 'work.joaquin.mano.noads.lifetime', name: () => t('Sin anuncios para siempre'), detail: () => t('Pago único, sin vencimiento.'), icon: InfinityIcon, tone: 'forever' },
+  { id: 'work.joaquin.mano.coffee', name: () => t('Invítame un café'), detail: () => t('CocoWash lo hace una sola persona. El café no quita anuncios: es un gracias.'), icon: CoffeeIcon, tone: 'coffee' },
 ] as const;
-/** «Apoyo»: the three purchases as postage stamps — CocoWash already speaks in
- * stamps (Sellos), so buying one reads as sending something, not a paywall. */
+/** «Apoyo»: the three purchases as real postage stamps — perforated paper
+ * margin, a printed face with its frame and the price as the stamp's value.
+ * CocoWash already speaks in stamps (Sellos), so buying one reads as sending
+ * something, not a paywall. An active pass carries a postmark. */
 export function PurchaseOptions({ money }: { money: Monetization }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const [failed, setFailed] = useState(false);
   const { clear, setStatus } = money;
-  const refresh = () => { void Store.catalog().then(setStatus).catch(() => setMessage('Los precios no están disponibles ahora. Prueba en un momento.')); };
+  const refresh = () => { setFailed(false); void Store.catalog().then(setStatus).catch(() => { setFailed(true); setMessage(t('Los precios no están disponibles ahora. Prueba en un momento.')); }); };
   useEffect(refresh, [setStatus]);
   const perform = async (run: () => Promise<(Status & { outcome?: Outcome }) | void>, success: string) => {
     if (busy) return;
@@ -214,19 +231,20 @@ export function PurchaseOptions({ money }: { money: Monetization }) {
         if (result.adFree) clear();
         setStatus(previous => ({ ...previous, ...result }));
       }
-      setMessage(result?.outcome === 'pending' ? 'Compra pendiente de aprobación.' : result?.outcome === 'cancelled' ? '' : success);
-    } catch { setMessage('No se pudo completar. Inténtalo de nuevo.'); }
+      setMessage(result?.outcome === 'pending' ? t('Compra pendiente de aprobación.') : result?.outcome === 'cancelled' ? '' : success);
+    } catch { setMessage(t('No se pudo completar. Inténtalo de nuevo.')); }
     finally { setBusy(false); }
   };
   const status = money.status;
+  const loaded = !!status?.products?.length;
   return <section className="support-panel" aria-labelledby="support-title">
     <header className="support-hero">
       <Character pose="coqui-wave" height={88} motion="still"/>
       <div>
-        <h3 id="support-title">CocoWash es gratis</h3>
+        <h3 id="support-title">{t('CocoWash es gratis')}</h3>
         <p>{status?.adFree
-          ? (status.expires ? `Sin anuncios hasta el ${new Date(status.expires).toLocaleDateString('es')}. Gracias por apoyarla.` : 'Sin anuncios para siempre. Gracias por apoyarla.')
-          : 'De vez en cuando llega un anuncio entre tus fotos. Con un pase dejan de llegar.'}</p>
+          ? (status.expires ? t('Sin anuncios hasta el {date}. Gracias por apoyarla.', { date: new Date(status.expires).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' }) }) : t('Sin anuncios para siempre. Gracias por apoyarla.'))
+          : t('De vez en cuando llega un anuncio entre tus fotos. Con un pase dejan de llegar.')}</p>
       </div>
     </header>
     <div className="support-stamps">{offers.map(offer => {
@@ -234,18 +252,22 @@ export function PurchaseOptions({ money }: { money: Monetization }) {
       const coffee = offer.tone === 'coffee';
       const owned = !coffee && !!status?.adFree && (!status.expires || offer.tone === 'year');
       const Icon = offer.icon;
-      return <button key={offer.id} type="button" className={`support-stamp tone-${offer.tone}`} disabled={busy || !product || owned}
-        aria-label={`${offer.name}. ${offer.detail} ${owned ? 'Activo.' : product ? `Precio ${product.price}.` : 'Precio no disponible.'}`}
-        onClick={() => void perform(() => Store.buy({ id: offer.id }), coffee ? '¡Gracias por el café!' : 'Listo: tu pase está activo.')}>
-        <span className="stamp-art" aria-hidden="true"><Icon size={34} weight={coffee ? 'fill' : 'duotone'}/></span>
-        <span className="stamp-text"><strong>{offer.name}</strong><small>{offer.detail}</small></span>
-        <span className="stamp-value" aria-hidden="true">{owned ? 'Activo' : product?.price ?? '—'}</span>
+      const name = offer.name(), detail = offer.detail();
+      return <button key={offer.id} type="button" className={`support-stamp tone-${offer.tone} ${owned ? 'is-owned' : ''} ${!product && !owned ? 'is-unpriced' : ''}`} disabled={busy || !product || owned}
+        aria-label={`${name}. ${detail} ${owned ? t('Activo.') : product ? t('Precio {price}.', { price: product.price }) : t('Precio no disponible.')}`}
+        onClick={() => void perform(() => Store.buy({ id: offer.id }), coffee ? t('¡Gracias por el café!') : t('Listo: tu pase está activo.'))}>
+        <span className="stamp-perf" aria-hidden="true"><span className="stamp-face">
+          <span className="stamp-art"><Icon size={30} weight={coffee ? 'fill' : 'duotone'}/></span>
+          <span className="stamp-text"><strong>{name}</strong><small>{detail}</small></span>
+          <span className="stamp-value">{owned ? '' : product ? product.price : loaded || failed ? t('Pronto') : <span className="stamp-value-wait"/>}</span>
+          {owned && <span className="stamp-postmark"><span>{t('Activo')}</span></span>}
+        </span></span>
       </button>;
     })}</div>
     <div className="support-links">
-      {!status?.products?.length && <button type="button" className="text-button" onClick={refresh}>Cargar precios</button>}
-      <button type="button" className="text-button" disabled={busy} onClick={() => void perform(Store.restore.bind(Store), 'Compras consultadas.')}><ArrowCounterClockwiseIcon size={16}/>Restaurar compras</button>
-      <button type="button" className="text-button" disabled={busy} onClick={() => void perform(Store.privacy.bind(Store), '')}><ShieldCheckIcon size={16}/>Privacidad de anuncios</button>
+      {failed && <button type="button" className="text-button" onClick={refresh}><ArrowCounterClockwiseIcon size={16}/>{t('Cargar precios')}</button>}
+      <button type="button" className="text-button" disabled={busy} onClick={() => void perform(Store.restore.bind(Store), t('Compras consultadas.'))}><ArrowCounterClockwiseIcon size={16}/>{t('Restaurar compras')}</button>
+      <button type="button" className="text-button" disabled={busy} onClick={() => void perform(Store.privacy.bind(Store), '')}><ShieldCheckIcon size={16}/>{t('Privacidad de anuncios')}</button>
     </div>
     <p className="setting-note" aria-live="polite">{message}</p>
   </section>;

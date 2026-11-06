@@ -33,6 +33,13 @@ class ManoBridgeController: CAPBridgeViewController {
         // whole file into memory on the main thread. Prepared videos stream instead.
         configuration.mediaTypesRequiringUserActionForPlayback = []
         configuration.setURLSchemeHandler(mediaStream, forURLScheme: PreparedVideoStreamHandler.scheme)
+        // The app's language as iOS resolved it (Settings › CocoWash › Language, or
+        // the device languages matched against the bundle's lproj folders), read by
+        // the web side before it renders (i18n.ts). English when nothing matches.
+        let locale: [String: Any] = ["languages": Bundle.main.preferredLocalizations, "preferred": Locale.preferredLanguages]
+        if let data = try? JSONSerialization.data(withJSONObject: locale), let json = String(data: data, encoding: .utf8) {
+            configuration.userContentController.addUserScript(WKUserScript(source: "window.CocoLocale=\(json);", injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        }
         return configuration
     }
     override func capacitorDidLoad() {

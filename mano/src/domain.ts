@@ -30,7 +30,7 @@ export type Order = 'oldest' | 'newest' | 'largest' | 'smallest' | 'random';
 /** Quick sets, combinable with every other filter. «favorites» is the only
  * one that shows favourites: everywhere else they stay out of the pile. */
 export type Smart = 'all' | 'later' | 'screenshots' | 'lowQuality' | 'text' | 'favorites';
-export type Filter = { seal: number | 'all' | 'none'; order: Order; media: 'all' | MediaKind; includeWaiting: boolean; dateRange?: 'all' | '24h' | '7d' | '30d' | 'custom'; from?: string; to?: string; geek?: boolean; smart?: Smart; v?: 2 };
+export type Filter = { seal: number | 'all' | 'none'; order: Order; media: 'all' | MediaKind; includeWaiting: boolean; dateRange?: 'all' | '24h' | '7d' | '30d' | '1y' | 'custom'; from?: string; to?: string; geek?: boolean; smart?: Smart; v?: 2 };
 export const ORDERS: Order[] = ['oldest', 'newest', 'largest', 'smallest', 'random'];
 export const SMARTS: Smart[] = ['all', 'later', 'screenshots', 'lowQuality', 'text', 'favorites'];
 export const LEVELS = ['Blanco', 'Rojo', 'Verde', 'Negro', 'Azul'];
@@ -52,7 +52,7 @@ export function normalizeFilter(value: unknown): Filter {
     order: ORDERS.includes(input.order as Order) && (input.v === 2 || input.order !== 'random') ? input.order as Order : initialFilter.order,
     media: ['all', 'photo', 'video', 'live'].includes(String(input.media)) ? input.media as Filter['media'] : initialFilter.media,
     includeWaiting: input.includeWaiting === true,
-    dateRange: ['all', '24h', '7d', '30d', 'custom'].includes(String(input.dateRange)) ? input.dateRange as Filter['dateRange'] : 'all',
+    dateRange: ['all', '24h', '7d', '30d', '1y', 'custom'].includes(String(input.dateRange)) ? input.dateRange as Filter['dateRange'] : 'all',
     ...(typeof input.from === 'string' ? { from: input.from } : {}),
     ...(typeof input.to === 'string' ? { to: input.to } : {}),
     geek: input.geek === true,
@@ -82,7 +82,7 @@ export function matchesDate(date: number, filter: Filter, now = Date.now()): boo
   if (range === 'all') return true;
   if (!Number.isFinite(date)) return false;
   if (range !== 'custom') {
-    const duration = range === '24h' ? 86400000 : (range === '7d' ? 7 : 30) * 86400000;
+    const duration = range === '24h' ? 86400000 : (range === '7d' ? 7 : range === '1y' ? 365 : 30) * 86400000;
     return date >= now - duration && date <= now;
   }
   const from = filter.from ? localDate(filter.from) : undefined;

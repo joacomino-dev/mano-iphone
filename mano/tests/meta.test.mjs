@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { initialState, initialFilter, decide, filterScope } from '../src/domain.ts';
-import { formatDate, formatTime, formatDuration, placeLabel, polaroidCaption, vhsLayout, normalizeDisplay, defaultDisplay, readDisplay, saveDisplay } from '../src/meta.ts';
+import { formatBytes, formatDate, formatTime, formatDuration, placeLabel, polaroidCaption, vhsLayout, normalizeDisplay, defaultDisplay, readDisplay, saveDisplay } from '../src/meta.ts';
 import { osdText, pixelPath } from '../src/pixelfont.ts';
 
 const at = new Date(2021, 5, 17, 14, 25).getTime();
@@ -13,7 +13,12 @@ test('date formats cover the four offered patterns and never render unknown date
   assert.equal(formatDate(at, 'dmy', 'es'), '17/06/2021');
   assert.equal(formatDate(at, 'iso', 'es'), '2021-06-17');
   assert.equal(formatDate(at, 'd-mon-y', 'es', true), '17 JUN 2021');
-  assert.equal(formatDate(at, 'mon-d-y', 'es', true), 'JUN. 17 2021');
+  assert.equal(formatDate(at, 'mon-d-y', 'es', true), 'JUN 17, 2021');
+  assert.equal(formatDate(at, 'mdy', 'es'), '06/17/2021');
+  assert.equal(formatDate(at, 'mon-y', 'es'), 'jun 2021');
+  // Japanese and Arabic compose the date with Intl; the VHS falls back to English capitals.
+  assert.match(formatDate(at, 'd-mon-y', 'ja'), /2021年6月17日/);
+  assert.equal(formatDate(at, 'd-mon-y', 'ja', true), '17 JUN 2021');
   for (const missing of [0, -1, NaN, undefined]) assert.equal(formatDate(missing, 'dmy'), undefined);
 });
 test('time keeps 24 h, 12 h and the camcorder meridiem-first order', () => {
@@ -40,9 +45,9 @@ test('place labels drop missing parts and long countries, never invent', () => {
 test('VHS layout adapts to every combination of available data (cases A–D)', () => {
   const all = defaultDisplay.video;
   const A = vhsLayout(video, { locality: 'Quito', country: 'Ecuador' }, all, 'es');
-  assert.deepEqual(A.lines, ['PM 02:25', 'JUN. 17 2021', 'QUITO, ECUADOR']); assert.equal(A.duration, '01:24');
+  assert.deepEqual(A.lines, ['PM 02:25', 'JUN 17, 2021', 'QUITO, ECUADOR']); assert.equal(A.duration, '01:24');
   const B = vhsLayout(video, undefined, all, 'es');
-  assert.deepEqual(B.lines, ['PM 02:25', 'JUN. 17 2021']); assert.equal(B.duration, '01:24');
+  assert.deepEqual(B.lines, ['PM 02:25', 'JUN 17, 2021']); assert.equal(B.duration, '01:24');
   const C = vhsLayout({ ...video, date: 0 }, { locality: 'Quito', country: 'Ecuador' }, all, 'es');
   assert.deepEqual(C.lines, ['QUITO, ECUADOR']); assert.equal(C.duration, '01:24');
   const D = vhsLayout({ ...video, date: 0 }, undefined, all, 'es');
@@ -81,4 +86,20 @@ test('OSD font folds accents, keeps Ñ, and draws only known glyph runs', () => 
   const { d, width } = pixelPath('AM 02:25');
   assert.ok(d.length > 0); assert.equal(width, 40);
   assert.match(d, /^M\d+ \d+h\d+v1h-\d+z/);
+});
+
+test('9.8.1: the old «Ahorrar iCloud» default becomes download-first; an explicit choice survives a save', () => {
+  const store = new Map();
+  const storage = { getItem: k => store.get(k) ?? null, setItem: (k, v) => store.set(k, v) };
+  store.set('cocowash-display-v1', JSON.stringify({ ...defaultDisplay, cloud: 'save' }));
+  assert.equal(readDisplay(storage).cloud, 'always');
+  assert.equal(saveDisplay({ ...defaultDisplay, cloud: 'save' }, storage), true);
+  assert.equal(readDisplay(storage).cloud, 'save');
+});
+
+test('9.8.1: sizes read naturally per language', () => {
+  assert.equal(formatBytes(8_200_000, 'en'), '8.2 MB');
+  assert.equal(formatBytes(8_200_000, 'fr'), '8,2 Mo');
+  assert.equal(formatBytes(8_200_000, 'ar-u-nu-latn'), '⁦8.2 MB⁩');
+  assert.equal(vhsLayout({ id: 'v', kind: 'video', date: new Date(2021, 5, 17, 14, 25).getTime(), width: 1, height: 1, duration: 84, bytes: 148_300_000 }, undefined, { ...defaultDisplay.video, location: false }, 'ar-u-nu-latn').size, '148 MB');
 });

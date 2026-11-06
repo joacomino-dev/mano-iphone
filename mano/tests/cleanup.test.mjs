@@ -91,8 +91,9 @@ test('VHS shows the weight under the duration, and the fit counts both lines', (
   assert.deepEqual(vhsLayout(asset, undefined, { ...defaultDisplay.video, size: false }).right, ['01:24']);
   assert.deepEqual(vhsLayout({ ...asset, bytes: undefined }, undefined, defaultDisplay.video).right, ['01:24']);
   assert.equal(normalizeDisplay({ video: { size: false } }).video.size, false);
-  assert.equal(normalizeDisplay({}).cloud, 'save');
-  assert.equal(normalizeDisplay({ cloud: 'always' }).cloud, 'always');
+  // 9.8.1: iCloud cards download by default; «Ahorrar datos» is an explicit choice.
+  assert.equal(normalizeDisplay({}).cloud, 'always');
+  assert.equal(normalizeDisplay({ cloud: 'save' }).cloud, 'save');
   const tall = fitOsd(['PM 02:25', 'JUN. 17 2021'], ['01:24', '148 MB'], { width: 340, height: 260 });
   const short = fitOsd(['PM 02:25', 'JUN. 17 2021'], ['01:24'], { width: 340, height: 260 });
   assert.ok(tall.pixel >= 1 && tall.pixel <= short.pixel);

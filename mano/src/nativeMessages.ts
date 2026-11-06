@@ -1,0 +1,35 @@
+/** Refusals that reach the screen as an Error message, written in Spanish where
+ * they are raised (PhotoLibrary.swift, album.ts, preload.ts). The app shows them
+ * through t(message), so each one is a key in every language; the i18n test
+ * checks that none is missing. Keep this list in step with those files. */
+export const NATIVE_MESSAGES = [
+  'Falta el identificador de preparación.',
+  'No se pudo abrir Ajustes.',
+  'Ya hay un análisis en curso.',
+  'Usa un nombre de 1 a 100 caracteres y selecciona entre 1 y 500 elementos.',
+  'Permite acceso a Fotos en Ajustes.',
+  'No se pueden añadir esos elementos a este álbum.',
+  'No se pudo preparar el archivo.',
+  'No se pudo descargar la Live Photo desde iCloud.',
+  'No se pudo compartir el archivo. Comprueba la conexión e inténtalo de nuevo.',
+  'No se pudo abrir la Live Photo.',
+  'No se pudo abrir el selector de Fotos.',
+  'No se pudo abrir el reproductor.',
+  'No se encontró un archivo para compartir.',
+  'No se encontró el álbum.',
+  'No se borró nada: los elementos ya no están disponibles o ahora son favoritos.',
+  'No hay espacio para preparar el vídeo.',
+  'No hay descartes para borrar.',
+  'La foto o el vídeo ya no está disponible.',
+  'Identificador de vista previa no válido.',
+  'Hay otros vídeos preparándose. Reinténtalo en un momento.',
+  'Este elemento ya no está disponible en Fotos.',
+  'Este elemento no es un vídeo.',
+  'Ese vídeo ya se está preparando.',
+  'Escribe un nombre y selecciona las fotos del álbum.',
+  'Esa vista previa ya se está preparando.',
+  'Alguna foto ya no está disponible.',
+  'Alguna foto ya no está disponible. Actualiza tu selección antes de crear el álbum.',
+  'Nada seleccionado.',
+  'No se pudo preparar el archivo',
+] as const;

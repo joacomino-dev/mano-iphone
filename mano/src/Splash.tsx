@@ -3,6 +3,8 @@ import { motion, useReducedMotion } from 'motion/react';
 
 /** How long the launch mark stays before it fades (ms). The app loads behind it. */
 export const SPLASH_MS = 1500;
+/** Shown faintly on the launch card; kept in step with scripts/configure-ios.mjs. */
+export const APP_VERSION = '9.8.1 (28)';
 
 /** Launch mark, like a studio card: the full CocoWash logo — Coqui washing Memo
  * with «CocoWash» to the right — centred, and the maker's mark (Zángano's
@@ -35,5 +37,7 @@ export function Splash({ done }: { done: () => void }) {
           not on iOS) is available as curves: mano/brand/zangano-studio-logo-source.svg. */}
       <span className="splash-maker-name"><b>ZANGANO</b><small>studio</small></span>
     </motion.div>
+    {/* 9.8.1: the version, barely there under the maker's mark. */}
+    <motion.span className="splash-version" initial={{ opacity: 0 }} animate={{ opacity: leaving ? 0 : 1 }} transition={{ delay: leaving || reduced ? 0 : .45, duration: leaving ? .24 : .4, ease }}>{APP_VERSION}</motion.span>
   </div>;
 }

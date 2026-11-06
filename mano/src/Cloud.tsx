@@ -2,6 +2,8 @@ import { useCallback, useSyncExternalStore, type SyntheticEvent } from 'react';
 import { CloudIcon, CloudArrowDownIcon, CloudSlashIcon, ArrowClockwiseIcon } from '@phosphor-icons/react';
 import type { Asset } from './domain';
 import { cloudPreviews, type CloudState } from './media';
+import { cloudDownloads } from './preview';
+import { t } from './i18n';
 
 /** The live iCloud state of one item's preview (media.ts `cloudPreviews`). */
 export function useCloud(asset: Asset | undefined): CloudState | undefined {
@@ -37,14 +39,17 @@ export function CloudBadge({ state, lite, onRetry, className = '' }: { state?: C
   const status = state?.status;
   if (status === 'ready') return null;
   if (!status && !lite) return null;
+  // 9.8.1: cards download by themselves (and the next ones in line), so «vista
+  // ligera» only shows when that did not work — or with «Ahorrar datos de iCloud».
+  if (!status && cloudDownloads()) return null;
   const percent = status === 'downloading' && typeof state?.progress === 'number' ? Math.round(state.progress * 100) : undefined;
-  const label = status === 'error' ? 'No se pudo descargar' : status === 'retrying' ? 'Reintentando' : status === 'downloading' ? `${percent ?? 0} %` : status === 'pending' ? 'iCloud' : 'iCloud · vista ligera';
-  const spoken = status === 'error' ? 'No se pudo descargar de iCloud' : status === 'retrying' ? 'Reintentando la descarga de iCloud' : status ? 'Descargando de iCloud' : 'Vista ligera; el original está en iCloud';
-  return <span className={`cloud-chip ${status ? `is-${status}` : 'is-lite'} ${className}`}>
-    <span role="progressbar" aria-label="Descarga de iCloud" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} aria-valuetext={spoken}><CloudRing state={state}/></span>
-    <span className="cloud-chip-label" aria-hidden="true">{label}</span>
+  const label = status === 'error' ? t('Vista ligera') : status === 'retrying' ? t('Reintentando') : status === 'downloading' ? `${percent ?? 0} %` : status === 'pending' ? '' : t('iCloud · vista ligera');
+  const spoken = status === 'error' ? t('No se pudo descargar de iCloud; se ve la vista ligera') : status === 'retrying' ? t('Reintentando la descarga de iCloud') : status ? t('Descargando de iCloud') : t('Vista ligera; el original está en iCloud');
+  return <span className={`cloud-chip ${status ? `is-${status}` : 'is-lite'} ${label ? '' : 'is-ring'} ${className}`}>
+    <span role="progressbar" aria-label={t('Descarga de iCloud')} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} aria-valuetext={spoken}><CloudRing state={state}/></span>
+    {label && <span className="cloud-chip-label" aria-hidden="true">{label}</span>}
     <span className="sr-only" role="status">{spoken}</span>
-    {status === 'error' && onRetry && <button onPointerDown={stop} onClick={e => { stop(e); onRetry(); }}><ArrowClockwiseIcon size={14} weight="bold"/>Reintentar</button>}
+    {status === 'error' && onRetry && <button onPointerDown={stop} onClick={e => { stop(e); onRetry(); }}><ArrowClockwiseIcon size={14} weight="bold"/>{t('Reintentar')}</button>}
   </span>;
 }
 
@@ -57,8 +62,8 @@ export function CloudPlaceholder({ state, download, retry, quiet }: { state?: Cl
   const percent = status === 'downloading' && typeof state?.progress === 'number' ? Math.round(state.progress * 100) : undefined;
   return <div className="photo-loading is-cloud">
     <CloudRing state={state} size={40}/>
-    <span role="status">{status === 'downloading' ? `Descargando de iCloud · ${percent ?? 0} %` : status === 'pending' ? 'Pidiendo a iCloud…' : status === 'retrying' ? 'Reintentando…' : status === 'error' ? 'No se pudo descargar' : 'En iCloud'}</span>
-    {!status && <button onPointerDown={stop} onClick={e => { stop(e); download(); }}><CloudArrowDownIcon size={16} weight="bold"/>Descargar vista previa</button>}
-    {status === 'error' && <button onPointerDown={stop} onClick={e => { stop(e); retry(); }}><ArrowClockwiseIcon size={16} weight="bold"/>Reintentar</button>}
+    <span role="status">{status === 'downloading' ? t('Descargando de iCloud: {percent} %', { percent: percent ?? 0 }) : status === 'pending' ? t('Pidiendo a iCloud…') : status === 'retrying' ? t('Reintentando…') : status === 'error' ? t('No se pudo descargar') : t('En iCloud')}</span>
+    {!status && <button onPointerDown={stop} onClick={e => { stop(e); download(); }}><CloudArrowDownIcon size={16} weight="bold"/>{t('Descargar vista previa')}</button>}
+    {status === 'error' && <button onPointerDown={stop} onClick={e => { stop(e); retry(); }}><ArrowClockwiseIcon size={16} weight="bold"/>{t('Reintentar')}</button>}
   </div>;
 }

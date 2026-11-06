@@ -2,11 +2,13 @@
    Ads are letters (airmail edge, postage-stamp «Publicidad»); purchases are
    perforated stamps. The native ad card (CocoMonetization.swift) draws over
    .cw-ad-slot with the same frame and the same letter. */
-.cw-ad-slot { position: relative; width: min(100%, 340px); flex: none; }
-.cw-ad-deck { height: min(380px, 100cqh); margin: auto; position: absolute; inset: 0; }
-.cw-ad-finish { height: 320px; margin: var(--cw-space-5) auto 0; }
+.cw-ad-slot { position: relative; width: min(100%, 360px); flex: none; }
+.cw-ad-deck { width: min(100%, 340px); height: min(380px, 100cqh); margin: auto; position: absolute; inset: 0; }
+/* Compact fixed letter (summary, «Una última mirada»): media 120 + 2 × 14 padding + airmail edges. */
+.cw-ad-finish, .cw-ad-review { height: 160px; margin-inline: auto; }
 .cw-ad-blank { position: absolute; inset: 0 14px 32px; border-radius: 6px; background: var(--cw-surface);
   box-shadow: 0 1px 0 var(--cw-paper-edge), 0 10px 24px rgba(37, 58, 58, .14); overflow: hidden; }
+.cw-ad-finish .cw-ad-blank, .cw-ad-review .cw-ad-blank { inset: 0; box-shadow: 0 1px 0 var(--cw-paper-edge), 0 5px 14px rgba(37, 58, 58, .12); }
 .cw-ad-blank::before, .cw-ad-blank::after { content: ''; position: absolute; left: 0; right: 0; height: 6px;
   background: repeating-linear-gradient(-45deg, var(--cw-turquoise) 0 9px, var(--cw-surface) 9px 14px, var(--cw-pink) 14px 23px, var(--cw-surface) 23px 28px); }
 .cw-ad-blank::before { top: 0; }
@@ -14,41 +16,64 @@
 .cw-ad-slot.is-covered .cw-ad-blank { visibility: hidden; }
 
 .ad-stage { position: absolute; inset: 0; display: grid; place-items: center; container-type: size; }
-.finish-monetization { display: grid; justify-items: center; width: 100%; margin-top: var(--cw-space-2); }
+.finish-monetization { display: grid; justify-items: center; width: 100%; margin-top: var(--cw-space-5); }
+.review-monetization { display: grid; justify-items: center; margin: 0 0 var(--cw-space-4); }
 
 /* «Apoyo» tab */
-.support-panel { --support-bg: var(--cw-sheet); display: grid; gap: var(--cw-space-4); padding: var(--cw-space-2) 0 var(--cw-space-5); }
-.native-sheet .support-panel { --support-bg: var(--cw-sheet-native); }
+.support-panel { display: grid; gap: var(--cw-space-4); padding: var(--cw-space-2) 0 var(--cw-space-5); }
 .support-hero { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--cw-space-3); align-items: center; }
-.support-hero h3 { margin: 0 0 var(--cw-space-1); color: var(--cw-ink); font: 600 var(--cw-text-xl)/1.15 var(--cw-font-brand); }
+.support-hero h3 { margin: 0 0 var(--cw-space-1); color: var(--cw-ink); font: 600 var(--cw-text-xl)/1.2 var(--cw-font-brand); }
 .support-hero p { margin: 0; color: var(--cw-ink-soft); font-size: var(--cw-text-sm); line-height: 1.5; max-width: 34ch; }
-.support-stamps { display: grid; gap: var(--cw-space-4); }
-.support-stamp { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; column-gap: var(--cw-space-4); row-gap: var(--cw-space-2);
-  align-items: center; width: 100%; min-height: 128px; padding: var(--cw-space-5) var(--cw-space-5) var(--cw-space-4); border: 0; border-radius: 4px; text-align: start;
-  background: var(--cw-paper-light); color: var(--cw-ink); box-shadow: inset 0 0 0 1.5px var(--cw-paper-edge), 0 6px 16px rgba(37, 58, 58, .10);
-  transition: transform var(--cw-base) var(--cw-ease), box-shadow var(--cw-base) var(--cw-ease); }
-/* Perforated edge: dots in the sheet's own colour, only along the border band. */
-.support-stamp::before { content: ''; position: absolute; inset: -4px; pointer-events: none;
-  background: radial-gradient(circle at 6px 6px, var(--support-bg) 3.4px, transparent 4px) 0 0 / 12px 12px;
-  -webkit-mask: linear-gradient(#000 0 0) top / 100% 8px no-repeat, linear-gradient(#000 0 0) bottom / 100% 8px no-repeat, linear-gradient(#000 0 0) left / 8px 100% no-repeat, linear-gradient(#000 0 0) right / 8px 100% no-repeat;
-  mask: linear-gradient(#000 0 0) top / 100% 8px no-repeat, linear-gradient(#000 0 0) bottom / 100% 8px no-repeat, linear-gradient(#000 0 0) left / 8px 100% no-repeat, linear-gradient(#000 0 0) right / 8px 100% no-repeat; }
-.support-stamp:not(:disabled):active { transform: scale(.985) rotate(-.4deg); }
-.support-stamp .stamp-art { grid-row: 1 / 3; align-self: start; display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%;
-  background: var(--cw-paper); color: var(--cw-turquoise-deep); box-shadow: inset 0 0 0 2px currentColor, inset 0 0 0 5px var(--cw-paper), inset 0 0 0 6.5px currentColor; transform: rotate(-8deg); }
-.stamp-text { display: grid; gap: 4px; min-width: 0; }
-.stamp-text strong { font: 600 var(--cw-text-lg)/1.2 var(--cw-font); }
-.stamp-text small { color: var(--cw-ink-soft); font-size: var(--cw-text-sm); line-height: 1.4; }
-.stamp-value { grid-column: 2; justify-self: start; min-width: 64px; padding: 6px 12px; border-radius: 4px;
-  background: var(--cw-action-primary); color: var(--cw-on-action-primary); font: 600 var(--cw-text-md)/1 var(--cw-font); font-variant-numeric: tabular-nums; text-align: center; }
-.support-stamp.tone-forever { background: var(--cw-teal-800); color: var(--cw-paper); box-shadow: inset 0 0 0 1.5px var(--cw-teal-950), 0 8px 20px rgba(18, 45, 46, .22); }
-.support-stamp.tone-forever .stamp-text small { color: var(--cw-on-dark-soft); }
-.support-stamp.tone-forever .stamp-art { background: var(--cw-teal-700); color: var(--cw-paper); box-shadow: inset 0 0 0 2px currentColor, inset 0 0 0 5px var(--cw-teal-700), inset 0 0 0 6.5px currentColor; }
-.support-stamp.tone-forever .stamp-value { background: var(--cw-pink); color: var(--cw-teal-950); }
-.support-stamp.tone-coffee .stamp-art { color: var(--cw-coconut-deep); }
-.support-stamp.tone-coffee .stamp-value { background: var(--cw-coconut-deep); color: var(--cw-paper); }
-.support-stamp:disabled { opacity: 1; }
-.support-stamp:disabled .stamp-value { background: var(--cw-track); color: var(--cw-ink-soft); }
-.support-stamp.tone-forever:disabled .stamp-value { background: var(--cw-teal-700); color: var(--cw-on-dark-soft); }
+.support-stamps { display: grid; gap: var(--cw-space-4); padding: var(--cw-space-1) 2px; container-type: inline-size; }
+
+/* A real postage stamp. The button only carries the shadow (drop-shadow follows
+   the perforated outline); .stamp-perf is the white stamp paper whose edges are
+   punched by four masks — one row of holes per side, evenly spaced (round) so
+   every side ends cleanly at the corners; .stamp-face is the printed design
+   with its fine frame. */
+.support-stamp { --hole: 3.6px; --pitch: 13px; --stamp-paper: #FFFDF8;
+  --face: var(--cw-paper-light); --face-ink: var(--cw-ink); --face-soft: var(--cw-ink-soft); --frame: var(--cw-turquoise-deep); --art-bg: var(--cw-surface);
+  position: relative; display: block; width: 100%; padding: 0; border: 0; background: none; text-align: start; color: var(--face-ink);
+  filter: drop-shadow(0 1px 0 rgba(37, 58, 58, .12)) drop-shadow(0 6px 10px rgba(37, 58, 58, .14));
+  transition: transform var(--cw-base) var(--cw-ease); }
+.stamp-perf { display: block; padding: 9px; background: var(--stamp-paper);
+  -webkit-mask:
+    radial-gradient(circle var(--hole) at 50% 0, #0000 97%, #000) 50% 0 / var(--pitch) 100% round,
+    radial-gradient(circle var(--hole) at 50% 100%, #0000 97%, #000) 50% 100% / var(--pitch) 100% round,
+    radial-gradient(circle var(--hole) at 0 50%, #0000 97%, #000) 0 50% / 100% var(--pitch) round,
+    radial-gradient(circle var(--hole) at 100% 50%, #0000 97%, #000) 100% 50% / 100% var(--pitch) round;
+  -webkit-mask-composite: source-in;
+  mask:
+    radial-gradient(circle var(--hole) at 50% 0, #0000 97%, #000) 50% 0 / var(--pitch) 100% round,
+    radial-gradient(circle var(--hole) at 50% 100%, #0000 97%, #000) 50% 100% / var(--pitch) 100% round,
+    radial-gradient(circle var(--hole) at 0 50%, #0000 97%, #000) 0 50% / 100% var(--pitch) round,
+    radial-gradient(circle var(--hole) at 100% 50%, #0000 97%, #000) 100% 50% / 100% var(--pitch) round;
+  mask-composite: intersect; }
+.stamp-face { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: var(--cw-space-3);
+  min-height: 104px; padding: var(--cw-space-4) var(--cw-space-4) var(--cw-space-4) var(--cw-space-3); background: var(--face);
+  box-shadow: inset 0 0 0 1.5px var(--frame), inset 0 0 0 4px var(--face), inset 0 0 0 5px color-mix(in srgb, var(--frame) 45%, transparent); overflow: hidden; }
+.support-stamp .stamp-art { display: grid; place-items: center; width: 58px; height: 58px; border-radius: 50%; background: var(--art-bg); color: var(--frame);
+  box-shadow: inset 0 0 0 2px currentColor, inset 0 0 0 5px var(--art-bg), inset 0 0 0 6px currentColor; transform: rotate(-8deg); }
+.stamp-text { display: grid; gap: 3px; min-width: 0; }
+.stamp-text strong { font: 600 var(--cw-text-lg)/1.25 var(--cw-font); color: var(--face-ink); }
+.stamp-text small { color: var(--face-soft); font-size: var(--cw-text-sm); line-height: 1.4; }
+/* The value, printed in the corner like a stamp's denomination. */
+.stamp-value { align-self: start; justify-self: end; max-width: 7.5em; color: var(--frame); font: 600 var(--cw-text-lg)/1.2 var(--cw-font-mono); font-variant-numeric: tabular-nums;
+  letter-spacing: -.01em; text-align: end; overflow-wrap: anywhere; }
+.stamp-value-wait { display: block; width: 3.2em; height: .8em; margin-top: .25em; border-radius: 3px; background: color-mix(in srgb, var(--frame) 22%, transparent); }
+.support-stamp.is-unpriced .stamp-value { font: 500 var(--cw-text-xs)/1.3 var(--cw-font); color: var(--face-soft); letter-spacing: 0; }
+.support-stamp.tone-forever { --face: var(--cw-teal-800); --face-ink: var(--cw-paper); --face-soft: var(--cw-on-dark-soft); --frame: var(--cw-pink); --art-bg: var(--cw-teal-700); }
+.support-stamp.tone-coffee { --face: #F6E9D8; --frame: var(--cw-coconut-deep); --art-bg: #FFF8EE; }
+.support-stamp:not(:disabled):active { transform: scale(.985) rotate(-.6deg); }
+.support-stamp:disabled { opacity: 1; cursor: default; }
+/* Active pass: a round postmark with wavy cancellation lines across the stamp. */
+.stamp-postmark { position: absolute; right: 10px; top: 50%; width: 76px; height: 76px; margin-top: -38px; display: grid; place-items: center; border-radius: 50%;
+  border: 2px solid var(--frame); color: var(--frame); transform: rotate(-14deg); opacity: .85; pointer-events: none; }
+.stamp-postmark::before { content: ''; position: absolute; right: 70px; top: 22px; width: 90px; height: 30px;
+  background: repeating-radial-gradient(circle at 0 120%, transparent 0 9px, currentColor 9px 10.5px, transparent 10.5px 14px); opacity: .55;
+  -webkit-mask: linear-gradient(90deg, transparent, #000 40%); mask: linear-gradient(90deg, transparent, #000 40%); }
+.stamp-postmark span { font: 600 var(--cw-text-xs)/1.2 var(--cw-font-mono); letter-spacing: .12em; text-transform: uppercase; }
 .support-links { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--cw-space-2) var(--cw-space-4); }
 .support-links .text-button { display: inline-flex; align-items: center; gap: 6px; color: var(--cw-ink); }
+@container (max-width: 380px) { .stamp-face { grid-template-columns: auto minmax(0, 1fr); } .stamp-value { grid-column: 2; justify-self: start; margin-top: var(--cw-space-2); } }
 @media (prefers-reduced-motion: reduce) { .support-stamp:not(:disabled):active { transform: none; } }

@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { t } from './i18n';
 
 /** CocoWash decision bar: Eliminar · Favorita · Conservar.
  *
@@ -128,19 +129,22 @@ function BarIcon({ name, flip = false, className }: { name: keyof typeof ICONS; 
 }
 
 /* ---------- Sizing ---------- */
-const LABELS = { discard: 'Eliminar', keep: 'Conservar' } as const;
-const FONT = '"Patua One"';
+const LABELS = { discard: () => t('Eliminar'), keep: () => t('Conservar') } as const;
 let canvas: HTMLCanvasElement | null = null;
+/** The bar's own type (--cw-font-display): Patua One, or the system font in
+ * Arabic and Japanese, so each language is measured as it will be drawn. */
+const barFont = () => (typeof document !== 'undefined' && getComputedStyle(document.documentElement).getPropertyValue('--cw-font-display').trim()) || '"Patua One", Georgia, serif';
 function textWidth(text: string, px: number) {
   canvas ??= document.createElement('canvas');
   const ctx = canvas.getContext('2d'); if (!ctx) return text.length * px * .62;
-  ctx.font = `400 ${px}px ${FONT}, Georgia, serif`;
+  ctx.font = `400 ${px}px ${barFont()}`;
   return ctx.measureText(text.toUpperCase()).width + text.length * px * .02;
 }
 /** The richest variant whose longer label fits, at the size Dynamic Type asks
  * for (rem); both sides always use the same variant, for symmetry. */
 function pickVariant(room: number, rem: number): { variant: BarVariant; font: number; icon: number } {
-  const word = (px: number) => textWidth(LABELS.keep, px);
+  // Both sides share one variant: measure the longer word (it changes by language).
+  const word = (px: number) => Math.max(textWidth(LABELS.keep(), px), textWidth(LABELS.discard(), px));
   const icon = Math.round(rem * 1.25), arrow = Math.round(rem * .8125), gap = rem * .3125;
   // Arrows only while the word keeps at least 16 px (large iPhones); below
   // that the position and the swipe already say the direction.
@@ -172,7 +176,7 @@ type Props = {
 export function DecisionBar({ count, disabled, favoriteOn, armed, onDiscard, onFavorite, onKeep }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 0, button: 56, heart: 70, rem: 16 });
-  const [fontReady, setFontReady] = useState(() => typeof document === 'undefined' || document.fonts?.check?.(`16px ${FONT}`) !== false);
+  const [fontReady, setFontReady] = useState(() => typeof document === 'undefined' || document.fonts?.check?.(`16px ${barFont()}`) !== false);
   useLayoutEffect(() => {
     const el = host.current; if (!el) return;
     const read = () => {
@@ -186,17 +190,16 @@ export function DecisionBar({ count, disabled, favoriteOn, armed, onDiscard, onF
     const observer = new ResizeObserver(read); observer.observe(el);
     return () => observer.disconnect();
   }, []);
-  useEffect(() => { if (fontReady) return; let alive = true; document.fonts?.load(`16px ${FONT}`).then(() => { if (alive) setFontReady(true); }).catch(() => {}); return () => { alive = false; }; }, [fontReady]);
+  useEffect(() => { if (fontReady) return; let alive = true; document.fonts?.load(`16px ${barFont()}`).then(() => { if (alive) setFontReady(true); }).catch(() => {}); return () => { alive = false; }; }, [fontReady]);
   const geometry = useMemo(() => size.width ? barGeometry(size.width, size.button, size.heart) : null, [size.width, size.button, size.heart]);
   const fit = useMemo(() => geometry ? pickVariant(geometry.discard.content.w, size.rem) : null, [geometry, size.rem, fontReady]);
-  const many = count > 1 ? ` ${count}` : '';
   const style = { '--bar-height': geometry ? `${geometry.height}px` : undefined } as CSSProperties;
   return <div ref={host} className={`decision-bar ${armed ? `armed-${armed}` : ''} ${favoriteOn ? 'is-favorites' : ''} ${fit ? `is-${fit.variant}` : ''}`} style={style}>
     {geometry && fit && <>
       <SideButton kind="discard" piece={geometry.discard} fit={fit} disabled={disabled || favoriteOn} onClick={onDiscard}
-        label={favoriteOn ? 'Eliminar: no disponible para favoritas' : `Eliminar${many}`}/>
+        label={favoriteOn ? t('Eliminar: no disponible para favoritas') : count > 1 ? t('Eliminar {n}', { n: count }) : t('Eliminar')}/>
       <button type="button" className="bar-piece bar-heart" aria-pressed={favoriteOn} disabled={disabled} onClick={onFavorite}
-        aria-label={favoriteOn ? `Quitar${many} de Favoritas` : `Añadir${many} a Favoritas`} style={place(geometry.heart.box)}>
+        aria-label={favoriteOn ? (count > 1 ? t('Quitar {n} de Favoritas', { n: count }) : t('Quitar de Favoritas')) : count > 1 ? t('Añadir {n} a Favoritas', { n: count }) : t('Añadir a Favoritas')} style={place(geometry.heart.box)}>
         <svg viewBox={view(geometry.heart.box)} aria-hidden="true" focusable="false">
           <path className="piece-base" d={geometry.heart.d} transform={`translate(0 ${BASE})`}/>
           <g className="piece-face">
@@ -209,7 +212,7 @@ export function DecisionBar({ count, disabled, favoriteOn, armed, onDiscard, onF
           </g>
         </svg>
       </button>
-      <SideButton kind="keep" piece={geometry.keep} fit={fit} disabled={disabled} onClick={onKeep} label={`Conservar${many}`}/>
+      <SideButton kind="keep" piece={geometry.keep} fit={fit} disabled={disabled} onClick={onKeep} label={count > 1 ? t('Conservar {n}', { n: count }) : t('Conservar')}/>
     </>}
   </div>;
 }
@@ -221,7 +224,7 @@ function SideButton({ kind, piece, fit, disabled, label, onClick }: { kind: 'dis
   const { box, content } = piece;
   const icon = <BarIcon name={kind === 'discard' ? 'trash' : 'bookmark'} className="bar-symbol"/>;
   const arrow = fit.variant === 'full' && <BarIcon name="arrow" flip={kind === 'keep'} className="bar-arrow"/>;
-  const word = fit.variant !== 'icon' && <span className="bar-word" aria-hidden="true">{LABELS[kind]}</span>;
+  const word = fit.variant !== 'icon' && <span className="bar-word" aria-hidden="true">{LABELS[kind]()}</span>;
   return <button type="button" className={`bar-piece bar-side bar-${kind}`} disabled={disabled} onClick={onClick} aria-label={label} style={place(box)}>
     <svg viewBox={view(box)} aria-hidden="true" focusable="false">
       <path className="piece-base" d={piece.d} transform={`translate(0 ${BASE})`}/>

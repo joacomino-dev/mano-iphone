@@ -3,6 +3,7 @@ import type { Asset } from './domain';
 import { Library, isNative, thumbnailInfo, inCloudError, clearThumbnailReferences } from './library';
 import { cardPixels, cloudDownloads, zoomPixels } from './preview';
 import { videoWindow } from './video-plan';
+import { t } from './i18n';
 
 /** Poster only. Videos prepare separately (VideoStore) so a slow or failed
  * video download can never take its poster down with it, and vice versa.
@@ -16,10 +17,10 @@ function decodePoster(src: string, signal: AbortSignal) {
     const image = new Image();
     const cleanup = () => { clearTimeout(timer); signal.removeEventListener('abort', cancel); image.onload = null; image.onerror = null; };
     const cancel = () => { cleanup(); image.src = ''; reject(aborted()); };
-    const timer = setTimeout(() => { cleanup(); reject(new Error('No se pudo cargar la vista previa.')); }, 20000);
+    const timer = setTimeout(() => { cleanup(); reject(new Error(t('No se pudo cargar la vista previa.'))); }, 20000);
     signal.addEventListener('abort', cancel, { once: true });
     image.onload = () => { cleanup(); resolve(); };
-    image.onerror = () => { cleanup(); reject(new Error('No se pudo cargar la vista previa.')); };
+    image.onerror = () => { cleanup(); reject(new Error(t('No se pudo cargar la vista previa.'))); };
     image.src = src;
   });
 }
@@ -272,13 +273,13 @@ const failureFor = (error: unknown): VideoFailure | 'busy' | 'cancelled' => {
 };
 export function videoFailureCopy(failure?: VideoFailure): { message: string; action: 'retry' | 'settings' | 'fullscreen' | 'download' | null } {
   switch (failure) {
-    case 'cloud': return { message: 'Está en iCloud. Decide sin descargarlo o descárgalo para verlo.', action: 'download' };
-    case 'download': return { message: 'No se pudo descargar de iCloud. Revisa tu conexión.', action: 'retry' };
-    case 'permission': return { message: 'CocoWash necesita acceso a este vídeo.', action: 'settings' };
-    case 'unavailable': return { message: 'Este vídeo ya no está en Fotos.', action: null };
-    case 'tooLarge': return { message: 'Es muy largo para verlo aquí.', action: 'fullscreen' };
-    case 'playback': return { message: 'No se puede reproducir aquí.', action: 'fullscreen' };
-    default: return { message: 'No se pudo preparar el vídeo.', action: 'retry' };
+    case 'cloud': return { message: t('Está en iCloud. Decide sin descargarlo o descárgalo para verlo.'), action: 'download' };
+    case 'download': return { message: t('No se pudo descargar de iCloud. Revisa tu conexión.'), action: 'retry' };
+    case 'permission': return { message: t('CocoWash necesita acceso a este vídeo.'), action: 'settings' };
+    case 'unavailable': return { message: t('Este vídeo ya no está en Fotos.'), action: null };
+    case 'tooLarge': return { message: t('Es muy largo para verlo aquí.'), action: 'fullscreen' };
+    case 'playback': return { message: t('No se puede reproducir aquí.'), action: 'fullscreen' };
+    default: return { message: t('No se pudo preparar el vídeo.'), action: 'retry' };
   }
 }
 

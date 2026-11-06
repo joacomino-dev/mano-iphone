@@ -7,6 +7,7 @@ import { sharpPreview, subscribeSharp } from './media';
 import { thumbPixels, previewPolicyKey, subscribePreviewPolicy } from './preview';
 import { CocoLoader, Deferred } from './Loader';
 import { ReviewLoader, reviewRows, reviewHeight } from './review';
+import { t } from './i18n';
 
 function ReviewPhoto(props: { asset: Asset; loader: ReviewLoader<Thumb>; open: boolean }) {
   return <UnprotectedReviewPhoto {...props}/>;
@@ -26,11 +27,11 @@ function UnprotectedReviewPhoto({ asset, loader, open }: { asset: Asset; loader:
       .catch(e => { if (!controller.signal.aborted) { if (inCloudError(e)) setCloud(true); else setError(true); } });
     return () => controller.abort();
   }, [open, key, sharp, retry, loader]);
-  if (src && !error) return <img src={src} alt={asset.kind === 'video' ? 'Vista previa de vídeo' : 'Foto del carrete'} draggable={false} decoding="async" onError={() => {
+  if (src && !error) return <img src={src} alt={asset.kind === 'video' ? t('Vista previa de vídeo') : t('Foto del carrete')} draggable={false} decoding="async" onError={() => {
     if (retry === 0) { loader.forget(key); setThumb(undefined); setRetry(1); } else setError(true);
   }}/>;
   if (cloud) return <div className="photo-loading is-cloud"><CloudIcon size={22}/></div>;
-  return <div className={`photo-loading ${error ? 'has-error' : ''}`}>{error ? <><ImageBrokenIcon size={26}/><span>No se pudo cargar</span></> : <Deferred><CocoLoader size={28}/></Deferred>}</div>;
+  return <div className={`photo-loading ${error ? 'has-error' : ''}`}>{error ? <><ImageBrokenIcon size={26}/><span>{t('No se pudo cargar')}</span></> : <Deferred><CocoLoader size={28}/></Deferred>}</div>;
 }
 
 /** The same cards in measured rows; only the viewport, overscan and focused row
@@ -86,8 +87,8 @@ export const ReviewGrid = memo(function ReviewGrid({ assets, open, recover }: { 
     const next = assets[index + 1] ?? assets[index - 1];
     wantedFocus.current = next?.id; setFocusId(next?.id); recover(asset.id);
   }, [assets, recover]);
-  return <Carousel ariaLabel="Revisar lo marcado para eliminar" draggingEnabled={false} className="review-carousel">
-    <div ref={grid} className="review-grid review-window" role="list" aria-label={`${assets.length} para eliminar`} style={{ height: reviewHeight(assets.length, box.height, box.gap) }}>
+  return <Carousel ariaLabel={t('Revisar lo marcado para eliminar')} draggingEnabled={false} className="review-carousel">
+    <div ref={grid} className="review-grid review-window" role="list" aria-label={t('{n} para eliminar', { n: assets.length })} style={{ height: reviewHeight(assets.length, box.height, box.gap) }}>
       {rows.map(row => <div key={row} data-review-row={row} className="review-row" role="presentation" style={{ top: row * (box.height + box.gap) }}>
         {assets.slice(row * 3, row * 3 + 3).map((asset, column) => { const index = row * 3 + column; return <article key={asset.id} className="review-card paper" role="listitem" aria-posinset={index + 1} aria-setsize={assets.length}>
           <div className="review-photo"><ReviewPhoto key={`${asset.id}:${asset.modified ?? 0}`} asset={asset} loader={loader} open={open}/></div>
@@ -97,7 +98,7 @@ export const ReviewGrid = memo(function ReviewGrid({ assets, open, recover }: { 
             if (e.key !== 'Tab' || e.altKey || e.ctrlKey || e.metaKey) return;
             const next = index + (e.shiftKey ? -1 : 1);
             if (next >= 0 && next < assets.length) { e.preventDefault(); focus(next); }
-          }} onClick={() => recoverOne(asset, index)}><ArrowCounterClockwiseIcon size={16}/>Recuperar</button>
+          }} onClick={() => recoverOne(asset, index)}><ArrowCounterClockwiseIcon size={16}/>{t('Recuperar')}</button>
         </article>; })}
       </div>)}
     </div>

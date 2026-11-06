@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { t } from './i18n';
 
 /** Main-screen chrome in the decision bar's language (see DecisionBar.tsx):
  * solid colour, cream band, ink contour, an ink base under what can be pressed.
@@ -21,7 +22,7 @@ export function PileProgress({ reviewed, total, count }: { reviewed: number; tot
   // its length while the reviewed number grows (1/20 → 10/20).
   const digits = String(Math.max(0, total)).length;
   return <>
-    <div className="pile-meter" role="progressbar" aria-valuemin={0} aria-valuemax={Math.max(1, total)} aria-valuenow={reviewed} aria-label={`Revisados ${reviewed} de ${total} con estos filtros`}>
+    <div className="pile-meter" role="progressbar" aria-valuemin={0} aria-valuemax={Math.max(1, total)} aria-valuenow={reviewed} aria-label={t('Revisados {n} de {total} con estos filtros', { n: reviewed, total })}>
       <span className="pile-meter-fill" style={{ width: `${share * 100}%` }}/>
     </div>
     <span className="pile-count" aria-hidden="true" style={{ minWidth: `calc(${digits * 2 + 1}ch + 22px)` }}>{count}</span>
