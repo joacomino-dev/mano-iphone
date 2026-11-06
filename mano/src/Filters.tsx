@@ -19,8 +19,8 @@ function DateCalendar({from,to,change}:{from?:string;to?:string;change:(value:Pa
 /** Background measuring state shown next to the sets that depend on it. */
 export type IndexProgress = { sized: number; total: number; analyzed: number; photos: number; measuring: boolean; analyzing: boolean };
 
-const SMART: { value: Smart; label: () => string; icon: typeof BroomIcon; hint: () => string }[] = [
- { value: 'all', label: () => t('Todo'), icon: SparkleIcon, hint: () => t('Sin atajos: todo lo que eligen los demás filtros.') },
+const SMART: { value: Smart; label: () => string; icon: typeof BroomIcon; hint?: () => string }[] = [
+ { value: 'all', label: () => t('Todo'), icon: SparkleIcon },
  { value: 'later', label: () => t('Más tarde'), icon: ClockCountdownIcon, hint: () => t('Lo que dejaste para después. Fuera de este atajo, espera al final de la pila.') },
  { value: 'screenshots', label: () => t('Capturas'), icon: DeviceMobileIcon, hint: () => t('Capturas y grabaciones de pantalla, marcadas así por tu iPhone.') },
  { value: 'lowQuality', label: () => t('Baja calidad'), icon: ImageBrokenIcon, hint: () => t('Borrosas, muy oscuras o quemadas, según Vision en tu iPhone.') },
@@ -29,12 +29,11 @@ const SMART: { value: Smart; label: () => string; icon: typeof BroomIcon; hint: 
 ];
 /** «Al azar» on its own row, then the pairs that read as opposites. */
 const ORDER: [Order, () => string][] = [['random', () => t('Al azar')], ['oldest', () => t('Más antiguas')], ['newest', () => t('Más recientes')], ['largest', () => t('Más pesadas')], ['smallest', () => t('Más ligeras')]];
-const ORDER_HINT: Record<Order, () => string> = {
+const ORDER_HINT: Partial<Record<Order, () => string>> = {
  oldest: () => t('Cronológico: de tu primera foto a la última. Sabes siempre por dónde vas.'),
  newest: () => t('Cronológico inverso: empieza por lo último que guardaste.'),
  largest: () => t('Primero lo que más espacio ocupa: el camino corto para liberar memoria.'),
  smallest: () => t('Primero lo más ligero.'),
- random: () => t('Una mezcla distinta cada ronda.'),
 };
 const MEDIA = [['all', () => t('Todo')], ['photo', () => t('Fotos')], ['video', () => t('Vídeos')], ['live', () => t('Live Photos')]] as const;
 /** Six ranges, two columns: the four quick ones, then «Último año» and «Elegir fechas». */
@@ -57,16 +56,16 @@ export function Filters({filter,assets,state,apply,index,preview}: {filter:Filte
  const visionPending=(smart==='lowQuality'||smart==='text')&&index.analyzing&&index.analyzed<index.photos;
  const sizePending=(draft.order==='largest'||draft.order==='smallest')&&index.measuring&&index.sized<index.total;
  return <div className="filters-panel">
-  <fieldset><legend><BroomIcon size={18}/>{t('Limpieza rápida')}</legend>
-   <div className="smart-chips" role="group" aria-label={t('Limpieza rápida')}>{SMART.map(({value,label,icon:Icon})=><button key={value} aria-pressed={smart===value} onClick={()=>update({smart:value})}><Icon size={20} weight={smart===value?'fill':'regular'}/><span>{label()}</span><span className="chip-count" aria-label={t('{n} en la pila',{n:counts[value]})}>{formatNumber(counts[value])}</span></button>)}</div>
-   <p className="setting-note" role="status">{SMART.find(s=>s.value===smart)!.hint()}{visionPending&&<small>{t('Memo revisa tu fototeca en el iPhone: {done} de {total}. Irán apareciendo más.',{done:index.analyzed,total:index.photos})}</small>}</p>
+  <fieldset><legend><BroomIcon size={18}/>{t('Filtros generales')}</legend>
+   <div className="smart-chips" role="group" aria-label={t('Filtros generales')}>{SMART.map(({value,label,icon:Icon})=><button key={value} aria-pressed={smart===value} onClick={()=>update({smart:value})}><Icon size={20} weight={smart===value?'fill':'regular'}/><span>{label()}</span><span className="chip-count" aria-label={t('{n} en la pila',{n:counts[value]})}>{formatNumber(counts[value])}</span></button>)}</div>
+   {(SMART.find(s=>s.value===smart)!.hint||visionPending)&&<p className="setting-note" role="status">{SMART.find(s=>s.value===smart)!.hint?.()}{visionPending&&<small>{t('Memo revisa tu fototeca en el iPhone: {done} de {total}. Irán apareciendo más.',{done:index.analyzed,total:index.photos})}</small>}</p>}
   </fieldset>
   <fieldset><legend><ImagesIcon size={18}/>{t('Contenido')}</legend><div className="filter-chips chip-grid cols-2" role="group" aria-label={t('Contenido')}>{MEDIA.map(([value,label])=><button key={value} aria-pressed={draft.media===value} onClick={()=>update({media:value})}>{label()}</button>)}</div></fieldset>
   <fieldset><legend><CalendarBlankIcon size={18}/>{t('Fecha')}</legend><div className="filter-chips chip-grid cols-2" role="group" aria-label={t('Fecha')}>{RANGES.map(([value,label])=><button key={value} aria-pressed={(draft.dateRange??'all')===value} onClick={()=>update({dateRange:value})}>{label()}</button>)}</div>
    {draft.dateRange==='custom'&&<><DateCalendar from={draft.from} to={draft.to} change={update}/>{invalid&&<small className="date-error" role="status">{t('Elige una fecha inicial y una final válidas.')}</small>}</>}
   </fieldset>
   <fieldset><legend><SortAscendingIcon size={18}/>{t('Orden')}</legend><div className="filter-chips chip-grid cols-2 lead-row" role="group" aria-label={t('Orden')}>{ORDER.map(([value,label])=><button key={value} aria-pressed={draft.order===value} onClick={()=>update({order:value})}>{label()}</button>)}</div>
-   <p className="setting-note" role="status">{ORDER_HINT[draft.order]()}{(draft.order==='largest'||draft.order==='smallest')&&<small>{sizePending?t('Midiendo el peso: {done} de {total}.',{done:index.sized,total:index.total})+' ':''}{t('Se mide lo que está en tu iPhone; lo que solo está en iCloud va al final.')}</small>}</p>
+   {(ORDER_HINT[draft.order]||draft.order==='largest'||draft.order==='smallest')&&<p className="setting-note" role="status">{ORDER_HINT[draft.order]?.()}{(draft.order==='largest'||draft.order==='smallest')&&<small>{sizePending?t('Midiendo el peso: {done} de {total}.',{done:index.sized,total:index.total})+' ':''}{t('Se mide lo que está en tu iPhone; lo que solo está en iCloud va al final.')}</small>}</p>}
   </fieldset>
   <fieldset><legend><StampIcon size={18}/>{t('Sellos')}</legend>
    {/* How seals work: one tap away, so the filter itself stays short. */}

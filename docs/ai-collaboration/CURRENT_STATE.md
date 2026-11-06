@@ -2,6 +2,17 @@
 
 Actualizado: 2026-11-05, America/Bogota. Codex trabaja solo por indicación del usuario.
 
+## Principal: 0.9.9.1 (build 35) en `main` (Claude)
+
+CW-CL-045. El usuario aprobó la serie 9.8.x y pidió dejarla como principal con el nombre
+0.9.9.1 (el bundle dice 0.9.9 porque Apple admite tres números; el arranque muestra
+«0.9.9.1 (35)»). `main` avanza en GitHub por fast-forward hasta esta versión; la copia de
+OneDrive (con `main` y cambios ajenos sin confirmar) no se tocó: actualizarla con
+`git pull` cuando esos cambios estén a salvo. La CI de `main` es ahora
+`build-people-dev.yml`; `build-ios.yml` (AltStore antiguo) solo se lanza a mano.
+Borradores para la tienda en `docs/appstore/` (ficha en 7 idiomas, política de privacidad,
+notas para el revisor). CI e IPA en esta entrada al terminar.
+
 ## Siguiente: lanzamiento 1.0
 
 El usuario aprobó 9.8.6 (34) y pide ir a la App Store. Hoja de ruta con responsables y

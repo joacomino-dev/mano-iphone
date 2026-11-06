@@ -1,7 +1,7 @@
 # CocoWash · Hoja de ruta a la App Store (1.0)
 
-Estado de partida (2026-11-06): 9.8.6 (34) en la rama `claude/cocowash-9.8.6`, probada por
-el usuario y aprobada en diseño y funciones. Nada fusionado en `main`. App solo para iPhone
+Estado (2026-11-06): **0.9.9.1 (35) es la versión principal en `main`**, probada por el
+usuario y aprobada en diseño y funciones. App solo para iPhone
 (`TARGETED_DEVICE_FAMILY = 1`), iOS 17+, 7 idiomas (es, en, fr, de, it, ar, ja).
 
 Quién: **U** = usuario (cuentas, dinero, decisiones legales, arte), **C** = Claude/Codex
@@ -19,8 +19,8 @@ Quién: **U** = usuario (cuentas, dinero, decisiones legales, arte), **C** = Cla
 5. **AdMob**: crear la app iOS, una unidad **nativa** y anotar el ID de app y el de unidad.
    Configurar en AdMob el mensaje de consentimiento (RGPD + estados de EE. UU.) y el mensaje
    explicativo de ATT. Clasificación máxima de anuncios: G (para todos).
-6. **Web mínima** en un dominio tuyo con: política de privacidad (obligatoria, menciona
-   AdMob/Google, compras, que las fotos no salen del iPhone), página de soporte con un
+6. **Web mínima** en un dominio tuyo con: política de privacidad (borrador en
+   `docs/appstore/privacy-policy.md`; completa tus datos), página de soporte con un
    correo, y el archivo **`app-ads.txt`** que te da AdMob (sin él, AdMob limita los anuncios).
 7. **Marca**: comprobar que «CocoWash» no choca con una marca registrada en tus mercados.
 
@@ -33,16 +33,15 @@ Quién: **U** = usuario (cuentas, dinero, decisiones legales, arte), **C** = Cla
 
 ## Fase 3 · Versión 1.0 en código (C)
 
-1. **Fusionar** las ramas 9.8.x en `main` mediante un PR revisado (Codex revisa según
-   `PROTOCOL.md`). Necesita tu aprobación.
+1. ~~Fusionar las ramas 9.8.x en `main`~~ — hecho (0.9.9.1, autorizado por el usuario).
 2. **Retirar el modo de prueba**: sección en Ajustes, chip, `testMode.ts`, rondas de
    postales y el flag `CocoWashTestAds` del flujo de publicación.
 3. **IDs reales de AdMob** en `COCO_ADMOB_APP_ID` y `COCO_ADMOB_NATIVE_UNIT_ID` (hoy son
    los de prueba de Google). Nunca en un repositorio público si decides que no deben verse;
    como mínimo, fuera de los registros de la CI.
-4. **Manifiesto de privacidad**: `NSPrivacyTracking` a `true` y declarar los tipos de datos
-   que recoge el SDK de anuncios (identificador de dispositivo, datos de uso y de
-   diagnóstico, ubicación aproximada); el SDK de Google aporta sus dominios de seguimiento.
+4. ~~Manifiesto de privacidad~~ — hecho en 0.9.9.1: seguimiento declarado e
+   identificador, datos de anuncios, interacción, ubicación aproximada y fallos para
+   publicidad de terceros (revisar si cambian los formatos de anuncio).
 5. **Compras en App Store Connect** con estos IDs exactos:
    - `work.joaquin.mano.noads.year`: **suscripción no renovable** (1 año).
    - `work.joaquin.mano.noads.lifetime`: **no consumible**.
@@ -62,8 +61,8 @@ Quién: **U** = usuario (cuentas, dinero, decisiones legales, arte), **C** = Cla
 
 ## Fase 4 · Ficha de la tienda (U+C)
 
-1. En los 7 idiomas: nombre, subtítulo (30 caracteres), palabras clave (100), descripción,
-   texto promocional, novedades. C redacta; ideal revisión nativa o con `asodev`/`unslop`.
+1. Borrador listo en `docs/appstore/listing.md` (7 idiomas, límites comprobados). Falta
+   revisión nativa o con `asodev`/`unslop`.
 2. **Capturas** de iPhone 6,9" (obligatorias) y, opcionalmente, 6,5": pila con estampa,
    «Una última mirada», resumen, Filtros y Ajustes. Mejor desde la versión 1.0 en un iPhone
    real; C puede preparar marcos y textos superpuestos por idioma.
@@ -71,8 +70,7 @@ Quién: **U** = usuario (cuentas, dinero, decisiones legales, arte), **C** = Cla
    anuncios de terceros; «seguimiento» solo si el usuario lo permite en ATT.
 4. Clasificación por edad (cuestionario), categoría (Fotografía o Utilidades), URL de soporte
    y de privacidad, copyright.
-5. **Notas para la revisión**: que el borrado siempre pasa por la confirmación de Fotos, que
-   no hay cuenta ni inicio de sesión, cómo ver un anuncio y cómo probar las compras.
+5. **Notas para la revisión**: borrador en `docs/appstore/review-notes.md`.
 6. **Países**: todos menos, al principio, **China continental** (exige número ICP).
 
 ## Fase 5 · TestFlight y pruebas finales (U+C)

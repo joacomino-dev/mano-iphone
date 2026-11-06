@@ -1094,3 +1094,10 @@ input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;u
 /* Filtros › Restablecer: a quiet outlined pill, centred, border in its own colour. */
 .filter-reset{display:flex;justify-content:center;margin:0 0 var(--cw-space-2)}
 .filter-reset button{display:inline-flex;align-items:center;gap:6px;min-height:var(--cw-touch);padding:0 var(--cw-space-4);border:1.5px solid currentColor;border-radius:var(--cw-radius-pill);background:transparent;color:var(--cw-ink-soft);font-size:var(--cw-text-sm);font-weight:500}
+
+/* 0.9.9.1: content scrolling under the Filtros/Ajustes/Apoyo tabs disappears at
+   their lower edge: a backing in the sheet's colour fills around the pill. */
+.sheet-tabs::before{content:'';position:absolute;z-index:-1;left:calc(-1 * var(--cw-space-6));right:calc(-1 * var(--cw-space-6));top:-200px;bottom:0;background:var(--cw-sheet)}
+.native-sheet .sheet-tabs::before{background:var(--cw-sheet-native)}
+.sheet-tabs{background:transparent}
+.sheet-tabs::after{content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;background:var(--cw-paper-dim)}

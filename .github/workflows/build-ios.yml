@@ -6,9 +6,7 @@ on:
         description: 'Also publish the IPA when the simulator smoke test fails (the run still fails)'
         type: boolean
         default: false
-  push:
-    branches: [main, master]
-    paths: ['mano/**', 'mano-source.zip', '.github/workflows/build-ios.yml']
+  # 0.9.9.1: main is built by build-people-dev.yml; this legacy flow runs on request only.
 permissions:
   contents: read
 concurrency:

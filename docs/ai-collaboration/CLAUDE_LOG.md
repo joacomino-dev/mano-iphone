@@ -378,3 +378,18 @@ Estado: completada local, pendiente de prueba física e integración.
 Base Git / commit: `claude/cocowash-9.8.6` sobre `68688a2`; misma versión, build 34.
 Cambios realizados: alemán e italiano completos (427 textos, plurales, permisos `InfoPlist.strings`, `CFBundleLocalizations`, regiones de Xcode, selector de idioma). El usuario prohíbe «pase» en español (se malentiende): Apoyo dice «Quita los anuncios…», «Puedes quitarlos por un año o para siempre» y «Listo: ya no verás anuncios»; mismas frases en los demás idiomas. Filtros: «Restablecer» al final, centrado, contorno discreto de su propio color.
 Validaciones: 119 Node, TypeScript, runtime 28; capturas de/it en `work/qa-986b/`.
+
+### CW-CL-045 — 0.9.9.1 (35): versión principal en `main` y primeras tareas de la hoja de ruta
+Fecha: 2026-11-06, America/Bogota
+Agente: Claude
+Estado: completada; pendiente de prueba física.
+Base Git / commit: `claude/cocowash-9.8.6` → fast-forward de `origin/main` (desde `a3dba60`).
+Cambios realizados: Filtros: «Limpieza rápida» pasa a «Filtros generales» y se quitan las
+frases de «Todo» y «Al azar». Nieve del pico derecho de la postal 2 hasta las dos laderas.
+Hojas: el contenido desaparece en el borde inferior de las pestañas (fondo del color de la
+hoja detrás de la píldora). Hoja de ruta: manifiesto de privacidad con seguimiento y datos
+de AdMob; borradores de ficha (7 idiomas, límites comprobados), política de privacidad y
+notas para el revisor en `docs/appstore/`. Versión 0.9.9 (35) mostrada como 0.9.9.1; CI de
+`main` = `build-people-dev.yml`; el flujo AltStore antiguo queda manual.
+Decisiones relevantes: el usuario autorizó expresamente dejar esta versión como `main`.
+Validaciones: 119 Node, TypeScript, runtime 28, builds; capturas `work/qa-991/`.
