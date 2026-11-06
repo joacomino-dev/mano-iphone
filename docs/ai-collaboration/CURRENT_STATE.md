@@ -8,7 +8,8 @@ CW-CL-037. Decisión del usuario: Personas y Breakup Mode salen por completo; lo
 faciales antiguos se borran al arrancar. Modo de prueba con anuncios frecuentes,
 pestaña Apoyo, anuncios como cartas solo deslizables, Compartir arriba a la derecha,
 resumen sin Filtros, orden inicial al azar, Zángano +30 %, pasada antigenéricos.
-Rama `claude/cocowash-9.8`. [Informe](../ai-handoff/COCOWASH_98.md). Sin merge ni Release.
+Rama `claude/cocowash-9.8`, IPA `C:/Users/Joaco/Downloads/CocoWash-9.8-build27-50467a8.ipa`,
+[CI 42134090699](https://github.com/joacomino-dev/mano-iphone/actions/runs/42134090699) success. [Informe](../ai-handoff/COCOWASH_98.md). Sin merge ni Release.
 
 ## Desarrollo para pruebas: 9.7.2.6 / build 26 (Claude)
 

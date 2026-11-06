@@ -53,7 +53,12 @@ Windows: 114 pruebas Node, TypeScript, runtime 28, builds web y native-web, Site
 Edge con puente simulado: 16 capturas en `work/qa-98/` (antes en `work/qa-98-before/`),
 390×844 y 375×667 con texto 130 %, sin errores JS (`mano/tests/qa-98-capture.mjs`).
 La carta nativa solo se ve en el iPhone (la web reserva su hueco).
-CI macOS y IPA: ver `CURRENT_STATE`.
+[CI 42134090699](https://github.com/joacomino-dev/mano-iphone/actions/runs/42134090699) **success**:
+Swift, Release iPhone con GoogleMobileAds y smoke de arranque (reset opcional, reapertura del
+mismo build y borrado de `CocoPeople` comprobado). IPA de fuente `50467a8`:
+`C:/Users/Joaco/Downloads/CocoWash-9.8-build27-50467a8.ipa`, 7.003.770 bytes, SHA-256
+`2753e93b9af993d1b455f50c1cf8001b37c2bc9ebd88de177ca0abaaa92e67bc`. 9.8 (27), sin reset,
+anuncios de prueba activos, sin `MediaIntelligence` en el binario.
 
 ## Pendiente
 
