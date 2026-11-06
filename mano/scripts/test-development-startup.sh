@@ -14,6 +14,22 @@ for runtime,devices in v['devices'].items():
 raise SystemExit('No iOS simulator available')
 PY
 )
+# A stuck CoreSimulator (seen on the hosted runner) used to hang this step until
+# the 10-minute limit. Every simctl call now has a time limit; a stall restarts
+# CoreSimulator, boots the same device again and retries once. Screenshots are
+# evidence only and never fail the step.
+limit() { perl -e 'alarm shift; exec @ARGV' "$@"; }
+sim() {
+  local seconds=$1; shift
+  if limit "$seconds" xcrun simctl "$@"; then return 0; fi
+  echo "simctl $1 stalled or failed; restarting CoreSimulator and retrying once" >&2
+  xcrun simctl shutdown all >/dev/null 2>&1 || true
+  killall -9 com.apple.CoreSimulator.CoreSimulatorService >/dev/null 2>&1 || true
+  limit 120 xcrun simctl boot "$SIM" >/dev/null 2>&1 || true
+  limit 240 xcrun simctl bootstatus "$SIM" -b >/dev/null 2>&1 || true
+  limit "$seconds" xcrun simctl "$@"
+}
+shot() { limit 60 xcrun simctl io "$SIM" screenshot "$1" || echo "screenshot skipped: $1" >&2; }
 xcrun simctl boot "$SIM" || true
 xcrun simctl bootstatus "$SIM" -b > build/startup-safety/boot.log 2>&1 &
 BOOT=$!
@@ -21,8 +37,8 @@ xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release -sd
 wait "$BOOT"
 APP=build/startup-safety/derived/Build/Products/Release-iphonesimulator/App.app
 /usr/libexec/PlistBuddy -c 'Add :CocoWashDevelopmentReset bool true' "$APP/Info.plist"
-xcrun simctl install "$SIM" "$APP"
-DATA=$(xcrun simctl get_app_container "$SIM" work.joaquin.mano data)
+sim 180 install "$SIM" "$APP"
+DATA=$(sim 60 get_app_container "$SIM" work.joaquin.mano data)
 export DATA
 python3 - <<'PY'
 import os
@@ -33,7 +49,7 @@ assert '/CoreSimulator/Devices/' in str(p) and '/Containers/Data/Application/' i
 (p/'Library/Application Support/CocoPeople/old-index').write_text('synthetic-old-index')
 (p/'Documents').mkdir(exist_ok=True);(p/'Documents/preserve').write_text('not-derived')
 PY
-xcrun simctl launch "$SIM" work.joaquin.mano > build/startup-safety/launch.log
+sim 120 launch "$SIM" work.joaquin.mano > build/startup-safety/launch.log
 python3 - <<'PY'
 import os,time,plistlib
 from pathlib import Path
@@ -54,9 +70,9 @@ assert (p/'Documents/preserve').read_text()=='not-derived'
 (p/'Library/Application Support/CocoPeople/index.sqlite').write_text('retired-face-index')
 PY
 sleep 10
-xcrun simctl io "$SIM" screenshot build/startup-safety/first-launch.png
-xcrun simctl terminate "$SIM" work.joaquin.mano
-xcrun simctl launch "$SIM" work.joaquin.mano >> build/startup-safety/launch.log
+shot build/startup-safety/first-launch.png
+sim 60 terminate "$SIM" work.joaquin.mano
+sim 120 launch "$SIM" work.joaquin.mano >> build/startup-safety/launch.log
 sleep 10
 python3 - <<'PY'
 import os
@@ -65,7 +81,7 @@ data=Path(os.environ['DATA'])
 assert (data/'Library/Caches/ManoThumbnails/same-build').read_text()=='keep-on-relaunch'
 assert not (data/'Library/Application Support/CocoPeople').exists(), 'Retired face data must be deleted on launch'
 PY
-xcrun simctl io "$SIM" screenshot build/startup-safety/relaunch.png
+shot build/startup-safety/relaunch.png
 # Termination succeeds only if the relaunched app is still running.
-xcrun simctl terminate "$SIM" work.joaquin.mano
+sim 60 terminate "$SIM" work.joaquin.mano
 echo 'NATIVE_STARTUP_OK: opted-in reset, preserved non-derived file, same-build relaunch, retired face data removed' | tee build/startup-safety/result.txt
