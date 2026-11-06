@@ -5,7 +5,9 @@ Actualizado: 2026-11-05, America/Bogota. Codex trabaja solo por indicación del 
 ## Desarrollo para pruebas: 9.8.6 / build 34 (Claude)
 
 CW-CL-044. Build 33 + alemán e italiano, Apoyo sin la palabra «pase», «Restablecer»
-discreto en Filtros. Rama `claude/cocowash-9.8.6`. CI e IPA en esta entrada al terminar.
+discreto en Filtros. Rama `claude/cocowash-9.8.6`, IPA
+`C:/Users/Joaco/Downloads/CocoWash-9.8.6-build34-df2d394.ipa`,
+[CI 42226489056](https://github.com/joacomino-dev/mano-iphone/actions/runs/42226489056) success; siete idiomas en el paquete. Sin merge ni Release.
 
 ## Desarrollo para pruebas: 9.8.6 / build 33 (Claude)
 
