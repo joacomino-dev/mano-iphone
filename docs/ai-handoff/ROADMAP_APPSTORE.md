@@ -19,10 +19,11 @@ Quién: **U** = usuario (cuentas, dinero, decisiones legales, arte), **C** = Cla
 5. **AdMob**: crear la app iOS, una unidad **nativa** y anotar el ID de app y el de unidad.
    Configurar en «Privacidad y mensajes» el mensaje RGPD y el de estados de EE. UU. (la app
    ya pide el permiso de rastreo por sí misma desde 0.9.9.1 (37) y limita los anuncios a G).
-6. ~~Web de soporte y privacidad~~ — hecha en `web/cocowash/` (es/en, responsable, bases
-   legales RGPD/LOPDP, aviso de EE. UU.). Falta publicarla en
-   https://joaquinmino.work/cocowash/, crear `cocowash@joaquinmino.work` y poner en la raíz
-   del dominio `app-ads.txt` con el ID de editor de AdMob (lo hace ChatGPT/Codex).
+6. ~~Web de soporte y privacidad~~ — publicada el 2026-11-06 en
+   https://joaquinmino.work/cocowash/ (idéntica a `web/cocowash/` de `3ff1b20`, comprobada).
+   ~~Correo `cocowash@joaquinmino.work`~~ — operativo (SPF, DKIM y DMARC en pass).
+   Falta `app-ads.txt` en la raíz: necesita el ID de editor de AdMob (hoy esa ruta devuelve
+   la portada del portafolio con 200; mejor un 404 hasta tener el ID).
 7. **Marca**: comprobar que «CocoWash» no choca con una marca registrada en tus mercados.
 
 ## Fase 2 · Arte (U)
