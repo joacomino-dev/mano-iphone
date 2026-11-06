@@ -25,7 +25,7 @@ const SMART: { value: Smart; label: () => string; icon: typeof BroomIcon; hint: 
  { value: 'screenshots', label: () => t('Capturas'), icon: DeviceMobileIcon, hint: () => t('Capturas y grabaciones de pantalla, marcadas así por tu iPhone.') },
  { value: 'lowQuality', label: () => t('Baja calidad'), icon: ImageBrokenIcon, hint: () => t('Borrosas, muy oscuras o quemadas, según Vision en tu iPhone.') },
  { value: 'text', label: () => t('Texto y documentos'), icon: ReceiptIcon, hint: () => t('Facturas, recibos, transferencias y chats. Las que tienen caras van al final.') },
- { value: 'favorites', label: () => t('Favoritas'), icon: HeartIcon, hint: () => t('Solo tus favoritas, que nunca entran en la pila general. Aquí el corazón las quita de Favoritas y vuelven a la pila; no se pueden eliminar.') },
+ { value: 'favorites', label: () => t('Favoritas'), icon: HeartIcon, hint: () => t('Solo tus favoritas. Aquí el corazón las quita de Favoritas; no se eliminan.') },
 ];
 /** «Al azar» on its own row, then the pairs that read as opposites. */
 const ORDER: [Order, () => string][] = [['random', () => t('Al azar')], ['oldest', () => t('Más antiguas')], ['newest', () => t('Más recientes')], ['largest', () => t('Más pesadas')], ['smallest', () => t('Más ligeras')]];
@@ -70,15 +70,17 @@ export function Filters({filter,assets,state,apply,index,preview}: {filter:Filte
    <p className="setting-note" role="status">{ORDER_HINT[draft.order]()}{(draft.order==='largest'||draft.order==='smallest')&&<small>{sizePending?t('Midiendo el peso: {done} de {total}.',{done:index.sized,total:index.total})+' ':''}{t('Se mide lo que está en tu iPhone; lo que solo está en iCloud va al final.')}</small>}</p>
   </fieldset>
   <fieldset><legend><StampIcon size={18}/>{t('Sellos')}</legend>
-   {/* How seals work lives next to the seal filter, where the levels are chosen. */}
+   {/* How seals work: one tap away, so the filter itself stays short. */}
+   <details className="seal-details"><summary>{t('Cómo funcionan los sellos')}</summary>
    <div className="seal-explainer">
     <span className="seal-sample" aria-hidden="true"><Stamp kind="keep" level={2}/></span>
     <p>{t('Cuando conservas una foto, recibe un sello y descansa: no vuelve a aparecer en un tiempo. Si la conservas otra vez, el sello sube de nivel y descansa más, hasta quedarse para siempre. Así cada ronda trae lo que aún no has decidido.')}</p>
    </div>
    <ul className="seal-levels" aria-label={t('Niveles de sello')}>{LEVELS.map((label, i) => i + 1 === LEVELS.length
      ? <li key={label} className="is-forever"><strong>{ROMAN[i]}</strong><span>{sealRest(i + 1)}</span><small>{t('Para volver a verlas, elige «Sello {level}» en Mostrar.',{level:ROMAN[i]})}</small></li>
-     : <li key={label}><strong>{ROMAN[i]}</strong>{sealRest(i + 1)}</li>)}</ul>
-   <label className="field">{t('Mostrar')}<select value={draft.seal} onChange={e=>update({seal:['all','none'].includes(e.target.value)?e.target.value as 'all'|'none':Number(e.target.value)})}><option value="all">{t('Todos los niveles')}</option><option value="none">{t('Sin sello: pendientes de descubrir')}</option>{LEVELS.map((l,i)=><option key={l} value={i+1}>{t('Sello {level}: {rest}',{level:ROMAN[i],rest:sealRest(i+1)})}</option>)}</select></label><label className="switch-field"><span>{t('Incluir las que descansan')}<small>{t('Las conservadas vuelven con menor frecuencia.')}</small></span><input type="checkbox" role="switch" checked={draft.includeWaiting} onChange={e=>update({includeWaiting:e.target.checked})}/></label></fieldset>
+     : <li key={label}><strong>{ROMAN[i]}</strong>{sealRest(i + 1)}</li>)}</ul></details>
+   <div className="settings-group">
+   <label className="field">{t('Mostrar')}<select value={draft.seal} onChange={e=>update({seal:['all','none'].includes(e.target.value)?e.target.value as 'all'|'none':Number(e.target.value)})}><option value="all">{t('Todos los niveles')}</option><option value="none">{t('Sin sello: pendientes de descubrir')}</option>{LEVELS.map((l,i)=><option key={l} value={i+1}>{t('Sello {level}: {rest}',{level:ROMAN[i],rest:sealRest(i+1)})}</option>)}</select></label><label className="switch-field"><span>{t('Incluir las que descansan')}<small>{t('Las conservadas vuelven con menor frecuencia.')}</small></span><input type="checkbox" role="switch" checked={draft.includeWaiting} onChange={e=>update({includeWaiting:e.target.checked})}/></label></div></fieldset>
   <div className="filter-apply"><span>{invalid?(!draft.from||!draft.to?t('Elige desde y hasta para aplicar'):t('La fecha inicial debe ir antes de la final')):<><AnimatedNumber value={count}/> {tn('pileTail',count)}</>}</span><button className="sheet-action" disabled={invalid} onClick={()=>apply({...draft,v:2})}>{t('Aplicar filtros')}</button></div>
  </div>;
 }

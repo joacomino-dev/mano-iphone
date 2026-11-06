@@ -1,8 +1,8 @@
-name: Verify CocoWash 9.8.4 development
+name: Verify CocoWash 9.8.5 development
 on:
   workflow_dispatch:
   push:
-    branches: [claude/cocowash-9.8.4]
+    branches: [claude/cocowash-9.8.5]
     paths: ['mano/**', '.github/workflows/build-people-dev.yml']
 permissions:
   contents: read
@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   development:
-    if: github.event.repository.private == false && github.ref == 'refs/heads/claude/cocowash-9.8.4'
+    if: github.event.repository.private == false && github.ref == 'refs/heads/claude/cocowash-9.8.5'
     # Standard public-repository runner; no large/paid runner, no deployment.
     runs-on: xcode-27
     timeout-minutes: 30
@@ -51,16 +51,16 @@ jobs:
           mkdir -p build/development/Payload
           cp -R build/ios/Build/Products/Release-iphoneos/App.app build/development/Payload/Mano.app
           cd build/development
-          ditto -c -k --keepParent Payload CocoWash-9.8.4-development-unsigned.ipa
+          ditto -c -k --keepParent Payload CocoWash-9.8.5-development-unsigned.ipa
       - name: Record verification boundary
         run: |
           printf '%s\n' 'DEVELOPMENT ONLY. Not a published or accepted release.' 'No development reset: installing over 9.7.x keeps decisions and settings; People/Breakup data is deleted on launch.' 'Ads: Google public test ads only (CocoWashTestAds). StoreKit products need App Store Connect; not available in this unsigned IPA.' > build/development/VALIDATION.txt
           printf 'Source SHA: %s\n' "$GITHUB_SHA" >> build/development/VALIDATION.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: CocoWash-9.8.4-development
+          name: CocoWash-9.8.5-development
           path: |
-            mano/build/development/CocoWash-9.8.4-development-unsigned.ipa
+            mano/build/development/CocoWash-9.8.5-development-unsigned.ipa
             mano/build/development/VALIDATION.txt
           retention-days: 7
           if-no-files-found: error
@@ -72,7 +72,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: CocoWash-9.8.4-startup-evidence
+          name: CocoWash-9.8.5-startup-evidence
           path: |
             mano/build/startup-safety/*.png
             mano/build/startup-safety/*.log

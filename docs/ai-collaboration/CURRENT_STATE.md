@@ -2,6 +2,12 @@
 
 Actualizado: 2026-11-05, America/Bogota. Codex trabaja solo por indicación del usuario.
 
+## Desarrollo para pruebas: 9.8.5 / build 32 (Claude)
+
+CW-CL-042. 9.8.4 + Ajustes y Filtros rediseñados: menos texto, bloques agrupados, un solo
+ritmo de espaciado. Rama `claude/cocowash-9.8.5`. CI e IPA en esta entrada al terminar.
+Sin merge ni Release.
+
 ## Desarrollo para pruebas: 9.8.4 / build 31 (Claude)
 
 CW-CL-041. Estampas al deslizar con la palabra debajo, barra de decisión restaurada,

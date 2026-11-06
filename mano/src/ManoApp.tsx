@@ -655,7 +655,6 @@ export function ManoApp() {
     {analyzing&&<button className="sheet-action quiet" onClick={stopAnalysis}>{t('Detener búsqueda')}</button>}
     {!demo&&<button className="sheet-action secondary" onClick={connect}>{t('Actualizar biblioteca')}</button>}
     {limited&&<button className="sheet-action secondary" onClick={()=>void manageLimited()}>{t('Elegir más fotos')}</button>}
-    <p className="sheet-fine">{t('Todo se analiza en tu iPhone. Las fotos de iCloud pueden necesitar conexión.')}</p>
   </>;
   const recoverAll=()=>{setState(s=>({...s,pending:[],history:s.history.filter(d=>d.action!=='discard')}));setSpoken(t('Todo recuperado'));haptic('soft');};
   const recoverReview=useCallback((id:string)=>{setState(s=>restore(s,id));setSpoken(t('Elemento recuperado'));},[]);

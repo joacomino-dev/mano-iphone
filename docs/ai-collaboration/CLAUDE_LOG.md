@@ -354,3 +354,11 @@ Estado: completada local, pendiente de prueba física e integración.
 Base Git / commit: `claude/cocowash-9.8.4` desde `8b9287b`.
 Cambios realizados: el usuario aclaró que el «icono grande y texto debajo» era para las estampas al deslizar, no para los botones: barra restaurada como en 9.8.2 (fila, sin flechas); las cuatro estampas de arrastre/decisión con la ilustración grande y la palabra debajo (se retiran las `*-word.webp`). Nieve del pico izquierdo de la postal 2 dentro de la ladera. Intro 3: «Continuar» bloqueado con relleno hasta ver toque, mantener y pellizcar (primera vez). Anuncios: precarga a los 8 s de ordenar y hueco reservado (`AdRoom`) mientras llega, sin saltos.
 Validaciones: 119 Node, TypeScript; capturas `work/qa-984/`; CI en CURRENT_STATE.
+
+### CW-CL-042 — 9.8.5: Ajustes y Filtros rediseñados (frontend-design + ui-ux-pro-max)
+Fecha: 2026-11-06, America/Bogota
+Agente: Claude
+Estado: completada local, pendiente de prueba física e integración.
+Base Git / commit: `claude/cocowash-9.8.5` desde `3bf4890` (9.8.4).
+Cambios realizados: el usuario sentía ambas hojas cargadas y con espacios mal definidos. Un ritmo para las dos (28 px entre secciones, 10 px título→bloque), títulos en el café de la marca, un bloque agrupado por sección con filas de 52 pt y las opciones de cada interruptor dentro de su bloque. Se retiran 18 textos de ayuda redundantes (Sellos pasa a Fotos; la explicación de sellos va en un desplegable). 5 textos nuevos en los cinco idiomas.
+Validaciones: 119 Node, TypeScript, runtime 28, auditoría táctil/contraste; capturas `work/qa-985/`.
