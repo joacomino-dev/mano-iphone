@@ -4,7 +4,7 @@
  * Japanese other only.
  * `{n}` is the number; `{amount}` is filled by the screen (i18n.ts parts). */
 type Forms = Partial<Record<Intl.LDMLPluralRule, string>> & { other: string };
-export type PluralKey = 'photos' | 'videos' | 'files' | 'pileTail' | 'laterWaiting' | 'pendingFree' | 'pendingFreeAtLeast' | 'similarGroups' | 'sentToDeleted' | 'selected' | 'createAndAdd';
+export type PluralKey = 'photos' | 'videos' | 'files' | 'pileTail' | 'laterWaiting' | 'pendingFree' | 'pendingFreeAtLeast' | 'similarGroups' | 'sentToDeleted' | 'selected' | 'createAndAdd' | 'freedFiles';
 type Table = Record<PluralKey, Forms>;
 
 const es: Table = {
@@ -19,6 +19,7 @@ const es: Table = {
   sentToDeleted: { one: '{n} enviada a Eliminado recientemente', other: '{n} enviadas a Eliminado recientemente' },
   selected: { one: '{n} seleccionada', other: '{n} seleccionadas' },
   createAndAdd: { one: 'Crear y añadir {n} elemento', other: 'Crear y añadir {n} elementos' },
+  freedFiles: { one: 'eliminado', other: 'eliminados' },
 };
 const en: Table = {
   photos: { one: '{n} photo', other: '{n} photos' },
@@ -32,6 +33,7 @@ const en: Table = {
   sentToDeleted: { one: '{n} moved to Recently Deleted', other: '{n} moved to Recently Deleted' },
   selected: { one: '{n} selected', other: '{n} selected' },
   createAndAdd: { one: 'Create and add {n} item', other: 'Create and add {n} items' },
+  freedFiles: { one: 'deleted', other: 'deleted' },
 };
 const fr: Table = {
   photos: { one: '{n} photo', other: '{n} photos' },
@@ -45,6 +47,7 @@ const fr: Table = {
   sentToDeleted: { one: '{n} envoyé dans Suppressions récentes', other: '{n} envoyés dans Suppressions récentes' },
   selected: { one: '{n} sélectionné', other: '{n} sélectionnés' },
   createAndAdd: { one: 'Créer et ajouter {n} élément', other: 'Créer et ajouter {n} éléments' },
+  freedFiles: { one: 'supprimé', other: 'supprimés' },
 };
 const ar: Table = {
   photos: { zero: 'لا صور', one: 'صورة واحدة', two: 'صورتان', few: '{n} صور', many: '{n} صورة', other: '{n} صورة' },
@@ -58,6 +61,7 @@ const ar: Table = {
   sentToDeleted: { one: 'نُقل عنصر واحد إلى المحذوفة مؤخرًا', two: 'نُقل عنصران إلى المحذوفة مؤخرًا', few: 'نُقلت {n} عناصر إلى المحذوفة مؤخرًا', many: 'نُقل {n} عنصرًا إلى المحذوفة مؤخرًا', other: 'نُقل {n} عنصر إلى المحذوفة مؤخرًا' },
   selected: { zero: 'لا شيء محدّد', one: 'عنصر واحد محدّد', two: 'عنصران محدّدان', few: '{n} عناصر محدّدة', many: '{n} عنصرًا محدّدًا', other: '{n} عنصر محدّد' },
   createAndAdd: { one: 'إنشاء وإضافة عنصر واحد', two: 'إنشاء وإضافة عنصرين', few: 'إنشاء وإضافة {n} عناصر', many: 'إنشاء وإضافة {n} عنصرًا', other: 'إنشاء وإضافة {n} عنصر' },
+  freedFiles: { other: 'تم حذفها' },
 };
 const ja: Table = {
   photos: { other: '{n}枚の写真' },
@@ -71,6 +75,7 @@ const ja: Table = {
   sentToDeleted: { other: '{n}件を「最近削除した項目」に移動しました' },
   selected: { other: '{n}件を選択中' },
   createAndAdd: { other: '作成して{n}件を追加' },
+  freedFiles: { other: '削除しました' },
 };
 const de: Table = {
   photos: { one: '{n} Foto', other: '{n} Fotos' },
@@ -84,6 +89,7 @@ const de: Table = {
   sentToDeleted: { one: '{n} in „Zuletzt gelöscht“ verschoben', other: '{n} in „Zuletzt gelöscht“ verschoben' },
   selected: { one: '{n} ausgewählt', other: '{n} ausgewählt' },
   createAndAdd: { one: 'Erstellen und {n} Objekt hinzufügen', other: 'Erstellen und {n} Objekte hinzufügen' },
+  freedFiles: { one: 'gelöscht', other: 'gelöscht' },
 };
 const it: Table = {
   photos: { one: '{n} foto', other: '{n} foto' },
@@ -97,5 +103,6 @@ const it: Table = {
   sentToDeleted: { one: '{n} spostata in «Eliminati di recente»', other: '{n} spostate in «Eliminati di recente»' },
   selected: { one: '{n} selezionata', other: '{n} selezionate' },
   createAndAdd: { one: 'Crea e aggiungi {n} elemento', other: 'Crea e aggiungi {n} elementi' },
+  freedFiles: { one: 'eliminato', other: 'eliminati' },
 };
 export const PLURALS = { es, en, fr, ar, ja, de, it };

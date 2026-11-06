@@ -407,7 +407,6 @@ const table: Record<string, string> = {
   'Fotos se abre\nen el iPhone': 'Foto si apre\nsull’iPhone',
   'De vez en cuando aparece un anuncio entre tus fotos. Puedes quitarlos por un año o para siempre.': 'Ogni tanto tra le tue foto compare una pubblicità. Puoi toglierla per un anno o per sempre.',
   'No se pudo abrir Fotos.': 'Impossibile aprire Foto.',
-  'Espacio por liberar': 'Spazio da liberare',
   '{photos} y {videos} en «Eliminado recientemente»': '{photos} e {videos} in «Eliminati di recente»',
   '{items} en «Eliminado recientemente»': '{items} in «Eliminati di recente»',
   'Abre Fotos.': 'Apri Foto.',
@@ -421,9 +420,6 @@ const table: Record<string, string> = {
   'Solo tus favoritas. Aquí el corazón las quita de Favoritas; no se eliminan.': 'Solo le tue preferite. Qui il cuore le toglie dalle Preferite; non vengono mai eliminate.',
   'Cómo funcionan los sellos': 'Come funzionano i timbri',
   'Eliminado': 'Eliminato',
-  'por liberar': 'da liberare',
-  'por liberar, como mínimo': 'da liberare, almeno',
-  'Para liberarlos ya': 'Per liberarlo ora',
   'O espera 30 días: Fotos lo vacía solo.': 'Oppure aspetta 30 giorni: Foto lo svuota da sola.',
   'Desliza para ver todo lo que vas a eliminar': 'Scorri per vedere tutto quello che elimini',
   'Ayuda': 'Aiuto',
@@ -433,5 +429,9 @@ const table: Record<string, string> = {
   'Modo developer': 'Modalità sviluppatore',
   'Anuncios': 'Annunci',
   'Apágalos para ver la app como quien pagó por quitarlos.': 'Disattivali per vedere l’app come chi ha pagato per toglierli.',
+  'de espacio liberado': 'di spazio liberato',
+  'de espacio liberado, como mínimo': 'di spazio liberato, almeno',
+  'Espacio liberado': 'Spazio liberato',
+  'Para vaciarlo ya': 'Per svuotarlo subito',
 };
 export default table;

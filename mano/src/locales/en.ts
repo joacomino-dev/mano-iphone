@@ -422,7 +422,6 @@ const table: Record<string, string> = {
   'De vez en cuando aparece un anuncio entre tus fotos. Puedes quitarlos por un año o para siempre.': 'Every now and then an ad shows up between your photos. You can remove them for a year or for good.',
   'No se pudo abrir Fotos.': 'Couldn’t open Photos.',
   // 9.8.3
-  'Espacio por liberar': 'Space to free up',
   '{photos} y {videos} en «Eliminado recientemente»': '{photos} and {videos} in Recently Deleted',
   '{items} en «Eliminado recientemente»': '{items} in Recently Deleted',
   'Abre Fotos.': 'Open Photos.',
@@ -438,9 +437,6 @@ const table: Record<string, string> = {
   'Cómo funcionan los sellos': 'How seals work',
   // 9.8.6
   'Eliminado': 'Deleted',
-  'por liberar': 'to free up',
-  'por liberar, como mínimo': 'to free up, at least',
-  'Para liberarlos ya': 'To free it up now',
   'O espera 30 días: Fotos lo vacía solo.': 'Or wait 30 days: Photos empties it on its own.',
   'Desliza para ver todo lo que vas a eliminar': 'Scroll to see everything you’re deleting',
   'Ayuda': 'Help',
@@ -450,5 +446,9 @@ const table: Record<string, string> = {
   'Modo developer': 'Developer mode',
   'Anuncios': 'Ads',
   'Apágalos para ver la app como quien pagó por quitarlos.': 'Turn them off to see the app as someone who paid to remove them.',
+  'de espacio liberado': 'of space freed up',
+  'de espacio liberado, como mínimo': 'of space freed up, at least',
+  'Espacio liberado': 'Space freed up',
+  'Para vaciarlo ya': 'To empty it now',
 };
 export default table;

@@ -100,15 +100,16 @@ export function SessionDone({ stats, pending, pendingBytes, pendingPartial, agai
       : <Character pose="memo-calm" height={compact ? 90 : 120} className="status-character" motion="sway"/>}
     <motion.div className="done-stamp" initial={reduced ? false : { scale: 1.6, opacity: 0, rotate: -14 }} animate={{ scale: 1, opacity: 1, rotate: -6 }} transition={{ type: 'spring', stiffness: 380, damping: 18, delay: .05 }} aria-hidden="true">{freed ? t('Eliminado') : t('Guardado')}</motion.div>
     </div>
-    {freed ? <motion.section {...rise(reduced, .12)} className="done-freed" aria-label={t('Espacio por liberar')}>
+    {freed ? <motion.section {...rise(reduced, .12)} className="done-freed" aria-label={t('Espacio liberado')}>
       <motion.strong className={`freed-amount ${amount[1] ? '' : 'is-plain'}`} dir={freedLabel ? 'ltr' : undefined} initial={reduced ? false : { scale: .6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 16, delay: .25 }}>
         <span className="amount-num">{amount[0]}</span>{amount[1] && <span className="amount-unit">{amount[1]}</span>}
       </motion.strong>
-      <span className="freed-label">{stats.freedPartial && freedLabel ? t('por liberar, como mínimo') : t('por liberar')}</span>
+      {/* 0.9.9.1 (41): told as done — the 30-day note and the steps come below. */}
+      <span className="freed-label">{!freedLabel ? tn('freedFiles', stats.freedPhotos + stats.freedVideos) : stats.freedPartial ? t('de espacio liberado, como mínimo') : t('de espacio liberado')}</span>
       <span className="freed-items">{items.length > 1 ? t('{photos} y {videos} en «Eliminado recientemente»', { photos: items[0], videos: items[1] }) : t('{items} en «Eliminado recientemente»', { items: items[0] ?? '' })}</span>
       {/* No API empties «Eliminado recientemente»: the person does it in Fotos (Face ID). */}
       <div className="freed-how">
-        <strong>{t('Para liberarlos ya')}</strong>
+        <strong>{t('Para vaciarlo ya')}</strong>
         <ol className="freed-steps">
           <li>{t('Abre Fotos.')}</li>
           <li>{t('Busca el álbum «Eliminado recientemente».')}</li>
