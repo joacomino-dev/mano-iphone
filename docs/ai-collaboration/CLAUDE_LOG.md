@@ -511,3 +511,5 @@ sin tamaños conocidos, «9 archivos / eliminados» (plural `freedFiles` en los 
 «Para liberarlos ya» pasa a «Para vaciarlo ya»; la nota de 30 días sigue debajo. Claves
 antiguas retiradas de todas las traducciones. Fusionado también en `release`.
 Validaciones: 119 Node (incluida cobertura i18n), tsc; capturas es/en con y sin carta.
+CI: `main` `42300027847` y `release` `42300033453` correctas. IPA 0.9.9 (41) de `25a44b3`,
+6 810 303 bytes, sha256 `001c6f54…813b`.
