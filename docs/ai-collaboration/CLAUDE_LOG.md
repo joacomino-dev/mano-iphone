@@ -427,3 +427,5 @@ Decisiones relevantes: el usuario autorizó definir fecha (6-11-2026), datos y t
 legales. No es asesoramiento legal.
 Validaciones: 119 Node, runtime 28, builds; Playwright: sección Ayuda sin desbordamiento y
 `openLink` con la URL correcta; web: 4 páginas, 22 preguntas, enlaces y anclas.
+CI `42254333901` correcta; IPA 0.9.9 (37) de `ff15abe`, 6 807 273 bytes, sha256
+`72104d7c…74cc`. Prompt para publicar la web: `docs/ai-handoff/PROMPT_WEB_DOMINIO.md`.
