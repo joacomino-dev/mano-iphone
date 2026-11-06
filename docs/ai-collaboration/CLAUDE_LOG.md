@@ -496,3 +496,8 @@ Cambios realizados:
 - Ramas: `main` vuelve a los IDs de muestra de Google; `release` lleva los reales y
   `DEVELOPER = false`, verificada por `verify-release.yml`.
 Validaciones: 119 Node, runtime 28, builds web y nativa.
+CI: `main` `42295971279` correcta tras limitar el tiempo de `simctl` y reintentar una vez
+(`d242a34`; dos ejecuciones previas se colgaron en el simulador del runner con la app ya
+compilada). `release` `42295976529` (`4e891af`, `main` fusionada) correcta: IDs reales, sin
+anuncios de prueba ni modo developer. IPA de desarrollo 0.9.9 (40), 6 810 184 bytes, sha256
+`825436ba…4624`, ID de app de muestra de Google y `CocoWashTestAds = true`.
