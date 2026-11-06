@@ -6,8 +6,9 @@ Actualizado: 2026-11-05, America/Bogota. Codex trabaja solo por indicación del 
 
 CW-CL-040. Revisión con skills + basurero nuevo, barra con icono grande y verbo debajo,
 cartas fijas siempre en revisión y resumen, resumen que guía a vaciar «Eliminado
-recientemente», postales redibujadas. Rama `claude/cocowash-9.8.3`. CI e IPA en esta
-entrada al terminar. Sin merge ni Release.
+recientemente», postales redibujadas. Rama `claude/cocowash-9.8.3`, IPA
+`C:/Users/Joaco/Downloads/CocoWash-9.8.3-build30-9a74a3e.ipa`,
+[CI 42166446918](https://github.com/joacomino-dev/mano-iphone/actions/runs/42166446918) success. Sin merge ni Release.
 
 ## Desarrollo para pruebas: 9.8.2 / build 29 (Claude)
 
