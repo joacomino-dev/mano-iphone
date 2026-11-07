@@ -1,74 +1,74 @@
-# CocoWash — recuerdos que se quedan
+# CocoWash — «Lo que importa, se queda»
 
-**Versión aprobada: 0.9.7 / 18**, probada y aceptada por el usuario en iPhone el 2026-11-04. Estado canónico en [CURRENT_STATE](../docs/ai-collaboration/CURRENT_STATE.md); cambios y validación en [OPTIMIZATION_097](../docs/ai-handoff/OPTIMIZATION_097.md).
+App de iPhone para ordenar la biblioteca de Fotos con decisiones rápidas: cada foto o
+vídeo llega como una postal y se decide con un gesto. Todo el análisis ocurre en el
+iPhone; nada se borra sin la confirmación de la app Fotos.
 
-Una app de iPhone para revisar Fotos mediante una mano de cartas. Interfaz verde petróleo, papel y sellos de tinta; sin cuenta propia, anuncios, suscripciones ni API de reconocimiento de pago.
+Estado: **0.9.9.1** (versión de bundle `0.9.9`; el build se ve en el arranque). iOS 17+,
+solo iPhone, 7 idiomas (es, en, fr, de, it, ar, ja). Bundle `work.joaquin.mano`.
 
-La bienvenida muestra fotos flotantes y «Iniciar sesión». Cada sesión mezcla al azar fotos, vídeos y Live Photos; cuando un elemento pertenece a un grupo visual analizado, aparece automáticamente un bundle de polaroids. La foto principal queda centrada y recta; tocarla o pulsar Siguiente la pasa al final. Puedes seleccionar varias girando la pila o elegir todas. Los filtros permiten cambiar el orden.
+## Cómo se usa
 
-El nombre visible y el icono son CocoWash; el identificador interno y las claves de datos se conservan para actualizar la instalación existente.
+- **Derecha** conserva · **izquierda** marca para eliminar · **arriba** favorita ·
+  **abajo** «Más tarde» (al final de la pila). «Deshacer» revierte la última decisión.
+- **Terminar** abre «Una última mirada»: todo lo marcado, con «Recuperar» en cada
+  elemento y «Recuperar todo». Solo «Eliminar» borra, y la app Fotos pide confirmación;
+  lo borrado pasa 30 días en «Eliminado recientemente». Favoritas y ocultas se vuelven a
+  comprobar justo antes y nunca se borran.
+- **Filtros** (capturas, borrosas, parecidas, «Más tarde», fechas…), **Ajustes**
+  (formato de fecha, sellos, iCloud, idioma, ayuda y privacidad) y **Apoyo** (compras).
+- Las hojas se cierran con la X o deslizando hacia abajo desde arriba.
 
-## Uso
+## Arquitectura
 
-- Derecha conserva; izquierda añade a una cola pendiente; arriba marca como favorita.
-- Tocar el centro de la primera carta la pasa al fondo. Tocar su control de selección permite elegir varias y decidir juntas.
-- Mantener pulsado inspecciona la foto sin sello. Soltar vuelve a la mano.
-- Terminar abre la revisión. Mantener pulsado un descarte y arrastrarlo a la derecha lo recupera. También hay un botón accesible Recuperar.
-- Finalizar sesión vuelve a la bienvenida y conserva los descartes pendientes; no los borra.
-- El borrado real solo ocurre después de la revisión y la confirmación de Fotos. Favoritos y fotos ocultas se vuelven a proteger antes de borrar.
-- Álbum añade las seleccionadas a un álbum real existente. No las saca de la biblioteca general.
-- Vídeos y Live Photos tienen reproducción nativa. Las fotos RAW/HEIF y otros formatos admitidos por Fotos usan su vista previa sin convertir ni reemplazar el original.
+React 19 + TypeScript en un WKWebView (Capacitor 8) y dos plugins nativos en Swift:
 
-## Sellos
+| Pieza | Archivo | Qué hace |
+|---|---|---|
+| Interfaz | `src/ManoApp.tsx` | Pantallas, pila, hojas; orquesta el resto |
+| Dominio | `src/domain.ts`, `sequence.ts`, `review.ts` | Decisiones, cola, sellos, orden de la pila (puro, con tests) |
+| Medios | `src/media.ts`, `preload.ts` | Miniaturas, iCloud y vídeo con colas acotadas |
+| Textos | `src/i18n.ts`, `src/locales/` | Español como clave; plurales con `Intl.PluralRules` |
+| Anuncios y compras | `src/Monetization.tsx`, `adCadence.ts` | Cadencia, huecos de la carta, Apoyo |
+| Canal | `src/channel.ts` | `DEVELOPER`: «Modo developer» solo en `main` |
+| Fotos (nativo) | `ios/App/App/PhotoLibrary.swift` | PhotoKit, Vision (en el iPhone), vídeo, compartir, borrar |
+| Monetización (nativo) | `ios/App/App/CocoMonetization.swift` | AdMob nativo, UMP + ATT, StoreKit 2 |
 
-Blanco, rojo, verde, negro, azul, morado, naranja y dorado. Conservar de nuevo incrementa el nivel; aparecer por sí solo no lo incrementa. Descanso por nivel: 7, 14, 30, 60, 120, 240 y 365 días; dorado solo se revisa manualmente. Las fotos sin sello tienen prioridad. El filtro por sello permite revisar un nivel aunque todavía esté descansando.
+Reglas que no se rompen (ver `AGENTS.md`):
 
-Los sellos son metadatos locales y capas visuales; jamás se imprimen sobre el original. Deshacer restaura el nivel y la fecha anteriores.
+- Deslizar nunca borra; solo «Eliminar» en «Una última mirada», confirmado por Fotos.
+- Sin servidores propios, cuentas, analítica ni telemetría. Las fotos no salen del iPhone.
+- Solo APIs públicas de Apple: nada de esquemas de URL privados ni selectores ocultos.
+- Los registros nativos (`devLog`) solo se escriben en Debug o en el simulador.
 
-## Privacidad y límites
+## Privacidad
 
-El análisis utiliza Apple Vision dentro del iPhone. Compara vistas previas de fotos, Live Photos y portadas de vídeo; no analiza el vídeo completo. Las agrupaciones son sugerencias de parecido visual, no detección infalible de duplicados. La primera indexación empieza tras autorizar Fotos y se puede repetir desde Sellos. Los resultados se guardan localmente.
+Política publicada en https://joaquinmino.work/cocowash/privacidad.html (fuente en
+`web/cocowash/`). Coherente con `ios/App/App/PrivacyInfo.xcprivacy` y con las respuestas
+de `docs/appstore/app-privacy.md`. Si cambia qué datos salen del iPhone, se actualizan
+los tres a la vez.
 
-El análisis inicial solo usa vistas previas disponibles localmente y comunica las que no puede analizar. Abrir una foto o reproducirla puede descargar contenido desde tu iCloud; no se envía a ningún servidor de Mano. Ocultas y favoritas no se incluyen. Con acceso limitado solo se revisan los elementos autorizados.
+## Ramas y compilación
 
-La cola, sellos e historial se guardan en el almacenamiento de la app y sobreviven a cierres normales. No desinstales la app para renovar la firma: al desinstalar puedes perder esos metadatos. La biblioteca original sigue perteneciendo a Fotos. El borrado con Fotos en iCloud se sincroniza con otros dispositivos.
-
-## Desarrollo
-
-Requisitos: Node 22+, npm. La vista previa conserva el runtime móvil de Product Design; la app instalada usa una entrada propia sin marco ni teclado ficticios.
+- **`main`** — desarrollo: anuncios de prueba de Google, «Modo developer» en Ajustes
+  (modo de prueba con postales de ejemplo, anuncios sí/no). Cada push genera una IPA de
+  desarrollo sin firmar (`.github/workflows/build-people-dev.yml`).
+- **`release`** — App Store: `main` + un commit con los IDs reales de AdMob y
+  `DEVELOPER = false`. `verify-release.yml` lo compila y comprueba. Para publicar:
+  fusionar `main` en `release`, subir la versión y firmar.
 
 ```sh
 npm ci
-npm run dev -- --host 127.0.0.1 --port 4173
-npm test
-npm run check:runtime
-npm run build
-npm run sync:ios
+npm test               # dominio, i18n, cadencia de anuncios… (Node)
+npm run check:runtime  # integridad de la vista previa protegida
+npm run build          # web
+npm run sync:ios       # web nativa + Capacitor + proyecto Xcode
 ```
 
-`src/ManoApp.tsx` contiene la interfaz compartida; `src/domain.ts` la cola y los sellos; `ios/App/App/PhotoLibrary.swift` el puente PhotoKit/Vision. Las fotos incluidas en la demostración son generadas; el navegador nunca accede a tus originales ni realiza borrados reales.
+Swift solo se compila en la CI de macOS (runners gratuitos de GitHub).
 
-El análisis se puede detener desde Sellos. Una huella visual rápida limita a 64 los candidatos comparados con Vision por imagen; los grupos siguen siendo sugerencias que debes revisar. Un análisis parcial de iCloud no se marca como terminado: Actualizar o volver a abrir permite intentarlo otra vez. La biblioteca y sus fechas de modificación invalidan la marca de análisis completado cuando cambian.
+## Documentos
 
-## Compilación gratuita e instalación
-
-El workflow del repositorio usa únicamente runners estándar y se bloquea si el repositorio es privado. Compila el dispositivo iPhone sin firma y produce `Mano-AltStore/Mano-unsigned.ipa` como artefacto. No necesita certificados, contraseña de Apple, suscripción Developer ni secretos en GitHub. El job inicial puede expandir un `mano-source.zip` subido desde navegador y dejar el código normal en el repositorio; después ya no modifica fuentes.
-
-1. Descargar el artefacto de una ejecución verde de Actions y extraer el `.ipa`.
-2. Conectar el iPhone al PC y abrir iLoader con la misma cuenta de Apple usada para la instalación existente. Cualquier autenticación, confianza del dispositivo o Modo Desarrollador se completa personalmente.
-3. Elegir el iPhone y usar **Import IPA** para firmar e instalar el archivo. Abrir CocoWash, permitir acceso completo a Fotos en la bienvenida y pulsar **Iniciar sesión** para revisar todo el carrete.
-4. Renovar la firma antes de siete días mediante **Import IPA**, con la misma cuenta y el identificador `work.joaquin.mano`. Actualizar la instalación existente; no desinstalarla.
-
-La instalación personal elegida usa iLoader; no requiere instalar AltStore, SideStore ni una VPN.
-
-La compilación no demuestra funcionamiento en un iPhone real. La verificación física pendiente comprueba permisos, miniaturas, iCloud y reproducción sin confirmar ningún borrado. Los flujos de descarte y recuperación se prueban con las imágenes generadas de la demostración.
-
-## Precarga y vídeo (0.3)
-
-Antes de empezar se preparan los próximos10 elementos, siguiendo el orden real y los bundles, con progreso y cancelación. La ventana se renueva al avanzar. Dos preparaciones simultáneas; las miniaturas quedan listas para mostrarse y los vídeos se descargan a una caché local temporal. Reproducir abre el vídeo dentro de la tarjeta; pantalla completa queda como alternativa explícita. Los vídeos demasiado grandes o no disponibles permiten reintentar o usar la reproducción nativa. Los originales no se alteran. El tamaño de caché es limitado y sus archivos en uso se protegen contra expulsión.
-
-## CocoWash0.4
-
-Sesiones guardadas con continuidad exacta y Regresar de10 pasos. Filtros por24h/7d/30d o calendario inclusivo, Modo Geek local y creación de álbumes en Fotos. Mantener pulsado amplía; arrastrar al gancho ancla; pellizcar permite zoom, tocar fuera o Cerrar vuelve a las cartas. Cabecera compacta, polaroids adaptadas al archivo y nueva identidad vectorial. Sin cambiar bundle ni claves anteriores.
-
-La revisión final tiene Eliminar/Deshacer todo primero. Eliminar solicita solo la confirmación de Apple; cancelar conserva la cola. Finalizar y guardar pendientes no borra archivos. El historial rápido registra decisiones de conservar/eliminar/favorita; añadir a álbum no se revierte con Regresar. Datos EXIF solo cuando locales; no se descargan originales para inspección.
+- Hoja de ruta a la App Store: `../docs/ai-handoff/ROADMAP_APPSTORE.md`
+- Ficha, compras, privacidad, capturas, notas de revisión: `../docs/appstore/`
+- Estado y bitácoras: `../docs/ai-collaboration/`

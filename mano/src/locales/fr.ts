@@ -405,17 +405,13 @@ const table: Record<string, string> = {
   'No se pudo preparar el archivo': 'Impossible de préparer le fichier',
   // 9.8.2
   'No se borró nada\nSigue en tu cola': 'Rien de supprimé\nToujours dans ta file',
-  'Modo de prueba\nFotos no se abre': 'Mode test\nPhotos reste fermé',
-  'Fotos se abre\nen el iPhone': 'Photos s’ouvre\nsur iPhone',
   'De vez en cuando aparece un anuncio entre tus fotos. Puedes quitarlos por un año o para siempre.': 'De temps en temps, une pub apparaît entre tes photos. Tu peux les retirer pour un an ou pour toujours.',
-  'No se pudo abrir Fotos.': 'Impossible d’ouvrir Photos.',
   // 9.8.3
   '{photos} y {videos} en «Eliminado recientemente»': '{photos} et {videos} dans Suppressions récentes',
   '{items} en «Eliminado recientemente»': '{items} dans Suppressions récentes',
   'Abre Fotos.': 'Ouvre Photos.',
   'Busca el álbum «Eliminado recientemente».': 'Trouve l’album Suppressions récentes.',
   'Toca Seleccionar › Eliminar todo.': 'Touche Sélectionner › Tout supprimer.',
-  'Abrir Fotos': 'Ouvrir Photos',
   'Mira el toque y las dos formas de zoom una vez.': 'Regarde le toucher et les deux façons de zoomer une fois.',
   // 9.8.5
   'Solo descarga al anclar o ampliar.': 'Ne télécharge que si tu épingles ou zoomes.',

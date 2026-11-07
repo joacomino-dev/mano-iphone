@@ -51,7 +51,8 @@ Quién: **U** = usuario (cuentas, dinero, decisiones legales, arte), **C** = Cla
 4. ~~Manifiesto de privacidad~~ — hecho en 0.9.9.1: seguimiento declarado e
    identificador, datos de anuncios, interacción, ubicación aproximada y fallos para
    publicidad de terceros (revisar si cambian los formatos de anuncio).
-5. **Compras en App Store Connect** con estos IDs exactos:
+5. **Compras en App Store Connect** (textos en 7 idiomas listos en
+   `docs/appstore/in-app-purchases.md`) con estos IDs exactos:
    - `work.joaquin.mano.noads.year`: **suscripción no renovable** (1 año).
    - `work.joaquin.mano.noads.lifetime`: **no consumible**.
    - `work.joaquin.mano.coffee`: **consumible** (propina).
@@ -63,8 +64,8 @@ Quién: **U** = usuario (cuentas, dinero, decisiones legales, arte), **C** = Cla
    Mac o con un flujo de CI que use una clave de la API de App Store Connect guardada como
    secreto (nunca en el repositorio ni en los registros).
 8. **Riesgos de revisión ya identificados**:
-   - «Abrir Fotos» usa `photos-redirect://`, un esquema no documentado. Si Apple lo objeta,
-     el botón se quita y quedan solo los tres pasos (ya escritos en pantalla).
+   - ~~«Abrir Fotos» (`photos-redirect://`, esquema no documentado)~~ — retirado en
+     0.9.9.1 (42): el resumen deja solo los tres pasos.
    - Anuncios nativos: deben verse claramente como anuncio («Publicidad» ya lo está).
    - El café es una propina: no desbloquea nada; el texto ya lo dice.
 
@@ -72,11 +73,10 @@ Quién: **U** = usuario (cuentas, dinero, decisiones legales, arte), **C** = Cla
 
 1. Borrador listo en `docs/appstore/listing.md` (7 idiomas, límites comprobados). Falta
    revisión nativa o con `asodev`/`unslop`.
-2. **Capturas** de iPhone 6,9" (obligatorias) y, opcionalmente, 6,5": pila con estampa,
-   «Una última mirada», resumen, Filtros y Ajustes. Mejor desde la versión 1.0 en un iPhone
-   real; C puede preparar marcos y textos superpuestos por idioma.
-3. **Etiquetas de privacidad** (App Privacy) coherentes con el punto 3.4: datos usados para
-   anuncios de terceros; «seguimiento» solo si el usuario lo permite en ATT.
+2. **Capturas** de iPhone 6,9": plan y textos en 7 idiomas en `docs/appstore/screenshots.md`
+   (siempre con Modo de prueba y anuncios apagados: ninguna foto personal).
+3. **Etiquetas de privacidad** (App Privacy): respuestas listas en
+   `docs/appstore/app-privacy.md` (también clasificación por edad y campos de la ficha).
 4. Clasificación por edad (cuestionario), categoría (Fotografía o Utilidades), URL de soporte
    y de privacidad, copyright.
 5. **Notas para la revisión**: borrador en `docs/appstore/review-notes.md`.

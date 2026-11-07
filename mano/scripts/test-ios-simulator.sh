@@ -267,7 +267,7 @@ start_log_stream
 # own JS error reports, then the tail.
 report_ui_failure() {
   echo '--- XCTest actions and markers ---'
-  grep -aE ' t = +[0-9.]+s (Tap|Press|Double tap|Swipe|Waiting|Added attachment)|COCOWASH_|MEMSWIPE_|error:' "$smoke_dir/ui-test.log" | tail -n 80 || true
+  grep -aE ' t = +[0-9.]+s (Tap|Press|Double tap|Swipe|Waiting|Added attachment)|COCOWASH_|COCOWASH_|error:' "$smoke_dir/ui-test.log" | tail -n 80 || true
   echo '--- App JS errors (COCOWASH_JS_ERROR) ---'
   grep -a 'COCOWASH_JS_ERROR' "$log_file" | tail -n 20 || true
   echo '--- ui-test.log tail ---'
@@ -308,7 +308,7 @@ if ! run_ui_test; then
   fi
 fi
 tail -n 25 "$smoke_dir/ui-test.log"
-grep -q 'MEMSWIPE_UI_AUTHORIZED_SESSION_OK' "$smoke_dir/ui-test.log" || {
+grep -q 'COCOWASH_UI_AUTHORIZED_SESSION_OK' "$smoke_dir/ui-test.log" || {
   echo 'ERROR: UI test did not reach the authorized real session. Packaging is blocked.' >&2
   exit 1
 }
@@ -329,19 +329,19 @@ while [ "$SECONDS" -lt "$deadline" ]; do
   read_status="$(python3 - "$log_file" <<'PY'
 import re, sys
 text = open(sys.argv[1], errors='replace').read()
-photos = re.findall(r'MEMSWIPE_PHOTOS_READ_OK count=(\d+)\b', text)
-videos = re.findall(r'MEMSWIPE_VIDEO_PREPARED_OK bytes=(\d+)\b', text)
+photos = re.findall(r'COCOWASH_PHOTOS_READ_OK count=(\d+)\b', text)
+videos = re.findall(r'COCOWASH_VIDEO_PREPARED_OK bytes=(\d+)\b', text)
 print('positive' if any(int(count) >= 1 for count in photos) and any(int(size) >= 1 for size in videos) else 'waiting')
 PY
 )"
   if [ "$read_status" = positive ]; then
-    grep 'MEMSWIPE_PHOTOS_READ_OK count=' "$log_file"
-    grep 'MEMSWIPE_VIDEO_PREPARED_OK bytes=' "$log_file"
+    grep 'COCOWASH_PHOTOS_READ_OK count=' "$log_file"
+    grep 'COCOWASH_VIDEO_PREPARED_OK bytes=' "$log_file"
     echo 'PASS: real UI granted full Photos access, completed session warmup, read native PhotoKit, and prepared a nonempty local generated video.'
     exit 0
   fi
   kill -0 "$log_pid" || { echo 'ERROR: unified-log stream ended before the PhotoKit assertion.' >&2; break; }
 done
 tail -n 120 "$log_file"
-echo 'ERROR: missing runtime MEMSWIPE_PHOTOS_READ_OK count>=1 or MEMSWIPE_VIDEO_PREPARED_OK bytes>=1 after authorized session start. PhotoKit/video warmup has NOT passed; packaging is blocked.' >&2
+echo 'ERROR: missing runtime COCOWASH_PHOTOS_READ_OK count>=1 or COCOWASH_VIDEO_PREPARED_OK bytes>=1 after authorized session start. PhotoKit/video warmup has NOT passed; packaging is blocked.' >&2
 exit 1

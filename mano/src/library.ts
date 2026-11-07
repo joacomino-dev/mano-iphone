@@ -42,7 +42,6 @@ type LibraryPlugin = {
   addListener(event: 'mediaPreparationProgress', cb: (data: { requestId: string; phase?: 'download' | 'prepare'; progress: number }) => void): Promise<{ remove(): Promise<void> }>;
   permissionStatus(): Promise<{ status: string }>;
   openSettings(): Promise<void>;
-  openPhotos(): Promise<void>;
   /** Opens an https://joaquinmino.work page in Safari (help, privacy). */
   openLink(options: { url: string }): Promise<void>;
   manageLimitedAccess(): Promise<{ changed: boolean }>;

@@ -1,10 +1,13 @@
-# CocoWash — mano-iphone
-App personal para revisar y organizar Fotos de iPhone con una mano de cartas. Análisis local, sellos y borrado por sesión.
+# CocoWash
 
-**Versión actual de `main`: 0.9.7, build 18.** Probada y aceptada por el usuario en iPhone el 4 de noviembre de 2026. Integrada mediante [PR #3](https://github.com/joacomino-dev/mano-iphone/pull/3), conservando los commits de cada etapa.
+App de iPhone para ordenar Fotos con decisiones rápidas, análisis en el dispositivo y
+borrado siempre confirmado por la app Fotos. «Lo que importa, se queda».
 
-- [Estado vigente y validación](docs/ai-collaboration/CURRENT_STATE.md).
-- [Optimización de las siete etapas y procedencia del IPA](docs/ai-handoff/OPTIMIZATION_097.md).
-- [Bitácora de Codex](docs/ai-collaboration/CODEX_LOG.md).
+- La app: [`mano/`](mano/README.md) — arquitectura, ramas, comandos.
+- Web de soporte y privacidad: [`web/cocowash/`](web/cocowash/) — publicada en
+  https://joaquinmino.work/cocowash/
+- Hoja de ruta a la App Store: [`docs/ai-handoff/ROADMAP_APPSTORE.md`](docs/ai-handoff/ROADMAP_APPSTORE.md)
+- Textos y respuestas para la tienda: [`docs/appstore/`](docs/appstore/)
+- Estado y bitácoras de los agentes: [`docs/ai-collaboration/`](docs/ai-collaboration/)
 
-La compilación Release para iPhone, 106 pruebas y el oráculo Swift pasaron. El smoke de XCTest conserva una incidencia de timeout de accesibilidad documentada; no se presenta como verde.
+Ramas: `main` (desarrollo, anuncios de prueba) y `release` (App Store, anuncios reales).

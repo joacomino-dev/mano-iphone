@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
-import { ArrowSquareOutIcon, GearSixIcon, ArrowClockwiseIcon, CaretRightIcon, ImagesIcon, EyeIcon, ClockCountdownIcon } from '@phosphor-icons/react';
+import { GearSixIcon, ArrowClockwiseIcon, CaretRightIcon, ImagesIcon, EyeIcon, ClockCountdownIcon } from '@phosphor-icons/react';
 import { AnimatedNumber, CocoLoader } from './Loader';
 import type { PhotoPermission } from './library';
 import { Character } from './Characters';
@@ -61,18 +61,6 @@ export function readStats(): RoundStats {
   } catch { /* fresh round */ }
   return EMPTY_STATS;
 }
-/** Everything CocoWash has freed on this iPhone, kept apart from the record. */
-export type Lifetime = { bytes: number; items: number };
-export function readLifetime(key: string): Lifetime {
-  try { const v = JSON.parse(localStorage.getItem(key) || 'null'); return { bytes: count(v?.bytes), items: count(v?.items) }; }
-  catch { return { bytes: 0, items: 0 }; }
-}
-export function saveLifetime(key: string, value: Lifetime) { try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* optional */ } }
-
-/** End of a round («Terminar»): a stamped summary. Pending discards stay for the
- * next round; with any pending, «Una última mirada» leads, since deletion only
- * happens there (Fotos confirms). «Cerrar» in that review comes back here.
- * After «Eliminar N», the reward leads: how much space this round freed. */
 /** «263 MB» → ['263', 'MB']; «9 archivos» → ['9', 'archivos']. Bidi isolates
  * (Arabic) are dropped: the amount is laid out left to right on its own. */
 export function splitAmount(text: string): [string, string] {
@@ -81,7 +69,11 @@ export function splitAmount(text: string): [string, string] {
   return match ? [match[1], match[2]] : [plain, ''];
 }
 
-export function SessionDone({ stats, pending, pendingBytes, pendingPartial, again, review, monetization, emptyDeleted }: { stats: RoundStats; pending: number; pendingBytes: number; pendingPartial: boolean; again: () => void; review: () => void; monetization?: ReactNode; emptyDeleted?: () => void }) {
+/** End of a round («Terminar»): a stamped summary. Pending discards stay for the
+ * next round; with any pending, «Una última mirada» leads, since deletion only
+ * happens there (Fotos confirms). «Cerrar» in that review comes back here.
+ * After «Eliminar N», the reward leads: how much space this round freed. */
+export function SessionDone({ stats, pending, pendingBytes, pendingPartial, again, review, monetization }: { stats: RoundStats; pending: number; pendingBytes: number; pendingPartial: boolean; again: () => void; review: () => void; monetization?: ReactNode }) {
   const reduced = useReducedMotion();
   const total = stats.keep + stats.discard + stats.favorite + stats.later;
   const freed = stats.freedPhotos + stats.freedVideos > 0;
@@ -130,8 +122,7 @@ export function SessionDone({ stats, pending, pendingBytes, pendingPartial, agai
     {/* 0.9.9.1 (38): the buttons live outside the body, between it and the letter,
         so they are always whole and never under the ad; the body drops what does
         not fit (prototype.css, container «done»). */}
-    <motion.div {...rise(reduced, .24)} className={`status-actions ${freed && emptyDeleted ? 'is-pair' : ''}`}>
-      {freed && emptyDeleted && <button className="danger-empty" onClick={emptyDeleted}><ArrowSquareOutIcon size={18} weight="bold"/>{t('Abrir Fotos')}</button>}
+    <motion.div {...rise(reduced, .24)} className="status-actions">
       {pending > 0 && <button className="primary-empty" onClick={review}><EyeIcon size={20} weight="bold"/>{t('Una última mirada ({n})', { n: pending })}</button>}
       <button className={pending > 0 ? 'secondary-empty' : 'primary-empty'} onClick={again}>{t('Seguir revisando')}<CaretRightIcon size={18} weight="bold" className="flip-rtl"/></button>
       {pending > 0 && <p className="status-hint">{pendingLabel ? parts(tn(pendingPartial ? 'pendingFreeAtLeast' : 'pendingFree', pending), { amount: <strong key="amount">{pendingLabel}</strong> }) : t('Lo marcado para eliminar se guarda para la próxima ronda si no eliminas ahora.')}</p>}

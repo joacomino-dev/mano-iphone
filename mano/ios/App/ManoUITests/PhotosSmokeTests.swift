@@ -111,7 +111,7 @@ final class PhotosSmokeTests: XCTestCase {
         XCTAssertTrue(finish.isHittable, "Session toolbar must be usable after media warmup finishes.")
         // The shell independently requires the native prepareVideo bytes marker.
         // Do not invoke native bridge methods or bypass the real session UI here.
-        print("MEMSWIPE_UI_AUTHORIZED_SESSION_OK")
+        print("COCOWASH_UI_AUTHORIZED_SESSION_OK")
 
         // Safe native mutation: a new album containing only simulator fixtures.
         // No discard, delete, favorites or real-device operations are performed.

@@ -70,9 +70,13 @@ final class CocoMonetizationPlugin: CAPPlugin, CAPBridgedPlugin, NativeAdLoaderD
             guard case .verified(let transaction) = result, transaction.revocationDate == nil else { continue }
             if transaction.productID == Self.lifetime { return ["adFree": true, "expires": NSNull()] }
             if transaction.productID == Self.annual {
+                // A non-renewing year: one year from its purchase. With several,
+                // the latest end wins (StoreKit does not order them).
                 var calendar = Calendar(identifier: .gregorian)
                 calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .current
-                expiry = calendar.date(byAdding: .year, value: 1, to: transaction.purchaseDate)
+                if let end = calendar.date(byAdding: .year, value: 1, to: transaction.purchaseDate) {
+                    expiry = max(expiry ?? end, end)
+                }
             }
         }
         if let expiry, expiry > Date() {

@@ -21,8 +21,8 @@ CocoWash helps people tidy their Photos library by swiping through their photos 
   is on the same screen.
 - **Privacy policy and help** are linked at the end of Settings (Filters › Settings ›
   Help): https://joaquinmino.work/cocowash/privacy.html
-- **«Open Photos»** on the summary opens the Photos app so the person can empty Recently
-  Deleted themselves; CocoWash cannot and does not empty it.
+- **After deleting**, the summary explains in three steps how to empty Recently Deleted in
+  the Photos app; CocoWash never opens or empties it and uses no private URL schemes.
 
 To see everything quickly: allow Photos access, swipe left on a few photos, tap «Finish»,
 review them in «One last look», tap «Delete N» and confirm in the system prompt.

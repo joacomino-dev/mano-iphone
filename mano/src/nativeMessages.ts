@@ -33,5 +33,4 @@ export const NATIVE_MESSAGES = [
   'Alguna foto ya no está disponible. Actualiza tu selección antes de crear el álbum.',
   'Nada seleccionado.',
   'No se pudo preparar el archivo',
-  'No se pudo abrir Fotos.',
 ] as const;

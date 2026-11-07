@@ -1,8 +1,8 @@
 import { FinishButton } from './FinishButton';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type PointerEvent, type MouseEvent } from 'react';
-import { AnimatePresence, motion, useReducedMotion, useMotionValue, useTransform, animate, type MotionValue } from 'motion/react';
+import { AnimatePresence, motion, useReducedMotion, useMotionValue, animate, type MotionValue } from 'motion/react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { ExportIcon, FolderOpenIcon, FolderSimplePlusIcon, CaretRightIcon, CaretDownIcon, ArrowCounterClockwiseIcon, ArrowUUpLeftIcon, StackIcon, TrashIcon, CheckIcon, XIcon, PlayIcon, SlidersHorizontalIcon, ArrowClockwiseIcon, ImageBrokenIcon, PlusIcon, PushPinIcon, InfoIcon, CloudIcon, CloudArrowDownIcon, SparkleIcon } from '@phosphor-icons/react';
+import { ExportIcon, FolderOpenIcon, FolderSimplePlusIcon, CaretRightIcon, CaretDownIcon, ArrowCounterClockwiseIcon, ArrowUUpLeftIcon, StackIcon, TrashIcon, CheckIcon, XIcon, PlayIcon, SlidersHorizontalIcon, ArrowClockwiseIcon, ImageBrokenIcon, PlusIcon, PushPinIcon, InfoIcon, CloudIcon, SparkleIcon } from '@phosphor-icons/react';
 import { BottomSheet, KeyboardInput, useKeyboard } from './mobile';
 import { ReviewGrid } from './ReviewGrid';
 import { decide, undo, restore, eligible, eligibleFrom, orderAssets, readState, reconcileLibrary, libraryFingerprint, filterScope, LEVELS, initialFilter, initialState, type Action, type Asset, type Decision, type Filter, type RecordState } from './domain';
@@ -22,7 +22,7 @@ import { haptic, setHapticsEnabled } from './haptics';
 import { AnimatedNumber, CocoLoader, Deferred } from './Loader';
 import { Onboarding } from './Onboarding';
 import { Splash } from './Splash';
-import { AccessScreen, PreparingScreen, LoadErrorScreen, SessionDone, EMPTY_STATS, readStats, readLifetime, saveLifetime, type RoundStats } from './Screens';
+import { AccessScreen, PreparingScreen, LoadErrorScreen, SessionDone, EMPTY_STATS, readStats, type RoundStats } from './Screens';
 import { AdRoom, AdSlot, PurchaseOptions, useMonetization } from './Monetization';
 import { readTestMode, setTestMode, readTestRounds, saveTestRounds, readAdsOff, saveAdsOff } from './testMode';
 import { useSheetDrag } from './sheetDrag';
@@ -255,7 +255,7 @@ export function ManoApp() {
   const [onboarded,setOnboarded]=useState(()=>{try{return localStorage.getItem(ONBOARDING_KEY)==='done';}catch{return false;}});
   const [permission,setPermission]=useState<PhotoPermission|'unknown'>(demo?'authorized':'unknown');
   const [loadError,setLoadError]=useState('');const [showDone,setShowDone]=useState(false);const [sheetTab,setSheetTab]=useState<'filters'|'settings'|'support'>('filters');
-  const [stats,setStats]=useState<RoundStats>(readStats);const lifetimeKey=demo?'cocowash-demo-freed-v1':'cocowash-freed-v1';const [lifetime,setLifetime]=useState(()=>readLifetime(lifetimeKey));const [decidedHere,setDecidedHere]=useState<Set<string>>(()=>new Set());
+  const [stats,setStats]=useState<RoundStats>(readStats);const [decidedHere,setDecidedHere]=useState<Set<string>>(()=>new Set());
   const videos=useRef<VideoStore|null>(null);const getVideos=()=>videos.current??(videos.current=new VideoStore());
   const [stageSize,setStageSize]=useState({width:340,height:440});const stageObserver=useRef<ResizeObserver|null>(null);
   // Callback ref: the stage remounts whenever another screen (onboarding, access,
@@ -435,7 +435,6 @@ export function ManoApp() {
   // «Terminar»: with items marked to delete, «Una última mirada» opens over the
   // session (closing it goes back to the cards); the round ends with «Eliminar».
   // With nothing to delete it ends here.
-  const closeSession=()=>{const review=state.pending.length>0;if(review)money.clear();else money.finish();resumeContext.current=undefined;cancelWarmup();cancel();setSheet(review?'review':null);setSession(false);setSessionOpen(false);setSelected([]);setLock(NO_HAND);setState(s=>({...s,history:[]}));setShowDone(true);haptic(review?'light':'success');};
   /** The decision itself (shared by swipes, buttons and album saves): one
    * undoable history entry, stats, and the move to the next card. */
   const SPOKEN={keep:()=>t('Conservada'),discard:()=>t('Para eliminar; se borra solo al confirmar'),favorite:()=>t('Favorita'),later:()=>t('Para más tarde: vuelve al final'),unfavorite:()=>t('Quitada de Favoritas: vuelve a la pila')} as const;
@@ -578,14 +577,12 @@ export function ManoApp() {
     // were unknown), counted for the round and for CocoWash as a whole.
     const gone=reviewAssets.filter(a=>result.deleted.includes(a.id));const bytes=gone.reduce((n,a)=>n+(a.bytes??0),0);const videos=gone.filter(a=>a.kind==='video').length;
     setStats(p=>({...p,freed:p.freed+bytes,freedPhotos:p.freedPhotos+gone.length-videos,freedVideos:p.freedVideos+videos,freedPartial:p.freedPartial||gone.some(a=>!a.bytes)}));
-    setLifetime(p=>{const next={bytes:p.bytes+bytes,items:p.items+gone.length};saveLifetime(lifetimeKey,next);return next;});
     setState(s=>({...s,pending:s.pending.filter(id=>!result.deleted.includes(id)),removed:[...new Set([...s.removed,...result.deleted])],history:[]}));
     money.finish();cancelWarmup();setLock(NO_HAND);setSessionOpen(false);setSheet(null);setSession(false);setShowDone(true);haptic('success');if(demo)setNotice(t('Borrado simulado\nTus fotos, intactas'));else setSpoken(tn('sentToDeleted',result.deleted.length));
   }catch(e){if(cancelled(e)){haptic('soft');setNotice(t('No se borró nada\nSigue en tu cola'));}else messageError(e);}finally{setBusy(false);}};
   const play=async(asset:Asset)=>{if(demo){setNotice(testMode?t('Modo de prueba\nsin pantalla completa'):t('Pantalla completa\nsolo en el iPhone'));return;}try{await Library.preview({id:asset.id});}catch(e){messageError(e);}};
   const requestAccess=async():Promise<PhotoPermission>=>{if(demo)return 'authorized';try{const {status}=await Library.authorize();setPermission(status as PhotoPermission);if(['authorized','limited'].includes(status)){initialLibrary.current=null;loadLibrary();}return status as PhotoPermission;}catch{return 'denied';}};
   const finishOnboarding=(status:PhotoPermission)=>{try{localStorage.setItem(ONBOARDING_KEY,'done');}catch{/* shown again next launch */}setOnboarded(true);haptic(['authorized','limited'].includes(status)?'success':'warning');};
-  const openPhotos=()=>{if(demo){setNotice(testMode?t('Modo de prueba\nFotos no se abre'):t('Fotos se abre\nen el iPhone'));return;}void Library.openPhotos().catch(e=>messageError(e));};
   const openSettings=()=>{void Library.openSettings().catch(()=>setError(t('Abre Ajustes › CocoWash › Fotos para permitir el acceso.')));};
   const manageLimited=async()=>{if(demo)return;try{const result=await Library.manageLimitedAccess();if(result.changed)await connect();}catch(e){messageError(e);}};
   const allowed=permission==='authorized'||permission==='limited';
@@ -624,7 +621,7 @@ export function ManoApp() {
   else if(permission==='unknown')screen=loadError?<LoadErrorScreen message={loadError} retry={()=>{initialLibrary.current=null;loadLibrary();}}/>:<PreparingScreen/>;
   else if(!allowed)screen=<AccessScreen status={permission} request={()=>void requestAccess()} openSettings={openSettings}/>;
   else if(loadError)screen=<LoadErrorScreen message={loadError} retry={()=>{initialLibrary.current=null;loadLibrary();}}/>;
-  else if(!session)screen=showDone&&sheet==='review'?<div className="session-content">{doneHeader}<main className="status-screen is-quiet"><Character pose="memo-cards" height={120} motion="still"/><p className="status-line">{t('Una última mirada antes de terminar.')}</p></main></div>:showDone?<div className="session-content">{doneHeader}<SessionDone stats={stats} pending={pending} pendingBytes={reviewBytes.bytes} pendingPartial={reviewBytes.partial} again={()=>{money.clear();setShowDone(false);setNotice('');}} emptyDeleted={openPhotos} review={()=>{money.clear();setError('');setSheet('review');}} monetization={money.available&&(money.placement==='finish'||money.awaiting==='finish')&&<div className="finish-monetization">{money.placement==='finish'?<AdSlot where="finish" money={money}/>:<AdRoom where="finish"/>}</div>}/></div>:<PreparingScreen cancel={()=>{cancelWarmup();setShowDone(true);}}/>;
+  else if(!session)screen=showDone&&sheet==='review'?<div className="session-content">{doneHeader}<main className="status-screen is-quiet"><Character pose="memo-cards" height={120} motion="still"/><p className="status-line">{t('Una última mirada antes de terminar.')}</p></main></div>:showDone?<div className="session-content">{doneHeader}<SessionDone stats={stats} pending={pending} pendingBytes={reviewBytes.bytes} pendingPartial={reviewBytes.partial} again={()=>{money.clear();setShowDone(false);setNotice('');}} review={()=>{money.clear();setError('');setSheet('review');}} monetization={money.available&&(money.placement==='finish'||money.awaiting==='finish')&&<div className="finish-monetization">{money.placement==='finish'?<AdSlot where="finish" money={money}/>:<AdRoom where="finish"/>}</div>}/></div>:<PreparingScreen cancel={()=>{cancelWarmup();setShowDone(true);}}/>;
   else screen=<div className="session-content" inert={pinnedInspect}>
     {/* «Terminar» ends the round: the summary keeps pending discards and offers the review. */}
     <header ref={noticeRoom} className="archive-header is-session">{filtersButton}{brand}<FinishButton pending={pending} busy={busy} announce={setSpoken} finish={()=>{cancel();setError('');setSheet('review');haptic('light');}}/></header>

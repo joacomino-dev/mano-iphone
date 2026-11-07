@@ -12,6 +12,14 @@ import ImageIO
 import CoreLocation
 import UniformTypeIdentifiers
 
+/// Test markers and JS error text for the simulator CI (scripts/test-ios-simulator.sh).
+/// Written only in Debug or on the simulator: a build on a device logs nothing.
+func devLog(_ format: String, _ args: CVarArg...) {
+    #if DEBUG || targetEnvironment(simulator)
+    withVaList(args) { NSLogv(format, $0) }
+    #endif
+}
+
 /// App-owned cache folder for prepared review videos (never Photos originals).
 let preparedVideoFolder = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
     .appendingPathComponent("MemSwipeVideos", isDirectory: true)
@@ -50,7 +58,7 @@ class ManoBridgeController: CAPBridgeViewController {
         bridge?.registerPluginInstance(PhotoLibraryPlugin())
         bridge?.registerPluginInstance(CocoMonetizationPlugin())
         webView?.allowsLinkPreview = false
-        NSLog("MEMSWIPE_BRIDGE_READY")
+        devLog("COCOWASH_BRIDGE_READY")
     }
     // Coco Cream (0.9): dark status bar text on the light cream frame.
     override var preferredStatusBarStyle: UIStatusBarStyle { .darkContent }
@@ -159,7 +167,6 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "cancelClassify", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "permissionStatus", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "openSettings", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "openPhotos", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "openLink", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "manageLimitedAccess", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "haptic", returnType: CAPPluginReturnPromise),
@@ -283,11 +290,12 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func authorize(_ call: CAPPluginCall) {
         PHPhotoLibrary.requestAuthorization(for: .readWrite) { _ in call.resolve(["status": self.status]) }
     }
-    /// JS error text from the web layer (Release builds do not forward the WebView
-    /// console). Bounded and single-line per entry; no media or user data.
+    /// JS error text from the web layer, for the simulator CI (Release builds do not
+    /// forward the WebView console). Bounded, single line, no media or user data;
+    /// nothing is written on a device (devLog).
     @objc func diagnostic(_ call: CAPPluginCall) {
         let message = String((call.getString("message") ?? "").prefix(1500)).replacingOccurrences(of: "\n", with: " | ")
-        NSLog("COCOWASH_JS_ERROR %@", message)
+        devLog("COCOWASH_JS_ERROR %@", message)
         call.resolve()
     }
     /// Reads the current state without ever showing the system prompt.
@@ -296,14 +304,6 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         DispatchQueue.main.async {
             guard let url = URL(string: UIApplication.openSettingsURLString) else { call.reject("No se pudo abrir Ajustes."); return }
             UIApplication.shared.open(url) { opened in opened ? call.resolve() : call.reject("No se pudo abrir Ajustes.") }
-        }
-    }
-    /// After a deletion: opens Photos so «Eliminado recientemente» can be emptied
-    /// there (no API empties it; only the person can, with Face ID).
-    @objc func openPhotos(_ call: CAPPluginCall) {
-        DispatchQueue.main.async {
-            guard let url = URL(string: "photos-redirect://") else { call.reject("No se pudo abrir Fotos."); return }
-            UIApplication.shared.open(url) { opened in opened ? call.resolve() : call.reject("No se pudo abrir Fotos.") }
         }
     }
     /// Help and privacy pages open in Safari. Only https pages of the CocoWash site.
@@ -339,8 +339,10 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
             call.resolve()
         }
     }
-    /// City/region for an asset's capture location, via Apple's on-device API.
-    /// Coordinates are rounded (~1 km) before lookup; absent location resolves {}.
+    /// City/region for an asset's capture location, from Apple's geocoding service
+    /// (a network lookup; see the privacy policy). Only coordinates rounded to ~1 km
+    /// leave the device, never the photo; absent location resolves {}. The web side
+    /// asks only while «Ubicación» is on in Ajustes.
     @objc func place(_ call: CAPPluginCall) {
         guard allowed(call), let item = asset(call) else { return }
         guard let location = item.location else { call.resolve([:]); return }
@@ -380,7 +382,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         return top
     }
     @objc func assets(_ call: CAPPluginCall) {
-        NSLog("MEMSWIPE_PHOTOS_REQUEST status=%@", status)
+        devLog("COCOWASH_PHOTOS_REQUEST status=%@", status)
         guard ["authorized", "limited"].contains(status) else { call.resolve(["assets": [], "status": status]); return }
         DispatchQueue.global(qos: .userInitiated).async {
             let options = PHFetchOptions()
@@ -401,7 +403,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                               "screenshot": item.mediaSubtypes.contains(.photoScreenshot) || item.mediaSubtypes.contains(.videoScreenRecording)])
             }
             // Runtime smoke-test signal: no asset IDs, names, paths or image data.
-            NSLog("MEMSWIPE_PHOTOS_READ_OK count=%d status=%@", items.count, self.status)
+            devLog("COCOWASH_PHOTOS_READ_OK count=%d status=%@", items.count, self.status)
             call.resolve(["assets": items, "status": self.status])
         }
     }
@@ -481,7 +483,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                                     job.timeout?.cancel(); self.thumbnailJobs.removeValue(forKey: token); self.endMediaWork()
                                     call.resolve(["path": file.path, "cloud": lite])
                                     // Measurement signal for the quality profiles: no ids, names or paths.
-                                    NSLog("COCOWASH_PREVIEW size=%ld bytes=%ld ms=%ld lite=%d", size, data.count, Int(Date().timeIntervalSince(started) * 1000), lite ? 1 : 0)
+                                    devLog("COCOWASH_PREVIEW size=%ld bytes=%ld ms=%ld lite=%d", size, data.count, Int(Date().timeIntervalSince(started) * 1000), lite ? 1 : 0)
                                     self.thumbnailWrites += 1
                                     if self.thumbnailBudget != cacheLimit || self.thumbnailWrites % 16 == 1 {
                                         self.thumbnailBudget = cacheLimit
@@ -789,7 +791,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                     if let bytes = self.videoSize(file), bytes > 0 {
                         self.pinnedVideos[key] = item.localIdentifier
                         try? FileManager.default.setAttributes([.modificationDate: Date()], ofItemAtPath: file.path)
-                        NSLog("MEMSWIPE_VIDEO_PREPARED_OK bytes=%lld cached=1", bytes)
+                        devLog("COCOWASH_VIDEO_PREPARED_OK bytes=%lld cached=1", bytes)
                         call.resolve(["path": file.path, "url": self.streamURL(file), "mimeType": self.videoMime(ext), "cached": true, "bytes": bytes]); return
                     }
                 }
@@ -1026,7 +1028,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
             job.timeout?.cancel()
             videoJobs.removeValue(forKey: job.token)
             endMediaWork()
-            NSLog("MEMSWIPE_VIDEO_PREPARED_OK bytes=%lld cached=0", bytes)
+            devLog("COCOWASH_VIDEO_PREPARED_OK bytes=%lld cached=0", bytes)
             job.source = nil
             job.call.resolve(["path": file.path, "url": streamURL(file), "mimeType": videoMime(ext), "cached": false, "bytes": bytes])
         } catch { failVideo(job, error: error) }
@@ -1111,7 +1113,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                     for file in files where !livePrints.contains(file) { try? FileManager.default.removeItem(at: printFolder.appendingPathComponent(file)) }
                 }
                 var groups: [Int: [String]] = [:]
-                NSLog("COCOWASH_VISION_CANDIDATES representatives=%ld visits=%ld", prints.count, signatureVisits)
+                devLog("COCOWASH_VISION_CANDIDATES representatives=%ld visits=%ld", prints.count, signatureVisits)
                 for i in items.indices { groups[root(i), default: []].append(items[i].localIdentifier) }
                 call.resolve(["groups": groups.values.filter { $0.count > 1 }, "skipped": skipped, "cancelled": self.cancelled()])
             }

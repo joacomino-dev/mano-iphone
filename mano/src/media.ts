@@ -50,7 +50,7 @@ export async function prepareReviewAsset(asset: Asset, signal: AbortSignal): Pro
 /** One native preview request owned by the caller's signal: cancelled natively
  * on abort, its file path converted for the WebView. `network` false stays on
  * the iPhone; `onProgress` follows an iCloud download (0–1). */
-async function nativeThumbnail(asset: Asset, size: number, prefix: string, signal: AbortSignal, network: boolean, track?: (cancel: () => void) => void, onProgress?: (value: number) => void) {
+async function nativeThumbnail(asset: Asset, size: number, prefix: string, signal: AbortSignal, network: boolean, onProgress?: (value: number) => void) {
   return thumbnailInfo(asset, size, false, network, signal, onProgress, prefix === 'zoom' || prefix === 'review');
 }
 /** Demonstration only: an iCloud download that takes a moment, with progress. */
@@ -63,11 +63,6 @@ function simulateDownload(signal: AbortSignal, onProgress?: (value: number) => v
   });
 }
 
-/** The larger preview for the anchored/zoomed view, on demand and one at a
- * time (the previous request is cancelled natively). Decoded off screen, so the
- * caller can swap it into the same <img> without a blank frame or reframing.
- * Anchoring is asking to look closer, so this one may download from iCloud;
- * `onProgress` lets the view say so while it happens. */
 /** Sharper versions fetched on purpose (anchor/zoom) replace a card's «vista
  * ligera» for the rest of the session; natively, the card size is also fetched
  * once with network so the next launch finds it cached on the iPhone. */
@@ -207,7 +202,7 @@ class CloudPreviews {
           // Demonstration only: a stand-in «iCloud» item that takes a moment.
           if (asset.cloud && !job.state.src) await simulateDownload(controller.signal, progress, 2200);
           src = (await thumbnailInfo(asset, size, false, true)).src;
-        } else src = (await nativeThumbnail(asset, size, zoom ? 'zoom' : 'cloud', controller.signal, true, undefined, progress)).src;
+        } else src = (await nativeThumbnail(asset, size, zoom ? 'zoom' : 'cloud', controller.signal, true, progress)).src;
         await decodePoster(src, controller.signal);
         if (this.jobs.get(job.key) !== job) return;
         if (!zoom && job.zoom) { zoom = true; this.set(job, { status: 'pending', zoom: true, src }); continue; }

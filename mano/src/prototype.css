@@ -971,16 +971,10 @@
 .native-sheet .sheet-footer{flex:none;padding:var(--cw-space-3) var(--cw-space-5) calc(env(safe-area-inset-bottom) + var(--cw-space-3));border-top:1px solid var(--cw-line);background:var(--cw-sheet-native)}
 /* Summary: fixed, never scrolls; the letter stays put. */
 .freed-note{max-width:30ch;font-weight:500;color:var(--cw-ink)!important}
-.status-actions.is-pair{flex-direction:row;flex-wrap:wrap;justify-content:center}
-.danger-empty{display:flex;align-items:center;gap:var(--cw-space-2);min-height:var(--cw-control);padding:0 var(--cw-space-5);border:0;border-radius:var(--cw-radius-pill);background:var(--cw-action-danger);color:var(--cw-on-action-danger);font-weight:600;box-shadow:var(--cw-shadow-press)}
-.danger-empty:not(:disabled):active{background:var(--cw-action-danger-pressed)}
-.status-actions.is-pair .primary-empty{padding:0 var(--cw-space-5)}
-.status-actions.is-pair{flex-wrap:nowrap;width:100%;max-width:340px;gap:var(--cw-space-2)}
-.status-actions.is-pair>button{flex:1 1 0;min-width:0;justify-content:center;padding:0 var(--cw-space-3);font-size:.9375rem;line-height:1.2;text-align:center}
 
 /* ================= 9.8.3 ================= */
-/* Summary after «Eliminar»: the amount waits in «Eliminado recientemente»;
-   three short steps say how to free it, «Abrir Fotos» starts the first. */
+/* Summary after «Eliminar»: three short steps say how to empty «Eliminado
+   recientemente» in Fotos (CocoWash never opens or empties it). */
 .freed-steps{display:grid;gap:4px;margin:var(--cw-space-2) 0 0;padding:var(--cw-space-2) var(--cw-space-3);border-radius:var(--cw-radius-md);background:var(--cw-paper);counter-reset:step;list-style:none;text-align:start;width:100%}
 .freed-steps li{counter-increment:step;display:grid;grid-template-columns:20px 1fr;align-items:baseline;gap:6px;font-size:var(--cw-text-sm);line-height:1.35;color:var(--cw-ink)}
 .freed-steps li::before{content:counter(step);display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--cw-action-danger);color:var(--cw-on-action-danger);font:600 12px/1 var(--cw-font);font-variant-numeric:tabular-nums}
@@ -1006,7 +1000,6 @@
 @media (prefers-reduced-motion:reduce){.scroll-cue svg{animation:none}.scroll-cue{transition:none}}
 /* Small chips keep their look but get a 44 pt touch area. */
 .access-indicator::after{content:'';position:absolute;inset:-9px -4px}
-.status-actions.is-pair>button{white-space:nowrap;font-size:.875rem}
 
 /* ================= 9.8.5 · Ajustes y Filtros ================= */
 /* One rhythm for both sheets: 28 px between sections, 10 px from a title to its
@@ -1113,13 +1106,6 @@ input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;u
 .session-done>.done-body{container:done/size;overflow-x:hidden;overflow-y:auto}
 .session-done>.status-actions{flex:none;align-self:center;margin-top:var(--cw-space-3)}
 .session-done>.done-body{padding-block:var(--cw-space-3) var(--cw-space-1)}
-.session-done>.status-actions.is-pair{align-self:stretch;margin-inline:auto;flex-wrap:wrap}
-/* Each button keeps its whole label; when both do not fit on one row (larger
-   text, longer languages) the second drops to its own row, full width. */
-.session-done>.status-actions.is-pair>button{flex:1 1 auto;white-space:nowrap;padding-inline:var(--cw-space-4)}
-.session-done>.status-actions.is-pair{container:done-actions/inline-size}
-/* Narrow phones (SE, mini): the decorative arrow goes first so both fit on one row. */
-@container done-actions (max-width:20.6em){.status-actions.is-pair>button{padding-inline:var(--cw-space-3)}.status-actions.is-pair .flip-rtl{display:none}}
 .session-done.is-freed>.done-body{justify-content:safe center}
 .session-done.is-freed .character-pair img{height:clamp(44px,16cqh,112px)}
 .session-done.is-freed .freed-amount{font-size:clamp(30px,10cqh,52px)}

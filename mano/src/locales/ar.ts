@@ -404,17 +404,13 @@ const table: Record<string, string> = {
   'No se pudo preparar el archivo': 'تعذّر تجهيز الملف',
   // 9.8.2
   'No se borró nada\nSigue en tu cola': 'لم يُحذف شيء\nما زال في قائمتك',
-  'Modo de prueba\nFotos no se abre': 'وضع التجربة\nلا يُفتح تطبيق الصور',
-  'Fotos se abre\nen el iPhone': 'تطبيق الصور\nيُفتح على iPhone',
   'De vez en cuando aparece un anuncio entre tus fotos. Puedes quitarlos por un año o para siempre.': 'من حين لآخر يظهر إعلان بين صورك. يمكنك إزالة الإعلانات لمدة سنة أو إلى الأبد.',
-  'No se pudo abrir Fotos.': 'تعذّر فتح تطبيق الصور.',
   // 9.8.3
   '{photos} y {videos} en «Eliminado recientemente»': '{photos} و{videos} في «المحذوفة مؤخرًا»',
   '{items} en «Eliminado recientemente»': '{items} في «المحذوفة مؤخرًا»',
   'Abre Fotos.': 'افتح تطبيق الصور.',
   'Busca el álbum «Eliminado recientemente».': 'ابحث عن ألبوم «المحذوفة مؤخرًا».',
   'Toca Seleccionar › Eliminar todo.': 'المس «تحديد» › «حذف الكل».',
-  'Abrir Fotos': 'فتح الصور',
   'Mira el toque y las dos formas de zoom una vez.': 'شاهد اللمس وطريقتي التكبير مرة واحدة.',
   // 9.8.5
   'Solo descarga al anclar o ampliar.': 'لا يُنزَّل إلا عند التثبيت أو التكبير.',

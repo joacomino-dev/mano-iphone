@@ -404,17 +404,13 @@ const table: Record<string, string> = {
   'No se pudo preparar el archivo': 'ファイルを準備できませんでした',
   // 9.8.2
   'No se borró nada\nSigue en tu cola': '削除していません\nリストに残っています',
-  'Modo de prueba\nFotos no se abre': 'テストモードでは\n「写真」を開きません',
-  'Fotos se abre\nen el iPhone': '「写真」は\niPhoneで開きます',
   'De vez en cuando aparece un anuncio entre tus fotos. Puedes quitarlos por un año o para siempre.': '写真の合間にときどき広告が表示されます。1年間、またはずっと広告をなくせます。',
-  'No se pudo abrir Fotos.': '「写真」を開けませんでした。',
   // 9.8.3
   '{photos} y {videos} en «Eliminado recientemente»': '{photos}と{videos}が「最近削除した項目」に',
   '{items} en «Eliminado recientemente»': '{items}が「最近削除した項目」に',
   'Abre Fotos.': '「写真」を開く。',
   'Busca el álbum «Eliminado recientemente».': '「最近削除した項目」アルバムを開く。',
   'Toca Seleccionar › Eliminar todo.': '「選択」›「すべて削除」をタップ。',
-  'Abrir Fotos': '「写真」を開く',
   'Mira el toque y las dos formas de zoom una vez.': 'タップと2つのズーム方法を一度見てみよう。',
   // 9.8.5
   'Solo descarga al anclar o ampliar.': 'ピン留めや拡大のときだけダウンロードします。',
