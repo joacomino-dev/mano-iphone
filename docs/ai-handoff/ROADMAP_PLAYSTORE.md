@@ -175,10 +175,10 @@ documentos» siempre vacío en un teléfono real (sin detector), «Álbum» sin 
 
 **P0 · antes de la prueba cerrada**
 1. U: teléfono Android 11+ (Play Console exige verificar uno; sin él no hay cuenta).
-2. C: ocultar en Android «Live Photos», «Texto y documentos» (hasta el detector) y «Álbum».
-3. C: E2E del emulador en verde (papelera cancelar/confirmar, Atrás, carta de anuncio).
-4. C + U aprueba: fusionar `android` en `main` con la CI de iOS en verde (código web compartido).
-5. U + C: keystore de desarrollo en secretos (APK que se instala encima).
+2. ~~C: ocultar en Android «Live Photos», «Texto y documentos» y «Álbum»~~ — hecho (build 3).
+3. ~~C: E2E del emulador en verde~~ — 17/17 ([CI 42416406276](https://github.com/joacomino-dev/mano-iphone/actions/runs/42416406276)); la carta de anuncio queda para un teléfono real (Play services del emulador antiguo).
+4. C + U aprueba: fusionar `android` en `main`. iOS verificado en la rama ([CI 42413945600](https://github.com/joacomino-dev/mano-iphone/actions/runs/42413945600): IPA y arranque). Falta la aprobación.
+5. U: keystore de desarrollo ya creado en `C:UsersJoacoDevelopercocowash-keys` (LEEME); falta pegarlo en los secretos.
 
 **P1 · antes de pedir producción**
 6. C: detector de texto LiteRT incluido (16 KB, sin red).
