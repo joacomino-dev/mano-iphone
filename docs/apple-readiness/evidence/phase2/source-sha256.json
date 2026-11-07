@@ -1,0 +1,38 @@
+{
+  "at": "2026-11-07T19:54:26.766Z",
+  "head": "13dae6f74869fcab1e01ba35144afd4647fc1963",
+  "baselineFiles": 247,
+  "changed": [
+    {
+      "file": "mano/src/ManoApp.tsx",
+      "before": "c485cdf90d35ac10251c6ebd459fa45e2e5ec7f46bf0d82f53b23952881b70e7",
+      "after": "fc212b8fe5c0e097b0d2b36d913465ba045d7bffbf659f170ad8a5a0a315c9f4"
+    },
+    {
+      "file": "mano/src/ReviewGrid.tsx",
+      "before": "e5e6a0004c5e60141bd4c8e4371b0a2908d1a91569bfe808eb528b5e0e12c9e3",
+      "after": "a75d3afe49d5a91327c6e0c6825e6568941311b8a223d8c5f727e8682f015bdd"
+    },
+    {
+      "file": "mano/src/prototype.css",
+      "before": "e80d8bc7d792d58d8ca384304b6e296876787c95d15ba4d1fb47291dff98e92d",
+      "after": "5576d9300dd2869f2e52e1afbd4d7607f7643d527f2fe728455dde4f6ef631b3"
+    },
+    {
+      "file": "mano/tests/mobile-runtime.spec.ts",
+      "before": "8585d11c768d853f26eef5d5dcc38edd32312646f8a83aecb23291da9235a975",
+      "after": "76be3a9478bccae23c8faa5c808a5cd192b48ee7f6837197b15367aea7ed88c6"
+    }
+  ],
+  "otherBaselineFilesUnchanged": 243,
+  "validationToolHashes": {
+    "mano/tests/apple-fixture.mjs": "1759258a2efb3d96b6f81555d0c3055f35c75b30b84f4e2886672ad8e06abd1e",
+    "mano/tests/apple-safety.mjs": "26e5584f44a31d2fba36de51fa5c93827b56096cd57975f89874c953585926f2",
+    "mano/tests/apple-readiness.mjs": "cdaf9c19b78185afe7f5e03815cc16cf525279129a858596e033191e26e54fbc",
+    "mano/tests/native-contract.test.mjs": "62fad434495caf09ab17cc1d16a84e61c35bb6fa1f05a436f3f1a82ae45f4cc7",
+    "mano/tests/benchmark-apple-readiness.mjs": "bc4a052e37fbc5d4f4e96c3c425bed54f0c2e6eea0a31988ebdd0b8fa3dceb9f",
+    "mano/tests/mobile-runtime.spec.ts": "76be3a9478bccae23c8faa5c808a5cd192b48ee7f6837197b15367aea7ed88c6",
+    "mano/playwright.apple.config.ts": "9510578c75b145d54a0950b4de9a04a8cffc17e0697e3f01856d333b54282c86",
+    "mano/scripts/validate-apple-native.sh": "674587b7fa394d02c94c0b953d6820c76f2e312a04191c9befc80488e73aa64d"
+  }
+}

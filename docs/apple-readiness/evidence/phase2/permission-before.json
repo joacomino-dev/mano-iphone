@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-07T19:47:00.469Z",
+  "boundary": "Edge + synthetic Capacitor fixture; not PhotoKit or native-device execution",
+  "results": [
+    {
+      "name": "permission ordering: confirmed deletion cannot discard a pending revocation result",
+      "status": "FAIL",
+      "error": "confirmed mutation discarded the latest permission result\n\n0 !== 1\n"
+    }
+  ]
+}

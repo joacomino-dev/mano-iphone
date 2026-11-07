@@ -260,7 +260,7 @@ export function PurchaseOptions({ money }: { money: Monetization }) {
   const [message, setMessage] = useState('');
   const [failed, setFailed] = useState(false);
   const { clear, setStatus } = money;
-  const refresh = () => { setFailed(false); void Store.catalog().then(setStatus).catch(() => { setFailed(true); setMessage(t('Los precios no están disponibles ahora. Prueba en un momento.')); }); };
+  const refresh = () => { setFailed(false); setMessage(''); void Store.catalog().then(value => { setStatus(value); if (!value.products?.length) { setFailed(true); setMessage(t('Los precios no están disponibles ahora. Prueba en un momento.')); } }).catch(() => { setFailed(true); setMessage(t('Los precios no están disponibles ahora. Prueba en un momento.')); }); };
   useEffect(refresh, [setStatus]);
   const perform = async (run: () => Promise<(Status & { outcome?: Outcome }) | void>, success: string) => {
     if (busy) return;
@@ -277,7 +277,6 @@ export function PurchaseOptions({ money }: { money: Monetization }) {
     finally { setBusy(false); }
   };
   const status = money.status;
-  const loaded = !!status?.products?.length;
   return <section className="support-panel" aria-labelledby="support-title">
     <header className="support-hero">
       <Character pose="coqui-wave" height={88} motion="still"/>
@@ -292,6 +291,9 @@ export function PurchaseOptions({ money }: { money: Monetization }) {
       const product = status?.products?.find(item => item.id === offer.id);
       const coffee = offer.tone === 'coffee';
       const owned = !coffee && !!status?.adFree && (!status.expires || offer.tone === 'year');
+      // A missing StoreKit product is unavailable, not a future feature or a price.
+      // Keep active entitlements visible; never offer an unconfigured purchase.
+      if (!product && !owned) return null;
       const Icon = offer.icon;
       const name = offer.name(), detail = offer.detail();
       return <button key={offer.id} type="button" className={`support-stamp tone-${offer.tone} ${owned ? 'is-owned' : ''} ${!product && !owned ? 'is-unpriced' : ''}`} disabled={busy || !product || owned}
@@ -300,7 +302,7 @@ export function PurchaseOptions({ money }: { money: Monetization }) {
         <span className="stamp-perf" aria-hidden="true"><span className="stamp-face">
           <span className="stamp-art"><Icon size={30} weight={coffee ? 'fill' : 'duotone'}/></span>
           <span className="stamp-text"><strong>{name}</strong><small>{detail}</small></span>
-          <span className="stamp-value">{owned ? '' : product ? product.price : loaded || failed ? t('Pronto') : <span className="stamp-value-wait"/>}</span>
+          <span className="stamp-value">{owned ? '' : product?.price ?? ''}</span>
           {owned && <span className="stamp-postmark"><span>{t('Activo')}</span></span>}
         </span></span>
       </button>;

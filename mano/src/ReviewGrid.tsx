@@ -36,7 +36,7 @@ function UnprotectedReviewPhoto({ asset, loader, open }: { asset: Asset; loader:
 
 /** The same cards in measured rows; only the viewport, overscan and focused row
  * mount. The scroll owner remains the existing sheet, including its animations. */
-export const ReviewGrid = memo(function ReviewGrid({ assets, open, recover }: { assets: Asset[]; open: boolean; recover: (id: string) => void }) {
+export const ReviewGrid = memo(function ReviewGrid({ assets, open, recover, disabled = false }: { assets: Asset[]; open: boolean; recover: (id: string) => void; disabled?: boolean }) {
   const grid = useRef<HTMLDivElement>(null), viewport = useRef<HTMLElement | null>(null);
   const [loader] = useState(() => new ReviewLoader<Thumb>());
   const [box, setBox] = useState({ offset: 0, viewport: 600, height: 180, gap: 8 });
@@ -84,15 +84,16 @@ export const ReviewGrid = memo(function ReviewGrid({ assets, open, recover }: { 
     }
   };
   const recoverOne = useCallback((asset: Asset, index: number) => {
+    if (disabled) return;
     const next = assets[index + 1] ?? assets[index - 1];
     wantedFocus.current = next?.id; setFocusId(next?.id); recover(asset.id);
-  }, [assets, recover]);
+  }, [assets, recover, disabled]);
   return <Carousel ariaLabel={t('Revisar lo marcado para eliminar')} draggingEnabled={false} className="review-carousel">
     <div ref={grid} className="review-grid review-window" role="list" aria-label={t('{n} para eliminar', { n: assets.length })} style={{ height: reviewHeight(assets.length, box.height, box.gap) }}>
       {rows.map(row => <div key={row} data-review-row={row} className="review-row" role="presentation" style={{ top: row * (box.height + box.gap) }}>
         {assets.slice(row * 3, row * 3 + 3).map((asset, column) => { const index = row * 3 + column; return <article key={asset.id} className="review-card paper" role="listitem" aria-posinset={index + 1} aria-setsize={assets.length}>
           <div className="review-photo"><ReviewPhoto key={`${asset.id}:${asset.modified ?? 0}`} asset={asset} loader={loader} open={open}/></div>
-          <button className="recover-button" data-id={asset.id} onFocus={() => setFocusId(asset.id)} onBlur={e => {
+          <button className="recover-button" disabled={disabled} data-id={asset.id} onFocus={() => setFocusId(asset.id)} onBlur={e => {
             if (!e.relatedTarget || !grid.current?.contains(e.relatedTarget as Node)) setFocusId(undefined);
           }} onPointerDown={e => e.stopPropagation()} onKeyDown={e => {
             if (e.key !== 'Tab' || e.altKey || e.ctrlKey || e.metaKey) return;

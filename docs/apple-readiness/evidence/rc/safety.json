@@ -1,0 +1,42 @@
+{
+  "at": "2026-11-07T20:40:58.806Z",
+  "boundary": "Edge + synthetic Capacitor fixture; not PhotoKit or native-device execution",
+  "results": [
+    {
+      "name": "manual refresh: old snapshot cannot resurrect a confirmed deletion",
+      "status": "PASS"
+    },
+    {
+      "name": "pending deletion: individual recovery cannot contradict an in-flight system operation",
+      "status": "PASS"
+    },
+    {
+      "name": "manual refresh: permission denied during enumeration closes the sheet and old library",
+      "status": "PASS"
+    },
+    {
+      "name": "out-of-order enumeration: a newer limited result wins over an older full result",
+      "status": "PASS"
+    },
+    {
+      "name": "permissions: full → limited → full restores the currently permitted totals",
+      "status": "PASS"
+    },
+    {
+      "name": "persistence: discard survives real page reload and undo restores its exact prior state",
+      "status": "PASS"
+    },
+    {
+      "name": "permission denied at launch: no library enumeration or destructive request",
+      "status": "PASS"
+    },
+    {
+      "name": "cloud contract: offline preview reports failure and a later successful retry shows the image",
+      "status": "PASS"
+    },
+    {
+      "name": "permission ordering: confirmed deletion cannot discard a pending revocation result",
+      "status": "PASS"
+    }
+  ]
+}

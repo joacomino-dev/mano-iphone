@@ -1,0 +1,21 @@
+{
+  "checkedOn": "2026-11-07",
+  "checkpoint":"9ff2734510182e00faa62d705a801b9b2a252dee",
+  "productSource":"13dae6f74869fcab1e01ba35144afd4647fc1963",
+  "pushed":false,
+  "final": {
+    "node":{"command":"pnpm test","pass":119,"fail":0},
+    "protected":{"command":"node scripts/check-mobile-runtime.mjs","files":28,"status":"PASS"},
+    "typescript":{"command":"node node_modules/typescript/bin/tsc","status":"PASS"},
+    "nativeContracts":{"command":"node --experimental-strip-types --test tests/native-contract.test.mjs","pass":4,"fail":0,"boundary":"static source checks, not Swift compilation"},
+    "webBuild":{"command":"node node_modules/vite/bin/vite.js build && node scripts/prepare-sites-build.mjs","status":"PASS"},
+    "nativeWebBuild":{"command":"node node_modules/vite/bin/vite.js build --config vite.native.config.ts && node scripts/prepare-native.mjs","status":"PASS","boundary":"web assets only"},
+    "sites":{"command":"node --test tests/sites-worker.test.mjs","pass":4,"fail":0},
+    "browserRegression":{"command":"node tests/apple-readiness.mjs","pass":19,"fail":0},
+    "browserSafety":{"command":"node tests/apple-safety.mjs","pass":9,"fail":0},
+    "runtime":{"command":"node node_modules/@playwright/test/cli.js test --config playwright.apple.config.ts --reporter=line","pass":8,"fail":0}
+  },
+  "nativeGate":{"syntaxCommand":"bash -n scripts/validate-apple-native.sh","syntax":"PASS","executionCommand":"bash scripts/validate-apple-native.sh","exit":78,"status":"NO VERIFICABLE EN ESTE ENTORNO","reason":"macOS/Xcode/Swift/Apple SDKs unavailable"},
+  "environment":{"node":"24.22.1","pnpm":"11.25.0","platform":"Windows x64","browser":"installed Edge","npmInPath":false,"nativeCompilerInPath":false,"physicalValidation":"not performed"},
+  "limitations":["No native compilation of the product changes","No real PhotoKit, iCloud or destructive physical-device operation","No VoiceOver, Instruments, battery or thermal measurements","Vite chunk warning retained","No signing, certificates, purchases, archive, upload or TestFlight action"]
+}

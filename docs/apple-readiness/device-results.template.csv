@@ -1,0 +1,11 @@
+sha,version,build,model,os,xcode,sdk,fixture_set,permission,scenario,status,elapsed_ms,peak_ram_mb,cpu_condition,network,notes,evidence_local_path
+,,,,,,,,,native_compile,NOT TESTED,,,,,,
+,,,,,,,,,full_limited_denied_revoked,NOT TESTED,,,,,,
+,,,,,,,,,delete_cancel_confirm_error_missing_favorite,NOT TESTED,,,,,,
+,,,,,,,,,undo_resume_kill_persistence,NOT TESTED,,,,,,
+,,,,,,,,,icloud_photo_video_offline_retry,NOT TESTED,,,,,,
+,,,,,,,,,storekit_buy_restore_pending_cancel_refund_expiry,NOT TESTED,,,,,,
+,,,,,,,,,ump_att_regions_revoke_offline,NOT TESTED,,,,,,
+,,,,,,,,,voiceover_dynamic_type_reduce_motion,NOT TESTED,,,,,,
+,,,,,,,,,instruments_1k_10k_50k,NOT TESTED,,,,,,
+,,,,,,,,,duo_closed_open_fold_rotate_split_continuity,NOT TESTED,,,,,,

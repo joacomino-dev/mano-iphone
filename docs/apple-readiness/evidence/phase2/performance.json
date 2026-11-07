@@ -1,0 +1,1091 @@
+{
+  "at": "2026-11-07T19:48:56.688Z",
+  "boundary": "Node synthetic metadata profile on Windows; not iPhone RAM/CPU/energy or media decoding performance",
+  "node": "v24.22.1",
+  "platform": "win32",
+  "arch": "x64",
+  "cpu": "AMD Ryzen AI 9 HX 370 w/ Radeon 890M           ",
+  "explicitGC": true,
+  "results": [
+    {
+      "assets": 1000,
+      "recordMarks": 1000,
+      "operations": [
+        {
+          "name": "orderAssets(oldest)",
+          "repetitions": 5,
+          "medianMs": 0.026300000000006207,
+          "minMs": 0.0257000000000005,
+          "maxMs": 0.04919999999999902,
+          "samples": [
+            {
+              "wallMs": 0.04919999999999902,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 9362504,
+              "heapAfter": 9433088,
+              "rssBefore": 76558336,
+              "rssAfter": 76066816,
+              "resultSize": 1000
+            },
+            {
+              "wallMs": 0.04179999999999495,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 9360928,
+              "heapAfter": 9426616,
+              "rssBefore": 76247040,
+              "rssAfter": 76247040,
+              "resultSize": 1000
+            },
+            {
+              "wallMs": 0.02600000000001046,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 9360904,
+              "heapAfter": 9426544,
+              "rssBefore": 76283904,
+              "rssAfter": 76283904,
+              "resultSize": 1000
+            },
+            {
+              "wallMs": 0.0257000000000005,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 9352592,
+              "heapAfter": 9418232,
+              "rssBefore": 76292096,
+              "rssAfter": 76292096,
+              "resultSize": 1000
+            },
+            {
+              "wallMs": 0.026300000000006207,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 9352792,
+              "heapAfter": 9419240,
+              "rssBefore": 76341248,
+              "rssAfter": 76341248,
+              "resultSize": 1000
+            }
+          ]
+        },
+        {
+          "name": "orderAssets(random)",
+          "repetitions": 5,
+          "medianMs": 0.5643000000000029,
+          "minMs": 0.4989999999999952,
+          "maxMs": 1.1696000000000026,
+          "samples": [
+            {
+              "wallMs": 1.1696000000000026,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 9357016,
+              "heapAfter": 10181960,
+              "rssBefore": 76341248,
+              "rssAfter": 76410880,
+              "resultSize": 1000
+            },
+            {
+              "wallMs": 0.5643000000000029,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 9372712,
+              "heapAfter": 10221024,
+              "rssBefore": 76410880,
+              "rssAfter": 76447744,
+              "resultSize": 1000
+            },
+            {
+              "wallMs": 0.4989999999999952,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 9410488,
+              "heapAfter": 10194424,
+              "rssBefore": 76541952,
+              "rssAfter": 76578816,
+              "resultSize": 1000
+            },
+            {
+              "wallMs": 0.5689999999999884,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 9373264,
+              "heapAfter": 10213960,
+              "rssBefore": 76615680,
+              "rssAfter": 76726272,
+              "resultSize": 1000
+            },
+            {
+              "wallMs": 0.5297000000000054,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 9373576,
+              "heapAfter": 10221688,
+              "rssBefore": 76886016,
+              "rssAfter": 76922880,
+              "resultSize": 1000
+            }
+          ]
+        },
+        {
+          "name": "eligibleFrom(after 30 decisions)",
+          "repetitions": 5,
+          "medianMs": 0.4111000000000047,
+          "minMs": 0.3107000000000113,
+          "maxMs": 1.0168999999999926,
+          "samples": [
+            {
+              "wallMs": 1.0168999999999926,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 9374600,
+              "heapAfter": 10045032,
+              "rssBefore": 76726272,
+              "rssAfter": 76619776,
+              "resultSize": 980
+            },
+            {
+              "wallMs": 0.6989999999999981,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 9429496,
+              "heapAfter": 9578344,
+              "rssBefore": 76734464,
+              "rssAfter": 76517376,
+              "resultSize": 980
+            },
+            {
+              "wallMs": 0.4037999999999897,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 9401584,
+              "heapAfter": 9574624,
+              "rssBefore": 76619776,
+              "rssAfter": 76910592,
+              "resultSize": 980
+            },
+            {
+              "wallMs": 0.4111000000000047,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 9405488,
+              "heapAfter": 9585520,
+              "rssBefore": 76972032,
+              "rssAfter": 76525568,
+              "resultSize": 980
+            },
+            {
+              "wallMs": 0.3107000000000113,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 9406504,
+              "heapAfter": 9577568,
+              "rssBefore": 76582912,
+              "rssAfter": 76771328,
+              "resultSize": 980
+            }
+          ]
+        },
+        {
+          "name": "SessionWriter: validate + serialize all marks",
+          "repetitions": 5,
+          "medianMs": 0.5,
+          "minMs": 0.4341000000000008,
+          "maxMs": 0.6687999999999903,
+          "samples": [
+            {
+              "wallMs": 0.5960999999999927,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 9406488,
+              "heapAfter": 11531632,
+              "rssBefore": 76877824,
+              "rssAfter": 77668352,
+              "resultSize": 71234
+            },
+            {
+              "wallMs": 0.6687999999999903,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 9426240,
+              "heapAfter": 11351672,
+              "rssBefore": 77733888,
+              "rssAfter": 76648448,
+              "resultSize": 71234
+            },
+            {
+              "wallMs": 0.5,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 9428192,
+              "heapAfter": 11336432,
+              "rssBefore": 76730368,
+              "rssAfter": 76742656,
+              "resultSize": 71234
+            },
+            {
+              "wallMs": 0.4487000000000023,
+              "cpuUserMs": 15,
+              "cpuSystemMs": 0,
+              "heapBefore": 9428504,
+              "heapAfter": 11336680,
+              "rssBefore": 76742656,
+              "rssAfter": 76742656,
+              "resultSize": 71234
+            },
+            {
+              "wallMs": 0.4341000000000008,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 9428704,
+              "heapAfter": 11336880,
+              "rssBefore": 76754944,
+              "rssAfter": 76754944,
+              "resultSize": 71234
+            }
+          ]
+        },
+        {
+          "name": "SessionWriter: same validated record",
+          "repetitions": 5,
+          "medianMs": 0.21059999999999945,
+          "minMs": 0.18789999999999907,
+          "maxMs": 0.3059999999999974,
+          "samples": [
+            {
+              "wallMs": 0.3059999999999974,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 9428760,
+              "heapAfter": 9507112,
+              "rssBefore": 76238848,
+              "rssAfter": 76365824,
+              "resultSize": 71234
+            },
+            {
+              "wallMs": 0.21069999999998856,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 9430016,
+              "heapAfter": 9507904,
+              "rssBefore": 76472320,
+              "rssAfter": 76554240,
+              "resultSize": 71234
+            },
+            {
+              "wallMs": 0.19870000000000232,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 9430216,
+              "heapAfter": 9690880,
+              "rssBefore": 76562432,
+              "rssAfter": 76562432,
+              "resultSize": 71234
+            },
+            {
+              "wallMs": 0.21059999999999945,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 9778536,
+              "heapAfter": 9517536,
+              "rssBefore": 76574720,
+              "rssAfter": 76578816,
+              "resultSize": 71234
+            },
+            {
+              "wallMs": 0.18789999999999907,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 9439816,
+              "heapAfter": 9518184,
+              "rssBefore": 76578816,
+              "rssAfter": 76578816,
+              "resultSize": 71234
+            }
+          ]
+        },
+        {
+          "name": "reviewRows(1000 pending, midpoint)",
+          "repetitions": 5,
+          "medianMs": 0.027200000000021873,
+          "minMs": 0.017799999999994043,
+          "maxMs": 0.18609999999999616,
+          "samples": [
+            {
+              "wallMs": 0.18609999999999616,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 9441256,
+              "heapAfter": 9446016,
+              "rssBefore": 76578816,
+              "rssAfter": 76578816,
+              "resultSize": 8
+            },
+            {
+              "wallMs": 0.03530000000000655,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 9444056,
+              "heapAfter": 9446760,
+              "rssBefore": 76578816,
+              "rssAfter": 76578816,
+              "resultSize": 8
+            },
+            {
+              "wallMs": 0.02549999999999386,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 9444336,
+              "heapAfter": 9446928,
+              "rssBefore": 76578816,
+              "rssAfter": 76578816,
+              "resultSize": 8
+            },
+            {
+              "wallMs": 0.027200000000021873,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 9444536,
+              "heapAfter": 9447128,
+              "rssBefore": 76578816,
+              "rssAfter": 76578816,
+              "resultSize": 8
+            },
+            {
+              "wallMs": 0.017799999999994043,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 9444736,
+              "heapAfter": 9447328,
+              "rssBefore": 76578816,
+              "rssAfter": 76578816,
+              "resultSize": 8
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "assets": 10000,
+      "recordMarks": 10000,
+      "operations": [
+        {
+          "name": "orderAssets(oldest)",
+          "repetitions": 5,
+          "medianMs": 0.25669999999999504,
+          "minMs": 0.1285000000000025,
+          "maxMs": 0.283299999999997,
+          "samples": [
+            {
+              "wallMs": 0.283299999999997,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 14810216,
+              "heapAfter": 15451912,
+              "rssBefore": 88915968,
+              "rssAfter": 88915968,
+              "resultSize": 10000
+            },
+            {
+              "wallMs": 0.25669999999999504,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 14810840,
+              "heapAfter": 15452536,
+              "rssBefore": 89047040,
+              "rssAfter": 89047040,
+              "resultSize": 10000
+            },
+            {
+              "wallMs": 0.23460000000000036,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 14811144,
+              "heapAfter": 15376928,
+              "rssBefore": 89124864,
+              "rssAfter": 89137152,
+              "resultSize": 10000
+            },
+            {
+              "wallMs": 0.2605000000000075,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 14811240,
+              "heapAfter": 15453016,
+              "rssBefore": 89137152,
+              "rssAfter": 89137152,
+              "resultSize": 10000
+            },
+            {
+              "wallMs": 0.1285000000000025,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 14811624,
+              "heapAfter": 14975592,
+              "rssBefore": 89210880,
+              "rssAfter": 89210880,
+              "resultSize": 10000
+            }
+          ]
+        },
+        {
+          "name": "orderAssets(random)",
+          "repetitions": 5,
+          "medianMs": 5.609099999999984,
+          "minMs": 5.471100000000007,
+          "maxMs": 5.854099999999988,
+          "samples": [
+            {
+              "wallMs": 5.662900000000008,
+              "cpuUserMs": 16,
+              "cpuSystemMs": 0,
+              "heapBefore": 14811408,
+              "heapAfter": 17117208,
+              "rssBefore": 88997888,
+              "rssAfter": 90009600,
+              "resultSize": 10000
+            },
+            {
+              "wallMs": 5.854099999999988,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 14812264,
+              "heapAfter": 17220552,
+              "rssBefore": 89227264,
+              "rssAfter": 89645056,
+              "resultSize": 10000
+            },
+            {
+              "wallMs": 5.471100000000007,
+              "cpuUserMs": 15,
+              "cpuSystemMs": 0,
+              "heapBefore": 14812464,
+              "heapAfter": 17155568,
+              "rssBefore": 89083904,
+              "rssAfter": 89964544,
+              "resultSize": 10000
+            },
+            {
+              "wallMs": 5.609099999999984,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 14812712,
+              "heapAfter": 17157640,
+              "rssBefore": 89178112,
+              "rssAfter": 90034176,
+              "resultSize": 10000
+            },
+            {
+              "wallMs": 5.575400000000002,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 14812992,
+              "heapAfter": 17157840,
+              "rssBefore": 89251840,
+              "rssAfter": 90095616,
+              "resultSize": 10000
+            }
+          ]
+        },
+        {
+          "name": "eligibleFrom(after 30 decisions)",
+          "repetitions": 5,
+          "medianMs": 2.1491000000000042,
+          "minMs": 1.8906000000000063,
+          "maxMs": 2.5634000000000015,
+          "samples": [
+            {
+              "wallMs": 2.5634000000000015,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 14812880,
+              "heapAfter": 16572320,
+              "rssBefore": 89309184,
+              "rssAfter": 89612288,
+              "resultSize": 9980
+            },
+            {
+              "wallMs": 2.2646000000000015,
+              "cpuUserMs": 16,
+              "cpuSystemMs": 0,
+              "heapBefore": 14813952,
+              "heapAfter": 16566488,
+              "rssBefore": 89612288,
+              "rssAfter": 89825280,
+              "resultSize": 9980
+            },
+            {
+              "wallMs": 1.8906000000000063,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 14815184,
+              "heapAfter": 16572968,
+              "rssBefore": 89825280,
+              "rssAfter": 89395200,
+              "resultSize": 9980
+            },
+            {
+              "wallMs": 1.9962999999999909,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 14814224,
+              "heapAfter": 16580824,
+              "rssBefore": 89575424,
+              "rssAfter": 89751552,
+              "resultSize": 9980
+            },
+            {
+              "wallMs": 2.1491000000000042,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 14823312,
+              "heapAfter": 16581160,
+              "rssBefore": 89763840,
+              "rssAfter": 89792512,
+              "resultSize": 9980
+            }
+          ]
+        },
+        {
+          "name": "SessionWriter: validate + serialize all marks",
+          "repetitions": 5,
+          "medianMs": 8.217999999999961,
+          "minMs": 8.133600000000001,
+          "maxMs": 8.97569999999999,
+          "samples": [
+            {
+              "wallMs": 8.97569999999999,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 14823264,
+              "heapAfter": 23947280,
+              "rssBefore": 89792512,
+              "rssAfter": 92839936,
+              "resultSize": 719234
+            },
+            {
+              "wallMs": 8.758199999999988,
+              "cpuUserMs": 31,
+              "cpuSystemMs": 0,
+              "heapBefore": 14835760,
+              "heapAfter": 23949808,
+              "rssBefore": 90370048,
+              "rssAfter": 95416320,
+              "resultSize": 719234
+            },
+            {
+              "wallMs": 8.133600000000001,
+              "cpuUserMs": 16,
+              "cpuSystemMs": 0,
+              "heapBefore": 14836560,
+              "heapAfter": 23692656,
+              "rssBefore": 92938240,
+              "rssAfter": 96808960,
+              "resultSize": 719234
+            },
+            {
+              "wallMs": 8.158900000000017,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 14836864,
+              "heapAfter": 23769680,
+              "rssBefore": 94208000,
+              "rssAfter": 95555584,
+              "resultSize": 719234
+            },
+            {
+              "wallMs": 8.217999999999961,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 14837240,
+              "heapAfter": 23954208,
+              "rssBefore": 93044736,
+              "rssAfter": 96854016,
+              "resultSize": 719234
+            }
+          ]
+        },
+        {
+          "name": "SessionWriter: same validated record",
+          "repetitions": 5,
+          "medianMs": 2.7028999999999996,
+          "minMs": 2.5283000000000015,
+          "maxMs": 2.9068999999999505,
+          "samples": [
+            {
+              "wallMs": 2.693499999999972,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 14837240,
+              "heapAfter": 15721472,
+              "rssBefore": 94257152,
+              "rssAfter": 93683712,
+              "resultSize": 719234
+            },
+            {
+              "wallMs": 2.9068999999999505,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 14838024,
+              "heapAfter": 15722256,
+              "rssBefore": 93057024,
+              "rssAfter": 93745152,
+              "resultSize": 719234
+            },
+            {
+              "wallMs": 2.7028999999999996,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 14838224,
+              "heapAfter": 15722456,
+              "rssBefore": 93196288,
+              "rssAfter": 94900224,
+              "resultSize": 719234
+            },
+            {
+              "wallMs": 2.5283000000000015,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 14838424,
+              "heapAfter": 15722816,
+              "rssBefore": 94179328,
+              "rssAfter": 94904320,
+              "resultSize": 719234
+            },
+            {
+              "wallMs": 2.7450999999999794,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 14838784,
+              "heapAfter": 15723080,
+              "rssBefore": 93339648,
+              "rssAfter": 95068160,
+              "resultSize": 719234
+            }
+          ]
+        },
+        {
+          "name": "reviewRows(1000 pending, midpoint)",
+          "repetitions": 5,
+          "medianMs": 0.052099999999995816,
+          "minMs": 0.05099999999998772,
+          "maxMs": 0.05490000000003192,
+          "samples": [
+            {
+              "wallMs": 0.05490000000003192,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 14836704,
+              "heapAfter": 14839312,
+              "rssBefore": 94371840,
+              "rssAfter": 94371840,
+              "resultSize": 8
+            },
+            {
+              "wallMs": 0.05119999999999436,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 14837520,
+              "heapAfter": 14840128,
+              "rssBefore": 94420992,
+              "rssAfter": 94420992,
+              "resultSize": 8
+            },
+            {
+              "wallMs": 0.05099999999998772,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 14837720,
+              "heapAfter": 14840328,
+              "rssBefore": 94420992,
+              "rssAfter": 94420992,
+              "resultSize": 8
+            },
+            {
+              "wallMs": 0.052099999999995816,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 14837920,
+              "heapAfter": 14841168,
+              "rssBefore": 94420992,
+              "rssAfter": 94420992,
+              "resultSize": 8
+            },
+            {
+              "wallMs": 0.052800000000047476,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 14838760,
+              "heapAfter": 14841400,
+              "rssBefore": 94425088,
+              "rssAfter": 94425088,
+              "resultSize": 8
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "assets": 50000,
+      "recordMarks": 50000,
+      "operations": [
+        {
+          "name": "orderAssets(oldest)",
+          "repetitions": 5,
+          "medianMs": 1.3716000000000008,
+          "minMs": 1.1129999999999995,
+          "maxMs": 1.6992999999999938,
+          "samples": [
+            {
+              "wallMs": 1.6992999999999938,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 40767696,
+              "heapAfter": 43365352,
+              "rssBefore": 160014336,
+              "rssAfter": 161132544,
+              "resultSize": 50000
+            },
+            {
+              "wallMs": 1.3978999999999928,
+              "cpuUserMs": 78,
+              "cpuSystemMs": 0,
+              "heapBefore": 40768448,
+              "heapAfter": 43970144,
+              "rssBefore": 160161792,
+              "rssAfter": 161107968,
+              "resultSize": 50000
+            },
+            {
+              "wallMs": 1.2113999999999692,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 40768752,
+              "heapAfter": 43135696,
+              "rssBefore": 160305152,
+              "rssAfter": 161288192,
+              "resultSize": 50000
+            },
+            {
+              "wallMs": 1.3716000000000008,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 40768920,
+              "heapAfter": 43970616,
+              "rssBefore": 160141312,
+              "rssAfter": 161112064,
+              "resultSize": 50000
+            },
+            {
+              "wallMs": 1.1129999999999995,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 40769224,
+              "heapAfter": 42651824,
+              "rssBefore": 160616448,
+              "rssAfter": 161013760,
+              "resultSize": 50000
+            }
+          ]
+        },
+        {
+          "name": "orderAssets(random)",
+          "repetitions": 5,
+          "medianMs": 39.76080000000002,
+          "minMs": 37.83460000000002,
+          "maxMs": 44.672300000000064,
+          "samples": [
+            {
+              "wallMs": 39.76080000000002,
+              "cpuUserMs": 47,
+              "cpuSystemMs": 0,
+              "heapBefore": 40769008,
+              "heapAfter": 50393088,
+              "rssBefore": 160342016,
+              "rssAfter": 165347328,
+              "resultSize": 50000
+            },
+            {
+              "wallMs": 41.302599999999984,
+              "cpuUserMs": 47,
+              "cpuSystemMs": 0,
+              "heapBefore": 40769896,
+              "heapAfter": 50368872,
+              "rssBefore": 160145408,
+              "rssAfter": 165396480,
+              "resultSize": 50000
+            },
+            {
+              "wallMs": 37.83460000000002,
+              "cpuUserMs": 31,
+              "cpuSystemMs": 0,
+              "heapBefore": 40770096,
+              "heapAfter": 50317144,
+              "rssBefore": 159993856,
+              "rssAfter": 165314560,
+              "resultSize": 50000
+            },
+            {
+              "wallMs": 39.08639999999991,
+              "cpuUserMs": 32,
+              "cpuSystemMs": 0,
+              "heapBefore": 40770296,
+              "heapAfter": 50312160,
+              "rssBefore": 160333824,
+              "rssAfter": 165441536,
+              "resultSize": 50000
+            },
+            {
+              "wallMs": 44.672300000000064,
+              "cpuUserMs": 47,
+              "cpuSystemMs": 0,
+              "heapBefore": 40770496,
+              "heapAfter": 50310056,
+              "rssBefore": 160493568,
+              "rssAfter": 165322752,
+              "resultSize": 50000
+            }
+          ]
+        },
+        {
+          "name": "eligibleFrom(after 30 decisions)",
+          "repetitions": 5,
+          "medianMs": 8.167699999999968,
+          "minMs": 8.08299999999997,
+          "maxMs": 10.013700000000085,
+          "samples": [
+            {
+              "wallMs": 10.013700000000085,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 40770384,
+              "heapAfter": 48389496,
+              "rssBefore": 159907840,
+              "rssAfter": 164896768,
+              "resultSize": 49980
+            },
+            {
+              "wallMs": 8.08299999999997,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 40773208,
+              "heapAfter": 45869720,
+              "rssBefore": 161308672,
+              "rssAfter": 164564992,
+              "resultSize": 49980
+            },
+            {
+              "wallMs": 8.115599999999972,
+              "cpuUserMs": 16,
+              "cpuSystemMs": 0,
+              "heapBefore": 40773408,
+              "heapAfter": 45869920,
+              "rssBefore": 162017280,
+              "rssAfter": 164986880,
+              "resultSize": 49980
+            },
+            {
+              "wallMs": 8.436799999999948,
+              "cpuUserMs": 15,
+              "cpuSystemMs": 0,
+              "heapBefore": 40773608,
+              "heapAfter": 45870120,
+              "rssBefore": 161828864,
+              "rssAfter": 164851712,
+              "resultSize": 49980
+            },
+            {
+              "wallMs": 8.167699999999968,
+              "cpuUserMs": 78,
+              "cpuSystemMs": 0,
+              "heapBefore": 40773808,
+              "heapAfter": 45870320,
+              "rssBefore": 161890304,
+              "rssAfter": 164859904,
+              "resultSize": 49980
+            }
+          ]
+        },
+        {
+          "name": "SessionWriter: validate + serialize all marks",
+          "repetitions": 5,
+          "medianMs": 52.871099999999956,
+          "minMs": 51.05970000000002,
+          "maxMs": 54.48419999999999,
+          "samples": [
+            {
+              "wallMs": 54.48419999999999,
+              "cpuUserMs": 78,
+              "cpuSystemMs": 0,
+              "heapBefore": 40773696,
+              "heapAfter": 74704240,
+              "rssBefore": 161800192,
+              "rssAfter": 181014528,
+              "resultSize": 3639234
+            },
+            {
+              "wallMs": 52.871099999999956,
+              "cpuUserMs": 31,
+              "cpuSystemMs": 16,
+              "heapBefore": 40774752,
+              "heapAfter": 72084016,
+              "rssBefore": 161849344,
+              "rssAfter": 182157312,
+              "resultSize": 3639234
+            },
+            {
+              "wallMs": 53.12220000000002,
+              "cpuUserMs": 46,
+              "cpuSystemMs": 0,
+              "heapBefore": 40775096,
+              "heapAfter": 72297272,
+              "rssBefore": 162185216,
+              "rssAfter": 181329920,
+              "resultSize": 3639234
+            },
+            {
+              "wallMs": 51.05970000000002,
+              "cpuUserMs": 46,
+              "cpuSystemMs": 0,
+              "heapBefore": 40775360,
+              "heapAfter": 72084624,
+              "rssBefore": 162062336,
+              "rssAfter": 181510144,
+              "resultSize": 3639234
+            },
+            {
+              "wallMs": 52.5911000000001,
+              "cpuUserMs": 31,
+              "cpuSystemMs": 15,
+              "heapBefore": 40775712,
+              "heapAfter": 72101256,
+              "rssBefore": 162447360,
+              "rssAfter": 182202368,
+              "resultSize": 3639234
+            }
+          ]
+        },
+        {
+          "name": "SessionWriter: same validated record",
+          "repetitions": 5,
+          "medianMs": 16.115299999999934,
+          "minMs": 15.615800000000036,
+          "maxMs": 16.239500000000135,
+          "samples": [
+            {
+              "wallMs": 15.705499999999802,
+              "cpuUserMs": 16,
+              "cpuSystemMs": 0,
+              "heapBefore": 40775600,
+              "heapAfter": 45219832,
+              "rssBefore": 163930112,
+              "rssAfter": 168517632,
+              "resultSize": 3639234
+            },
+            {
+              "wallMs": 16.239500000000135,
+              "cpuUserMs": 15,
+              "cpuSystemMs": 0,
+              "heapBefore": 40776448,
+              "heapAfter": 45220680,
+              "rssBefore": 162402304,
+              "rssAfter": 166633472,
+              "resultSize": 3639234
+            },
+            {
+              "wallMs": 15.615800000000036,
+              "cpuUserMs": 16,
+              "cpuSystemMs": 0,
+              "heapBefore": 40776616,
+              "heapAfter": 45220848,
+              "rssBefore": 162607104,
+              "rssAfter": 168288256,
+              "resultSize": 3639234
+            },
+            {
+              "wallMs": 16.15949999999998,
+              "cpuUserMs": 15,
+              "cpuSystemMs": 0,
+              "heapBefore": 40776816,
+              "heapAfter": 45221048,
+              "rssBefore": 163807232,
+              "rssAfter": 167514112,
+              "resultSize": 3639234
+            },
+            {
+              "wallMs": 16.115299999999934,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 16,
+              "heapBefore": 40777016,
+              "heapAfter": 45221248,
+              "rssBefore": 163291136,
+              "rssAfter": 166813696,
+              "resultSize": 3639234
+            }
+          ]
+        },
+        {
+          "name": "reviewRows(1000 pending, midpoint)",
+          "repetitions": 5,
+          "medianMs": 0.028900000000021464,
+          "minMs": 0.0283999999999196,
+          "maxMs": 0.11110000000007858,
+          "samples": [
+            {
+              "wallMs": 0.11110000000007858,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 40776904,
+              "heapAfter": 40779608,
+              "rssBefore": 162652160,
+              "rssAfter": 162652160,
+              "resultSize": 8
+            },
+            {
+              "wallMs": 0.028900000000021464,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 40777952,
+              "heapAfter": 40780304,
+              "rssBefore": 162340864,
+              "rssAfter": 162340864,
+              "resultSize": 8
+            },
+            {
+              "wallMs": 0.0283999999999196,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 40778152,
+              "heapAfter": 40780504,
+              "rssBefore": 162656256,
+              "rssAfter": 162656256,
+              "resultSize": 8
+            },
+            {
+              "wallMs": 0.028700000000071668,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 40778352,
+              "heapAfter": 40780704,
+              "rssBefore": 162684928,
+              "rssAfter": 162684928,
+              "resultSize": 8
+            },
+            {
+              "wallMs": 0.028900000000021464,
+              "cpuUserMs": 0,
+              "cpuSystemMs": 0,
+              "heapBefore": 40778552,
+              "heapAfter": 40780904,
+              "rssBefore": 162742272,
+              "rssAfter": 162742272,
+              "resultSize": 8
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

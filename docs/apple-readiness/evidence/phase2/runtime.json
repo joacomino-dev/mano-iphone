@@ -1,0 +1,16 @@
+{
+  "checkedOn": "2026-11-07",
+  "boundary": "Installed Edge, original preview runtime test assertions; not an iPhone, iOS simulator or WKWebView",
+  "before": {"passed":7,"failed":1,"test":"BottomSheet remains mounted while its default exit animation plays","failure":"locator.click timed out because HTML intercepted the old corner point"},
+  "hitTest": {
+    "viewport":{"width":1100,"height":1100},
+    "overlay":{"x":353.5,"y":124,"width":393,"height":852},
+    "screenBorderRadius":"42px",
+    "oldPoint":{"x":361.5,"y":132,"hitTag":"HTML"},
+    "safePoint":{"x":550,"y":226.24,"hitTestId":"sheet-overlay"},
+    "systemReducedMotion":false
+  },
+  "correction":"Change only the test click target; assert hit-test and retain both exit-animation assertions. Protected runtime untouched.",
+  "after":{"passed":8,"failed":0,"reportedDurationSeconds":11.0},
+  "command":"node node_modules/@playwright/test/cli.js test --config playwright.apple.config.ts --reporter=line"
+}

@@ -1,0 +1,42 @@
+{
+  "at": "2026-11-07T20:31:42.0903026Z",
+  "note": "Python urllib default user-agent returned 403; PowerShell GET returned these results. Local RC policy not deployed.",
+  "results": [
+    {
+      "containsRCPolicy": false,
+      "hasController": true,
+      "bytes": 13876,
+      "status": 200,
+      "client": "PowerShell Invoke-WebRequest",
+      "url": "https://joaquinmino.work/cocowash/privacy.html",
+      "hasEmail": true
+    },
+    {
+      "containsRCPolicy": false,
+      "hasController": true,
+      "bytes": 14725,
+      "status": 200,
+      "client": "PowerShell Invoke-WebRequest",
+      "url": "https://joaquinmino.work/cocowash/privacidad.html",
+      "hasEmail": true
+    },
+    {
+      "containsRCPolicy": false,
+      "hasController": true,
+      "bytes": 9285,
+      "status": 200,
+      "client": "PowerShell Invoke-WebRequest",
+      "url": "https://joaquinmino.work/cocowash/support.html",
+      "hasEmail": true
+    },
+    {
+      "containsRCPolicy": false,
+      "hasController": true,
+      "bytes": 9568,
+      "status": 200,
+      "client": "PowerShell Invoke-WebRequest",
+      "url": "https://joaquinmino.work/cocowash/",
+      "hasEmail": true
+    }
+  ]
+}

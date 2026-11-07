@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-07T18:53:20.478Z",
+  "boundary": "Edge + synthetic Capacitor bridge; not iOS or physical-device QA",
+  "results": [
+    {
+      "name": "permission during enumeration: a denied native result hides the previous library",
+      "status": "FAIL",
+      "error": "denied enumeration left old photos visible\n\n1 !== 0\n"
+    }
+  ]
+}

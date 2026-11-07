@@ -1,0 +1,82 @@
+{
+  "at": "2026-11-07T19:25:17.598Z",
+  "boundary": "Edge + synthetic Capacitor bridge; not iOS or physical-device QA",
+  "results": [
+    {
+      "name": "permission: authorized → limited reloads the permitted set",
+      "status": "PASS"
+    },
+    {
+      "name": "permission: changing the limited selection with the same status refreshes it",
+      "status": "PASS"
+    },
+    {
+      "name": "permission: revocation closes review; regrant reloads without losing decisions",
+      "status": "PASS"
+    },
+    {
+      "name": "permission during enumeration: a denied native result hides the previous library",
+      "status": "PASS"
+    },
+    {
+      "name": "delete contract: cancel",
+      "status": "PASS"
+    },
+    {
+      "name": "delete contract: error",
+      "status": "PASS"
+    },
+    {
+      "name": "delete contract: partial",
+      "status": "PASS"
+    },
+    {
+      "name": "delete contract: success",
+      "status": "PASS"
+    },
+    {
+      "name": "deletion: a stale foreground refresh cannot undo confirmed removal",
+      "status": "PASS"
+    },
+    {
+      "name": "secondary screens: settings, support, album, inspector and video",
+      "status": "PASS"
+    },
+    {
+      "name": "resizing: the current card and saved decisions survive width/height changes",
+      "status": "PASS"
+    },
+    {
+      "name": "safe areas: asymmetric left/right insets protect app and sheet controls",
+      "status": "PASS"
+    },
+    {
+      "name": "layout fixture: se",
+      "status": "PASS"
+    },
+    {
+      "name": "layout fixture: mini",
+      "status": "PASS"
+    },
+    {
+      "name": "layout fixture: max",
+      "status": "PASS"
+    },
+    {
+      "name": "layout fixture: wide-short-stress",
+      "status": "PASS"
+    },
+    {
+      "name": "layout fixture: split-stress",
+      "status": "PASS"
+    },
+    {
+      "name": "layout fixture: narrow-stress",
+      "status": "PASS"
+    },
+    {
+      "name": "onboarding: four compact captures and reachable next control",
+      "status": "PASS"
+    }
+  ]
+}

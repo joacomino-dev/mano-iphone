@@ -15,6 +15,62 @@ AdMob Android. Hoja de ruta, auditoría y ruta a Play en
 [ROADMAP_PLAYSTORE](../ai-handoff/ROADMAP_PLAYSTORE.md); documentos de la tienda en
 `docs/playstore/`. APK `C:/Users/Joaco/Downloads/CocoWash-0.9.9.1-android-build3-11e2830.apk`.
 
+## Cierre RC — 2026-11-07 (CW-CX-020, completada local; envío bloqueado)
+
+Codex por petición del usuario sobre b0cf83d, limpio al iniciar; todos los gates
+locales anteriores repetidos PASS. Reserva: seguridad asíncrona en ManoApp,
+catálogo de Apoyo, localización/mensajes nativos, manifiesto/documentos de
+privacidad y herramientas/metadatos de distribución. El usuario confirma
+Joaquin Miño, Quito (Ecuador), cocowash@joaquinmino.work y mantener monetización.
+Sin arte, nuevas funciones/Personas, dependencias mayores, push, cuentas o envío.
+
+Correcciones locales645564f/9824907/cb927ad/55c6951; gates880a9a0/ca668b7.
+120 Node +6 Release +4 contratos estáticos +Sites4 +52 casos navegador/runtime,
+TS/builds/sync Windows y runtime28 PASS. Arte/CSS/personajes/icono intactos.
+**FAIL P1:** tracking=true sin dominios; gate estricto bloquea archivo. Nativo,
+hardware/Duo, privacidad agregada/tráfico, comercio, firma y distribución BLOCKED.
+[Entrega RC](../apple-readiness/RELEASE_CANDIDATE.md) y
+[checklist](../apple-readiness/APP_STORE_SUBMISSION_CHECKLIST.md). Preservar todos
+los commits al integrar; la rama release remota antigua no incluye esta RC.
+
+## Fase 2 Apple — 2026-11-07 (CW-CX-019)
+
+Checkpoint autorizado: `9ff2734`, después de repetir todos los gates de Fase1.
+Correcciones verificadas en `b463bd2` y `13dae6f`: refresco manual obsoleto,
+Recuperar durante borrado pendiente y revocación fuera de orden. Resultado local:
+119 Node +19 regresiones +9 seguridad +8 runtime Edge +4 contratos estáticos +Sites4;
+runtime28, TypeScript y builds PASS. El test de esquina se corrigió con hit-test,
+sin modificar runtime/arte. Perfil sintético1k/10k/50k medido, no extrapolado a iOS.
+
+[Informe/evidencia Fase2](../apple-readiness/PHASE2.md) y
+[protocolo TestFlight](../apple-readiness/TESTFLIGHT.md). Gate macOS preparado;
+en Windows devuelve78 (sin Xcode/Swift). Pendientes: compilar/ejecutar este diff
+nativamente, PhotoKit destructivo con fixtures, mínimo17/26/27.1 y Duo, recursos/
+accesibilidad físicos, privacidad agregada, firma/cuenta/ASC. Sin push/distribución,
+cambios de identidad, monetización o Personas. No declarar lista para publicar.
+
+## Prioridad Apple / App Store — 2026-11-07 (CW-CX-018)
+
+Por petición directa del usuario, Codex auditó build 43 sobre
+`691cded44bbb39bc4c8fa1ddfd1889a69e2b62a9`, mismo `main` remoto comprobado.
+Checkout efectivo: `C:/Users/Joaco/Developer/CocoWash-b24`, limpio al empezar;
+OneDrive antigua/divergente se conserva sin tocar. **Completada local**, sin
+commit/push/integración ni nueva CI. Esta es la referencia actual; los apartados
+siguientes conservan snapshots históricos anteriores al build 43.
+
+[Entrega y evidencia](../apple-readiness/README.md): auditoría, matriz, problemas,
+App Review, UI y plan de pruebas. Correcciones pequeñas en ManoApp (recarga de
+permisos, revocación durante enumeración, cierre de superficies y generaciones
+de consultas alrededor del borrado) y CSS (insets laterales del shell/hojas).
+Contratos de decisión/borrado/recuperación, Swift, identidad y dependencias intactos.
+119 Node + 19 escenarios Edge/puente ficticio + 4 Sites; runtime28, tsc y builds PASS.
+247 fuentes/config comparadas: solo esos dos archivos existentes cambiaron.
+
+**Pendiente:** revisión/integración del diff, gate macOS de esta entrega,
+PhotoKit destructivo con fixtures, mínimo iOS17/26/27.1 y Duo en simulador/físico,
+rendimiento/accesibilidad y archive firmado/ASC. No declarar lista para publicar.
+
+
 ## Principal: 0.9.9.1 (build 35) en `main` (Claude)
 
 CW-CL-045. El usuario aprobó la serie 9.8.x y pidió dejarla como principal con el nombre

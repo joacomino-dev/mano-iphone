@@ -325,7 +325,6 @@ const table: Record<string, string> = {
   'Precio no disponible.': 'Price unavailable.',
   '¡Gracias por el café!': 'Thanks for the coffee!',
   'Listo: ya no verás anuncios.': 'Done: no more ads.',
-  'Pronto': 'Soon',
   'Activo': 'Active',
   'Cargar precios': 'Load prices',
   'Compras consultadas.': 'Purchases checked.',
@@ -445,5 +444,14 @@ const table: Record<string, string> = {
   'Para vaciarlo ya': 'To empty it now',
   'en «Eliminado recientemente»': 'in Recently Deleted',
   'En 30 días, Fotos lo vacía solo.': 'In 30 days, Photos empties it on its own.',
+  "Fotos no confirmó el cambio. Tu cola se conserva.": "Photos didn’t confirm the change. Your queue is kept.",
+  "Fotos no confirmó la creación del álbum.": "Photos didn’t confirm the album was created.",
+  "Sin conexión con iCloud. Inténtalo con conexión.": "No connection to iCloud. Try again when you’re online.",
+  "No se pudo abrir el vídeo.": "Couldn’t open the video.",
+  "El vídeo supera 512 MB. Puedes abrirlo con el reproductor de Fotos.": "The video is larger than 512 MB. You can open it in the Photos player.",
+  "La caché de vídeos de esta sesión está llena. Termina la sesión para liberar espacio.": "This session’s video cache is full. Finish the session to free up space.",
+  "Preparación cancelada.": "Preparation cancelled.",
+  "El archivo del vídeo no está disponible. Comprueba iCloud y reintenta.": "The video file isn’t available. Check iCloud and try again.",
+  "No se pudo guardar el vídeo para reproducirlo. Comprueba el espacio libre y reintenta.": "Couldn’t save the video for playback. Check free space and try again.",
 };
 export default table;

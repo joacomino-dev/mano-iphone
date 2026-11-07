@@ -248,3 +248,42 @@ Cambios realizados: recuperación de respuestas al pausar, trazas de fase, progr
 Validaciones: base falla y build nuevo pasa en Edge la carrera de pausa. 114 Node, 4 Sites, runtime28, builds, Swift, Release iPhone y smoke de reset/reapertura en simulador. Demo verificó recuperación de vídeo, VHS y pila. IPA y SHA en [informe](../ai-handoff/COCOWASH_9723.md).
 Impacto para Claude: la tarea pasa a la rama de Codex. Usar el build 23 como candidato.
 Pendientes: diagnóstico y aceptación física de Personas, ejecución en segundo plano y validación de la hoja de iOS.
+
+### CW-CX-018 — Compatibilidad Apple y preparación internacional
+Fecha: 2026-11-07, America/Bogota.
+Agente: Codex.
+Tarea: auditoría, matriz y correcciones comprobadas sobre build 43.
+Estado: completada local; pendiente de integrar y QA nativo.
+Base Git / commit: CocoWash-b24, claude/cocowash-9.8.6, 691cded; limpio inicialmente, ahora diff local propio.
+Archivos modificados: ManoApp.tsx, prototype.css, tests/apple-*.mjs, docs/apple-readiness, CURRENT_STATE y esta bitácora.
+Cambios realizados: recarga de permisos; cierre al revocar; invalidación de snapshots anteriores al borrado; insets laterales. [Auditoría/evidencia](../apple-readiness/README.md).
+Decisiones relevantes: mínimo configurado 17 conservado; Duo no acreditado; sin cambios visuales/dependencias/Swift ni publicación.
+Validaciones: 119 Node antes/después, 19 escenarios Edge con puente ficticio, Sites4, runtime28, tsc y builds. Baseline de 247 fuentes: solo dos existentes cambian. CI base consultada, no del diff.
+Impacto para Claude: preservar esta corrección local al integrar; snapshots históricos no son el estado actual.
+Pendientes: macOS/PhotoKit, iOS mínimo, Duo, hardware, privacidad agregada, firma/TestFlight/ASC.
+
+### CW-CX-019 — Seguridad asíncrona y gate nativo/TestFlight
+Fecha: 2026-11-07, America/Bogota.
+Agente: Codex.
+Tarea: Fase2 autorizada; consolidar build43 y ejecutar validaciones posibles.
+Estado: verificada local; integración y ejecución nativa pendientes.
+Base Git / commit: 691cded; checkpoint 9ff2734; correcciones b463bd2 y 13dae6f.
+Archivos modificados: ManoApp/ReviewGrid, tests/fixtures/config Edge, gate macOS, documentación/evidencia.
+Cambios realizados: guard manual refresh; bloqueo de Recuperar pendiente; permiso independiente de snapshots; coordenada válida de test. [Informe](../apple-readiness/PHASE2.md).
+Decisiones relevantes: mínimo17/identidad/Swift/dependencias/monetización conservados; sin push/distribución.
+Validaciones: 119 Node, 19 regresiones, 9 seguridad, 8 runtime Edge, 4 contratos estáticos, Sites4, runtime28, tsc/builds; métricas Node 1k/10k/50k. Fallos reproducidos antes y corregidos. Bash sintaxis PASS; nativo no disponible, exit78.
+Impacto para Claude: preservar commits locales y guards al integrar; no confundir fixture con PhotoKit real.
+Pendientes: macOS/PhotoKit, hardware/Duo, Instruments/accesibilidad, privacidad agregada, firma/ASC/TestFlight.
+
+### CW-CX-020 — RC local y puertas de distribución
+Fecha:2026-11-07, America/Bogota.
+Agente:Codex.
+Tarea:Cierre RC autorizado; conservar identidad/monetización/última base.
+Estado:completada local; envío bloqueado.
+Base Git / commit:b0cf83d limpio, CocoWash-b24; código/config dc5ffc9.
+Archivos modificados:ManoApp/Monetization, traducciones/close nativo, manifest/políticas, canal/config, tests/scripts/docs.
+Cambios realizados:favorita obsoleta/catálogo vacío corregidos645564f; i18n9824907; privacidadcb927ad; Release/versionado55c6951; gates880a9a0/ca668b7; plazos legalesdc5ffc9. [Informe](../apple-readiness/RELEASE_CANDIDATE.md).
+Decisiones relevantes:responsable/contacto y monetización confirmados; iOS17, arte,28 protegidos, dependencias y funciones conservados. Sin push/cuentas/subidas.
+Validaciones:120 Node+6 Release+4 estáticos+Sites4+52 navegador/runtime;TS/builds/sync Windows PASS. SDKs oficiales inspeccionados; NO Swift/PhotoKit nativo ejecutado.
+Impacto para Claude:preservar commits/configuración RC; no mostrar developer/«Pronto» ni copiar metadatos históricos como finales.
+Pendientes:P1 dominios tracking FAIL; macOS/hardware/Duo, privacidad agregada/tráfico/web, sandbox/comercio/firma/TestFlight BLOCKED.

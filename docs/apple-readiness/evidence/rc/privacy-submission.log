@@ -1,0 +1,2 @@
+PASS (static scope only): SDK collection superset, plist parsing, native close localization and ES/EN policy identity.
+FAIL for submission: tracking enabled but no tracking domains declared (Apple TN3182). Provider confirmation/native traffic inspection required; do not invent domains.

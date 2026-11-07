@@ -33,4 +33,13 @@ export const NATIVE_MESSAGES = [
   'Alguna foto ya no está disponible. Actualiza tu selección antes de crear el álbum.',
   'Nada seleccionado.',
   'No se pudo preparar el archivo',
+  "Fotos no confirmó el cambio. Tu cola se conserva.",
+  "Fotos no confirmó la creación del álbum.",
+  "Sin conexión con iCloud. Inténtalo con conexión.",
+  "No se pudo abrir el vídeo.",
+  "El vídeo supera 512 MB. Puedes abrirlo con el reproductor de Fotos.",
+  "La caché de vídeos de esta sesión está llena. Termina la sesión para liberar espacio.",
+  "Preparación cancelada.",
+  "El archivo del vídeo no está disponible. Comprueba iCloud y reintenta.",
+  "No se pudo guardar el vídeo para reproducirlo. Comprueba el espacio libre y reintenta.",
 ] as const;

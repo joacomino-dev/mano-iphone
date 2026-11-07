@@ -315,7 +315,6 @@ const table: Record<string, string> = {
   'Precio no disponible.': '価格は表示できません。',
   '¡Gracias por el café!': 'コーヒーをありがとう！',
   'Listo: ya no verás anuncios.': '完了：もう広告は表示されません。',
-  'Pronto': '近日',
   'Activo': '有効',
   'Cargar precios': '価格を読み込む',
   'Compras consultadas.': '購入履歴を確認しました。',
@@ -432,5 +431,14 @@ const table: Record<string, string> = {
   'Para vaciarlo ya': '今すぐ空にするには',
   'en «Eliminado recientemente»': '「最近削除した項目」に移動しました',
   'En 30 días, Fotos lo vacía solo.': '30日後に「写真」が自動で空にします。',
+  "Fotos no confirmó el cambio. Tu cola se conserva.": "写真アプリが変更を確認できませんでした。キューは保持されます。",
+  "Fotos no confirmó la creación del álbum.": "写真アプリがアルバムの作成を確認できませんでした。",
+  "Sin conexión con iCloud. Inténtalo con conexión.": "iCloudに接続できません。オンラインで再試行してください。",
+  "No se pudo abrir el vídeo.": "ビデオを開けませんでした。",
+  "El vídeo supera 512 MB. Puedes abrirlo con el reproductor de Fotos.": "ビデオは512 MBを超えています。写真アプリのプレーヤーで開けます。",
+  "La caché de vídeos de esta sesión está llena. Termina la sesión para liberar espacio.": "このセッションのビデオキャッシュがいっぱいです。セッションを終了して空き容量を確保してください。",
+  "Preparación cancelada.": "準備がキャンセルされました。",
+  "El archivo del vídeo no está disponible. Comprueba iCloud y reintenta.": "ビデオファイルを利用できません。iCloudを確認して再試行してください。",
+  "No se pudo guardar el vídeo para reproducirlo. Comprueba el espacio libre y reintenta.": "再生用のビデオを保存できませんでした。空き容量を確認して再試行してください。",
 };
 export default table;

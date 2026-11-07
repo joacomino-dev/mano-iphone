@@ -315,7 +315,6 @@ const table: Record<string, string> = {
   'Precio no disponible.': 'السعر غير متاح.',
   '¡Gracias por el café!': 'شكرًا على القهوة!',
   'Listo: ya no verás anuncios.': 'تم: لن ترى إعلانات بعد الآن.',
-  'Pronto': 'قريبًا',
   'Activo': 'مفعّل',
   'Cargar precios': 'تحميل الأسعار',
   'Compras consultadas.': 'تم التحقق من المشتريات.',
@@ -432,5 +431,14 @@ const table: Record<string, string> = {
   'Para vaciarlo ya': 'لإفراغه الآن',
   'en «Eliminado recientemente»': 'في «المحذوفة مؤخرًا»',
   'En 30 días, Fotos lo vacía solo.': 'خلال 30 يومًا يفرغه تطبيق الصور تلقائيًا.',
+  "Fotos no confirmó el cambio. Tu cola se conserva.": "لم يؤكد تطبيق الصور التغيير. تم الاحتفاظ بقائمتك.",
+  "Fotos no confirmó la creación del álbum.": "لم يؤكد تطبيق الصور إنشاء الألبوم.",
+  "Sin conexión con iCloud. Inténtalo con conexión.": "لا يوجد اتصال بـ iCloud. حاول مجددًا عند الاتصال بالإنترنت.",
+  "No se pudo abrir el vídeo.": "تعذّر فتح الفيديو.",
+  "El vídeo supera 512 MB. Puedes abrirlo con el reproductor de Fotos.": "يتجاوز الفيديو 512 ميغابايت. يمكنك فتحه بمشغّل تطبيق الصور.",
+  "La caché de vídeos de esta sesión está llena. Termina la sesión para liberar espacio.": "ذاكرة الفيديو المؤقتة لهذه الجلسة ممتلئة. أنهِ الجلسة لتحرير مساحة.",
+  "Preparación cancelada.": "تم إلغاء التحضير.",
+  "El archivo del vídeo no está disponible. Comprueba iCloud y reintenta.": "ملف الفيديو غير متاح. تحقّق من iCloud وحاول مجددًا.",
+  "No se pudo guardar el vídeo para reproducirlo. Comprueba el espacio libre y reintenta.": "تعذّر حفظ الفيديو لتشغيله. تحقّق من المساحة المتاحة وحاول مجددًا.",
 };
 export default table;

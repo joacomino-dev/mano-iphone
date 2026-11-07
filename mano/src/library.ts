@@ -50,14 +50,19 @@ type LibraryPlugin = {
   haptic(options: { kind: HapticKind }): Promise<void>;
   place(options: { id: string }): Promise<Place & { retry?: string }>;
   diagnostic(options: { message: string }): Promise<void>;
-  /** Android only: while active, the system Back button/gesture emits `backButton`. */
+};
+/** Methods only the Android plugin (PhotoLibraryPlugin.kt) implements. Kept out of
+ * `LibraryPlugin`, which is the contract shared with PhotoLibrary.swift and checked
+ * against it by tests/native-contract.test.mjs. Callers guard by platform. */
+type AndroidLibraryPlugin = LibraryPlugin & {
+  /** While active, the system Back button/gesture emits `backButton`. */
   backHandling(options: { active: boolean }): Promise<void>;
 };
 export type HapticKind = 'selection' | 'light' | 'soft' | 'medium' | 'rigid' | 'success' | 'warning' | 'error';
 export type Place = { locality?: string; region?: string; country?: string; countryCode?: string };
 export type PhotoPermission = 'authorized' | 'limited' | 'denied' | 'notDetermined';
 export const isNative = Capacitor.isNativePlatform();
-export const Library = registerPlugin<LibraryPlugin>('PhotoLibrary');
+export const Library = registerPlugin<AndroidLibraryPlugin>('PhotoLibrary');
 export type Thumb = { src: string; cloud: boolean };
 /** In-flight and recent preview answers (file references), shared by every
  * caller. Bounded, least recently used first: one entry per item seen, so an

@@ -1,0 +1,17 @@
+{
+  "at": "2026-11-07T18:55:40.956Z",
+  "head": "691cded44bbb39bc4c8fa1ddfd1889a69e2b62a9",
+  "baselineCount": 247,
+  "changed": [
+    {
+      "file": "mano/src/ManoApp.tsx",
+      "before": "c485cdf90d35ac10251c6ebd459fa45e2e5ec7f46bf0d82f53b23952881b70e7",
+      "after": "46218c18752d807dc0d79cd5afb00b3b5a21a12d4e85eb5a3d453d74b0ea5df8"
+    },
+    {
+      "file": "mano/src/prototype.css",
+      "before": "e80d8bc7d792d58d8ca384304b6e296876787c95d15ba4d1fb47291dff98e92d",
+      "after": "5576d9300dd2869f2e52e1afbd4d7607f7643d527f2fe728455dde4f6ef631b3"
+    }
+  ]
+}
