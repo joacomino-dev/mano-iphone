@@ -14,7 +14,7 @@ jobs:
     if: github.event.repository.private == false
     # Standard public-repository runner (free); no large/paid runner, no deployment.
     runs-on: ubuntu-latest
-    timeout-minutes: 50
+    timeout-minutes: 60
     defaults:
       run:
         working-directory: mano
@@ -138,7 +138,7 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
       - name: Verify native startup on the emulator
-        timeout-minutes: 25
+        timeout-minutes: 35
         run: bash scripts/android-emulator.sh android/app/build/outputs/apk/debug/app-debug.apk
       - name: Keep native startup evidence
         if: always()

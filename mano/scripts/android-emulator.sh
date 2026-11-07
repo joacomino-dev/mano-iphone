@@ -39,7 +39,14 @@ boot() {
   timeout 30 adb shell settings put global transition_animation_scale 0 >/dev/null 2>&1 || true
   timeout 30 adb shell settings put global animator_duration_scale 0 >/dev/null 2>&1 || true
 }
-stop() { timeout 30 adb emu kill >/dev/null 2>&1 || true; kill "$EMU" >/dev/null 2>&1 || true; wait "$EMU" 2>/dev/null || true; }
+# Never an unbounded wait: an emulator that ignores the polite stop is killed after 15 s.
+stop() {
+  timeout 30 adb emu kill >/dev/null 2>&1 || true
+  kill "$EMU" >/dev/null 2>&1 || true
+  for _ in $(seq 1 15); do kill -0 "$EMU" 2>/dev/null || return 0; sleep 1; done
+  kill -9 "$EMU" >/dev/null 2>&1 || true
+  pkill -9 -f 'qemu-system' >/dev/null 2>&1 || true
+}
 
 for attempt in 1 2; do
   if boot "$attempt"; then

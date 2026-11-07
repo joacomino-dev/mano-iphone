@@ -606,3 +606,46 @@ correcta (el primer arranque falló por un cierre de `UiAutomation`, no de la ap
 ahora solo cuenta cierres de `work.joaquin.mano`). APK
 `C:/Users/Joaco/Downloads/CocoWash-0.9.9.1-android-build2-12745dc.apk`, 14 552 290 bytes,
 sha256 `2afd3e0b…9011`.
+
+### CW-CL-056 — Android: anuncios y compras, análisis sin modelos, documentos de Play, web, E2E
+Fecha: 2026-11-07, America/Bogota
+Agente: Claude
+Estado: completada en la rama `android`; pendiente de teléfono real.
+Petición del usuario: dejar Android equivalente a iOS y «hacer todo lo que se pueda» sin
+teléfono (prueba solo en navegador).
+Cambios realizados:
+- `CocoMonetizationPlugin.kt` + `CocoNativeAdCard.kt`: UMP (sin ATT), AdMob nativo G en
+  código, carta de papel con «Publicidad» y sus protecciones, Billing 8 (año = producto
+  único que se consume al vencer). IDs de muestra de Google en esta rama; desarrollo con la
+  unidad de prueba (si el ID de muestra no tiene mensajes de consentimiento, solo en debug
+  se prueba la carta con anuncio de prueba no personalizado).
+- `PhotoLibrary`: `classify` (laplaciano, brillo, caras con FaceDetector; texto pendiente,
+  caché versionada) y `analyze` (dHash 64 bits, Hamming, caché); duración del vídeo leída
+  del archivo si MediaStore no la tiene.
+- `docs/playstore/`: ficha 7 idiomas (comprobada por `check-play-listing.mjs` en la CI),
+  seguridad de los datos, declaraciones (texto del permiso de fotos), productos, gráficos.
+- Web es/en: política con «En teléfonos Android» y ayuda con 4 preguntas de Android; prompt
+  de redespliegue y AdMob Android en `docs/ai-handoff/PROMPT_WEB_ANDROID.md` (sin publicar).
+- Vista previa: el selector «Pixel 10» activa los textos y opciones de Android
+  (`setPreviewPlatform`).
+- CI: E2E en el emulador por DevTools sobre una biblioteca sintética (capturas del emulador
+  y un vídeo de prueba de ffmpeg): biblioteca, captura, miniatura, tamaños, metadatos, vídeo
+  206, lugar, favorita, favorita protegida, papelera cancelada y confirmada, Atrás, estado de
+  compras. La carta de anuncio no se pudo ver: el Play services del emulador es antiguo y el
+  anuncio de prueba llega mal formado.
+
+### CW-CL-057 — Android: auditoría crítica, ruta a Play y P0 propios (build 3)
+Fecha: 2026-11-07, America/Bogota
+Agente: Claude
+Estado: completada en la rama `android`; pendiente de teléfono real y de fusionar en `main`.
+Cambios realizados:
+- Comparación visual iPhone ↔ Pixel 10 (`mano/tests/qa-android-compare.mjs`, capturas en
+  `work/qa-android-compare*`), auditoría P0/P1/P2 y ruta de publicación en
+  `ROADMAP_PLAYSTORE.md` y en una página privada para el usuario.
+- P0 (aprobado por el usuario): en Android no se ofrecen «Live Photos», «Texto y documentos»
+  (hasta el detector) ni «Álbum» (hueco vacío para mantener «Más tarde» centrado). iOS igual.
+- `build-people-dev.yml` admite un lanzamiento manual sobre `android` para verificar iOS
+  antes de fusionar.
+- Clave de desarrollo PKCS12 generada fuera del repositorio
+  (`C:\Users\Joaco\Developer\cocowash-keys\`, con LEEME); el usuario la añade a los secretos.
+- Android versionCode 3.
