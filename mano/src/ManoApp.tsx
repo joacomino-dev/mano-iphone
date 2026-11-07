@@ -473,12 +473,12 @@ export function ManoApp() {
     const action:Action=favView&&requested==='favorite'?'unfavorite':requested;
     if(favView&&action==='discard'){haptic('warning');setNotice(t('Las favoritas\nno se eliminan'));return false;}
     setBusy(true);setError('');haptic(action==='favorite'||action==='unfavorite'?'medium':action==='later'?'soft':'light');try{
-    if((action==='favorite'||action==='unfavorite')&&!demo)await Library.favorite({ids,value:action==='favorite'});
+    if((action==='favorite'||action==='unfavorite')&&!demo){invalidateLibrary();await Library.favorite({ids,value:action==='favorite'});invalidateLibrary();}
     record(action,ids);return true;
   }catch(e){haptic('error');messageError(e);return false;}finally{setBusy(false);}};
   const undoLast=async()=>{if(busy)return;const last=state.history.at(-1);if(!last)return;setBusy(true);try{
     let missing=0;let missingIds:string[]=[];
-    if((last.action==='favorite'||last.action==='unfavorite')&&!demo){const result=await Library.favorite({ids:last.ids,value:last.action==='unfavorite',ignoreMissing:true});missing=result.missing.length;missingIds=result.missing;}
+    if((last.action==='favorite'||last.action==='unfavorite')&&!demo){invalidateLibrary();const result=await Library.favorite({ids:last.ids,value:last.action==='unfavorite',ignoreMissing:true});invalidateLibrary();missing=result.missing.length;missingIds=result.missing;}
     const undone=last.action;haptic('soft');if(undone!=='unfavorite')setStats(previous=>({...previous,[undone]:Math.max(0,previous[undone]-last.ids.length)}));
     // Back to the very hand the decision was made on, in the order it was shown.
     setState(undo);const previous=last.context;setLock(restoreHand(previous,last.ids));setSelected(previous?.selected??[]);if(previous?.filter)setFilter(previous.filter);if(missing)setNotice(missing===last.ids.length?t('Ya no está\nen Fotos'):t('Algunas ya no\nestán en Fotos'));setSpoken(t('Última decisión deshecha'));

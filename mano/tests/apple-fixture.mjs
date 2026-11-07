@@ -20,7 +20,17 @@ export function installAppleFixture({ onboarded = true, status = 'authorized', l
     nativeCallback() { return Promise.resolve({ remove: async () => {} }); },
     async nativePromise(plugin, method, args) {
       fixture.calls.push({ plugin, method, args });
-      if (plugin === 'CocoMonetization') return { adFree: true, products: [], ready: false };
+      if (plugin === 'CocoMonetization') {
+        if(method==='catalog'&&fixture.catalogError)throw new Error('Fixture: catalog unavailable');
+        if(method==='restore'&&fixture.restoreError)throw new Error('Fixture: restore unavailable');
+        if(method==='buy') {
+          if(fixture.purchaseError)throw new Error('Fixture: purchase failed');
+          const outcome=fixture.purchaseOutcome??'cancelled';
+          if(outcome==='purchased'&&args.id!=='work.joaquin.mano.coffee')fixture.adFree=true;
+          return {adFree:fixture.adFree??true,products:fixture.products??[],outcome};
+        }
+        return { adFree: fixture.adFree ?? true, products: fixture.products ?? [], ready: false };
+      }
       switch (method) {
         case 'permissionStatus': {
           const status=fixture.status;
@@ -41,7 +51,10 @@ export function installAppleFixture({ onboarded = true, status = 'authorized', l
         case 'classify': return { results: {}, skipped: 0, cancelled: false };
         case 'analyze': return { groups: [], skipped: 0, cancelled: false };
         case 'albums': return { albums: [{id:'fixture-album',title:'Fixture'}] };
-        case 'favorite': return { missing: [] };
+        case 'favorite': {
+          fixture.assets=fixture.assets.map(a=>args.ids.includes(a.id)?{...a,favorite:args.value}:a);
+          return { missing: [] };
+        }
         case 'deleteAssets': {
           if(fixture.holdDelete)await new Promise(resolve=>(fixture.pendingDeletes ||= []).push(resolve));
           if (fixture.deleteMode === 'cancel') throw Object.assign(new Error('Cancelado'), {code:'CANCELLED'});
