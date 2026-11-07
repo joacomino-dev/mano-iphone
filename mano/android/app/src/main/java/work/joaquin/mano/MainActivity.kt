@@ -30,6 +30,7 @@ class MainActivity : BridgeActivity() {
         // keeps the system bars' icons dark and stops WebView auto-darkening.
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
         registerPlugin(PhotoLibraryPlugin::class.java)
+        registerPlugin(CocoMonetizationPlugin::class.java)
         super.onCreate(savedInstanceState)
         // Videos stream from MediaStore through the WebView (see CocoWebViewClient).
         bridge?.let { it.webViewClient = CocoWebViewClient(it) }

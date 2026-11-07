@@ -12,7 +12,8 @@ type Placement = 'deck' | 'finish' | 'review';
 type Product = { id: string; price: string };
 type Status = { adFree: boolean; expires?: number | null; products?: Product[] };
 type Outcome = 'purchased' | 'pending' | 'cancelled';
-const native = Capacitor.getPlatform() === 'ios';
+// The native letter and purchases exist on iPhone (CocoMonetization.swift) and Android (CocoMonetizationPlugin.kt).
+const native = ['ios', 'android'].includes(Capacitor.getPlatform());
 const Store = registerPlugin<{
   status(): Promise<Status>;
   catalog(): Promise<Status>;
