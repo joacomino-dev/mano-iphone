@@ -44,7 +44,14 @@ stop() { timeout 30 adb emu kill >/dev/null 2>&1 || true; kill "$EMU" >/dev/null
 for attempt in 1 2; do
   if boot "$attempt"; then
     rm -f "$OUT/result.txt"
-    if timeout 300 bash scripts/test-android-startup.sh "$APK"; then stop; exit 0; fi
+    if timeout 300 bash scripts/test-android-startup.sh "$APK"; then
+      # End to end on a synthetic library made here (never personal photos).
+      code=0
+      timeout 420 bash scripts/android-e2e-library.sh || code=$?
+      if [ "$code" = 0 ]; then timeout 600 node scripts/android-e2e.mjs || code=$?; fi
+      [ "$code" = 0 ] || note "end-to-end checks failed (exit $code); see e2e.json in the evidence"
+      stop; exit "$code"
+    fi
     note "attempt $attempt: $(tr '\n' ' ' < "$OUT/result.txt" 2>/dev/null || echo 'startup test timed out')"
   fi
   stop

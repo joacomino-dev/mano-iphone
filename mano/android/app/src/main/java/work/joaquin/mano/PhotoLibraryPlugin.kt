@@ -6,6 +6,7 @@ import android.content.ContentUris
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.location.Address
 import android.location.Geocoder
 import android.media.MediaMetadataRetriever
@@ -31,6 +32,7 @@ import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
+import org.json.JSONObject
 import java.io.File
 import java.security.MessageDigest
 import java.util.Locale
@@ -591,22 +593,165 @@ class PhotoLibraryPlugin : Plugin() {
     @PluginMethod fun releasePreparedVideos(call: PluginCall) { call.resolve(JSObject().put("released", 0)) }
 
     // endregion
-    // region On-device analysis (phase 3: LiteRT models bundled in the app)
+    // region On-device analysis (no models, nothing leaves the phone)
 
+    private val analysisQueue = Executors.newSingleThreadExecutor()
+    private val classifyQueue = Executors.newSingleThreadExecutor()
+    @Volatile private var analysisCancelled = false
+    @Volatile private var classifyCancelled = false
+    @Volatile private var analyzing = false
+    @Volatile private var insightSavedAt = 0L
+
+    private fun cacheFile(name: String) = File(context.cacheDir, name)
+    private fun loadCache(name: String): JSONObject =
+        try { JSONObject(cacheFile(name).readText()) } catch (e: Exception) { JSONObject() }
+    private fun saveCache(cache: JSONObject, name: String) {
+        try { val tmp = cacheFile("$name.part"); tmp.writeText(cache.toString()); tmp.renameTo(cacheFile(name)) } catch (e: Exception) { }
+    }
+
+    /** A small local preview from the system thumbnail service (never downloaded or uploaded). */
+    private fun preview(row: Row, size: Int): Bitmap? = try {
+        context.contentResolver.loadThumbnail(itemUri(row.id, row.video), Size(size, size), null)
+    } catch (e: Exception) { null }
+
+    private fun luma(pixel: Int) = (Color.red(pixel) * 299 + Color.green(pixel) * 587 + Color.blue(pixel) * 114) / 1000
+
+    /** 64-bit difference hash on a 9×8 grey copy (the signature iOS uses to shortlist). */
+    private fun dHash(image: Bitmap): Long {
+        val grey = Bitmap.createScaledBitmap(image, 9, 8, true)
+        var hash = 0L
+        for (y in 0 until 8) for (x in 0 until 8) {
+            if (luma(grey.getPixel(x, y)) > luma(grey.getPixel(x + 1, y))) hash = hash or (1L shl (y * 8 + x))
+        }
+        if (grey !== image) grey.recycle()
+        return hash
+    }
+
+    /** Similar photos: near-identical shots (bursts, retakes) by the Hamming distance
+     * of their difference hashes, each compared with one representative per group.
+     * `threshold` (0.05–0.6, default 0.28 as on iOS) allows 2–22 differing bits of 64.
+     * Hashes persist per item (id + edit date) in the app cache; no image data. */
     @PluginMethod
     fun analyze(call: PluginCall) {
         if (!allowed(call)) return
-        call.resolve(JSObject().apply { put("groups", JSArray()); put("skipped", ids(call)?.size ?: 0); put("cancelled", false) })
+        val list = ids(call) ?: run { call.reject("Nada seleccionado."); return }
+        if (analyzing) { call.reject("Ya hay un análisis en curso."); return }
+        analyzing = true; analysisCancelled = false
+        val limit = (min(0.6, max(0.05, call.getDouble("threshold") ?: 0.28)) * 36).roundToLong().toInt()
+        analysisQueue.execute {
+            try {
+                val rows = query(list).filter { !it.video }.sortedBy { it.date }
+                val cache = loadCache("ManoPrints.json"); val live = JSONObject()
+                val parent = IntArray(rows.size) { it }
+                fun root(n: Int): Int { var k = n; while (parent[k] != k) k = parent[k]; return k }
+                val representatives = ArrayList<Pair<Int, Long>>()
+                var skipped = 0
+                for ((index, row) in rows.withIndex()) {
+                    if (analysisCancelled) break
+                    val key = "${row.id}-${row.modified}"
+                    val hash: Long? = if (cache.has(key)) java.lang.Long.parseUnsignedLong(cache.getString(key), 16) else {
+                        val image = preview(row, 256)
+                        if (image == null) { skipped++; null } else dHash(image).also { image.recycle() }
+                    }
+                    if (hash != null) {
+                        live.put(key, java.lang.Long.toUnsignedString(hash, 16))
+                        var best = -1; var bestDistance = Int.MAX_VALUE
+                        for ((i, rep) in representatives) {
+                            val d = java.lang.Long.bitCount(hash xor rep)
+                            if (d <= limit && d < bestDistance) { best = i; bestDistance = d }
+                        }
+                        if (best >= 0) parent[index] = root(best) else representatives += index to hash
+                    }
+                    if (index % 10 == 0 || index == rows.size - 1) notifyListeners("analysisProgress", JSObject().apply { put("done", index + 1); put("total", rows.size) })
+                }
+                // A complete pass knows every live hash: deleted or edited items drop out.
+                if (analysisCancelled) { val keys = live.keys(); while (keys.hasNext()) { val k = keys.next(); cache.put(k, live.get(k)) }; saveCache(cache, "ManoPrints.json") }
+                else saveCache(live, "ManoPrints.json")
+                val groups = LinkedHashMap<Int, JSArray>()
+                for (i in rows.indices) groups.getOrPut(root(i)) { JSArray() }.put(rows[i].id.toString())
+                val result = JSArray()
+                for (group in groups.values) if (group.length() > 1) result.put(group)
+                call.resolve(JSObject().apply { put("groups", result); put("skipped", skipped); put("cancelled", analysisCancelled) })
+            } catch (e: Exception) {
+                call.reject("Ya hay un análisis en curso.")
+            } finally { analyzing = false }
+        }
     }
-    @PluginMethod fun cancelAnalysis(call: PluginCall) { call.resolve() }
+    @PluginMethod fun cancelAnalysis(call: PluginCall) { analysisCancelled = true; call.resolve() }
+
+    /** Signals for the clean-up filters from a 512 px local preview: sharpness
+     * (variance of the Laplacian on a 256 px grey copy, as on iOS), mean brightness
+     * and faces (Android's own on-device face detector). Text needs a bundled model
+     * (pending), so text coverage and lines read 0 for now. JS decides the
+     * categories (insights.ts). Cached per item (id + edit date). */
     @PluginMethod
     fun classify(call: PluginCall) {
         if (!allowed(call)) return
-        call.resolve(JSObject().apply { put("results", JSObject()); put("skipped", ids(call)?.size ?: 0); put("cancelled", false) })
+        val list = ids(call) ?: run { call.reject("Nada seleccionado."); return }
+        val flush = call.getBoolean("flush") == true
+        classifyQueue.execute {
+            classifyCancelled = false
+            val cache = loadCache(INSIGHTS); var changed = false
+            val results = JSObject(); var skipped = 0
+            try {
+                for (row in query(list.take(400))) {
+                    if (classifyCancelled) break
+                    if (row.video) continue
+                    val key = "${row.id}-${row.modified}"
+                    if (cache.has(key)) { results.put(row.id.toString(), cache.getJSONObject(key)); continue }
+                    val image = preview(row, 512)
+                    if (image == null) { skipped++; continue }
+                    val metrics = insights(image)
+                    image.recycle()
+                    cache.put(key, metrics); results.put(row.id.toString(), metrics); changed = true
+                }
+            } catch (e: Exception) { }
+            if (changed && (flush || classifyCancelled || System.currentTimeMillis() - insightSavedAt > 20_000)) {
+                saveCache(cache, INSIGHTS); insightSavedAt = System.currentTimeMillis()
+            }
+            call.resolve(JSObject().apply { put("results", results); put("skipped", skipped); put("cancelled", classifyCancelled) })
+        }
     }
-    @PluginMethod fun cancelClassify(call: PluginCall) { call.resolve() }
+    @PluginMethod fun cancelClassify(call: PluginCall) { classifyCancelled = true; call.resolve() }
+
+    private fun insights(image: Bitmap): JSONObject {
+        val width = 256
+        val height = max(3, min(512, (image.height.toDouble() / max(1, image.width) * width).toInt()))
+        val grey = Bitmap.createScaledBitmap(image, width, height, true)
+        val pixels = IntArray(width * height)
+        grey.getPixels(pixels, 0, width, 0, 0, width, height)
+        if (grey !== image) grey.recycle()
+        val v = IntArray(pixels.size) { luma(pixels[it]) }
+        var light = 0.0
+        for (value in v) light += value
+        var sum = 0.0; var squares = 0.0; var count = 0.0
+        for (y in 1 until height - 1) for (x in 1 until width - 1) {
+            val i = y * width + x
+            val l = 4.0 * v[i] - v[i - 1] - v[i + 1] - v[i - width] - v[i + width]
+            sum += l; squares += l * l; count++
+        }
+        val mean = sum / max(1.0, count)
+        // Android's face detector wants an even-width RGB_565 image.
+        val faces = try {
+            val evenWidth = max(2, image.width and 1.inv())
+            val scaled = Bitmap.createScaledBitmap(image, evenWidth, max(1, image.height), false)
+            val copy = scaled.copy(Bitmap.Config.RGB_565, false)
+            if (scaled !== image) scaled.recycle()
+            val found = android.media.FaceDetector(copy.width, copy.height, 8).findFaces(copy, arrayOfNulls(8))
+            copy.recycle(); found
+        } catch (e: Exception) { 0 }
+        return JSONObject().apply {
+            put("text", 0); put("lines", 0); put("faces", faces)
+            put("sharp", squares / max(1.0, count) - mean * mean)
+            put("luma", light / v.size / 255.0)
+        }
+    }
 
     // endregion
 
-    companion object { private const val ASKED = "photos-permission-asked" }
+    companion object {
+        private const val ASKED = "photos-permission-asked"
+        /** Versioned: when text detection arrives, older entries (text 0) are recomputed. */
+        private const val INSIGHTS = "ManoInsights-a1.json"
+    }
 }

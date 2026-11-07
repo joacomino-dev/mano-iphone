@@ -52,7 +52,7 @@ import kotlin.math.tanh
 @SuppressLint("ViewConstructor")
 class CocoNativeAdCard(context: Context, val ad: NativeAd, private val deck: Boolean, private val labels: Labels) : FrameLayout(context) {
     /** Texts in the app's language, sent by the web side (Monetization.tsx). */
-    class Labels(raw: JSObject?) {
+    class Labels(private val raw: JSObject?) {
         private fun pick(key: String, fallback: String) = raw?.optString(key)?.takeIf { it.isNotEmpty() } ?: fallback
         val stamp = pick("stamp", "Publicidad")
         val greeting = pick("greeting", "Esta carta mantiene CocoWash gratis")
