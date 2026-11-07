@@ -4,6 +4,10 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 if [ "$(uname -s)" != Darwin ]; then echo 'BLOCKED: macOS/Xcode required.' >&2; exit 78; fi
+xcode_version=$(xcodebuild -version)
+[[ "$xcode_version" =~ Xcode\ ([0-9]+) ]] && [ "${BASH_REMATCH[1]}" -ge 26 ] || { echo 'BLOCKED: Xcode26+ required.' >&2; exit 78; }
+sdk_version=$(xcrun --sdk iphoneos --show-sdk-version)
+[ "${sdk_version%%.*}" -ge 26 ] || { echo 'BLOCKED: iOS SDK26+ required.' >&2; exit 78; }
 test "${COCOWASH_SIGNING_AUTHORIZED:-}" = YES || { echo 'REFUSED: owner must explicitly authorize local signing with COCOWASH_SIGNING_AUTHORIZED=YES.' >&2; exit 78; }
 : "${COCOWASH_TEAM_ID:?Set the existing Apple team ID; never a private key}"
 : "${COCOWASH_VERSION:?Choose the marketing version after checking App Store Connect}"
@@ -50,6 +54,8 @@ test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$plist")" = work
 test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$plist")" = "$COCOWASH_VERSION"
 test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$plist")" = "$COCOWASH_BUILD"
 test "$(/usr/libexec/PlistBuddy -c 'Print :MinimumOSVersion' "$plist")" = 17.0
+test "$(/usr/libexec/PlistBuddy -c 'Print :UIDeviceFamily:0' "$plist")" = 1
+test "$(xcrun lipo -archs "$app/App")" = arm64
 test "$(/usr/libexec/PlistBuddy -c 'Print :GADApplicationIdentifier' "$plist")" = 'ca-app-pub-5676353604168025~4587143429'
 test "$(/usr/libexec/PlistBuddy -c 'Print :CocoNativeAdUnitID' "$plist")" = 'ca-app-pub-5676353604168025/8219266678'
 for flag in CocoWashTestAds CocoWashDevelopmentReset; do

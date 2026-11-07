@@ -9,6 +9,10 @@ fi
 for tool in node npm xcodebuild xcrun swiftc plutil; do
   command -v "$tool" >/dev/null || { echo "NO VERIFICABLE: required tool missing: $tool" >&2; exit 78; }
 done
+xcode_version=$(xcodebuild -version)
+[[ "$xcode_version" =~ Xcode\ ([0-9]+) ]] && [ "${BASH_REMATCH[1]}" -ge 26 ] || { echo 'BLOCKED: Xcode26+ required.' >&2; exit 78; }
+sdk_version=$(xcrun --sdk iphoneos --show-sdk-version)
+[ "${sdk_version%%.*}" -ge 26 ] || { echo 'BLOCKED: iOS SDK26+ required.' >&2; exit 78; }
 test -d node_modules || { echo 'NO VERIFICABLE: install the existing package-lock with npm ci first.' >&2; exit 78; }
 out="$PWD/build/apple-readiness"
 mkdir -p "$out"
