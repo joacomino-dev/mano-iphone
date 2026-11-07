@@ -1,7 +1,7 @@
 # CocoWash · Hoja de ruta a la App Store (1.0)
 
-Estado (2026-11-06): **0.9.9.1 (35) es la versión principal en `main`**, probada por el
-usuario y aprobada en diseño y funciones. App solo para iPhone
+Estado (2026-11-07): **0.9.9.1 (41)** en `main` (desarrollo) y en `release` (canal App Store
+con anuncios reales), ambas con CI en verde. Diseño y funciones aprobados por el usuario. App solo para iPhone
 (`TARGETED_DEVICE_FAMILY = 1`), iOS 17+, 7 idiomas (es, en, fr, de, it, ar, ja).
 
 Quién: **U** = usuario (cuentas, dinero, decisiones legales, arte), **C** = Claude/Codex
@@ -35,8 +35,9 @@ Quién: **U** = usuario (cuentas, dinero, decisiones legales, arte), **C** = Cla
 ## Fase 3 · Versión 1.0 en código (C)
 
 1. ~~Fusionar las ramas 9.8.x en `main`~~ — hecho (0.9.9.1, autorizado por el usuario).
-2. **Retirar el modo de prueba**: sección en Ajustes, chip, `testMode.ts`, rondas de
-   postales y el flag `CocoWashTestAds` del flujo de publicación.
+2. ~~Retirar el modo de prueba~~ — resuelto con el canal: en `release`, `DEVELOPER = false`
+   oculta «Modo developer» y fuerza el modo de prueba y los anuncios de prueba a apagados;
+   `CocoWashTestAds` solo lo añade el flujo de desarrollo. `verify-release.yml` lo comprueba.
 3. ~~IDs reales de AdMob~~ — en la rama **`release`** desde 0.9.9.1 (40): app
    `ca-app-pub-5676353604168025~4587143429`, bloque nativo `…/8219266678` (no son secretos:
    van en cada IPA y el ID de editor está en `app-ads.txt`).
@@ -109,6 +110,8 @@ Quién: **U** = usuario (cuentas, dinero, decisiones legales, arte), **C** = Cla
 
 ## Ruta corta
 
-U: Fases 1–2 (cuentas, AdMob, web con privacidad y `app-ads.txt`, iconos) → C: Fase 3
-(1.0 sin modo de prueba, IDs reales, privacidad, PR a `main`) → U+C: Fase 4 (ficha y
-capturas) → Fase 5 (TestFlight) → Fase 6 (envío).
+Hecho: AdMob, web, correo, `app-ads.txt`, IDs reales, canal `release`, privacidad (manifiesto,
+ATT, enlaces en la app, política RGPD/LOPDP/EE. UU.). Siguiente: U: Apple Developer, App Store
+Connect, acuerdo de pago, DSA, pagos de AdMob, marca, iconos → C: compras en 7 idiomas,
+1.0 (1) en `release`, firma y subida → U+C: ficha, capturas, etiquetas de privacidad →
+TestFlight → envío.
