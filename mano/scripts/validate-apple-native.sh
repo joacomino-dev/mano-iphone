@@ -20,6 +20,8 @@ xcrun simctl list -j > "$out/simulators.json"
 npm test
 npm run check:runtime
 node --experimental-strip-types --test tests/native-contract.test.mjs
+node --test tests/release.test.mjs
+node scripts/check-release.mjs > "$out/release-source.json"
 swiftc ios/App/App/SignatureIndex.swift tests/swift/main.swift -o "$out/signature-tests"
 "$out/signature-tests" > "$out/signature-tests.log"
 swiftc ios/App/App/DevelopmentSafety.swift tests/swift-safety/main.swift -o "$out/safety-tests"

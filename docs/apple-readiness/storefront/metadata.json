@@ -1,0 +1,28 @@
+{
+  "status": "Prepared local ES/EN copy; not submitted or approved. Screenshots and commercial configuration remain blocked.",
+  "copyright": "2026 Joaquin Miño",
+  "primaryCategory": "PHOTO_AND_VIDEO",
+  "secondaryCategory": "UTILITIES",
+  "localizations": {
+    "es": {
+      "name": "CocoWash",
+      "subtitle": "Lo que importa, se queda",
+      "keywords": "fotos,vídeos,organizar,carrete,espacio,limpieza,galería,favoritas,álbumes,similares",
+      "promotionalText": "Dale una vuelta a tu carrete con Coqui y Memo. Conserva lo que importa, deja lo demás para revisión y decide a tu ritmo.",
+      "description": "Lo que importa, se queda.\n\nCocoWash te ayuda a ordenar las fotos y los vídeos de tu iPhone con decisiones rápidas y una última mirada antes de eliminar. Coqui y Memo te acompañan, foto a foto.\n\nTU CARRETE, A TU RITMO\nConserva, marca como favorita, deja para más tarde o envía a revisión. Puedes usar los gestos de las tarjetas o los botones. Deshacer te permite corregir las decisiones recientes mientras organizas.\n\nUNA ÚLTIMA MIRADA\nDescartar no borra una foto: la coloca en tu cola de revisión. Recupera los descartes que quieras conservar y confirma en Fotos de Apple lo que decidas eliminar. CocoWash vuelve a comprobar las favoritas antes de borrar. Después de una eliminación confirmada, la recuperación depende de Eliminado recientemente en Fotos, no de Deshacer en CocoWash.\n\nFOTOS Y VÍDEOS\nRevisa fotos, reproduce vídeos y utiliza los filtros disponibles para organizar tu biblioteca. Las herramientas locales de parecido y calidad pueden ayudarte a elegir; tú tomas la decisión. Algunos análisis dependen de la versión de iOS y de que el archivo esté disponible.\n\nEN TU IPHONE\nEl análisis de tu fototeca se realiza en el dispositivo. CocoWash no sube tus fotos para analizarlas ni para publicidad. Puedes conceder acceso completo o elegir solo algunas fotos. Los originales de iCloud necesitan conexión cuando no están descargados. Tus decisiones y ajustes se guardan localmente.\n\nGRATIS, CON OPCIONES DE APOYO\nCocoWash incluye publicidad y opciones de compra dentro de la app para quitar los anuncios durante un año o para siempre. El pase de un año es un pago único y no se renueva automáticamente. También puedes dejar un café como agradecimiento; el café no elimina anuncios. Los precios y la disponibilidad se muestran en la app según tu región.\n\nLa publicidad utiliza servicios de Google y puede tratar identificadores, interacciones y datos técnicos según los permisos y el consentimiento. Consulta la política de privacidad para más información.\n\nHecha para disfrutar de lo que guardas. Sin prisas, sin borrar desde un gesto.",
+      "releaseNotes": "Primera versión de CocoWash: organiza fotos y vídeos, conserva tus favoritas y revisa los descartes antes de confirmar su eliminación en Fotos de Apple.",
+      "supportURL": "https://joaquinmino.work/cocowash/",
+      "privacyURL": "https://joaquinmino.work/cocowash/privacidad.html"
+    },
+    "en": {
+      "name": "CocoWash",
+      "subtitle": "What matters stays",
+      "keywords": "photos,videos,organize,camera roll,storage,clean,gallery,favorites,albums,similar",
+      "promotionalText": "Give your camera roll a fresh look with Coqui and Memo. Keep what matters, send the rest to review, and decide at your own pace.",
+      "description": "What matters stays.\n\nCocoWash helps you organize your iPhone’s photos and videos with quick decisions and one last look before deleting anything. Coqui and Memo keep you company, photo by photo.\n\nYOUR CAMERA ROLL, YOUR PACE\nKeep, mark as a favorite, save for later or send to review. Use the card gestures or the buttons. Undo lets you correct recent decisions while sorting.\n\nONE LAST LOOK\nDiscarding a photo only puts it in your review queue. Recover anything you want to keep, then confirm what you want to delete in Apple Photos. CocoWash checks favorites again before deleting. After a confirmed deletion, recovery depends on Recently Deleted in Photos, rather than Undo in CocoWash.\n\nPHOTOS AND VIDEOS\nBrowse photos, play videos and use the available filters to organize your library. Local similarity and quality tools can help you choose; the decision is yours. Some analyses depend on your iOS version and whether the file is available.\n\nON YOUR IPHONE\nYour library is analyzed on the device. CocoWash does not upload your photos for analysis or advertising. Grant full access or choose only some photos. iCloud originals need a connection when they are not downloaded. Decisions and settings are stored locally.\n\nFREE, WITH WAYS TO SUPPORT\nCocoWash includes ads and in-app purchases to remove them for a year or forever. The one-year pass is a one-time payment and does not renew automatically. You can also leave a coffee as a thank-you; a coffee does not remove ads. Regional prices and availability appear in the app.\n\nAdvertising uses Google services and may process identifiers, interactions and technical data according to your permissions and consent. See the privacy policy for details.\n\nMade to help you enjoy what you keep. Take your time; a gesture never deletes a photo.",
+      "releaseNotes": "The first version of CocoWash: organize photos and videos, keep your favorites and review discards before confirming deletion in Apple Photos.",
+      "supportURL": "https://joaquinmino.work/cocowash/support.html",
+      "privacyURL": "https://joaquinmino.work/cocowash/privacy.html"
+    }
+  }
+}

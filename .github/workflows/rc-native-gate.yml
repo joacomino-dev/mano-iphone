@@ -1,0 +1,44 @@
+name: CocoWash RC unsigned gate
+# Prepared only. Dispatch requires owner authorization; this file never uploads
+# an app, signs, creates certificates, purchases, or modifies Apple accounts.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: cocowash-rc-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  native:
+    # Standard public hosted runner only. No private-repo billing or self-hosted resets.
+    if: github.event.repository.private == false
+    runs-on: xcode-27
+    timeout-minutes: 60
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
+    defaults:
+      run:
+        working-directory: mano
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+        timeout-minutes: 10
+      - name: Unsigned build, Swift oracles and real PhotoKit read smoke
+        run: bash scripts/validate-apple-native.sh --simulator-smoke
+      - name: Retain synthetic QA logs, never an IPA or personal media
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rc-native-evidence-${{ github.sha }}
+          path: |
+            mano/build/apple-readiness/*.txt
+            mano/build/apple-readiness/*.json
+            mano/build/apple-readiness/*.log
+            mano/build/apple-readiness/resolutions/*.resolved
+          retention-days: 7
+          if-no-files-found: warn
