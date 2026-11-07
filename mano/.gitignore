@@ -8,7 +8,7 @@ build/
 *.mobileprovision
 *.ipa
 *.xcarchive
-work/
+/work/
 *.jks
 *.keystore
 *.aab
