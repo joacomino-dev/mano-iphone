@@ -11,6 +11,7 @@ import ar from '../src/locales/ar.ts';
 import ja from '../src/locales/ja.ts';
 import de from '../src/locales/de.ts';
 import it from '../src/locales/it.ts';
+import { ANDROID_TEXT } from '../src/locales/android.ts';
 
 /** Every literal t('…') in the app: the Spanish source text is the key. */
 function sourceKeys() {
@@ -74,4 +75,16 @@ test('language: a pinned choice wins, then the first supported iPhone language, 
   assert.equal(detectLanguage(null, ['de-AT']), 'de');
   assert.equal(detectLanguage(null, ['it-CH', 'en']), 'it');
   assert.equal(detectLanguage(null, []), 'en');
+});
+
+test('Android wording replaces existing texts only, in all seven languages, with the same placeholders', () => {
+  const keys = sourceKeys();
+  for (const [key, text] of Object.entries(ANDROID_TEXT)) {
+    assert.ok(keys.has(key), `not an app text: ${key}`);
+    for (const language of ['es', 'en', 'fr', 'de', 'it', 'ar', 'ja']) {
+      assert.ok(text[language]?.trim(), `${language} missing for ${key}`);
+      assert.equal(placeholders(text[language]), placeholders(key), `${language} placeholders for ${key}`);
+      assert.doesNotMatch(text[language], /iPhone|iCloud|Recently Deleted|Eliminado recientemente/, `${language} still names iPhone things: ${key}`);
+    }
+  }
 });

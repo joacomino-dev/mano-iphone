@@ -1,6 +1,6 @@
 # CocoWash · Hoja de ruta a Google Play (Android)
 
-Estado (2026-11-07): **fase 1 en curso** en la rama `android` (worktree
+Estado (2026-11-07): **fase 1 hecha, fase 2 en curso** en la rama `android` (worktree
 `C:\Users\Joaco\Developer\CocoWash-android`). iOS no se toca: `main` y `release` siguen
 como estaban. Plan aprobado por el usuario el 2026-11-07.
 
@@ -57,11 +57,30 @@ textos), **U+C** = juntos.
       (`brand/generate-android-icons.mjs`).
 - [x] `npm run sync:android`.
 - [x] CI `build-android.yml` (`ubuntu-latest`): tests, `sync:android`, APK de desarrollo +
-      AAB, comprobación de paquete/SDK/16 KB, arranque en emulador con límites de tiempo y
-      un reintento.
-- [ ] CI en verde y primer APK en `C:\Users\Joaco\Downloads`.
+      AAB, comprobación de paquete/SDK/16 KB, arranque en emulador propio
+      (`scripts/android-emulator.sh`: límites de tiempo, un reinicio, fallos como anotaciones
+      legibles sin iniciar sesión).
 
 ## Fase 2 · `PhotoLibrary` en Kotlin (C) → primera build de la prueba cerrada
+
+Hecho (CW-CL-054): `PhotoLibraryPlugin.kt` con la API de `library.ts` (permisos completo y
+parcial, MediaStore, miniaturas en caché acotada, EXIF y lugar con `Geocoder`, tamaños,
+papelera con `createTrashRequest` y favoritas recomprobadas, favoritas con
+`createFavoriteRequest`, compartir, ajustes, `openLink`, hápticos); vídeo por rangos desde
+MediaStore (`CocoWebViewClient`, sin copias); Atrás y gesto predictivo cierran hojas y vista
+anclada (`androidBack.ts`); textos Android en 7 idiomas (`locales/android.ts`: galería,
+papelera, teléfono, rutas de permisos); Ajustes sin «Fotos en iCloud».
+
+Pendiente: las dos decisiones de abajo, prueba en un teléfono real y «parecidas»/limpieza
+(fase 3).
+
+**Decisiones abiertas (U):**
+- *Favoritas*: Android pide confirmación del sistema en cada `createFavoriteRequest`. Opciones:
+  un diálogo en cada deslizamiento hacia arriba, o guardarlas en CocoWash y pasarlas a la
+  galería todas juntas al terminar la ronda (un solo diálogo). `MANAGE_MEDIA` quitaría los
+  diálogos, pero también el de la papelera: descartado.
+- *Álbum*: en Android los álbumes son carpetas; añadir a uno movería o copiaría el original.
+  Hoy el plugin lo rechaza; propuesta: ocultar «Álbum» en Android.
 
 Misma API JS (`src/library.ts`). Permisos `READ_MEDIA_IMAGES`/`VIDEO`, acceso parcial
 (`READ_MEDIA_VISUAL_USER_SELECTED`, «Elegir más fotos»), `ACCESS_MEDIA_LOCATION`;

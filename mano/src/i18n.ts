@@ -5,6 +5,7 @@ import ja from './locales/ja.ts';
 import de from './locales/de.ts';
 import it from './locales/it.ts';
 import { PLURALS, type PluralKey } from './locales/plurals.ts';
+import { ANDROID_TEXT, onAndroid } from './locales/android.ts';
 
 /** CocoWash speaks Spanish (the source text), English, French, German,
  * Italian, Arabic and Japanese. The language follows the iPhone (iOS resolves it per app: Settings ›
@@ -40,6 +41,8 @@ export const lang: Lang = typeof window === 'undefined' ? 'es' : detectLanguage(
 /** For Intl: Latin digits in Arabic, so counters, sizes and the VHS stay in one script. */
 export const locale = lang === 'ar' ? 'ar-u-nu-latn' : lang;
 export const dir: 'rtl' | 'ltr' = lang === 'ar' ? 'rtl' : 'ltr';
+/** Android wording (gallery, trash, phone) for texts that name iPhone-only things. */
+const android = onAndroid();
 if (typeof document !== 'undefined') {
   document.documentElement.lang = lang;
   document.documentElement.dir = dir;
@@ -63,7 +66,8 @@ const fill = (text: string, vars?: Record<string, string | number>) => vars ? te
 
 /** The Spanish text is the key; `{name}` placeholders are filled from `vars`. */
 export function t(text: string, vars?: Record<string, string | number>): string {
-  return fill(lang === 'es' ? text : TABLES[lang][text] ?? text, vars);
+  const platform = android ? ANDROID_TEXT[text]?.[lang] : undefined;
+  return fill(platform ?? (lang === 'es' ? text : TABLES[lang][text] ?? text), vars);
 }
 /** Counted phrases with each language's own plural rules (Arabic has six). */
 export function tn(key: PluralKey, n: number, vars?: Record<string, string | number>): string {

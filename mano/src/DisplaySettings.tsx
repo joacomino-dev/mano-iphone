@@ -7,6 +7,7 @@ import { VhsOverlay } from './Vhs';
 import { haptic } from './haptics';
 import { PREVIEW_QUALITIES, type PreviewQuality } from './preview';
 import { LANGS, languageChoice, locale, setLanguage, t, type Lang } from './i18n';
+import { onAndroid } from './locales/android';
 
 // Format samples only: a fixed illustrative moment, never attributed to a real file.
 const SAMPLE_DATE = new Date(2021, 5, 17, 14, 25).getTime();
@@ -88,11 +89,12 @@ export function DisplaySettingsPanel({ display, change, geek, setGeek, library, 
     <Section icon={<ImageSquareIcon size={18}/>} title={t('Nitidez de las cartas')} note={QUALITY_COPY[display.quality][1]()}>
       <Choice label={t('Nitidez de las cartas')} value={display.quality} options={PREVIEW_QUALITIES.map(q => [q, QUALITY_COPY[q][0]()])} change={quality => change({ ...display, quality })}/>
     </Section>
-    <Section icon={<CloudArrowDownIcon size={18}/>} title={t('Fotos en iCloud')}>
+    {/* Android's MediaStore has no cloud-only items: nothing to save there. */}
+    {!onAndroid() && <Section icon={<CloudArrowDownIcon size={18}/>} title={t('Fotos en iCloud')}>
       <div className="settings-group">
         <Switch label={t('Ahorrar datos de iCloud')} hint={t('Solo descarga al anclar o ampliar.')} checked={display.cloud === 'save'} change={save => change({ ...display, cloud: save ? 'save' : 'always' })}/>
       </div>
-    </Section>
+    </Section>}
     <Section icon={<HandTapIcon size={18}/>} title={t('Experiencia')}>
       <div className="settings-group">
         <Switch label={t('Vibración')} checked={display.haptics} change={haptics => change({ ...display, haptics })}/>
