@@ -419,8 +419,6 @@ const table: Record<string, string> = {
   'No se borró nada\nSigue en tu cola': 'Nothing deleted\nStill in your queue',
   'De vez en cuando aparece un anuncio entre tus fotos. Puedes quitarlos por un año o para siempre.': 'Every now and then an ad shows up between your photos. You can remove them for a year or for good.',
   // 9.8.3
-  '{photos} y {videos} en «Eliminado recientemente»': '{photos} and {videos} in Recently Deleted',
-  '{items} en «Eliminado recientemente»': '{items} in Recently Deleted',
   'Abre Fotos.': 'Open Photos.',
   'Busca el álbum «Eliminado recientemente».': 'Find the Recently Deleted album.',
   'Toca Seleccionar › Eliminar todo.': 'Tap Select › Delete All.',
@@ -433,7 +431,6 @@ const table: Record<string, string> = {
   'Cómo funcionan los sellos': 'How seals work',
   // 9.8.6
   'Eliminado': 'Deleted',
-  'O espera 30 días: Fotos lo vacía solo.': 'Or wait 30 days: Photos empties it on its own.',
   'Desliza para ver todo lo que vas a eliminar': 'Scroll to see everything you’re deleting',
   'Ayuda': 'Help',
   'Preguntas frecuentes': 'Frequently asked questions',
@@ -446,5 +443,7 @@ const table: Record<string, string> = {
   'de espacio liberado, como mínimo': 'of space freed up, at least',
   'Espacio liberado': 'Space freed up',
   'Para vaciarlo ya': 'To empty it now',
+  'en «Eliminado recientemente»': 'in Recently Deleted',
+  'En 30 días, Fotos lo vacía solo.': 'In 30 days, Photos empties it on its own.',
 };
 export default table;

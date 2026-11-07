@@ -404,8 +404,6 @@ const table: Record<string, string> = {
   'No se pudo preparar el archivo': 'Impossibile preparare il file',
   'No se borró nada\nSigue en tu cola': 'Niente eliminato\nResta nella tua lista',
   'De vez en cuando aparece un anuncio entre tus fotos. Puedes quitarlos por un año o para siempre.': 'Ogni tanto tra le tue foto compare una pubblicità. Puoi toglierla per un anno o per sempre.',
-  '{photos} y {videos} en «Eliminado recientemente»': '{photos} e {videos} in «Eliminati di recente»',
-  '{items} en «Eliminado recientemente»': '{items} in «Eliminati di recente»',
   'Abre Fotos.': 'Apri Foto.',
   'Busca el álbum «Eliminado recientemente».': 'Cerca l’album «Eliminati di recente».',
   'Toca Seleccionar › Eliminar todo.': 'Tocca Seleziona › Elimina tutto.',
@@ -416,7 +414,6 @@ const table: Record<string, string> = {
   'Solo tus favoritas. Aquí el corazón las quita de Favoritas; no se eliminan.': 'Solo le tue preferite. Qui il cuore le toglie dalle Preferite; non vengono mai eliminate.',
   'Cómo funcionan los sellos': 'Come funzionano i timbri',
   'Eliminado': 'Eliminato',
-  'O espera 30 días: Fotos lo vacía solo.': 'Oppure aspetta 30 giorni: Foto lo svuota da sola.',
   'Desliza para ver todo lo que vas a eliminar': 'Scorri per vedere tutto quello che elimini',
   'Ayuda': 'Aiuto',
   'Preguntas frecuentes': 'Domande frequenti',
@@ -429,5 +426,7 @@ const table: Record<string, string> = {
   'de espacio liberado, como mínimo': 'di spazio liberato, almeno',
   'Espacio liberado': 'Spazio liberato',
   'Para vaciarlo ya': 'Per svuotarlo subito',
+  'en «Eliminado recientemente»': 'in «Eliminati di recente»',
+  'En 30 días, Fotos lo vacía solo.': 'Tra 30 giorni Foto lo svuota da sola.',
 };
 export default table;

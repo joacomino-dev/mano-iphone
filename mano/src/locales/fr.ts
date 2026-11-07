@@ -407,8 +407,6 @@ const table: Record<string, string> = {
   'No se borró nada\nSigue en tu cola': 'Rien de supprimé\nToujours dans ta file',
   'De vez en cuando aparece un anuncio entre tus fotos. Puedes quitarlos por un año o para siempre.': 'De temps en temps, une pub apparaît entre tes photos. Tu peux les retirer pour un an ou pour toujours.',
   // 9.8.3
-  '{photos} y {videos} en «Eliminado recientemente»': '{photos} et {videos} dans Suppressions récentes',
-  '{items} en «Eliminado recientemente»': '{items} dans Suppressions récentes',
   'Abre Fotos.': 'Ouvre Photos.',
   'Busca el álbum «Eliminado recientemente».': 'Trouve l’album Suppressions récentes.',
   'Toca Seleccionar › Eliminar todo.': 'Touche Sélectionner › Tout supprimer.',
@@ -421,7 +419,6 @@ const table: Record<string, string> = {
   'Cómo funcionan los sellos': 'Comment marchent les tampons',
   // 9.8.6
   'Eliminado': 'Supprimé',
-  'O espera 30 días: Fotos lo vacía solo.': 'Ou attends 30 jours : Photos le vide tout seul.',
   'Desliza para ver todo lo que vas a eliminar': 'Fais défiler pour tout voir avant de supprimer',
   'Ayuda': 'Aide',
   'Preguntas frecuentes': 'Questions fréquentes',
@@ -434,5 +431,7 @@ const table: Record<string, string> = {
   'de espacio liberado, como mínimo': 'd’espace libéré, au moins',
   'Espacio liberado': 'Espace libéré',
   'Para vaciarlo ya': 'Pour le vider maintenant',
+  'en «Eliminado recientemente»': 'dans Suppressions récentes',
+  'En 30 días, Fotos lo vacía solo.': 'Dans 30 jours, Photos le vide tout seul.',
 };
 export default table;

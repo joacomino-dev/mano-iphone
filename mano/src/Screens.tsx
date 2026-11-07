@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
-import { GearSixIcon, ArrowClockwiseIcon, CaretRightIcon, ImagesIcon, EyeIcon, ClockCountdownIcon } from '@phosphor-icons/react';
+import { GearSixIcon, ArrowClockwiseIcon, CaretRightIcon, ImagesIcon, EyeIcon, ClockCountdownIcon, ImageSquareIcon, FilmStripIcon } from '@phosphor-icons/react';
 import { AnimatedNumber, CocoLoader } from './Loader';
 import type { PhotoPermission } from './library';
 import { Character } from './Characters';
@@ -69,6 +69,13 @@ export function splitAmount(text: string): [string, string] {
   return match ? [match[1], match[2]] : [plain, ''];
 }
 
+/** «8 fotos» with the number in bold; forms without a digit (Arabic «صورة واحدة») stay as they are. */
+function numbered(text: string): ReactNode {
+  const match = /\d[\d.,\u00a0\u202f]*/.exec(text);
+  if (!match) return text;
+  return <>{text.slice(0, match.index)}<strong>{match[0]}</strong>{text.slice(match.index + match[0].length)}</>;
+}
+
 /** End of a round («Terminar»): a stamped summary. Pending discards stay for the
  * next round; with any pending, «Una última mirada» leads, since deletion only
  * happens there (Fotos confirms). «Cerrar» in that review comes back here.
@@ -79,7 +86,6 @@ export function SessionDone({ stats, pending, pendingBytes, pendingPartial, agai
   const freed = stats.freedPhotos + stats.freedVideos > 0;
   const freedLabel = formatBytes(stats.freed, locale);
   const pendingLabel = formatBytes(pendingBytes, locale);
-  const items = [stats.freedPhotos ? tn('photos', stats.freedPhotos) : '', stats.freedVideos ? tn('videos', stats.freedVideos) : ''].filter(Boolean);
   const compact = !!monetization;
   // 0.9.9.1 (40): the amount is the headline — the number large, its unit small.
   const amount = splitAmount(freedLabel ? freedLabel : tn('files', stats.freedPhotos + stats.freedVideos));
@@ -98,7 +104,13 @@ export function SessionDone({ stats, pending, pendingBytes, pendingPartial, agai
       </motion.strong>
       {/* 0.9.9.1 (41): told as done — the 30-day note and the steps come below. */}
       <span className="freed-label">{!freedLabel ? tn('freedFiles', stats.freedPhotos + stats.freedVideos) : stats.freedPartial ? t('de espacio liberado, como mínimo') : t('de espacio liberado')}</span>
-      <span className="freed-items">{items.length > 1 ? t('{photos} y {videos} en «Eliminado recientemente»', { photos: items[0], videos: items[1] }) : t('{items} en «Eliminado recientemente»', { items: items[0] ?? '' })}</span>
+      {/* 0.9.9.1 (43): how many photos and videos, as two small postage stamps
+          (photos teal, videos coffee, each tilted its own way), then where they are. */}
+      <div className="freed-counts">
+        {stats.freedPhotos > 0 && <span className="count-stamp is-photo"><ImageSquareIcon size={16} weight="bold" aria-hidden="true"/>{numbered(tn('photos', stats.freedPhotos))}</span>}
+        {stats.freedVideos > 0 && <span className="count-stamp is-video"><FilmStripIcon size={16} weight="bold" aria-hidden="true"/>{numbered(tn('videos', stats.freedVideos))}</span>}
+      </div>
+      <span className="freed-where">{t('en «Eliminado recientemente»')}</span>
       {/* No API empties «Eliminado recientemente»: the person does it in Fotos (Face ID). */}
       <div className="freed-how">
         <strong>{t('Para vaciarlo ya')}</strong>
@@ -108,7 +120,7 @@ export function SessionDone({ stats, pending, pendingBytes, pendingPartial, agai
           <li>{t('Toca Seleccionar › Eliminar todo.')}</li>
         </ol>
       </div>
-      <small className="freed-note">{t('O espera 30 días: Fotos lo vacía solo.')}</small>
+      <small className="freed-note">{t('En 30 días, Fotos lo vacía solo.')}</small>
     </motion.section>
     : <motion.h1 {...rise(reduced, .12)}>{total ? t('Buena ronda.') : t('Revisión guardada.')}</motion.h1>}
     {/* With the letter below, the one step left matters more than the tally. */}

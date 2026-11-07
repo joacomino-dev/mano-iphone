@@ -406,8 +406,6 @@ const table: Record<string, string> = {
   'No se borró nada\nSigue en tu cola': 'لم يُحذف شيء\nما زال في قائمتك',
   'De vez en cuando aparece un anuncio entre tus fotos. Puedes quitarlos por un año o para siempre.': 'من حين لآخر يظهر إعلان بين صورك. يمكنك إزالة الإعلانات لمدة سنة أو إلى الأبد.',
   // 9.8.3
-  '{photos} y {videos} en «Eliminado recientemente»': '{photos} و{videos} في «المحذوفة مؤخرًا»',
-  '{items} en «Eliminado recientemente»': '{items} في «المحذوفة مؤخرًا»',
   'Abre Fotos.': 'افتح تطبيق الصور.',
   'Busca el álbum «Eliminado recientemente».': 'ابحث عن ألبوم «المحذوفة مؤخرًا».',
   'Toca Seleccionar › Eliminar todo.': 'المس «تحديد» › «حذف الكل».',
@@ -420,7 +418,6 @@ const table: Record<string, string> = {
   'Cómo funcionan los sellos': 'كيف تعمل الأختام',
   // 9.8.6
   'Eliminado': 'حُذف',
-  'O espera 30 días: Fotos lo vacía solo.': 'أو انتظر 30 يومًا: يفرغها تطبيق الصور تلقائيًا.',
   'Desliza para ver todo lo que vas a eliminar': 'مرّر لرؤية كل ما ستحذفه',
   'Ayuda': 'المساعدة',
   'Preguntas frecuentes': 'الأسئلة الشائعة',
@@ -433,5 +430,7 @@ const table: Record<string, string> = {
   'de espacio liberado, como mínimo': 'مساحة تم تحريرها على الأقل',
   'Espacio liberado': 'المساحة المحرَّرة',
   'Para vaciarlo ya': 'لإفراغه الآن',
+  'en «Eliminado recientemente»': 'في «المحذوفة مؤخرًا»',
+  'En 30 días, Fotos lo vacía solo.': 'خلال 30 يومًا يفرغه تطبيق الصور تلقائيًا.',
 };
 export default table;
