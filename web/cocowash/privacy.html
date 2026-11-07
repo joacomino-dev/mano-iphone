@@ -31,7 +31,7 @@
       <div>
         <h1>Your photos stay on your iPhone</h1>
         <p class="lead">What data CocoWash handles, what Apple and Google do, and how you decide.</p>
-        <p class="meta">Last updated: November 6, 2026</p>
+        <p class="meta">Last updated: November 7, 2026</p>
       </div>
       <div class="hero-art" aria-hidden="true">
         <img src="./assets/coqui-wave.webp" alt="" width="230" height="230">
@@ -61,8 +61,8 @@
       <div class="sheet">
         <h2 id="summary">In short</h2>
         <ul class="gist">
-          <li>Your photos and videos are analyzed on your iPhone. They’re never uploaded to a server.</li>
-          <li>No accounts, no servers of our own, no analytics.</li>
+          <li>Your photos and videos are analyzed on your iPhone. CocoWash does not upload them for analysis or advertising. Sharing is always your choice.</li>
+          <li>No accounts, no servers of our own, no analytics of our own. Advertising SDKs process the data described below.</li>
           <li>The free version shows Google AdMob ads. They’re only personalized if you give permission.</li>
           <li>Apple processes payments. CocoWash never sees your payment details.</li>
         </ul>
@@ -71,7 +71,9 @@
         <p>The controller is Joaquin Miño, an independent developer based in Quito, Ecuador. For any privacy matter, write to <a href="mailto:cocowash@joaquinmino.work">cocowash@joaquinmino.work</a>.</p>
 
         <h2 id="photos">Your photos and videos</h2>
-        <p>With your permission, CocoWash reads your Photos library to show it to you and help you sort it. Similarity, quality and text in screenshots are worked out on your iPhone with Apple’s own tools. Your photos, videos, their details (date, size, location) and those results are never sent to the controller or to Google.</p>
+        <p>With your permission, CocoWash reads your Photos library to show it to you and help you sort it. Similarity, quality and text in screenshots are worked out on your iPhone with Apple’s own tools. Your photos, videos, their details and those results are not sent to the controller or to Google for analysis or advertising. The optional Apple place-name lookup and user-initiated sharing are described below.</p>
+        <p>The existing local classification can count detected faces as a signal when assessing an image. It does not identify people, build face-identity profiles or offer person-based grouping.</p>
+        <p>If you choose Share, the iOS share sheet sends only the media you select to the app or recipient you choose, under that service’s privacy terms. CocoWash does not share your library automatically.</p>
         <p>If a photo’s original is in iCloud, your iPhone downloads it from your own iCloud account, just as the Photos app would.</p>
         <p>Only what you confirm in Apple’s Photos prompt is deleted. Deleted items stay in Recently Deleted for 30 days, and favorites can’t be marked for deletion. CocoWash’s suggestions (similar, blurry, screenshots) are just that: the decision is always yours.</p>
 
@@ -95,7 +97,7 @@
         <h3>First, your consent</h3>
         <p>Before the first ad, if your region requires it (the European Economic Area, the UK, Switzerland and US states with privacy laws), Google’s consent form appears. You can change your choice at any time in <span class="path">Filters › Support › Ad privacy</span>.</p>
         <h3>Then, Apple’s tracking permission</h3>
-        <p>Right after, your iPhone asks whether you allow CocoWash to track you to show more relevant ads. The IDFA is only used if you agree. If you don’t, or if you didn’t give consent, CocoWash asks Google for non-personalized ads, and the app works exactly the same. You can change this in <span class="path">Settings › Privacy &amp; Security › Tracking</span>.</p>
+        <p>When eligible and not previously decided, iOS asks for tracking permission. The IDFA is only used if you agree. If tracking is not authorized, CocoWash requests non-personalized ads. Google’s consent platform separately determines whether ads may be requested at all; if it does not allow requests, CocoWash does not request an ad. Non-personalized ads can still process device, IP, interaction and diagnostic data. Sorting your photos does not require accepting tracking. You can change this in <span class="path">Settings › Privacy &amp; Security › Tracking</span>.</p>
         <h3>No ads</h3>
         <p>While “A year without ads” or “No ads, forever” is active, CocoWash stops requesting ads. More: <a href="https://policies.google.com/technologies/partner-sites">how Google uses information from sites or apps that use its services</a>.</p>
 
@@ -110,7 +112,7 @@
           <li>It has no user accounts and no servers of its own.</li>
           <li>It includes no analytics or telemetry of its own.</li>
           <li>It doesn’t sell or rent data for money.</li>
-          <li>It doesn’t process sensitive data such as health, beliefs or orientation.</li>
+          <li>It does not build profiles about health, beliefs or orientation. The media you choose to analyze locally can contain personal or sensitive content.</li>
         </ul>
         <p>If you turn it on in <span class="path">Settings › Privacy &amp; Security › Analytics &amp; Improvements</span>, Apple may share crash reports with the developer, without data that identifies you.</p>
 
@@ -126,10 +128,10 @@
 
         <h2 id="transfers">Transfers and retention</h2>
         <p>Google and Apple may process data outside your country, for example in the United States, with safeguards such as the European Commission’s standard contractual clauses or the EU-US Data Privacy Framework. Support emails are received in Ecuador through an email provider that may store them in other countries.</p>
-        <p>Data stored on your iPhone is kept until you delete the app. Support emails are kept for up to 12 months after your request is resolved, unless the law requires longer. Google keeps advertising data under its own policies.</p>
+        <p>Data stored on your iPhone is kept until you delete the app. Support emails are retained only as long as needed to answer the request and meet applicable legal obligations; you can request their deletion. Google keeps advertising data under its own policies.</p>
 
         <h2 id="rights">Your rights</h2>
-        <p>You can ask to access, correct, delete or port your data, restrict or object to its processing, and withdraw your consent. Since CocoWash keeps no data about you outside your iPhone, in practice:</p>
+        <p>You can ask to access, correct, delete or port your data, restrict or object to its processing, and withdraw your consent. Although library analysis stays on your iPhone, advertising providers and support email may process data outside it. In practice:</p>
         <ul>
           <li>to erase everything the app stores, delete it;</li>
           <li>for ads, use “Ad privacy” in the app, the iPhone Tracking setting or Google’s <a href="https://myadcenter.google.com/">My Ad Center</a>;</li>
@@ -140,9 +142,9 @@
         <h2 id="us">US residents</h2>
         <p>This section is the notice required by California’s CCPA, as amended by the CPRA, and by other state privacy laws such as those of Virginia, Colorado, Connecticut, Utah, Texas and Oregon.</p>
         <h3>What is collected and why</h3>
-        <p>In the last 12 months, through Google’s SDK on your device, these categories may have been collected: identifiers (IDFA, only with your permission, and IP address), internet activity (interaction with ads), approximate (not precise) geolocation, device information and the advertising inferences Google may draw. They’re used to show and measure ads and prevent fraud, and they’re received by Google. No sensitive personal information is collected.</p>
+        <p>Through Google’s SDK on your device, these categories may be processed: identifiers (IDFA, only with your permission, and IP address), internet activity (interaction with ads), approximate (not precise) geolocation, device information and the advertising inferences Google may draw. They’re used to show and measure ads and prevent fraud, and they’re received by Google. CocoWash does not send the content of your photos or your library decisions to Google.</p>
         <h3>Sale and targeted advertising</h3>
-        <p>We don’t sell data for money. Even so, letting Google use this data for personalized ads may count as “sharing” for cross-context behavioral advertising (California) or “targeted advertising” in other states. You can opt out at any time in <span class="path">Filters › Support › Ad privacy</span> and by not allowing tracking on your iPhone: from then on you’ll only see non-personalized ads. We don’t knowingly sell or share data of anyone under 16.</p>
+        <p>We don’t sell data for money. Even so, letting Google use this data for personalized ads may count as “sharing” for cross-context behavioral advertising (California) or “targeted advertising” in other states. You can opt out at any time in <span class="path">Filters › Support › Ad privacy</span> and by not allowing tracking on your iPhone: ad requests then follow the updated consent status; ads may be non-personalized or unavailable. We don’t knowingly sell or share data of anyone under 16.</p>
         <h3>Your rights</h3>
         <p>You have the right to know what data is processed, to access, correct or delete it, and to opt out of its sale, sharing or targeted advertising. Using these rights doesn’t change the price or how the app works. You or an authorized agent can ask by writing to <a href="mailto:cocowash@joaquinmino.work">cocowash@joaquinmino.work</a>. If we deny your request, you can appeal by replying to that email; if the appeal is also denied, you can contact your state attorney general.</p>
 
@@ -150,7 +152,7 @@
         <p>CocoWash isn’t directed at children under 13 and doesn’t knowingly collect their data. Ads are limited to content suitable for all audiences. If you think a child has sent us data, write to us and we’ll delete it.</p>
 
         <h2 id="changes">Changes and contact</h2>
-        <p>If this policy changes, we’ll publish the new version on this page with its date and, if the change is significant, we’ll also mention it in the app. For any question: <a href="mailto:cocowash@joaquinmino.work">cocowash@joaquinmino.work</a>.</p>
+        <p>If this policy changes, we’ll publish the new version on this page with its date and provide any additional notice required by applicable law. For any question: <a href="mailto:cocowash@joaquinmino.work">cocowash@joaquinmino.work</a>.</p>
       </div>
     </article>
   </main>
