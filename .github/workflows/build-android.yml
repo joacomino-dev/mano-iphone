@@ -2,7 +2,7 @@ name: Verify CocoWash Android
 on:
   workflow_dispatch:
   push:
-    branches: [android]
+    branches: [main, android]
     paths: ['mano/**', 'docs/playstore/**', '.github/workflows/build-android.yml']
 permissions:
   contents: read

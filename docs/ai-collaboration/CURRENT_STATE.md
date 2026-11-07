@@ -1,6 +1,19 @@
 # CocoWash — estado vigente
 
-Actualizado: 2026-11-05, America/Bogota. Codex trabaja solo por indicación del usuario.
+Actualizado: 2026-11-07, America/Bogota. Codex trabaja solo por indicación del usuario.
+
+## Android en `main`: 0.9.9.1, build Android 3 (Claude)
+
+CW-CL-054 a CW-CL-057. El usuario aprobó fusionar la rama `android` en `main` (fast-forward,
+2026-11-07). `main` lleva ahora el proyecto `mano/android` (Capacitor 8.6.0, minSdk 30,
+targetSdk 36, `work.joaquin.mano`), los plugins Kotlin (`PhotoLibrary`, `CocoMonetization`),
+textos de Android en 7 idiomas y la vista previa con «Pixel 10» en modo Android. iOS se
+verificó antes de fusionar (CI de desarrollo sobre `android`: IPA y arranque correctos).
+CI de Android: `build-android.yml` en `main` y `android` (APK de desarrollo, AAB, 16 KB,
+emulador con E2E). `release` no se tocó: sigue siendo solo iOS hasta que haya IDs reales de
+AdMob Android. Hoja de ruta, auditoría y ruta a Play en
+[ROADMAP_PLAYSTORE](../ai-handoff/ROADMAP_PLAYSTORE.md); documentos de la tienda en
+`docs/playstore/`. APK `C:/Users/Joaco/Downloads/CocoWash-0.9.9.1-android-build3-11e2830.apk`.
 
 ## Principal: 0.9.9.1 (build 35) en `main` (Claude)
 
