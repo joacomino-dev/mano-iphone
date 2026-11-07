@@ -91,6 +91,16 @@ try{
   await page.waitForFunction(()=>[...document.querySelectorAll('.photo-window img')].some(img=>img.complete&&img.naturalWidth>0));
   assert.equal((await stored(page)).record.removed.length,0);
  },{nativeMedia:true,cloudOffline:true});
+ await scenario('permission ordering: confirmed deletion cannot discard a pending revocation result',async page=>{
+  await discard(page);await review(page);await page.evaluate(()=>{appleFixture.holdDelete=true;appleFixture.deleteMode='success';});
+  await page.getByRole('button',{name:/^Eliminar 1/}).click();await page.waitForFunction(()=>appleFixture.pendingDeletes?.length===1);
+  await page.evaluate(()=>{appleFixture.holdPermission=true;appleFixture.status='denied';document.dispatchEvent(new Event('visibilitychange'));});
+  await page.waitForFunction(()=>appleFixture.pendingPermissions?.length===1);
+  await page.evaluate(()=>appleFixture.pendingDeletes.splice(0).forEach(resolve=>resolve()));await page.waitForTimeout(350);
+  await page.evaluate(()=>appleFixture.pendingPermissions.splice(0).forEach(resolve=>resolve()));await page.waitForTimeout(350);
+  assert.equal(await page.getByRole('heading',{name:'CocoWash necesita tus fotos',exact:true}).count(),1,'confirmed mutation discarded the latest permission result');
+  assert.equal((await stored(page)).record.removed.length,1);
+ });
 }finally{
  await browser.close();await fs.writeFile(path.join(output,'results.json'),JSON.stringify({at:new Date().toISOString(),boundary:'Edge + synthetic Capacitor fixture; not PhotoKit or native-device execution',results},null,2)+'\n');
 }

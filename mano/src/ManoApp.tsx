@@ -334,6 +334,8 @@ export function ManoApp() {
   useEffect(()=>()=>{if(gesture.current?.timer)clearTimeout(gesture.current.timer);},[]);
   const initialLibrary=useRef<ReturnType<typeof Library.assets>|null>(null);
   const libraryRevision=useRef(0);
+  // A mutation invalidates asset snapshots, never the latest permission answer.
+  const permissionRevision=useRef(0);
   const invalidateLibrary=useCallback(()=>{initialLibrary.current=null;setLoading(false);return ++libraryRevision.current;},[]);
   const clearLibraryAccess=useCallback(()=>{cancelWarmup();setConnected(false);setAssets([]);setInspect(null);setPinnedInspect(false);setSelected([]);setSheet(null);},[]);
   const loadLibrary=useCallback(()=>{if(demo)return;let alive=true;const revision=libraryRevision.current;setLoadError('');const request=initialLibrary.current??(initialLibrary.current=Library.permissionStatus().then(({status})=>{if(revision!==libraryRevision.current)return {assets:[] as Asset[],status};setPermission(status as PhotoPermission);return ['authorized','limited'].includes(status)?Library.assets():{assets:[] as Asset[],status};}));
@@ -342,7 +344,7 @@ export function ManoApp() {
   // Photos may change both the permission and the selected limited set while
   // away. Refresh even when its status is unchanged; keep decisions and the
   // locked hand, and ignore an older request finishing after a newer resume.
-  useEffect(()=>{if(demo)return;const recheck=()=>{if(document.visibilityState!=='visible')return;const revision=invalidateLibrary();void Library.permissionStatus().then(({status})=>{if(revision!==libraryRevision.current)return;setPermission(status as PhotoPermission);setLimited(status==='limited');if(['authorized','limited'].includes(status))loadLibrary();else clearLibraryAccess();}).catch(e=>{if(revision!==libraryRevision.current)return;setInspect(null);setSheet(null);setLoadError(e instanceof Error?t(e.message):t('Inténtalo de nuevo en un momento.'));});};document.addEventListener('visibilitychange',recheck);return()=>document.removeEventListener('visibilitychange',recheck);},[loadLibrary,clearLibraryAccess,invalidateLibrary]);
+  useEffect(()=>{if(demo)return;const recheck=()=>{if(document.visibilityState!=='visible')return;const permission=++permissionRevision.current;invalidateLibrary();void Library.permissionStatus().then(({status})=>{if(permission!==permissionRevision.current)return;setPermission(status as PhotoPermission);setLimited(status==='limited');if(['authorized','limited'].includes(status))loadLibrary();else clearLibraryAccess();}).catch(e=>{if(permission!==permissionRevision.current)return;setInspect(null);setSheet(null);setLoadError(e instanceof Error?t(e.message):t('Inténtalo de nuevo en un momento.'));});};document.addEventListener('visibilitychange',recheck);return()=>document.removeEventListener('visibilitychange',recheck);},[loadLibrary,clearLibraryAccess,invalidateLibrary]);
   // Weight and clean-up signals measured in the background (indexer.ts); the
   // pile, counters and filters all read the enriched list.
   // Recomputed only when the set of items or their edits change (groups or
@@ -414,8 +416,8 @@ export function ManoApp() {
   const freeLabel=formatBytes(reviewBytes.bytes,locale)??'';
   // Native refusals arrive in Spanish (PhotoLibrary.swift): they are keys too (nativeMessages.ts).
   const messageError=(e:unknown)=>cancelled(e)?undefined:setError(e instanceof Error?t(e.message):t('No se pudo completar la acción. Inténtalo de nuevo.'));
-  const connect=useCallback(async()=>{const revision=invalidateLibrary();setLoading(true);setError('');try{
-    const access=await Library.authorize();if(revision!==libraryRevision.current)return false;setPermission(access.status as PhotoPermission);if(!['authorized','limited'].includes(access.status)){clearLibraryAccess();return false;}
+  const connect=useCallback(async()=>{const permission=++permissionRevision.current;const revision=invalidateLibrary();setLoading(true);setError('');try{
+    const access=await Library.authorize();if(permission!==permissionRevision.current)return false;setPermission(access.status as PhotoPermission);if(!['authorized','limited'].includes(access.status)){clearLibraryAccess();return false;}if(revision!==libraryRevision.current)return false;
     const result=await Library.assets();if(revision!==libraryRevision.current)return false;setPermission(result.status as PhotoPermission);if(!['authorized','limited'].includes(result.status)){clearLibraryAccess();return false;}setAssets(savedGroups(result.assets));setState(s=>reconcileLibrary(s,result.assets));setLimited(result.status==='limited');setConnected(true);analysisStarted.current='';return savedGroups(result.assets);
   }catch(e){if(revision===libraryRevision.current)messageError(e);return false;}finally{if(revision===libraryRevision.current)setLoading(false);}},[invalidateLibrary,clearLibraryAccess]);
   const beginSession=async()=>{

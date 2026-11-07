@@ -22,7 +22,12 @@ export function installAppleFixture({ onboarded = true, status = 'authorized', l
       fixture.calls.push({ plugin, method, args });
       if (plugin === 'CocoMonetization') return { adFree: true, products: [], ready: false };
       switch (method) {
-        case 'permissionStatus': case 'authorize': return { status: fixture.status };
+        case 'permissionStatus': {
+          const status=fixture.status;
+          if(fixture.holdPermission)return new Promise(resolve=>(fixture.pendingPermissions ||= []).push(()=>resolve({status})));
+          return {status};
+        }
+        case 'authorize': return { status: fixture.status };
         case 'assets': {
           const snapshot = {status: fixture.status, assets: structuredClone(fixture.assets)};
           if(fixture.holdAssets) return new Promise(resolve => (fixture.pendingAssets ||= []).push(() => resolve({...snapshot,status:fixture.status})));
