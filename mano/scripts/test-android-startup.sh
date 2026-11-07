@@ -10,7 +10,8 @@ mkdir -p "$OUT"
 fail() {
   timeout 30 adb logcat -d > "$OUT/logcat.txt" 2>&1 || true
   { echo "ANDROID_STARTUP_FAILED: $*"
-    grep -E "FATAL EXCEPTION|AndroidRuntime: |COCOWASH_JS_ERROR|Capacitor/Console.*(rror|ncaught)" "$OUT/logcat.txt" 2>/dev/null | tail -5 || true
+    grep -A40 "FATAL EXCEPTION" "$OUT/logcat.txt" 2>/dev/null | grep -E "FATAL|Process:|Caused by|Exception:|Error:" | head -6 || true
+    grep -E "COCOWASH_JS_ERROR|Capacitor/Console.*(rror|ncaught)" "$OUT/logcat.txt" 2>/dev/null | tail -3 || true
   } > "$OUT/result.txt"
   cat "$OUT/result.txt"; exit 1
 }

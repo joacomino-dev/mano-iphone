@@ -76,7 +76,13 @@ jobs:
 
       - name: Compile development APK and Play bundle
         working-directory: mano/android
-        run: ./gradlew --no-daemon --stacktrace assembleDebug bundleRelease
+        run: |
+          set -o pipefail
+          if ! ./gradlew --no-daemon --stacktrace assembleDebug bundleRelease 2>&1 | tee ../build-gradle.txt; then
+            # Compiler errors as annotations (readable without signing in to GitHub).
+            grep -E '^e: |error:|What went wrong' -A2 ../build-gradle.txt | head -20 | while IFS= read -r line; do echo "::error title=Gradle::$line"; done
+            exit 1
+          fi
 
       - name: Verify package, SDK levels and 16 KB alignment
         run: |
@@ -90,6 +96,11 @@ jobs:
           grep -q "targetSdkVersion:'36'" build-badging.txt
           # Play's 16 KB page-size rule: every native library page-aligned (none today).
           "$BT/zipalign" -c -P 16 -v 4 "$APK" > build-zipalign.txt
+          # The app's own classes are in the APK (a .gitignore once dropped them silently).
+          unzip -o -q "$APK" 'classes*.dex' -d build-dex
+          for class in MainActivity PhotoLibraryPlugin CocoWebViewClient; do
+            cat build-dex/classes*.dex | grep -aq "Lwork/joaquin/mano/$class;" || { echo "::error title=APK::$class missing from the APK"; exit 1; }
+          done
           test -s "$AAB"
           CODE=$(sed -n "s/.*versionCode='\([0-9]*\)'.*/\1/p" build-badging.txt)
           SHORT=$(echo "$GITHUB_SHA" | cut -c1-7)
