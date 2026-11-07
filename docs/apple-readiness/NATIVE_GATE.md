@@ -131,6 +131,8 @@ Los valores de arriba son marcadores para sustituir, no datos configurados.
 Script exige autorización local explícita, valida método/destino/equipo, build,
 bundle/min17/IDs, flags de desarrollo, firma, entitlements y perfil App Store.
 No usa `-allowProvisioningUpdates`, no obtiene certificados ni sube archivos.
+La comprobación de privacidad con `--submission` bloquea actualmente el archivo
+por dominios de rastreo ausentes; resolver P1 y repetir antes de pedir firma.
 **NOT TESTED**: la sintaxis Bash no acredita que Xcode firme o exporte el proyecto.
 Revisar caducidad de perfil/certificado y firma de cada SDK en Organizer/Xcode.
 Generar Privacy Report y comprobar todas las localizaciones, icono y launch screen

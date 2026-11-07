@@ -35,7 +35,12 @@ No se copian justificaciones del SDK al código propio sin uso que las sustente.
 
 **BLOCKED:** Privacy Report agregado, validación Xcode de firmas SDK y dominios de
 rastreo. Los `_CodeSignature` presentes no verifican identidad/integridad Apple.
-No se inventa una lista de dominios para rellenar el array vacío. Las
+**FAIL P1 para envío:** tracking=true con lista de dominios vacía incumple la
+declaración esperada por [Apple TN3182](https://developer.apple.com/documentation/technotes/tn3182-adding-privacy-tracking-keys-to-your-privacy-manifest).
+La evidencia confirma la ausencia; resolver los valores requiere proveedor/tráfico.
+`python scripts/check-apple-privacy.py --submission` falla explícitamente y el
+script de archivo lo exige antes de firmar/exportar. No se inventa una lista
+de dominios para rellenar el array vacío. Las
 [etiquetas propuestas](../appstore/app-privacy.md) siguen pendientes de contraste.
 
 Reproducir desde raíz: `python scripts/inspect-apple-sdks.py` y

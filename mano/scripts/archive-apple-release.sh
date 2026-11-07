@@ -19,6 +19,7 @@ test "$(/usr/libexec/PlistBuddy -c 'Print :destination' "$COCOWASH_EXPORT_OPTION
 test "$(/usr/libexec/PlistBuddy -c 'Print :teamID' "$COCOWASH_EXPORT_OPTIONS")" = "$COCOWASH_TEAM_ID"
 test "$(/usr/libexec/PlistBuddy -c 'Print :manageAppVersionAndBuildNumber' "$COCOWASH_EXPORT_OPTIONS")" = false
 test "$(/usr/libexec/PlistBuddy -c 'Print :uploadSymbols' "$COCOWASH_EXPORT_OPTIONS")" = false
+python3 ../scripts/check-apple-privacy.py --submission
 node scripts/check-release.mjs
 node scripts/check-mobile-runtime.mjs
 npm test

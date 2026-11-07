@@ -1,5 +1,5 @@
 """Static privacy consistency check. Not a substitute for Xcode's archive report."""
-import json, pathlib, plistlib
+import json, pathlib, plistlib, sys
 root = pathlib.Path(__file__).resolve().parent.parent
 data = json.loads((root/'docs/apple-readiness/evidence/rc-sdk-summary.json').read_text(encoding='utf8'))
 app = plistlib.loads((root/'mano/ios/App/App/PrivacyInfo.xcprivacy').read_bytes())
@@ -18,4 +18,9 @@ for name in ['privacy.html','privacidad.html']:
     text = (root/'web/cocowash'/name).read_text(encoding='utf8')
     assert 'cocowash@joaquinmino.work' in text and 'Joaquin Miño' in text
     assert 'iCloud' in text and 'Google' in text and 'IDFA' in text
-print('PASS: SDK collection superset, plist parsing, native close localization and ES/EN policy identity. BLOCKED: domains, signatures, traffic, public policy deployment and aggregate archive report.')
+print('PASS (static scope only): SDK collection superset, plist parsing, native close localization and ES/EN policy identity.')
+if app.get('NSPrivacyTracking') and not app.get('NSPrivacyTrackingDomains'):
+    print('FAIL for submission: tracking enabled but no tracking domains declared (Apple TN3182). Provider confirmation/native traffic inspection required; do not invent domains.')
+    if '--submission' in sys.argv:
+        sys.exit(1)
+print('BLOCKED: signatures, traffic, public policy deployment and aggregate archive report.')
