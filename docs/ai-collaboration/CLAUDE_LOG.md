@@ -655,3 +655,19 @@ correcta; CI Android [42416406276](https://github.com/joacomino-dev/mano-iphone/
 correcta (E2E 17/17; el anuncio de prueba no se sirve en el emulador). APK
 `C:/Users/Joaco/Downloads/CocoWash-0.9.9.1-android-build3-11e2830.apk`, 24 468 391 bytes
 (crece por los SDK de anuncios y compras), sha256 `9c8e05a0…a9c3`.
+
+### CW-CL-058 — Android fusionado en `main`
+Fecha: 2026-11-07, America/Bogota
+Agente: Claude
+Estado: completada.
+Decisión del usuario: «Sí, fusiona».
+Cambios realizados: `main` avanzó por fast-forward de `691cded` (build 43) a `a03d2a1`
+(rama `android` completa); sin forzar, sin conflictos (main no tenía commits nuevos).
+`build-android.yml` corre ahora también en `main`; `CURRENT_STATE` y `mano/README` describen
+iPhone y Android. `release` no se tocó (solo iOS hasta tener IDs reales de AdMob Android).
+Validaciones: 123 Node, tsc estricto, runtime 28, ficha de Play; CI en `main`: iOS
+[42418397855](https://github.com/joacomino-dev/mano-iphone/actions/runs/42418397855) y Android
+[42418397820](https://github.com/joacomino-dev/mano-iphone/actions/runs/42418397820) correctas
+(E2E 17/17; el anuncio de prueba no se sirve en el emulador).
+Nota: la copia `CocoWash-b24` sigue en `claude/cocowash-9.8.6` (= build 43); para seguir con
+iOS desde ella, actualizarla con `git pull` cuando no haya cambios sin guardar.
