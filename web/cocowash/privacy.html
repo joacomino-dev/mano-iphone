@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Privacy policy · CocoWash</title>
-<meta name="description" content="What data CocoWash handles, what Apple and Google AdMob do, and how you decide.">
+<meta name="description" content="What data CocoWash handles, what Apple, Google and Google Play do, and how you decide.">
 <meta name="theme-color" content="#F3ECE1">
 <link rel="canonical" href="https://joaquinmino.work/cocowash/privacy.html">
 <link rel="alternate" hreflang="es" href="https://joaquinmino.work/cocowash/privacidad.html">
@@ -29,9 +29,9 @@
   <main id="content">
     <div class="hero compact">
       <div>
-        <h1>Your photos stay on your iPhone</h1>
+        <h1>Your photos stay on your phone</h1>
         <p class="lead">What data CocoWash handles, what Apple and Google do, and how you decide.</p>
-        <p class="meta">Last updated: November 6, 2026</p>
+        <p class="meta">Last updated: November 7, 2026</p>
       </div>
       <div class="hero-art" aria-hidden="true">
         <img src="./assets/coqui-wave.webp" alt="" width="230" height="230">
@@ -48,6 +48,7 @@
           <li><a href="#local">What stays on your iPhone</a></li>
           <li><a href="#ads">Google AdMob ads</a></li>
           <li><a href="#purchases">Purchases</a></li>
+          <li><a href="#android">On Android phones</a></li>
           <li><a href="#support">Support emails</a></li>
           <li><a href="#never">What CocoWash doesn’t do</a></li>
           <li><a href="#bases">Legal bases</a></li>
@@ -61,10 +62,10 @@
       <div class="sheet">
         <h2 id="summary">In short</h2>
         <ul class="gist">
-          <li>Your photos and videos are analyzed on your iPhone. They’re never uploaded to a server.</li>
+          <li>Your photos and videos are analyzed on your phone, iPhone or Android. They’re never uploaded to a server.</li>
           <li>No accounts, no servers of our own, no analytics.</li>
           <li>The free version shows Google AdMob ads. They’re only personalized if you give permission.</li>
-          <li>Apple processes payments. CocoWash never sees your payment details.</li>
+          <li>Apple or Google Play processes payments. CocoWash never sees your payment details.</li>
         </ul>
 
         <h2 id="controller">Who we are</h2>
@@ -102,6 +103,19 @@
         <h2 id="purchases">Purchases</h2>
         <p>Apple processes payments. On your iPhone, CocoWash receives Apple’s signed transaction for each purchase: which product it is, when it was bought and whether it was refunded. That tells the app whether to show ads and when “A year without ads” ends. The transaction isn’t sent to the controller or to any server. Your name, email and payment details stay with Apple.</p>
 
+        <h2 id="android">On Android phones</h2>
+        <p>The Android version works the same way, with Android’s tools instead of Apple’s:</p>
+        <ul>
+          <li><strong>Photos and videos.</strong> With your permission (“Allow all” or “Select photos”), CocoWash reads your gallery through Android’s media store. Sharpness, brightness, faces and near-identical photos are worked out on the phone, with nothing sent anywhere. To show where a photo was taken it reads its location (EXIF), also on the phone.</li>
+          <li><strong>Deleting.</strong> Only what you confirm in Android’s own prompt is deleted. Deleted items stay in your gallery’s trash for 30 days, and favorites are never deleted. The favorites you mark reach your gallery at the end of each round, also through Android’s prompt.</li>
+          <li><strong>Place names.</strong> CocoWash uses Android’s geocoder, which on most phones is answered by Google services. Only the coordinates, rounded to about 1 km, are sent, never the photo, and “Location” turns it off.</li>
+          <li><strong>What stays on your phone.</strong> The same as on iPhone. CocoWash turns off Android backup and device-to-device transfer: your decisions are not uploaded to Google’s backup.</li>
+          <li><strong>Ads.</strong> Instead of the IDFA, Google’s SDK may use the Android advertising ID and an app-specific ID for measurement. Android has no tracking prompt: where the law requires it, Google’s consent form comes first, and you can change it in <span class="path">Filters › Support › Ad privacy</span>; you can also delete or reset your advertising ID in <span class="path">Android Settings › Privacy › Ads</span>. Ads are limited to content suitable for everyone.</li>
+          <li><strong>Purchases.</strong> Google Play processes payments. CocoWash checks your Google Play purchases on the phone (which product and when) to know whether to show ads and when “A year without ads” ends; it doesn’t send them to any server. Your name and payment details stay with Google.</li>
+          <li><strong>Crash reports.</strong> If you have it turned on, Google Play may share crash and performance reports with the developer, without data that identifies you.</li>
+        </ul>
+        <p>CocoWash’s “Data safety” section on Google Play matches this policy.</p>
+
         <h2 id="support">Support emails</h2>
         <p>If you write to us, we use your address and what you tell us only to answer you and improve the app. Please don’t send personal photos.</p>
 
@@ -132,7 +146,7 @@
         <p>You can ask to access, correct, delete or port your data, restrict or object to its processing, and withdraw your consent. Since CocoWash keeps no data about you outside your iPhone, in practice:</p>
         <ul>
           <li>to erase everything the app stores, delete it;</li>
-          <li>for ads, use “Ad privacy” in the app, the iPhone Tracking setting or Google’s <a href="https://myadcenter.google.com/">My Ad Center</a>;</li>
+          <li>for ads, use “Ad privacy” in the app, the iPhone Tracking setting, the Android advertising ID or Google’s <a href="https://myadcenter.google.com/">My Ad Center</a>;</li>
           <li>for anything else, write to <a href="mailto:cocowash@joaquinmino.work">cocowash@joaquinmino.work</a>. We’ll answer within one month and may ask for just enough to confirm it’s you.</li>
         </ul>
         <p>If you think we haven’t handled your request properly, you can complain to the data protection authority in your country: in the EU, your member state’s authority; in the UK, the ICO; in Ecuador, the Superintendencia de Protección de Datos Personales.</p>
@@ -140,7 +154,7 @@
         <h2 id="us">US residents</h2>
         <p>This section is the notice required by California’s CCPA, as amended by the CPRA, and by other state privacy laws such as those of Virginia, Colorado, Connecticut, Utah, Texas and Oregon.</p>
         <h3>What is collected and why</h3>
-        <p>In the last 12 months, through Google’s SDK on your device, these categories may have been collected: identifiers (IDFA, only with your permission, and IP address), internet activity (interaction with ads), approximate (not precise) geolocation, device information and the advertising inferences Google may draw. They’re used to show and measure ads and prevent fraud, and they’re received by Google. No sensitive personal information is collected.</p>
+        <p>In the last 12 months, through Google’s SDK on your device, these categories may have been collected: identifiers (IDFA, only with your permission, or the Android advertising ID, and IP address), internet activity (interaction with ads), approximate (not precise) geolocation, device information and the advertising inferences Google may draw. They’re used to show and measure ads and prevent fraud, and they’re received by Google. No sensitive personal information is collected.</p>
         <h3>Sale and targeted advertising</h3>
         <p>We don’t sell data for money. Even so, letting Google use this data for personalized ads may count as “sharing” for cross-context behavioral advertising (California) or “targeted advertising” in other states. You can opt out at any time in <span class="path">Filters › Support › Ad privacy</span> and by not allowing tracking on your iPhone: from then on you’ll only see non-personalized ads. We don’t knowingly sell or share data of anyone under 16.</p>
         <h3>Your rights</h3>

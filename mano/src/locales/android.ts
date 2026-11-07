@@ -191,8 +191,15 @@ export const ANDROID_TEXT: Record<string, Text> = {
   },
 };
 
-/** True inside the Android app (Capacitor sets window.Capacitor before any script). */
+let previewPlatform: "ios" | "android" | undefined;
+/** Browser preview only: the device chosen in the preview picker (iPhone / Pixel 10)
+ * decides the platform wording, so the Android texts can be reviewed without a phone. */
+export const setPreviewPlatform = (platform: "ios" | "android" | undefined) => { previewPlatform = platform; };
+
+/** True inside the Android app (Capacitor sets window.Capacitor before any script),
+ * or in the browser preview with the Pixel selected. */
 export const onAndroid = (): boolean => {
-  const cap = (globalThis as { Capacitor?: { getPlatform?: () => string } }).Capacitor;
-  return typeof cap?.getPlatform === 'function' && cap.getPlatform() === 'android';
+  const cap = (globalThis as { Capacitor?: { getPlatform?: () => string; isNativePlatform?: () => boolean } }).Capacitor;
+  if (cap?.isNativePlatform?.()) return cap.getPlatform?.() === "android";
+  return previewPlatform === "android";
 };

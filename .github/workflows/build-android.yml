@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [android]
-    paths: ['mano/**', '.github/workflows/build-android.yml']
+    paths: ['mano/**', 'docs/playstore/**', '.github/workflows/build-android.yml']
 permissions:
   contents: read
 concurrency:
@@ -35,7 +35,7 @@ jobs:
       - run: npm ci --no-audit --no-fund
         timeout-minutes: 10
       - name: Verify logic and protected preview
-        run: npm test && npm run check:runtime
+        run: npm test && npm run check:runtime && node scripts/check-play-listing.mjs
       - name: Build web and sync the Android project
         run: npm run sync:android
 

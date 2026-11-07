@@ -56,26 +56,42 @@ async function page(expression, timeout = 30_000) {
 }
 const call = (plugin, method, args = {}) => page(`try { return { value: await Capacitor.Plugins.${plugin}.${method}(${JSON.stringify(args)}) }; } catch (e) { return { code: e.code ?? null, message: e.message ?? String(e) }; }`, 60_000);
 
+/** Saves what the screen shows (screenshot + UI hierarchy) for the evidence. */
+async function capture(name) {
+  try {
+    await adb("shell", "screencap", "-p", "/sdcard/e2e.png");
+    await run("adb", ["pull", "/sdcard/e2e.png", `${OUT}/${name}.png`], { timeout: 30_000 });
+    await adb("shell", "uiautomator", "dump", "/sdcard/window.xml");
+    fs.writeFileSync(`${OUT}/${name}.xml`, await adb("shell", "cat", "/sdcard/window.xml"));
+  } catch { /* evidence only */ }
+}
 /** Taps the button of a system dialog whose text matches (via the UI hierarchy). */
-async function tap(label) {
+async function tap(label, name) {
   for (let i = 0; i < 12; i++) {
     await sleep(1000);
     try {
-      await adb('shell', 'uiautomator', 'dump', '/sdcard/window.xml');
-      const xml = await adb('shell', 'cat', '/sdcard/window.xml');
-      const node = [...xml.matchAll(/<node [^>]*>/g)].map(m => m[0]).find(n => label.test(/text="([^"]*)"/.exec(n)?.[1] ?? '') && /clickable="true"/.test(n));
-      const bounds = node && /bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/.exec(node);
+      await adb("shell", "uiautomator", "dump", "/sdcard/window.xml");
+      const xml = await adb("shell", "cat", "/sdcard/window.xml");
+      const node = [...xml.matchAll(/<node [^>]*>/g)].map(m => m[0]).find(n => label.test(/text="([^"]*)"/.exec(n)?.[1] ?? "") && /clickable="true"/.test(n));
+      const bounds = node && /bounds="[(d+),(d+)][(d+),(d+)]"/.exec(node);
       if (bounds) {
+        if (name) await capture(name);
         const [x1, y1, x2, y2] = bounds.slice(1).map(Number);
-        await adb('shell', 'input', 'tap', String((x1 + x2) >> 1), String((y1 + y2) >> 1));
+        await adb("shell", "input", "tap", String((x1 + x2) >> 1), String((y1 + y2) >> 1));
         return true;
       }
     } catch { /* retry */ }
   }
+  if (name) await capture(name + "-not-found");
   return false;
 }
-const back = async (delay = 3000) => { await sleep(delay); await adb('shell', 'input', 'keyevent', '4'); };
+const back = async (delay = 3000) => { await sleep(delay); await adb("shell", "input", "keyevent", "4"); };
 const ALLOW = /^(Allow|ALLOW|Permitir|PERMITIR)$/;
+const DENY = /^(Deny|DENY|Cancel|CANCEL|Don.t allow|Denegar|Cancelar)$/;
+/** One step: a failure or a timeout is recorded and the next step still runs. */
+async function step(name, body) {
+  try { await body(); } catch (error) { failures.push(`${name}: ${error.message}`); await capture(`${name.replace(/W+/g, "-")}-error`); }
+}
 
 try {
   await connect();
@@ -109,30 +125,39 @@ try {
   const place = await call('PhotoLibrary', 'place', { id: a.id });
   check('place (no location → empty)', place?.value && !place.value.locality, place);
 
-  // Favourite: Android's own dialog, accepted.
-  const favorite = call('PhotoLibrary', 'favorite', { ids: [a.id], value: true });
-  const allowedFavorite = await tap(ALLOW);
-  const favoriteResult = await favorite;
-  const favMeta = await call('PhotoLibrary', 'metadata', { id: a.id });
-  check('favorite dialog', allowedFavorite && !favoriteResult?.code && favMeta?.value?.isFavorite === true, { allowedFavorite, favoriteResult, isFavorite: favMeta?.value?.isFavorite });
+  // Favourite: Android's own dialog when it shows one (some system images apply it directly).
+  await step("favorite", async () => {
+    const favorite = call("PhotoLibrary", "favorite", { ids: [a.id], value: true });
+    const allowed = await tap(ALLOW, "favorite-dialog");
+    const result = await favorite;
+    const meta = await call("PhotoLibrary", "metadata", { id: a.id });
+    check("favorite", !result?.code && meta?.value?.isFavorite === true, { dialog: allowed, result, isFavorite: meta?.value?.isFavorite });
+  });
 
   // A favourite is never deleted (checked again at the last moment).
-  const protectedDelete = await call('PhotoLibrary', 'deleteAssets', { ids: [a.id] });
-  check('favourite protected', /favoritos/.test(protectedDelete?.message ?? ''), protectedDelete);
+  await step("favourite protected", async () => {
+    const result = await call("PhotoLibrary", "deleteAssets", { ids: [a.id] });
+    check("favourite protected", /favoritos/.test(result?.message ?? ""), result);
+  });
 
   // Trash: cancelled in Android's dialog → CANCELLED, item still there.
-  const cancelled = call('PhotoLibrary', 'deleteAssets', { ids: [b.id] });
-  await back(4000);
-  const cancelledResult = await cancelled;
-  const still = (await call('PhotoLibrary', 'assets'))?.value?.assets?.some(x => x.id === b.id);
-  check('trash cancelled', cancelledResult?.code === 'CANCELLED' && still, { cancelledResult, still });
+  await step("trash cancelled", async () => {
+    const pending = call("PhotoLibrary", "deleteAssets", { ids: [b.id] });
+    const denied = await tap(DENY, "trash-dialog-cancel");
+    if (!denied) await back(0);
+    const result = await pending;
+    const still = (await call("PhotoLibrary", "assets"))?.value?.assets?.some(x => x.id === b.id);
+    check("trash cancelled", result?.code === "CANCELLED" && still, { denied, result, still });
+  });
 
   // Trash: confirmed → moved to Android's trash (synthetic emulator image).
-  const trash = call('PhotoLibrary', 'deleteAssets', { ids: [b.id] });
-  const allowedTrash = await tap(ALLOW);
-  const trashResult = await trash;
-  const gone = !(await call('PhotoLibrary', 'assets'))?.value?.assets?.some(x => x.id === b.id);
-  check('trash confirmed', allowedTrash && trashResult?.value?.deleted?.includes(b.id) && gone, { allowedTrash, trashResult, gone });
+  await step("trash confirmed", async () => {
+    const pending = call("PhotoLibrary", "deleteAssets", { ids: [b.id] });
+    const allowed = await tap(ALLOW, "trash-dialog-allow");
+    const result = await pending;
+    const gone = !(await call("PhotoLibrary", "assets"))?.value?.assets?.some(x => x.id === b.id);
+    check("trash confirmed", allowed && result?.value?.deleted?.includes(b.id) && gone, { allowed, result, gone });
+  });
 
   // Back closes what is open instead of leaving.
   await page(`window.__back = 0; await Capacitor.Plugins.PhotoLibrary.addListener('backButton', () => window.__back++); await Capacitor.Plugins.PhotoLibrary.backHandling({ active: true }); return true;`);
@@ -162,6 +187,7 @@ try {
   failures.push(`e2e aborted: ${error.message}`);
 }
 fs.mkdirSync(OUT, { recursive: true });
+try { fs.writeFileSync(`${OUT}/e2e-logcat.txt`, (await run("adb", ["logcat", "-d"], { timeout: 30_000, maxBuffer: 64 << 20 })).stdout); } catch { /* evidence only */ }
 fs.writeFileSync(`${OUT}/e2e.json`, JSON.stringify({ results, failures }, null, 2));
 for (const failure of failures) console.log(`::error title=Android E2E::${failure.slice(0, 900)}`);
 console.log(failures.length ? `ANDROID_E2E_FAILED ${failures.length}` : `ANDROID_E2E_OK ${Object.keys(results).length} checks`);

@@ -254,6 +254,22 @@ class PhotoLibraryPlugin : Plugin() {
         return rows
     }
 
+    /** A video's length in seconds: MediaStore's, or read from the file's own header
+     * when the media scanner left it empty (seen with some recordings). Cached. */
+    private val durations = ConcurrentHashMap<String, Double>()
+    private fun duration(row: Row): Double {
+        if (!row.video || row.duration > 0) return row.duration
+        return durations.getOrPut("${row.id}-${row.modified}") {
+            try {
+                val retriever = MediaMetadataRetriever()
+                try {
+                    retriever.setDataSource(context, itemUri(row.id, true))
+                    (retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L) / 1000.0
+                } finally { retriever.release() }
+            } catch (e: Exception) { 0.0 }
+        }
+    }
+
     private fun ids(call: PluginCall): List<Long>? =
         call.getArray("ids")?.toList<Any>()?.mapNotNull { it.toString().toLongOrNull() }
 
@@ -274,7 +290,7 @@ class PhotoLibraryPlugin : Plugin() {
                 val list = JSArray()
                 for (r in query()) list.put(JSObject().apply {
                     put("id", r.id.toString()); put("kind", if (r.video) "video" else "photo"); put("date", r.date)
-                    put("width", r.width); put("height", r.height); put("duration", r.duration); put("modified", r.modified)
+                    put("width", r.width); put("height", r.height); put("duration", duration(r)); put("modified", r.modified)
                     // Reading each file's location up front would open every original;
                     // the caption asks place() per card and an absent place stays empty.
                     put("hasLocation", true)
@@ -402,7 +418,7 @@ class PhotoLibraryPlugin : Plugin() {
             val row = one(call) ?: return@execute
             val result = JSObject().apply {
                 put("id", row.id.toString()); put("kind", if (row.video) "video" else "photo")
-                put("width", row.width); put("height", row.height); put("duration", row.duration)
+                put("width", row.width); put("height", row.height); put("duration", duration(row))
                 put("isFavorite", row.favorite); put("isHidden", false)
                 put("creationDate", row.date); put("modified", row.modified)
             }
