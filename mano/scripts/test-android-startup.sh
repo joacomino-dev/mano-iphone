@@ -7,7 +7,13 @@ APK=${1:?usage: test-android-startup.sh <apk>}
 PKG=work.joaquin.mano
 OUT=build/android-startup
 mkdir -p "$OUT"
-fail() { echo "ANDROID_STARTUP_FAILED: $*" | tee "$OUT/result.txt"; timeout 30 adb logcat -d > "$OUT/logcat.txt" 2>&1 || true; exit 1; }
+fail() {
+  timeout 30 adb logcat -d > "$OUT/logcat.txt" 2>&1 || true
+  { echo "ANDROID_STARTUP_FAILED: $*"
+    grep -E "FATAL EXCEPTION|AndroidRuntime: |COCOWASH_JS_ERROR|Capacitor/Console.*(rror|ncaught)" "$OUT/logcat.txt" 2>/dev/null | tail -5 || true
+  } > "$OUT/result.txt"
+  cat "$OUT/result.txt"; exit 1
+}
 shot() { timeout 30 adb exec-out screencap -p > "$1" 2>/dev/null || echo "screenshot skipped: $1" >&2; }
 alive() { [ -n "$(timeout 15 adb shell pidof "$PKG" 2>/dev/null | tr -d '\r')" ]; }
 

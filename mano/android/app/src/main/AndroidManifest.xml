@@ -44,6 +44,16 @@
         </provider>
     </application>
 
+    <!-- Photos and videos, read on the phone only. Android 11-12 use the storage
+         permission; 13+ the media ones; 14+ also offers «Seleccionar fotos» (partial
+         access, like iPhone's limited access). Location of a photo for the caption's
+         place name (EXIF), only with «Ubicación» on. -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
+    <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
+
     <!-- Ads (AdMob) and the place-name lookup; photos are never uploaded. -->
     <uses-permission android:name="android.permission.INTERNET" />
 </manifest>

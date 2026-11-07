@@ -26,6 +26,7 @@ import { AccessScreen, PreparingScreen, LoadErrorScreen, SessionDone, EMPTY_STAT
 import { AdRoom, AdSlot, PurchaseOptions, useMonetization } from './Monetization';
 import { readTestMode, setTestMode, readTestRounds, saveTestRounds, readAdsOff, saveAdsOff } from './testMode';
 import { useSheetDrag } from './sheetDrag';
+import { useAndroidBack } from './androidBack';
 import { DEVELOPER } from './channel';
 import { DisplaySettingsPanel } from './DisplaySettings';
 import { formatNumber, locale, parts, t, tn } from './i18n';
@@ -132,7 +133,7 @@ function Seal({ level, hide }: { level: number; hide: () => void }) {
 }
 function Sheet({ open, close, title, description, children, error, returnTo, footer }: { open: boolean; close: () => void; title: string; description: string; children: ReactNode; error?: string; returnTo: string; footer?: ReactNode }) {
   const bodyRef=useRef<HTMLDivElement>(null); const previousDialog=useRef<Element|null>(null);
-  const [sheetNode,setSheetNode]=useState<HTMLDivElement|null>(null); useSheetDrag(sheetNode,open&&isNative,close);
+  const [sheetNode,setSheetNode]=useState<HTMLDivElement|null>(null); useSheetDrag(sheetNode,open&&isNative,close); useAndroidBack(open,close);
   const restoreFocus=()=>document.getElementById(returnTo)?.focus({preventScroll:true});
   useEffect(()=>{
     if(isNative)return;
@@ -485,6 +486,7 @@ export function ManoApp() {
   const windowOf=(element:Element)=>(element.querySelector('.photo-window')??element).getBoundingClientRect();
   const openPinned=(asset:Asset,element:Element)=>{heldVideo.current=element.querySelector('video');inspectOrigin.current=windowOf(element);resetPeek();setPinnedInspect(true);setInspect(asset);haptic('rigid');};
   const closeInspect=()=>{setPinnedInspect(false);setInspect(null);haptic('soft');};
+  useAndroidBack(!!inspect,closeInspect);
   /** Proximity (0–1) to the single bottom dock; armed within 64 px after a
    * deliberate downward drag. Also checked on release, where the last move may
    * not have landed exactly on the dock. */

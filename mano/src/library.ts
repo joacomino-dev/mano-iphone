@@ -40,6 +40,8 @@ type LibraryPlugin = {
   cancelClassify(): Promise<void>;
   addListener(event: 'analysisProgress', cb: (data: { done: number; total: number }) => void): Promise<{ remove(): Promise<void> }>;
   addListener(event: 'mediaPreparationProgress', cb: (data: { requestId: string; phase?: 'download' | 'prepare'; progress: number }) => void): Promise<{ remove(): Promise<void> }>;
+  /** Android only: Back closes the open sheet or anchored view (androidBack.ts). */
+  addListener(event: 'backButton', cb: () => void): Promise<{ remove(): Promise<void> }>;
   permissionStatus(): Promise<{ status: string }>;
   openSettings(): Promise<void>;
   /** Opens an https://joaquinmino.work page in Safari (help, privacy). */
@@ -48,6 +50,8 @@ type LibraryPlugin = {
   haptic(options: { kind: HapticKind }): Promise<void>;
   place(options: { id: string }): Promise<Place & { retry?: string }>;
   diagnostic(options: { message: string }): Promise<void>;
+  /** Android only: while active, the system Back button/gesture emits `backButton`. */
+  backHandling(options: { active: boolean }): Promise<void>;
 };
 export type HapticKind = 'selection' | 'light' | 'soft' | 'medium' | 'rigid' | 'success' | 'warning' | 'error';
 export type Place = { locality?: string; region?: string; country?: string; countryCode?: string };
