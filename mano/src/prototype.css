@@ -834,7 +834,6 @@
 .done-freed{display:flex;flex-direction:column;align-items:center;gap:var(--cw-space-1);width:100%;max-width:320px;padding:var(--cw-space-4) var(--cw-space-3);border-radius:var(--cw-radius-md);background:var(--cw-paper-light);box-shadow:inset 0 0 0 1px var(--cw-line);text-align:center}
 .freed-label{font-size:var(--cw-text-sm);font-weight:500;color:var(--cw-ink-soft)}
 .freed-amount{font:600 40px/1.05 var(--cw-font-mono);letter-spacing:-.01em;color:var(--cw-turquoise-deep)}
-.freed-items{font-size:var(--cw-text-sm);color:var(--cw-ink)}
 .freed-total{margin-top:var(--cw-space-1);padding:2px var(--cw-space-3);border-radius:var(--cw-radius-pill);background:var(--cw-paper);box-shadow:inset 0 0 0 1px var(--cw-line);font-size:var(--cw-text-xs);font-weight:500;color:var(--cw-coconut-ink)}
 .done-freed small{margin-top:var(--cw-space-2);font-size:var(--cw-text-xs);line-height:1.45;color:var(--cw-ink-soft)}
 .done-later{display:flex;align-items:center;justify-content:center;gap:var(--cw-icon-gap);font-size:var(--cw-text-sm)}
@@ -970,7 +969,7 @@
 /* «Una última mirada»: letter and buttons in a fixed footer; only the photos scroll. */
 .native-sheet .sheet-footer{flex:none;padding:var(--cw-space-3) var(--cw-space-5) calc(env(safe-area-inset-bottom) + var(--cw-space-3));border-top:1px solid var(--cw-line);background:var(--cw-sheet-native)}
 /* Summary: fixed, never scrolls; the letter stays put. */
-.freed-note{max-width:30ch;font-weight:500;color:var(--cw-ink)!important}
+.freed-note{font-weight:500;color:var(--cw-ink)!important}
 
 /* ================= 9.8.3 ================= */
 /* Summary after «Eliminar»: three short steps say how to empty «Eliminado
@@ -1065,7 +1064,6 @@ input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;u
 .session-done.is-freed .done-freed{gap:0;padding:var(--cw-space-4) var(--cw-space-4) var(--cw-space-3);background:transparent;box-shadow:none}
 .session-done.is-freed .freed-amount{font-size:clamp(40px,8dvh,56px);line-height:1}
 .session-done.is-freed .freed-label{margin-top:2px;font-size:var(--cw-text-md);font-weight:600;color:var(--cw-ink)}
-.session-done.is-freed .freed-items{margin-top:var(--cw-space-2);font-size:var(--cw-text-sm);color:var(--cw-ink-soft)}
 .freed-how{display:grid;gap:6px;width:100%;margin-top:var(--cw-space-4);padding:var(--cw-space-3);border-radius:14px;background:var(--cw-surface);box-shadow:inset 0 0 0 1px var(--cw-line);text-align:start}
 .freed-how>strong{font:600 var(--cw-text-sm)/1.3 var(--cw-font);color:var(--cw-ink)}
 .freed-how .freed-steps{margin:0;padding:0;background:none}
@@ -1111,7 +1109,7 @@ input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;u
 .session-done.is-freed .freed-amount{font-size:clamp(30px,10cqh,52px)}
 .session-done:not(.is-freed) .character-pair img,.session-done:not(.is-freed) .status-character img{height:clamp(56px,22cqh,140px);width:auto}
 @container done (max-height:29.5em){.freed-note{display:none}.done-stamp{padding:6px 14px;font-size:var(--cw-text-md)}}
-@container done (max-height:25em){.freed-items{display:none}}
+@container done (max-height:25em){.freed-where{display:none}}
 @container done (max-height:17em){.character-pair,.status-character{display:none}}
 @container done (max-height:21em){.freed-how>strong{display:none}.done-later{display:none}}
 @container done (max-height:14em){.done-stats{display:none}.done-stamp{display:none}}
@@ -1139,7 +1137,6 @@ input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;u
 .session-done.is-freed .amount-unit{font-size:.4em;letter-spacing:.02em;color:var(--cw-turquoise)}
 .session-done.is-freed .freed-amount.is-plain .amount-num{font-size:.62em}
 .session-done.is-freed .freed-label{margin-top:clamp(2px,.8cqh,6px);font:600 clamp(15px,2.6cqh,19px)/1.2 var(--cw-font);color:var(--cw-ink)}
-.session-done.is-freed .freed-items{margin-top:2px;font-size:var(--cw-text-sm)}
 .session-done.is-freed .freed-how{margin-top:clamp(8px,2.4cqh,20px)}
 @container done (max-height:20em){
   .session-done.is-freed .character-pair img{height:clamp(56px,24cqh,90px)}
@@ -1155,3 +1152,16 @@ input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;u
 .session-done.is-freed:not(.has-letter)>.done-body{justify-content:space-evenly}
 .session-done.is-freed:not(.has-letter) .freed-how{padding:10px var(--cw-space-4)}
 .session-done.is-freed:not(.has-letter) .freed-steps li{font-size:var(--cw-text-md)}
+
+/* 0.9.9.1 (43): photo and video counts as small postage stamps under the amount —
+   perforated edge, each in its own ink and tilt, the number in the brand face. */
+.freed-counts{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 14px;margin-top:clamp(6px,1.6cqh,14px)}
+.count-stamp{display:inline-flex;align-items:center;gap:6px;padding:4px 12px 4px 9px;border:1.5px dashed currentColor;border-radius:8px;background:var(--cw-surface);
+  font:500 var(--cw-text-sm)/1.25 var(--cw-font);box-shadow:0 2px 6px rgba(18,45,46,.1)}
+.count-stamp strong{font:600 1.4em/1 var(--cw-font-brand);letter-spacing:-.01em}
+.count-stamp.is-photo{color:var(--cw-turquoise-deep);transform:rotate(-2.5deg)}
+.count-stamp.is-video{color:var(--cw-coconut-deep);transform:rotate(2deg) translateY(2px)}
+.count-stamp svg{flex:none}
+.freed-where{margin-top:6px;font-size:var(--cw-text-sm);color:var(--cw-ink-soft)}
+.session-done.is-freed .freed-note{white-space:nowrap}
+@container done (max-height:19em){.freed-counts{display:none}}

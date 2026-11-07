@@ -406,8 +406,6 @@ const table: Record<string, string> = {
   'No se borró nada\nSigue en tu cola': '削除していません\nリストに残っています',
   'De vez en cuando aparece un anuncio entre tus fotos. Puedes quitarlos por un año o para siempre.': '写真の合間にときどき広告が表示されます。1年間、またはずっと広告をなくせます。',
   // 9.8.3
-  '{photos} y {videos} en «Eliminado recientemente»': '{photos}と{videos}が「最近削除した項目」に',
-  '{items} en «Eliminado recientemente»': '{items}が「最近削除した項目」に',
   'Abre Fotos.': '「写真」を開く。',
   'Busca el álbum «Eliminado recientemente».': '「最近削除した項目」アルバムを開く。',
   'Toca Seleccionar › Eliminar todo.': '「選択」›「すべて削除」をタップ。',
@@ -420,7 +418,6 @@ const table: Record<string, string> = {
   'Cómo funcionan los sellos': 'スタンプのしくみ',
   // 9.8.6
   'Eliminado': '削除済み',
-  'O espera 30 días: Fotos lo vacía solo.': 'または30日待てば「写真」が自動で空にします。',
   'Desliza para ver todo lo que vas a eliminar': 'スクロールして削除するものをすべて確認',
   'Ayuda': 'ヘルプ',
   'Preguntas frecuentes': 'よくある質問',
@@ -433,5 +430,7 @@ const table: Record<string, string> = {
   'de espacio liberado, como mínimo': '以上の空き容量を確保しました',
   'Espacio liberado': '確保した空き容量',
   'Para vaciarlo ya': '今すぐ空にするには',
+  'en «Eliminado recientemente»': '「最近削除した項目」に移動しました',
+  'En 30 días, Fotos lo vacía solo.': '30日後に「写真」が自動で空にします。',
 };
 export default table;

@@ -532,3 +532,17 @@ Cambios realizados:
   de ruta al día. README raíz y de `mano/` reescritos con el estado real.
 - Web: FAQ de espacio sin «Abrir Fotos» en `web/cocowash/` (falta redesplegar).
 Validaciones: 119 Node, tsc estricto sin avisos, runtime 28, builds; resumen medido.
+CI de la build 42: `main` `42384125063` y `release` `42384128013` correctas (IPA no entregada:
+la sustituye la 43).
+
+### CW-CL-053 — 0.9.9.1 (43): fotos y vídeos como sellos; nota de 30 días en una línea
+Fecha: 2026-11-07, America/Bogota
+Agente: Claude
+Estado: completada; pendiente de prueba física.
+Cambios realizados: bajo la cifra, «7 fotos» y «2 vídeos» en dos sellos pequeños con borde
+perforado, tinta y giro propios (turquesa / café), número en Fredoka (`numbered` no toca
+las formas árabes sin cifra), y «en «Eliminado recientemente»» debajo. La nota pasa a «En 30
+días, Fotos lo vacía solo.» en una línea (7 idiomas). Claves antiguas retiradas. Prompt
+para el chat de Android en `docs/ai-handoff/PROMPT_ANDROID.md`.
+Validaciones: 119 Node, tsc estricto; resumen medido en es, de y ar con y sin carta: nota en
+una línea, nada bajo la carta ni recortado.
