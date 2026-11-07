@@ -546,3 +546,5 @@ días, Fotos lo vacía solo.» en una línea (7 idiomas). Claves antiguas retira
 para el chat de Android en `docs/ai-handoff/PROMPT_ANDROID.md`.
 Validaciones: 119 Node, tsc estricto; resumen medido en es, de y ar con y sin carta: nota en
 una línea, nada bajo la carta ni recortado.
+CI de la build 43: `main` `42385089470` y `release` `42385092530` correctas. IPA 0.9.9 (43) de
+`5e620b4`, 6 808 120 bytes, sha256 `2e7272dc…ac80`.
