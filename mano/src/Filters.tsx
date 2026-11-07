@@ -5,6 +5,7 @@ import { AnimatedNumber } from './Loader';
 import { haptic } from './haptics';
 import { ROMAN, sealRest, Stamp } from './Stamp';
 import { formatNumber, locale, t, tn } from './i18n';
+import { onAndroid } from './locales/android';
 
 /** Week days from Monday, in the app's language (narrow forms: L M X J V S D). */
 const weekDays = () => Array.from({ length: 7 }, (_, i) => new Intl.DateTimeFormat(locale, { weekday: 'narrow' }).format(new Date(2024, 0, 1 + i)));
@@ -36,6 +37,10 @@ const ORDER_HINT: Partial<Record<Order, () => string>> = {
  smallest: () => t('Primero lo más ligero.'),
 };
 const MEDIA = [['all', () => t('Todo')], ['photo', () => t('Fotos')], ['video', () => t('Vídeos')], ['live', () => t('Live Photos')]] as const;
+/** Android has no Live Photos, and no on-device text detector yet: those two choices
+ * would always be empty there, so they are not offered (ROADMAP_PLAYSTORE, P0). */
+const media = () => onAndroid() ? MEDIA.filter(([value]) => value !== 'live') : MEDIA;
+const smarts = () => onAndroid() ? SMART.filter(({ value }) => value !== 'text') : SMART;
 /** Six ranges, two columns: the four quick ones, then «Último año» and «Elegir fechas». */
 const RANGES = [['all', () => t('Cualquier fecha')], ['24h', () => t('Últimas 24 h')], ['7d', () => t('Últimos 7 días')], ['30d', () => t('Últimos 30 días')], ['1y', () => t('Último año')], ['custom', () => t('Elegir fechas')]] as const;
 
@@ -52,15 +57,15 @@ export function Filters({filter,assets,state,apply,index,preview}: {filter:Filte
  const count=pileCount(assets,state,draft);
  const smart=draft.smart??'all';
  // «Favoritas» shows how many favourites there are (as in Photos), not how many are left to review.
- const counts=Object.fromEntries(SMART.map(({value})=>[value,value==='favorites'?favoritesTotal(assets,state,draft):value===smart?count:pileCount(assets,state,{...draft,smart:value})])) as Record<Smart,number>;
+ const counts=Object.fromEntries(smarts().map(({value})=>[value,value==='favorites'?favoritesTotal(assets,state,draft):value===smart?count:pileCount(assets,state,{...draft,smart:value})])) as Record<Smart,number>;
  const visionPending=(smart==='lowQuality'||smart==='text')&&index.analyzing&&index.analyzed<index.photos;
  const sizePending=(draft.order==='largest'||draft.order==='smallest')&&index.measuring&&index.sized<index.total;
  return <div className="filters-panel">
   <fieldset><legend><BroomIcon size={18}/>{t('Filtros generales')}</legend>
-   <div className="smart-chips" role="group" aria-label={t('Filtros generales')}>{SMART.map(({value,label,icon:Icon})=><button key={value} aria-pressed={smart===value} onClick={()=>update({smart:value})}><Icon size={20} weight={smart===value?'fill':'regular'}/><span>{label()}</span><span className="chip-count" aria-label={t('{n} en la pila',{n:counts[value]})}>{formatNumber(counts[value])}</span></button>)}</div>
+   <div className="smart-chips" role="group" aria-label={t('Filtros generales')}>{smarts().map(({value,label,icon:Icon})=><button key={value} aria-pressed={smart===value} onClick={()=>update({smart:value})}><Icon size={20} weight={smart===value?'fill':'regular'}/><span>{label()}</span><span className="chip-count" aria-label={t('{n} en la pila',{n:counts[value]})}>{formatNumber(counts[value])}</span></button>)}</div>
    {(SMART.find(s=>s.value===smart)!.hint||visionPending)&&<p className="setting-note" role="status">{SMART.find(s=>s.value===smart)!.hint?.()}{visionPending&&<small>{t('Memo revisa tu fototeca en el iPhone: {done} de {total}. Irán apareciendo más.',{done:index.analyzed,total:index.photos})}</small>}</p>}
   </fieldset>
-  <fieldset><legend><ImagesIcon size={18}/>{t('Contenido')}</legend><div className="filter-chips chip-grid cols-2" role="group" aria-label={t('Contenido')}>{MEDIA.map(([value,label])=><button key={value} aria-pressed={draft.media===value} onClick={()=>update({media:value})}>{label()}</button>)}</div></fieldset>
+  <fieldset><legend><ImagesIcon size={18}/>{t('Contenido')}</legend><div className={`filter-chips chip-grid cols-2${onAndroid()?' lead-row':''}`} role="group" aria-label={t('Contenido')}>{media().map(([value,label])=><button key={value} aria-pressed={draft.media===value} onClick={()=>update({media:value})}>{label()}</button>)}</div></fieldset>
   <fieldset><legend><CalendarBlankIcon size={18}/>{t('Fecha')}</legend><div className="filter-chips chip-grid cols-2" role="group" aria-label={t('Fecha')}>{RANGES.map(([value,label])=><button key={value} aria-pressed={(draft.dateRange??'all')===value} onClick={()=>update({dateRange:value})}>{label()}</button>)}</div>
    {draft.dateRange==='custom'&&<><DateCalendar from={draft.from} to={draft.to} change={update}/>{invalid&&<small className="date-error" role="status">{t('Elige una fecha inicial y una final válidas.')}</small>}</>}
   </fieldset>

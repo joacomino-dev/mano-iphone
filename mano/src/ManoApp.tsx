@@ -28,6 +28,7 @@ import { readTestMode, setTestMode, readTestRounds, saveTestRounds, readAdsOff, 
 import { useSheetDrag } from './sheetDrag';
 import { useAndroidBack } from './androidBack';
 import { setFavorite, flushFavorites } from './favoriteQueue';
+import { onAndroid } from './locales/android';
 import { DEVELOPER } from './channel';
 import { DisplaySettingsPanel } from './DisplaySettings';
 import { formatNumber, locale, parts, t, tn } from './i18n';
@@ -667,7 +668,7 @@ export function ManoApp() {
         toward rises. In «Favoritas» the heart is on and takes items out. */}
     <DecisionBar count={targets.length} disabled={deckAd||!active||busy} favoriteOn={favView} armed={currentColor}
       onDiscard={()=>void act('discard')} onFavorite={()=>void act('favorite')} onKeep={()=>void act('keep')}/>
-    <footer className="archive-tools" inert={deckAd}><button onClick={undoLast} disabled={busy||!state.history.length} aria-label={state.history.length?t('Deshacer la última decisión'):t('Nada que deshacer')}><span className="tool-icon"><ArrowUUpLeftIcon size={24} className="flip-rtl"/></span><span className="tool-label">{t('Deshacer')}</span></button><button className="later" aria-label={targets.length>1?t('Dejar {n} para más tarde',{n:targets.length}):t('Dejar para más tarde')} disabled={!active||busy} onClick={()=>act('later')}><span className="tool-icon"><DecisionIcon kind="later" size={24}/></span><span className="tool-label">{t('Más tarde')}</span></button><button id="album-trigger" onClick={openAlbums} disabled={!active||busy}><span className="tool-icon"><FolderSimplePlusIcon size={24}/></span><span className="tool-label">{t('Álbum')}</span></button></footer>
+    <footer className="archive-tools" inert={deckAd}><button onClick={undoLast} disabled={busy||!state.history.length} aria-label={state.history.length?t('Deshacer la última decisión'):t('Nada que deshacer')}><span className="tool-icon"><ArrowUUpLeftIcon size={24} className="flip-rtl"/></span><span className="tool-label">{t('Deshacer')}</span></button><button className="later" aria-label={targets.length>1?t('Dejar {n} para más tarde',{n:targets.length}):t('Dejar para más tarde')} disabled={!active||busy} onClick={()=>act('later')}><span className="tool-icon"><DecisionIcon kind="later" size={24}/></span><span className="tool-label">{t('Más tarde')}</span></button>{/* Android keeps albums as folders (moving the original): no «Álbum» there; the empty cell keeps «Más tarde» centred. */}{onAndroid()?<span aria-hidden="true"/>:<button id="album-trigger" onClick={openAlbums} disabled={!active||busy}><span className="tool-icon"><FolderSimplePlusIcon size={24}/></span><span className="tool-label">{t('Álbum')}</span></button>}</footer>
     </div>;
   const libraryActions=<>
     <button className="sheet-action secondary" onClick={()=>void analyze(true)} disabled={analyzing}>{analyzing?<><CocoLoader size={22} progress={progress.total?progress.done/progress.total:undefined}/>{t('Buscando parecidas…')}</>:t('Buscar fotos parecidas')}</button>

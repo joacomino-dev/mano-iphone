@@ -7,7 +7,7 @@ apply plugin: 'org.jetbrains.kotlin.android'
 // Versions: versionName follows the iPhone line (0.9.9.1); versionCode is Android's
 // own build counter and must only grow (Play rejects a repeated or lower code).
 def cocoVersionName = '0.9.9.1'
-def cocoVersionCode = 2
+def cocoVersionCode = 3
 
 // AdMob. `main` (development) carries Google's sample app ID and test unit; the
 // `release` branch replaces these two lines with CocoWash's real Android IDs (like

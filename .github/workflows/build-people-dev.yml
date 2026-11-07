@@ -11,7 +11,9 @@ concurrency:
   cancel-in-progress: true
 jobs:
   development:
-    if: github.event.repository.private == false && github.ref == 'refs/heads/main'
+    # Also on demand for the android branch, to check that shared web changes keep
+    # iOS working before merging (never on a push to that branch).
+    if: github.event.repository.private == false && (github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/android'))
     # Standard public-repository runner; no large/paid runner, no deployment.
     runs-on: xcode-27
     timeout-minutes: 30
