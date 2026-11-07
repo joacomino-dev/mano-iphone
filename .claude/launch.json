@@ -6,6 +6,24 @@
       "runtimeExecutable": "C:\\Users\\Joaco\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe",
       "runtimeArgs": ["mano/node_modules/vite/bin/vite.js", "mano", "--host", "127.0.0.1", "--port", "4183", "--strictPort"],
       "port": 4183
+    },
+    {
+      "name": "cocowash-rc-dev",
+      "runtimeExecutable": "C:\\Users\\Joaco\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe",
+      "runtimeArgs": ["mano/node_modules/vite/bin/vite.js", "mano", "--host", "127.0.0.1", "--port", "4186", "--strictPort"],
+      "port": 4186
+    },
+    {
+      "name": "cocowash-rc-dist",
+      "runtimeExecutable": "C:\\Users\\Joaco\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe",
+      "runtimeArgs": ["mano/node_modules/vite/bin/vite.js", "preview", "mano", "--host", "127.0.0.1", "--port", "4187", "--strictPort"],
+      "port": 4187
+    },
+    {
+      "name": "cocowash-rc-native-dist",
+      "runtimeExecutable": "C:\\Users\\Joaco\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe",
+      "runtimeArgs": ["mano/node_modules/vite/bin/vite.js", "preview", "mano", "--config", "mano/vite.native.config.ts", "--host", "127.0.0.1", "--port", "4188", "--strictPort"],
+      "port": 4188
     }
   ]
 }

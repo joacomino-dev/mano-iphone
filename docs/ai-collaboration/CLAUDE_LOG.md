@@ -671,3 +671,27 @@ Validaciones: 123 Node, tsc estricto, runtime 28, ficha de Play; CI en `main`: i
 (E2E 17/17; el anuncio de prueba no se sirve en el emulador).
 Nota: la copia `CocoWash-b24` sigue en `claude/cocowash-9.8.6` (= build 43); para seguir con
 iOS desde ella, actualizarla con `git pull` cuando no haya cambios sin guardar.
+
+### CW-CL-059 — Integración de la RC iOS (Codex 8fdd2bf) sobre `main` con Android
+Fecha: 2026-11-07, America/Bogota
+Agente: Claude
+Tarea: integrar, cargar y verificar la RC de CW-CX-018/019/020 sin rehacerla; compatible con el último build.
+Estado: integrada local en `claude/rc-android-integration` (sin push); nativo BLOCKED.
+Base Git / commit: `CocoWash-android`, rama nueva desde `main`/`android` `a4f765d` (limpio); merge `--no-ff` de
+`8fdd2bf` → `bc6db8c`. `8fdd2bf` y `a4f765d` son ancestros; `android`, `main` y `claude/cocowash-9.8.6` intactos.
+Archivos modificados: conflictos en `ManoApp.tsx`, `privacy.html`, `privacidad.html`, `CURRENT_STATE.md`; `library.ts`.
+Cambios realizados:
+- `ManoApp`: `setFavorite`/`flushFavorites` de Android dentro de la invalidación de snapshots de Codex (favorita,
+  deshacer, antes/después de borrar); `flushFavorites` sigue antes del borrado Android; iPhone delega igual que la RC.
+- Políticas ES/EN: correcciones RC + menciones y apartado «En teléfonos Android».
+- `library.ts`: `backHandling` (solo Android) pasa a `AndroidLibraryPlugin`; `LibraryPlugin` vuelve a ser el contrato
+  común con `PhotoLibrary.swift` (el contrato estático de la RC fallaba en el árbol fusionado). Sin Swift ni test tocados.
+Decisiones relevantes: rama = canal de tienda de la RC (`DEVELOPER=false`, IDs AdMob iOS comerciales en Release).
+No va a `main` tal cual: `build-people-dev.yml` exige `DEVELOPER = true` e ID de muestra. Versiones sin cambios.
+Validaciones: 124 Node (120 RC + 4 Android), 6 Release, 4 contratos, `check-release` PASS 0.9.9/43, tsc, runtime 28,
+builds web/native-web, Sites 4, sync iOS Windows; navegador 19+9+10+6+8 = 52 PASS (Edge, puente sintético).
+Carga: `vite preview` de `dist/client` en 4187; JS servido sha256 `18c919cf…042da` = compilado. Privacidad normal PASS,
+`--submission` FAIL (P1 dominios). Gate Apple exit 78; sin JDK/SDK Android.
+Impacto para Codex: revisar que la invalidación alrededor de la cola Android (sin mutación nativa inmediata) es aceptable
+y si el `flushFavorites()` de fin de ronda necesita la misma protección. Pendiente variante de desarrollo para `main`.
+Pendientes: P1 dominios; Swift/PhotoKit/simulador/hardware; APK/AAB de esta base en CI; publicar políticas; push/CI.

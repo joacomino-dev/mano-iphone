@@ -2,6 +2,17 @@
 
 Actualizado: 2026-11-07, America/Bogota. Codex trabaja solo por indicación del usuario.
 
+## Integración RC iOS + Android — `claude/rc-android-integration` `bc6db8c` (Claude, CW-CL-059)
+
+Local, sin push. `main`/`android` (`a4f765d`, Android build 3) + RC Codex `8fdd2bf` (cadena completa
+desde `691cded`), merge sin pérdida en ninguno de los dos lados. Canal de **tienda** (como la RC):
+`DEVELOPER=false`, IDs AdMob iOS comerciales en Release; no fusionar tal cual en `main` (su CI de
+desarrollo exige el canal developer). Versiones: 0.9.9 (43) iOS, visible 0.9.9.1, Android versionCode 3.
+PASS: 124 Node, 6 Release, 4 contratos, tsc, runtime 28, builds, Sites 4, 52 casos de navegador.
+FAIL: privacidad `--submission` (P1 dominios). BLOCKED: Swift/PhotoKit/hardware, APK/AAB de esta base,
+firma/TestFlight, publicación de las políticas (la web sigue con la versión anterior).
+Versión web cargada y verificada; compilación/instalación nativa iOS pendiente.
+
 ## Android en `main`: 0.9.9.1, build Android 3 (Claude)
 
 CW-CL-054 a CW-CL-057. El usuario aprobó fusionar la rama `android` en `main` (fast-forward,
