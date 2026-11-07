@@ -23,6 +23,10 @@ Un riesgo pendiente de probar no se presenta como fallo reproducido.
 | APL-012 | P2 | SPM transitivo sin Package.resolved seguido; UMP real 3.1.0 en CI | PENDIENTE conservar resolución del archivo y evaluar actualización solo si se justifica | Resolver en macOS y comparar diffs/licencias/manifiestos |
 | APL-013 | P2 | Persistencia agrupada hasta 350 ms; procesos terminados sin lifecycle pueden perder decisiones recientes | PENDIENTE prueba de interrupción en límites de escritura | Comprobar envelope/undo tras kill; no cambiar almacenamiento sin reproducción |
 | APL-014 | P3 | Vite avisa de chunks >500 kB (native JS ~910 kB sin gzip) | Registrado, sin cambio masivo ni subir el umbral del aviso | Perfilar arranque real antes de dividir módulos |
+| APL-015 | P0 | Fase2: snapshot manual retenido vaciaba removed tras éxito de borrado | Corregido en b463bd2; generación y guards tras await en connect | FAIL antes/PASS después con puente; falta nativo |
+| APL-016 | P0 | Fase2: Recuperar individual activo con solicitud de eliminación pendiente | Corregido en b463bd2; disabled y guards, restaurados al cancelar | FAIL antes/PASS después; falta PhotoKit real |
+| APL-017 | P1 | Fase2: confirmar una mutación descartaba la respuesta pendiente de revocación | Corregido en13dae6f; vigencia de permisos separada de snapshots | FAIL antes/PASS después; falta WKWebView |
+| APL-018 | P2, prueba | Coordenada8/8 de test caía fuera de la esquina42px del preview | Punto real en overlay con hit-test previo; mismas aserciones de animación | 8/8 Edge; runtime protegido intacto |
 
 ## Secuencia de correcciones y puertas
 
@@ -54,3 +58,9 @@ Recibos: [baseline de permisos](evidence/before-web.json),
 [insets antes](evidence/safe-before.json),
 [revocación durante enumeración](evidence/inflight-before.json),
 [validación final](evidence/final-web.json).
+
+Fase2: [reproducciones y resultados](evidence/phase2/README.md),
+[informe](PHASE2.md). Los commits locales conservan puntos de control; no se
+confunden estas verificaciones de puente/JS con aceptación nativa o publicación.
+APL-009/013 tienen ahora un perfil de metadatos Node reproducible; RAM/CPU/energía
+de medios reales y terminación de iOS continúan NO VERIFICABLES EN ESTE ENTORNO.

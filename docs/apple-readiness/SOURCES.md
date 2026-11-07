@@ -42,3 +42,11 @@ Las páginas de [privacidad en inglés](https://joaquinmino.work/cocowash/privac
 [español](https://joaquinmino.work/cocowash/privacidad.html) y
 [soporte](https://joaquinmino.work/cocowash/) devolvieron HEAD HTTPS 200.
 El recibo de disponibilidad no certifica exactitud de los textos o cumplimiento jurídico.
+
+## Fase 2
+
+Se reconsultaron los requisitos de envío, Guidelines, Capacitor8, preparación Duo
+y lista iOS27; se añadió [TestFlight overview](https://developer.apple.com/help/app-store-connect/test-a-beta-version/testflight-overview/)
+para el procedimiento. No se consultó una cuenta ASC ni se crearon certificados.
+La validez de firma, builds disponibles y permisos administrativos no se infiere
+de documentación pública. Fuentes/ejecuciones en [PHASE2](PHASE2.md).

@@ -70,3 +70,15 @@ No enviar hasta cerrar P0/P1 aplicables de [ISSUES](ISSUES.md), demostrar el can
 `release` firmado sin flags de desarrollo y completar los campos reales de ASC.
 El valor `ITSAppUsesNonExemptEncryption=false` está declarado; la respuesta de
 exportación debe contrastarse con el binario final, incluidos los SDK externos.
+
+## Actualización Fase 2
+
+Se reconsultaron Guidelines, requisitos de SDK y guía TestFlight oficiales. Sin
+cambios de política comercial o nuevos servicios. Los checks estáticos pasan para
+registros/handlers TS-Swift, escena, mínimo, bundle y recursos; plist/manifiesto
+parsean como XML. **No son una compilación Swift ni un informe de privacidad Apple.**
+
+Se añadieron protecciones frente a respuestas fuera de orden y recuperación durante
+el borrado; [evidencia](PHASE2.md). Se mantiene pendiente validar PhotoKit,
+consentimiento/StoreKit nativos, etiquetas/manifiestos agregados, destinos y firma.
+Procedimiento administrativo/técnico concreto en [TESTFLIGHT](TESTFLIGHT.md).

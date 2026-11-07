@@ -1,5 +1,8 @@
 # Evidencia de CW-CX-018
 
+Actualización: [recibos de Fase2 / CW-CX-019](phase2/README.md). Lo que sigue
+conserva el snapshot de Fase1 anterior a los commits de control.
+
 Todos los medios son fixtures/postales, sin fotos personales ni secretos.
 
 - [baseline.json](baseline.json): SHA/rama/Node/remoto y hashes de los 247 archivos

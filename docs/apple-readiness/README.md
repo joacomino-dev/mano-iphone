@@ -2,6 +2,12 @@
 
 Fecha: 2026-11-07 · responsable de esta intervención: Codex (CW-CX-018).
 
+**Actualización Fase 2 — CW-CX-019:** [resultados ejecutados](PHASE2.md) y
+[protocolo físico/TestFlight](TESTFLIGHT.md). Checkpoint `9ff2734`; correcciones
+adicionales `b463bd2` y `13dae6f`. Sin push, firma, subida o publicación.
+Pasan 119 Node, 19 escenarios iniciales, 9 de seguridad ampliada, 8 del runtime
+en Edge, 4 contratos estáticos y Sites4; native-web no acredita Swift.
+
 **Estado: preparación local avanzada; publicación bloqueada por validación nativa,
 dispositivos y configuración de distribución. No es una certificación App Review.**
 
@@ -13,8 +19,9 @@ build 43; package npm 0.1.0. Se conservan esas versiones.
 El checkout usado es `C:/Users/Joaco/Developer/CocoWash-b24`, rama existente
 `claude/cocowash-9.8.6`, limpio al iniciar. La copia OneDrive estaba en 0.7
 (`76744e2`), divergente y con trabajo local: no se actualizó ni se sobrescribió.
-Las correcciones de esta entrega están **solo en el árbol de trabajo**, sin commit,
-integración en `main`/`release`, push, nueva CI, firma ni instalación física.
+Las correcciones de la Fase 1 quedaron conservadas en el checkpoint `9ff2734`.
+Las fases 1/2 siguen pendientes de integrar en `main`/`release` y de nueva CI,
+firma e instalación física. Las métricas Node no son mediciones de iPhone.
 
 ## Documentos mantenidos
 
@@ -26,6 +33,8 @@ integración en `main`/`release`, push, nueva CI, firma ni instalación física.
 - [Auditoría de interfaz y límites Duo](UI_AUDIT.md).
 - [Fuentes oficiales consultadas](SOURCES.md).
 - [Evidencias y recibos](evidence/README.md).
+- [Fase 2 y métricas verificadas](PHASE2.md).
+- [Procedimiento físico y TestFlight](TESTFLIGHT.md).
 
 ## Estado comprobado
 

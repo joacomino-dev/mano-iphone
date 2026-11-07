@@ -1,0 +1,16 @@
+{
+  "at": "2026-11-07T19:29:29.076Z",
+  "boundary": "Edge + synthetic Capacitor fixture; not PhotoKit or native-device execution",
+  "results": [
+    {
+      "name": "manual refresh: old snapshot cannot resurrect a confirmed deletion",
+      "status": "FAIL",
+      "error": "manual refresh erased confirmed removals\n+ actual - expected\n\n+ []\n- [\n-   'fixture-0'\n- ]\n"
+    },
+    {
+      "name": "pending deletion: individual recovery cannot contradict an in-flight system operation",
+      "status": "FAIL",
+      "error": "individual recovery remained active after deletion was submitted\n\nfalse !== true\n"
+    }
+  ]
+}

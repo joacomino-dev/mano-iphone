@@ -75,3 +75,32 @@ La disponibilidad en Mac se administra aparte del target de Xcode:
 Registrar modelo real/identificador o UDID sintético de simulador, OS y build,
 Xcode/SDK, SHA de fuente, permisos, conjunto demo, pasos, resultado y artefactos.
 Una captura Edge, un build arm64 o un test en otro iPhone no satisfacen ese criterio.
+
+## Evaluación del mínimo y cobertura — Fase 2
+
+**Recomendación: conservar iOS17.** No se encontró un motivo comprobado para
+elevarlo ni existe evidencia que permita rebajarlo a15/16. Capacitor permite15,
+pero la combinación completa de código/StoreKit/Swift/medios debe verificarse en
+el mínimo elegido, no inferirse del runtime de Capacitor. API de estética está
+guardada en18; Personas/Breakup/Media Intelligence no son requisitos actuales.
+No se encontró enlace a Media Intelligence en el proyecto actual inspeccionado.
+
+| Criterio | Evaluación técnica / puerta pendiente |
+| --- | --- |
+| Cobertura | 17 conserva XR/XS/XS Max y SE2/3 como candidatos, más cohortes posteriores dentro de sus OS de fábrica; no se da porcentaje de mercado sin datos |
+| Dependencias/API | Versiones fijadas y configuración17 coherentes en cuatro checks estáticos; falta compilación y ejecución del mínimo con Apple |
+| Rendimiento | SE/compactos y XR/XS son la prioridad de memoria/decodificación; el perfil Windows muestra coste de serialización con 50k marcas, no rendimiento de esos teléfonos |
+| Seguridad | Deployment17 no acredita un parche seguro o mantenido. Reconsultar actualizaciones de seguridad de Apple para cada OS y usar el parche aplicable más reciente en QA; no prometer mantenimiento de Apple por fijar un mínimo |
+| Mantenimiento | 17/18/26/27.1 requieren cohortes separadas; ampliar a15/16 añadiría combinaciones sin evidencia ni necesidad justificada |
+
+| Cohorte | Clase de ventana web ensayada (no tamaño nativo acreditado) | Riesgo / capacidades |
+| --- | --- | --- |
+| SE y compactos | 375×667, 375×812; estrés320×568 | Menor margen para miniaturas/vídeo y texto; UIKit/PhotoKit/Vision básicos, sin exigir Neural Engine/Face ID |
+| Estándar / notch / Island | 390×844 | Cambios de permisos, reanudación y overlays; safe areas reales pendientes |
+| Plus / Pro Max | 440×956 | Archivos de alta resolución, HDR y vídeos largos; pantalla amplia no garantiza memoria suficiente |
+| Duo / especial | Estrés890×626 y360×626, resize dinámico | No presets oficiales; escenas/displays, cámara y bisagra requieren Device Hub/hardware |
+
+**Estado de ejecución por modelo:** ninguna nueva fila de simulador Apple o
+hardware se acredita en esta fase. Windows no dispone de esos SDKs. Las listas
+oficiales 26/27 y las fichas 18 Pro/Max/Duo se reconsultaron; no se añadió una
+variante de iPhone que Apple no documentara. [Detalle](PHASE2.md).

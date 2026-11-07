@@ -261,3 +261,16 @@ Decisiones relevantes: mínimo configurado 17 conservado; Duo no acreditado; sin
 Validaciones: 119 Node antes/después, 19 escenarios Edge con puente ficticio, Sites4, runtime28, tsc y builds. Baseline de 247 fuentes: solo dos existentes cambian. CI base consultada, no del diff.
 Impacto para Claude: preservar esta corrección local al integrar; snapshots históricos no son el estado actual.
 Pendientes: macOS/PhotoKit, iOS mínimo, Duo, hardware, privacidad agregada, firma/TestFlight/ASC.
+
+### CW-CX-019 — Seguridad asíncrona y gate nativo/TestFlight
+Fecha: 2026-11-07, America/Bogota.
+Agente: Codex.
+Tarea: Fase2 autorizada; consolidar build43 y ejecutar validaciones posibles.
+Estado: verificada local; integración y ejecución nativa pendientes.
+Base Git / commit: 691cded; checkpoint 9ff2734; correcciones b463bd2 y 13dae6f.
+Archivos modificados: ManoApp/ReviewGrid, tests/fixtures/config Edge, gate macOS, documentación/evidencia.
+Cambios realizados: guard manual refresh; bloqueo de Recuperar pendiente; permiso independiente de snapshots; coordenada válida de test. [Informe](../apple-readiness/PHASE2.md).
+Decisiones relevantes: mínimo17/identidad/Swift/dependencias/monetización conservados; sin push/distribución.
+Validaciones: 119 Node, 19 regresiones, 9 seguridad, 8 runtime Edge, 4 contratos estáticos, Sites4, runtime28, tsc/builds; métricas Node 1k/10k/50k. Fallos reproducidos antes y corregidos. Bash sintaxis PASS; nativo no disponible, exit78.
+Impacto para Claude: preservar commits locales y guards al integrar; no confundir fixture con PhotoKit real.
+Pendientes: macOS/PhotoKit, hardware/Duo, Instruments/accesibilidad, privacidad agregada, firma/ASC/TestFlight.

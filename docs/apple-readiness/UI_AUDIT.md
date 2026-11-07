@@ -65,3 +65,9 @@ validar disponibilidad/fallback y el contrato de los dos displays.
 
 No se ejecutó App Resizability ni Device Hub en Windows. No se usaron opciones
 ocultas del simulador ni se asumieron insets a partir de resolución física.
+
+Fase2: suite del runtime8/8 en Edge; clic de esquina inválida corregido solo en
+test, con hit-test y mismas aserciones de salida. Recuperar individual ahora se
+deshabilita mientras Fotos procesa borrado y vuelve al cancelar. No se alteran
+arte, animaciones o composición; VoiceOver/Dynamic Type/teclado de iOS siguen
+NO VERIFICABLES EN ESTE ENTORNO. Ver [PHASE2](PHASE2.md).

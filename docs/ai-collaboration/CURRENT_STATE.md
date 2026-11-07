@@ -1,5 +1,21 @@
 # CocoWash — estado vigente
 
+## Fase 2 Apple — 2026-11-07 (CW-CX-019)
+
+Checkpoint autorizado: `9ff2734`, después de repetir todos los gates de Fase1.
+Correcciones verificadas en `b463bd2` y `13dae6f`: refresco manual obsoleto,
+Recuperar durante borrado pendiente y revocación fuera de orden. Resultado local:
+119 Node +19 regresiones +9 seguridad +8 runtime Edge +4 contratos estáticos +Sites4;
+runtime28, TypeScript y builds PASS. El test de esquina se corrigió con hit-test,
+sin modificar runtime/arte. Perfil sintético1k/10k/50k medido, no extrapolado a iOS.
+
+[Informe/evidencia Fase2](../apple-readiness/PHASE2.md) y
+[protocolo TestFlight](../apple-readiness/TESTFLIGHT.md). Gate macOS preparado;
+en Windows devuelve78 (sin Xcode/Swift). Pendientes: compilar/ejecutar este diff
+nativamente, PhotoKit destructivo con fixtures, mínimo17/26/27.1 y Duo, recursos/
+accesibilidad físicos, privacidad agregada, firma/cuenta/ASC. Sin push/distribución,
+cambios de identidad, monetización o Personas. No declarar lista para publicar.
+
 ## Prioridad Apple / App Store — 2026-11-07 (CW-CX-018)
 
 Por petición directa del usuario, Codex auditó build 43 sobre

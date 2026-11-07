@@ -163,3 +163,23 @@ compras reales ni cambiar cuentas del usuario como parte de una prueba automatiz
 Salida: cero P0 abiertos y P1 aplicables cerrados con evidencia; problemas P2
 documentados/aceptados; compatibilidad/marketing coinciden con lo probado; campos,
 cuentas y contratos reales completos. Publicación requiere autorización separada.
+
+## Comandos añadidos y ejecutados en Fase 2
+
+Con Vite existente en4186, desde mano:
+
+```powershell
+node tests/apple-safety.mjs
+node --experimental-strip-types --test tests/native-contract.test.mjs
+node node_modules/@playwright/test/cli.js test --config playwright.apple.config.ts --reporter=line
+node --experimental-strip-types --expose-gc tests/benchmark-apple-readiness.mjs
+```
+
+`apple-safety` usa las mismas variables de URL/browser/output y filtro de nombre
+de la suite inicial. El benchmark acepta APPLE_PERF_OUTPUT. El config runtime
+solo cambia canal a Edge y reutiliza servidor; no cambia aserciones/tiempos ni el
+runtime. Son pruebas de navegador o estáticas, nunca PhotoKit simulado como real.
+
+Se preparó `bash scripts/validate-apple-native.sh`: en este Windows devuelve78,
+NO VERIFICABLE. Ver [PHASE2](PHASE2.md) y [TESTFLIGHT](TESTFLIGHT.md). El antiguo
+“test:runtime no ejecutado” de Fase1 ya tiene resultado nuevo en perfil Edge:8/8.
