@@ -601,3 +601,8 @@ Pendientes en `localStorage`; «Cancelar» descarta ese lote. iPhone sin cambios
 (`Library.favorite` directo). Texto Android de la favorita en 7 idiomas: «al terminar, pasa a
 favoritas de tu galería». Android versionCode 2.
 Validaciones: 123 Node (3 nuevas de la cola), tsc estricto, runtime 28.
+CI [42394432299](https://github.com/joacomino-dev/mano-iphone/actions/runs/42394432299)
+correcta (el primer arranque falló por un cierre de `UiAutomation`, no de la app; la prueba
+ahora solo cuenta cierres de `work.joaquin.mano`). APK
+`C:/Users/Joaco/Downloads/CocoWash-0.9.9.1-android-build2-12745dc.apk`, 14 552 290 bytes,
+sha256 `2afd3e0b…9011`.

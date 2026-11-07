@@ -39,7 +39,8 @@ alive || fail 'process died after relaunch'
 shot "$OUT/relaunch.png"
 
 timeout 30 adb logcat -d > "$OUT/logcat.txt" 2>&1 || true
-if grep -q "FATAL EXCEPTION" "$OUT/logcat.txt"; then fail 'crash in logcat'; fi
+# Only CocoWash's own crashes count (UiAutomation, used for the screen dump, can crash on its own).
+if grep -A2 "FATAL EXCEPTION" "$OUT/logcat.txt" | grep -q "Process: $PKG,"; then fail "crash of $PKG in logcat"; fi
 if grep -q "ANR in $PKG" "$OUT/logcat.txt"; then fail 'ANR in logcat'; fi
 grep -E "Capacitor/Console|Capacitor" "$OUT/logcat.txt" > "$OUT/capacitor.txt" || true
 grep -q "Loading app at https://localhost" "$OUT/logcat.txt" || fail 'web app did not load'
