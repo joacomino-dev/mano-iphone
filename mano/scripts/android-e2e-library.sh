@@ -9,7 +9,13 @@ sh() { timeout 60 adb shell "$@"; }
 sh mkdir -p /sdcard/DCIM/Camera /sdcard/Pictures/Screenshots /sdcard/Movies
 for i in 1 2 3; do sh screencap -p "/sdcard/DCIM/Camera/cocowash-test-$i.png"; sleep 1; done
 sh screencap -p /sdcard/Pictures/Screenshots/Screenshot_cocowash-test.png
-timeout 30 adb shell screenrecord --time-limit 3 /sdcard/Movies/cocowash-test.mp4 || true
+# A known-good 3 s test pattern when the runner has ffmpeg (the emulator's own screen
+# recording is sometimes almost empty); otherwise a screen recording.
+if command -v ffmpeg >/dev/null 2>&1 && timeout 60 ffmpeg -loglevel error -y -f lavfi -i testsrc=duration=3:size=640x360:rate=15 -pix_fmt yuv420p "${RUNNER_TEMP:-/tmp}/cocowash-test.mp4"; then
+  timeout 60 adb push "${RUNNER_TEMP:-/tmp}/cocowash-test.mp4" /sdcard/Movies/cocowash-test.mp4 >/dev/null
+else
+  timeout 30 adb shell screenrecord --time-limit 3 /sdcard/Movies/cocowash-test.mp4 || true
+fi
 for file in /sdcard/DCIM/Camera/cocowash-test-1.png /sdcard/DCIM/Camera/cocowash-test-2.png /sdcard/DCIM/Camera/cocowash-test-3.png \
             /sdcard/Pictures/Screenshots/Screenshot_cocowash-test.png /sdcard/Movies/cocowash-test.mp4; do
   sh am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d "file://$file" >/dev/null 2>&1 || true

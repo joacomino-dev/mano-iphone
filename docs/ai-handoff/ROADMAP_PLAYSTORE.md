@@ -165,3 +165,42 @@ Nunca en el repositorio ni en los registros. La CI lee estos secretos (todos opc
 
 Sin ellos, el APK usa una clave desechable (hay que desinstalar el anterior) y el AAB sale
 sin firmar.
+
+## Auditoría crítica (2026-11-07, tras probar el usuario en el navegador)
+
+Comparación visual (`mano/tests/qa-android-compare.mjs`, capturas en `work/qa-android-compare/`):
+la interfaz es la misma en iPhone y Pixel 10; cambian el marco del sistema y los textos de
+plataforma. Fallos visibles en Android: «Live Photos» en Filtros › Contenido, «Texto y
+documentos» siempre vacío en un teléfono real (sin detector), «Álbum» sin función.
+
+**P0 · antes de la prueba cerrada**
+1. U: teléfono Android 11+ (Play Console exige verificar uno; sin él no hay cuenta).
+2. C: ocultar en Android «Live Photos», «Texto y documentos» (hasta el detector) y «Álbum».
+3. C: E2E del emulador en verde (papelera cancelar/confirmar, Atrás, carta de anuncio).
+4. C + U aprueba: fusionar `android` en `main` con la CI de iOS en verde (código web compartido).
+5. U + C: keystore de desarrollo en secretos (APK que se instala encima).
+
+**P1 · antes de pedir producción**
+6. C: detector de texto LiteRT incluido (16 KB, sin red).
+7. C: «parecidas» con embedder LiteRT (mejora «Mejor toma»).
+8. C + U (IDs): rama `release` Android (IDs reales, `DEVELOPER=false`, AAB firmado, comprobación sin anuncios de prueba).
+9. C + U (clave): verificar la firma de compras con la clave de licencias.
+10. C: carta de anuncio con Fredoka y espejo RTL; captura con anuncio de prueba.
+11. C: vídeo a pantalla completa dentro de la app.
+12. Testers + informe previo: rendimiento (10 000+), gama baja, letra grande, TalkBack, árabe.
+
+**P2 · después**: animación del Atrás predictivo, vibración por gama, icono temático.
+
+## Ruta de publicación (con anuncios)
+
+| Etapa | Cuándo | Quién | Pasa cuando |
+|---|---|---|---|
+| Teléfono, cuenta Play Console, grupo de 15–20 testers | días 1–3 | U | cuenta verificada, grupo ≥ 15 |
+| AdMob Android + mensajes, web redesplegada, app en Play Console, App Signing + clave de subida, productos + licencias de prueba, ficha/datos/declaraciones/IARC | días 2–6 | U + C | AAB firmado sin IDs de prueba, ficha completa |
+| Prueba interna + informe previo al lanzamiento | días 5–7 | U + C | sin fallos graves, compras de prueba OK |
+| Prueba cerrada (≥ 12 testers, 14 días seguidos, una actualización por semana) | días 7–21 | U + testers + C | 14 días cumplidos, sin P0/P1 abiertos |
+| Solicitud de producción (cuestionario) | día ~22 | U (C redacta) | aprobada (≤ 7 días normalmente) |
+| Producción escalonada 10 → 50 → 100 %, vincular AdMob, `app-ads.txt` verificado | días ~25–35 | U + C | vitals sanos, anuncios sirviendo |
+
+Riesgos: sin teléfono (bloquea todo), prueba cerrada floja, declaración del permiso de fotos,
+anuncio en la pila (política de anuncios: etiqueta y sin toques accidentales), romper iOS al fusionar.
