@@ -77,10 +77,12 @@ Pendiente: las dos decisiones de abajo, prueba en un teléfono real y «parecida
 (fase 3).
 
 **Decisiones abiertas (U):**
-- *Favoritas*: Android pide confirmación del sistema en cada `createFavoriteRequest`. Opciones:
-  un diálogo en cada deslizamiento hacia arriba, o guardarlas en CocoWash y pasarlas a la
-  galería todas juntas al terminar la ronda (un solo diálogo). `MANAGE_MEDIA` quitaría los
-  diálogos, pero también el de la papelera: descartado.
+- ~~*Favoritas*~~ — decidido (usuario, 2026-11-07): **juntas al terminar la ronda**. En
+  Android el corazón es decisión de CocoWash al instante y llega a la galería en un lote al
+  abrirse el resumen (un diálogo para añadir y otro, si hace falta, para quitar). Antes de
+  «Eliminar» se envían primero los corazones quitados de esos elementos. Pendientes guardados
+  en `localStorage` si se cierra la app; «Cancelar» en el diálogo descarta ese lote
+  (`favoriteQueue.ts`). `MANAGE_MEDIA` descartado: quitaría también el diálogo de la papelera.
 - *Álbum*: en Android los álbumes son carpetas; añadir a uno movería o copiaría el original.
   Hoy el plugin lo rechaza; propuesta: ocultar «Álbum» en Android.
 

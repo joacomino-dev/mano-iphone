@@ -586,3 +586,18 @@ correcta: APK + AAB, minSdk 30 / targetSdk 36, 16 KB, emulador Android 15 (arran
 relanzamiento sin fallos, introducción visible de borde a borde, permiso `notDetermined`).
 APK de desarrollo `C:/Users/Joaco/Downloads/CocoWash-0.9.9.1-android-build1-4412172.apk`,
 14 551 790 bytes, sha256 `73c72c85…8f42` (clave de depuración desechable). AAB sin firmar.
+
+### CW-CL-055 — Android build 2: favoritas juntas al terminar la ronda
+Fecha: 2026-11-07, America/Bogota
+Agente: Claude
+Estado: completada en la rama `android`; pendiente de teléfono real.
+Decisión del usuario: en Android las favoritas pasan a la galería **juntas al terminar**.
+Cambios realizados: `favoriteQueue.ts` (+ `favoritePending.ts`, puro): en Android
+`setFavorite` guarda el cambio (marcar y desmarcar antes de terminar no envía nada) y
+`flushFavorites` lo manda con `createFavoriteRequest` en un lote al mostrarse el resumen
+(un diálogo para añadir, otro para quitar si hace falta); antes de «Eliminar» se envían los
+corazones quitados de esos elementos, para que la comprobación de favoritas no los proteja.
+Pendientes en `localStorage`; «Cancelar» descarta ese lote. iPhone sin cambios
+(`Library.favorite` directo). Texto Android de la favorita en 7 idiomas: «al terminar, pasa a
+favoritas de tu galería». Android versionCode 2.
+Validaciones: 123 Node (3 nuevas de la cola), tsc estricto, runtime 28.

@@ -27,6 +27,7 @@ import { AdRoom, AdSlot, PurchaseOptions, useMonetization } from './Monetization
 import { readTestMode, setTestMode, readTestRounds, saveTestRounds, readAdsOff, saveAdsOff } from './testMode';
 import { useSheetDrag } from './sheetDrag';
 import { useAndroidBack } from './androidBack';
+import { setFavorite, flushFavorites } from './favoriteQueue';
 import { DEVELOPER } from './channel';
 import { DisplaySettingsPanel } from './DisplaySettings';
 import { formatNumber, locale, parts, t, tn } from './i18n';
@@ -467,12 +468,12 @@ export function ManoApp() {
     const action:Action=favView&&requested==='favorite'?'unfavorite':requested;
     if(favView&&action==='discard'){haptic('warning');setNotice(t('Las favoritas\nno se eliminan'));return false;}
     setBusy(true);setError('');haptic(action==='favorite'||action==='unfavorite'?'medium':action==='later'?'soft':'light');try{
-    if((action==='favorite'||action==='unfavorite')&&!demo)await Library.favorite({ids,value:action==='favorite'});
+    if((action==='favorite'||action==='unfavorite')&&!demo)await setFavorite(ids,action==='favorite');
     record(action,ids);return true;
   }catch(e){haptic('error');messageError(e);return false;}finally{setBusy(false);}};
   const undoLast=async()=>{if(busy)return;const last=state.history.at(-1);if(!last)return;setBusy(true);try{
     let missing=0;let missingIds:string[]=[];
-    if((last.action==='favorite'||last.action==='unfavorite')&&!demo){const result=await Library.favorite({ids:last.ids,value:last.action==='unfavorite',ignoreMissing:true});missing=result.missing.length;missingIds=result.missing;}
+    if((last.action==='favorite'||last.action==='unfavorite')&&!demo){const result=await setFavorite(last.ids,last.action==='unfavorite',true);missing=result.missing.length;missingIds=result.missing;}
     const undone=last.action;haptic('soft');if(undone!=='unfavorite')setStats(previous=>({...previous,[undone]:Math.max(0,previous[undone]-last.ids.length)}));
     // Back to the very hand the decision was made on, in the order it was shown.
     setState(undo);const previous=last.context;setLock(restoreHand(previous,last.ids));setSelected(previous?.selected??[]);if(previous?.filter)setFilter(previous.filter);if(missing)setNotice(missing===last.ids.length?t('Ya no está\nen Fotos'):t('Algunas ya no\nestán en Fotos'));setSpoken(t('Última decisión deshecha'));
@@ -574,6 +575,9 @@ export function ManoApp() {
   const openAlbums=async()=>{if(!targets.length)return;setSheet('albums');setCreatingAlbum(false);setNewAlbum('');setError('');try{setAlbums(demo&&albums.length?albums:demo?[{id:'viajes',title:t('Viajes')},{id:'recuerdos',title:t('Recuerdos')},{id:'familia',title:t('Familia')}]:(await Library.albums()).albums);}catch(e){messageError(e);}};
   const addAlbum=(album:Album)=>void saveToAlbum(async()=>{if(!demo)await Library.addToAlbum({ids:targets,albumId:album.id});return {title:album.title};});
   const commitDelete=async()=>{if(busy)return;setBusy(true);setError('');const ids=reviewAssets.map(a=>a.id);try{
+    // Android: a heart removed this round reaches the gallery first, or the system
+    // would still protect that item as a favourite (no-op on the iPhone).
+    if(!demo)await flushFavorites(ids);
     const result=demo?{deleted:ids}:await Library.deleteAssets({ids});
     // The reward: what this deletion frees (measured weights; «al menos» when some
     // were unknown), counted for the round and for CocoWash as a whole.
@@ -590,6 +594,8 @@ export function ManoApp() {
   const allowed=permission==='authorized'||permission==='limited';
   // No landing page: once onboarded and allowed, the session (or its resume) starts by itself.
   useEffect(()=>{if(onboarded&&allowed&&connected&&!session&&!showDone&&!warming&&!loading&&!loadError)void beginSession();},[onboarded,allowed,connected,session,showDone,warming,loading,loadError]);
+  // Android: the round's favourites reach the gallery together, in one system dialog.
+  useEffect(()=>{if(showDone&&!demo)void flushFavorites();},[showDone,demo]);
   useEffect(()=>{setDecidedHere(new Set());},[filterKey]);
   // «Modo de prueba» never runs out: when fewer than eight cards remain, another
   // round of postcards is dealt. A round that adds nothing (filters exclude it)

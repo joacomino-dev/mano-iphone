@@ -7,7 +7,7 @@ apply plugin: 'org.jetbrains.kotlin.android'
 // Versions: versionName follows the iPhone line (0.9.9.1); versionCode is Android's
 // own build counter and must only grow (Play rejects a repeated or lower code).
 def cocoVersionName = '0.9.9.1'
-def cocoVersionCode = 1
+def cocoVersionCode = 2
 
 // Signing never lives in the repository. CI writes the keystores from GitHub
 // secrets into the runner's temp folder and passes their paths here:
