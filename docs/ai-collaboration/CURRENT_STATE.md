@@ -1,5 +1,26 @@
 # CocoWash — estado vigente
 
+## Prioridad Apple / App Store — 2026-11-07 (CW-CX-018)
+
+Por petición directa del usuario, Codex auditó build 43 sobre
+`691cded44bbb39bc4c8fa1ddfd1889a69e2b62a9`, mismo `main` remoto comprobado.
+Checkout efectivo: `C:/Users/Joaco/Developer/CocoWash-b24`, limpio al empezar;
+OneDrive antigua/divergente se conserva sin tocar. **Completada local**, sin
+commit/push/integración ni nueva CI. Esta es la referencia actual; los apartados
+siguientes conservan snapshots históricos anteriores al build 43.
+
+[Entrega y evidencia](../apple-readiness/README.md): auditoría, matriz, problemas,
+App Review, UI y plan de pruebas. Correcciones pequeñas en ManoApp (recarga de
+permisos, revocación durante enumeración, cierre de superficies y generaciones
+de consultas alrededor del borrado) y CSS (insets laterales del shell/hojas).
+Contratos de decisión/borrado/recuperación, Swift, identidad y dependencias intactos.
+119 Node + 19 escenarios Edge/puente ficticio + 4 Sites; runtime28, tsc y builds PASS.
+247 fuentes/config comparadas: solo esos dos archivos existentes cambiaron.
+
+**Pendiente:** revisión/integración del diff, gate macOS de esta entrega,
+PhotoKit destructivo con fixtures, mínimo iOS17/26/27.1 y Duo en simulador/físico,
+rendimiento/accesibilidad y archive firmado/ASC. No declarar lista para publicar.
+
 Actualizado: 2026-11-05, America/Bogota. Codex trabaja solo por indicación del usuario.
 
 ## Principal: 0.9.9.1 (build 35) en `main` (Claude)

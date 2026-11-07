@@ -1,0 +1,39 @@
+{
+  "at": "2026-11-07T18:37:11.379Z",
+  "boundary": "Edge + synthetic Capacitor bridge; not iOS or physical-device QA",
+  "results": [
+    {
+      "name": "permission: authorized → limited reloads the permitted set",
+      "status": "PASS"
+    },
+    {
+      "name": "permission: changing the limited selection with the same status refreshes it",
+      "status": "PASS"
+    },
+    {
+      "name": "permission: revocation closes review; regrant reloads without losing decisions",
+      "status": "PASS"
+    },
+    {
+      "name": "delete contract: cancel",
+      "status": "PASS"
+    },
+    {
+      "name": "delete contract: error",
+      "status": "PASS"
+    },
+    {
+      "name": "delete contract: partial",
+      "status": "PASS"
+    },
+    {
+      "name": "delete contract: success",
+      "status": "PASS"
+    },
+    {
+      "name": "deletion: a stale foreground refresh cannot undo confirmed removal",
+      "status": "FAIL",
+      "error": "old Photos snapshot resurrected a confirmed deletion\n+ actual - expected\n\n+ []\n- [\n-   'fixture-0'\n- ]\n"
+    }
+  ]
+}

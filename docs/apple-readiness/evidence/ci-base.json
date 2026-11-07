@@ -1,0 +1,28 @@
+{
+  "checkedOn": "2026-11-07",
+  "method": "GitHub connector: workflow jobs and decoded job logs; existing completed runs only",
+  "development": {
+    "run": 42385089470,
+    "job": 128440664820,
+    "source": "5e620b4286f8f64b2e0c9bf4ae61fa0572b33fb6",
+    "conclusion": "success",
+    "developerDir": "/Applications/Xcode_27.1.app/Contents/Developer",
+    "sdk": "iphoneos27.1",
+    "destination": "generic/platform=iOS",
+    "signing": false,
+    "packagesResolved": {"capacitor-swift-pm":"8.6.0","GoogleMobileAds":"13.12.0","GoogleUserMessagingPlatform":"3.1.0"},
+    "startupMarker": "NATIVE_STARTUP_OK: opted-in reset, preserved non-derived file, same-build relaunch, retired face data removed",
+    "startupBoundary": "Simulator selected by first available iPhone; specific model/runtime not established from the inspected output; no Photos permission or destructive test"
+  },
+  "release": {
+    "run": 42385092530,
+    "job": 128440673661,
+    "source": "4c43d0c07c363901739b366914cb5a00dac65b66",
+    "conclusion": "success",
+    "sdk": "iphoneos27.1",
+    "signing": false,
+    "marker": "RELEASE_OK: real AdMob IDs, no test ads, no developer mode",
+    "channelVerifiedAtSource": "DEVELOPER = false"
+  },
+  "boundary": "These runs prove the unmodified build-43 base. No native compilation of CW-CX-018 local changes, signed archive, TestFlight install or physical-device test was performed."
+}

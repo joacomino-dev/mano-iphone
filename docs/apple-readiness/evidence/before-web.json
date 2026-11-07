@@ -1,0 +1,37 @@
+{
+  "at": "2026-11-07T18:34:26.222Z",
+  "boundary": "Edge + synthetic Capacitor bridge; not iOS or physical-device QA",
+  "results": [
+    {
+      "name": "permission: authorized → limited reloads the permitted set",
+      "status": "FAIL",
+      "error": "assets was not refreshed"
+    },
+    {
+      "name": "permission: changing the limited selection with the same status refreshes it",
+      "status": "FAIL",
+      "error": "same-status limited set was not refreshed"
+    },
+    {
+      "name": "permission: revocation closes review; regrant reloads without losing decisions",
+      "status": "FAIL",
+      "error": "review remained above the access screen\n\n1 !== 0\n"
+    },
+    {
+      "name": "delete contract: cancel",
+      "status": "PASS"
+    },
+    {
+      "name": "delete contract: error",
+      "status": "PASS"
+    },
+    {
+      "name": "delete contract: partial",
+      "status": "PASS"
+    },
+    {
+      "name": "delete contract: success",
+      "status": "PASS"
+    }
+  ]
+}

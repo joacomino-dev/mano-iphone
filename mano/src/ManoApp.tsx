@@ -333,11 +333,15 @@ export function ManoApp() {
   useEffect(()=>{if(!notice)return;const t=setTimeout(()=>setNoticeState(null),Math.min(4500,Math.max(2500,1600+notice.text.length*45)));return()=>clearTimeout(t);},[notice]);
   useEffect(()=>()=>{if(gesture.current?.timer)clearTimeout(gesture.current.timer);},[]);
   const initialLibrary=useRef<ReturnType<typeof Library.assets>|null>(null);
-  const loadLibrary=useCallback(()=>{if(demo)return;let alive=true;setLoadError('');const request=initialLibrary.current??(initialLibrary.current=Library.permissionStatus().then(({status})=>{setPermission(status as PhotoPermission);return ['authorized','limited'].includes(status)?Library.assets():{assets:[] as Asset[],status};}));
-    request.then(result=>{if(alive&&['authorized','limited'].includes(result.status)){setAssets(savedGroups(result.assets));setLimited(result.status==='limited');setConnected(true);setState(s=>reconcileLibrary(s,result.assets));}}).catch(e=>{initialLibrary.current=null;if(alive)setLoadError(e instanceof Error?t(e.message):t('Inténtalo de nuevo en un momento.'));});return()=>{alive=false;};},[]);
+  const libraryRevision=useRef(0);
+  const clearLibraryAccess=useCallback(()=>{cancelWarmup();setConnected(false);setAssets([]);setInspect(null);setPinnedInspect(false);setSelected([]);setSheet(null);},[]);
+  const loadLibrary=useCallback(()=>{if(demo)return;let alive=true;const revision=libraryRevision.current;setLoadError('');const request=initialLibrary.current??(initialLibrary.current=Library.permissionStatus().then(({status})=>{if(revision!==libraryRevision.current)return {assets:[] as Asset[],status};setPermission(status as PhotoPermission);return ['authorized','limited'].includes(status)?Library.assets():{assets:[] as Asset[],status};}));
+    request.then(result=>{if(!alive||revision!==libraryRevision.current)return;setPermission(result.status as PhotoPermission);setLimited(result.status==='limited');if(['authorized','limited'].includes(result.status)){setAssets(savedGroups(result.assets));setConnected(true);setState(s=>reconcileLibrary(s,result.assets));setInspect(a=>a&&result.assets.some(fresh=>fresh.id===a.id)?a:null);}else clearLibraryAccess();}).catch(e=>{if(revision!==libraryRevision.current)return;initialLibrary.current=null;if(alive)setLoadError(e instanceof Error?t(e.message):t('Inténtalo de nuevo en un momento.'));});return()=>{alive=false;};},[clearLibraryAccess]);
   useEffect(()=>loadLibrary(),[]);
-  // Returning from Ajustes: pick up a newly granted (or revoked) permission.
-  useEffect(()=>{if(demo)return;const recheck=()=>{if(document.visibilityState!=='visible')return;void Library.permissionStatus().then(({status})=>{setPermission(status as PhotoPermission);setLimited(status==='limited');if(['authorized','limited'].includes(status)&&!connected){initialLibrary.current=null;loadLibrary();}}).catch(()=>{});};document.addEventListener('visibilitychange',recheck);return()=>document.removeEventListener('visibilitychange',recheck);},[connected]);
+  // Photos may change both the permission and the selected limited set while
+  // away. Refresh even when its status is unchanged; keep decisions and the
+  // locked hand, and ignore an older request finishing after a newer resume.
+  useEffect(()=>{if(demo)return;const recheck=()=>{if(document.visibilityState!=='visible')return;const revision=++libraryRevision.current;initialLibrary.current=null;void Library.permissionStatus().then(({status})=>{if(revision!==libraryRevision.current)return;setPermission(status as PhotoPermission);setLimited(status==='limited');if(['authorized','limited'].includes(status))loadLibrary();else clearLibraryAccess();}).catch(e=>{if(revision!==libraryRevision.current)return;setInspect(null);setSheet(null);setLoadError(e instanceof Error?t(e.message):t('Inténtalo de nuevo en un momento.'));});};document.addEventListener('visibilitychange',recheck);return()=>document.removeEventListener('visibilitychange',recheck);},[loadLibrary,clearLibraryAccess]);
   // Weight and clean-up signals measured in the background (indexer.ts); the
   // pile, counters and filters all read the enriched list.
   // Recomputed only when the set of items or their edits change (groups or
@@ -571,8 +575,11 @@ export function ManoApp() {
   const createAlbum=async()=>{const title=newAlbum.trim();if(!title)return;const ok=await saveToAlbum(async()=>{const result=demo?{album:{id:`demo-${Date.now()}`,title},added:targets.length}:await Library.createAlbum({title,ids:targets});setAlbums(a=>[result.album,...a]);return {title:result.album.title,added:result.added};});if(ok){setNewAlbum('');setCreatingAlbum(false);}};
   const openAlbums=async()=>{if(!targets.length)return;setSheet('albums');setCreatingAlbum(false);setNewAlbum('');setError('');try{setAlbums(demo&&albums.length?albums:demo?[{id:'viajes',title:t('Viajes')},{id:'recuerdos',title:t('Recuerdos')},{id:'familia',title:t('Familia')}]:(await Library.albums()).albums);}catch(e){messageError(e);}};
   const addAlbum=(album:Album)=>void saveToAlbum(async()=>{if(!demo)await Library.addToAlbum({ids:targets,albumId:album.id});return {title:album.title};});
-  const commitDelete=async()=>{if(busy)return;setBusy(true);setError('');const ids=reviewAssets.map(a=>a.id);try{
+  const commitDelete=async()=>{if(busy)return;libraryRevision.current++;initialLibrary.current=null;setBusy(true);setError('');const ids=reviewAssets.map(a=>a.id);try{
     const result=demo?{deleted:ids}:await Library.deleteAssets({ids});
+    // A foreground snapshot begun before Photos confirmed this change must
+    // never reconcile those confirmed removals back into the live library.
+    libraryRevision.current++;initialLibrary.current=null;
     // The reward: what this deletion frees (measured weights; «al menos» when some
     // were unknown), counted for the round and for CocoWash as a whole.
     const gone=reviewAssets.filter(a=>result.deleted.includes(a.id));const bytes=gone.reduce((n,a)=>n+(a.bytes??0),0);const videos=gone.filter(a=>a.kind==='video').length;

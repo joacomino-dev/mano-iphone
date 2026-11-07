@@ -248,3 +248,16 @@ Cambios realizados: recuperación de respuestas al pausar, trazas de fase, progr
 Validaciones: base falla y build nuevo pasa en Edge la carrera de pausa. 114 Node, 4 Sites, runtime28, builds, Swift, Release iPhone y smoke de reset/reapertura en simulador. Demo verificó recuperación de vídeo, VHS y pila. IPA y SHA en [informe](../ai-handoff/COCOWASH_9723.md).
 Impacto para Claude: la tarea pasa a la rama de Codex. Usar el build 23 como candidato.
 Pendientes: diagnóstico y aceptación física de Personas, ejecución en segundo plano y validación de la hoja de iOS.
+
+### CW-CX-018 — Compatibilidad Apple y preparación internacional
+Fecha: 2026-11-07, America/Bogota.
+Agente: Codex.
+Tarea: auditoría, matriz y correcciones comprobadas sobre build 43.
+Estado: completada local; pendiente de integrar y QA nativo.
+Base Git / commit: CocoWash-b24, claude/cocowash-9.8.6, 691cded; limpio inicialmente, ahora diff local propio.
+Archivos modificados: ManoApp.tsx, prototype.css, tests/apple-*.mjs, docs/apple-readiness, CURRENT_STATE y esta bitácora.
+Cambios realizados: recarga de permisos; cierre al revocar; invalidación de snapshots anteriores al borrado; insets laterales. [Auditoría/evidencia](../apple-readiness/README.md).
+Decisiones relevantes: mínimo configurado 17 conservado; Duo no acreditado; sin cambios visuales/dependencias/Swift ni publicación.
+Validaciones: 119 Node antes/después, 19 escenarios Edge con puente ficticio, Sites4, runtime28, tsc y builds. Baseline de 247 fuentes: solo dos existentes cambian. CI base consultada, no del diff.
+Impacto para Claude: preservar esta corrección local al integrar; snapshots históricos no son el estado actual.
+Pendientes: macOS/PhotoKit, iOS mínimo, Duo, hardware, privacidad agregada, firma/TestFlight/ASC.

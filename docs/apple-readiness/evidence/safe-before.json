@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-07T18:37:39.104Z",
+  "boundary": "Edge + synthetic Capacitor bridge; not iOS or physical-device QA",
+  "results": [
+    {
+      "name": "safe areas: asymmetric left/right insets protect app and sheet controls",
+      "status": "FAIL",
+      "error": "Expected values to be strictly equal:\n\n16 !== 26\n"
+    }
+  ]
+}

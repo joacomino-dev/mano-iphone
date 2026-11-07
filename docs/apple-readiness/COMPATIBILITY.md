@@ -1,0 +1,77 @@
+# Matriz técnica inicial de compatibilidad
+
+2026-11-07 · base y alcance en [README](README.md).
+
+**Mínimo configurado: iOS 17.0, arm64, target iPhone.** No es todavía una
+promesa de ejecución verificada en todas las versiones posteriores.
+Los sistemas de la tabla son intersecciones con soporte de Apple: no significan
+que un modelo reciente admita instalar un iOS anterior al que traía de fábrica.
+
+| Familia / modelos | Sistemas candidatos | ¿Puede ejecutar según configuración? | Limitaciones / validación prioritaria | Prueba de ese modelo en esta intervención |
+| --- | --- | --- | --- | --- |
+| SE 2.ª / 3.ª generación | 17, 18, 26, 27 | Sí, condicionado a QA | Pantalla compacta, RAM/almacenamiento; estética ausente en 17 | NO VERIFICABLE físico; render Edge 375×667 VERIFICADO como aproximación de espacio |
+| 12 mini / 13 mini | 17, 18, 26, 27 | Sí, condicionado a QA | Notch, teclado, texto grande, vídeos pesados | NO VERIFICABLE físico; 375×812 en Edge, sin notch real |
+| XR / XS / XS Max | 17, 18 | Sí, condicionado a QA; no 26/27 | Primera cohorte candidata con menos recursos; estética no en 17 | NO VERIFICABLE; no aceptación física reciente acreditada |
+| 11 / 12 / 13 / 14 / 15 estándar | 17, 18, 26, 27 | Sí, en versiones que el modelo admite | iCloud, codecs y rendimiento; notch frente a Island | NO VERIFICABLE físico; 390×844 en Edge no identifica modelo |
+| 14 Plus / 15 Plus | 17, 18, 26, 27 | Sí, condicionado a QA | Ergonomía, proporción de fotos, borde inferior | NO VERIFICABLE físico |
+| 11–15 Pro / Pro Max | 17, 18, 26, 27 | Sí, en versiones que el modelo admite | Island según generación, 48 MP/RAW/HDR y vídeos largos | NO VERIFICABLE físico |
+| 16 / 16 Plus / 16 Pro / 16 Pro Max / 16e | 18, 26, 27 | Sí, condicionado a QA | Live Photos, HDR, alta resolución y tasa de refresco | NO VERIFICABLE físico |
+| 17 / 17 Pro / 17 Pro Max / Air / 17e | 26, 27 | Sí, condicionado a QA | Nuevas dimensiones, Island, reanudación y anuncios nativos | NO VERIFICABLE físico |
+| 18 Pro / 18 Pro Max | 27 | Sí por mínimo/arquitectura; pendiente ejecución | SDK 27.1 disponible en CI de la base; no basta para aprobar hardware nuevo | NO VERIFICABLE físico ni simulador identificado |
+| Otras variantes llamadas “18” / “18 Plus” | Sin establecer | NO VERIFICABLE: no se inventa un modelo | Las fuentes oficiales consultadas identifican 18 Pro y Pro Max | Ninguna |
+| Duo cerrado, ambas orientaciones y márgenes laterales | 27.1 para la experiencia del dispositivo | Candidato por arquitectura; adaptación completa NO acreditada | Cámara/barra lateral, insets asimétricos, continuidad | NO VERIFICABLE nativo/físico; solamente estrés geométrico web |
+| Duo abierto, plano o plegado parcialmente | 27.1 | Candidato; no declarar optimizado | Interior regular/regular, orientación dinámica, regiones reservadas/cámara/bisagra | NO VERIFICABLE nativo/físico |
+| Duo Split View y transición exterior↔interior | 27.1 | PENDIENTE | Mantener misma carta/selección/undo, vídeo, modal y coordenadas del anuncio | Resize 390×844→890×626→360×626→390×844 solo en Edge; no simula la bisagra |
+| SE 1.ª, 6s/7/8/X y anteriores | No alcanzan iOS 17 | No, fuera del alcance | No reducir arquitectura ni dependencias para incluirlos | No requerido |
+
+Los límites de OS proceden de las listas oficiales de
+[iOS 26](https://support.apple.com/en-ie/guide/iphone/-iphe3fa5df43/ios) y
+[iOS 27](https://www.apple.com/os/ios/). XR/XS pertenecen a la cohorte de iOS
+17/18, excluida de las listas 26/27. Los modelos nuevos están confirmados en
+[18 Pro/Max](https://www.apple.com/iphone-18-pro/specs/) y
+[Duo](https://www.apple.com/iphone-duo/specs/).
+
+## Matriz por sistema operativo
+
+| Sistema | Declaración actual | Evidencia de ejecución |
+| --- | --- | --- |
+| iOS 15 / 16 | No soportados por la configuración de CocoWash | No ejecutados. El mínimo 15 de Capacitor no cambia los targets 17 |
+| iOS 17.x | Mínimo configurado | PENDIENTE XCTest/WKWebView y dispositivo en este mínimo |
+| iOS 18.x | Candidato; estética opcional con guard de disponibilidad | PENDIENTE; fuente incluye fallback si Vision falla |
+| iOS 26.x | Candidato | PENDIENTE ejecución identificada sobre esta base |
+| iOS 27.x / 27.1 | Candidato; SDK 27.1 compila la base | VERIFICADO build de base, no matriz de ejecución. Modelo/OS del smoke no identificado |
+| Betas o versiones posteriores | Sin promesa | NO VERIFICABLE hasta disponer del runtime y repetir gates |
+
+## Otros dispositivos Apple
+
+| Destino | Configuración comprobada | Pendiente |
+| --- | --- | --- |
+| iPad | Familia 2 no habilitada; no layout universal propio | Verificar disponibilidad/modo de compatibilidad de app iPhone en iPad. No confundir family=1 con exclusión administrativa |
+| Mac Apple silicon | Sin target Catalyst explícito; binario iOS arm64 | App Store Connect puede habilitar apps iOS en Mac; revisar disponibilidad y decidir antes de publicar |
+| Apple Vision Pro | Sin target visionOS propio | Revisar disponibilidad de compatibilidad en App Store Connect; no declararlo probado |
+| Watch / Apple TV | Sin targets watchOS/tvOS | Fuera del producto actual |
+
+La disponibilidad en Mac se administra aparte del target de Xcode:
+[Apple, apps iOS en Mac](https://developer.apple.com/help/app-store-connect/manage-your-apps-availability/manage-availability-of-iphone-and-ipad-apps-on-macs-with-apple-silicon/).
+
+## Funciones comunes y degradación honesta
+
+- Fotos, favoritas, álbumes, revisión y borrado: dependen del permiso PhotoKit,
+  no de tener un chip reciente. Con acceso limitado solo se ofrece el conjunto permitido.
+- Parecidas y limpieza: Vision local; análisis parcial/omitido si la vista no
+  está disponible. No interpretar ausencia de coincidencias como análisis completo.
+- Estética: iOS 18+ y ejecución satisfactoria; si falta, no inventar puntuaciones.
+- Personas / Breakup: retiradas en build 43; no existen como función compatible
+  ni se exige Apple Intelligence para ellas. Solo queda limpieza de datos derivados antiguos.
+- iCloud: necesita red para material no local; sin conexión deben conservarse
+  decisiones y explicarse los elementos pendientes. Caché local no prueba descarga completa.
+- Vídeo/Live Photo: formato y recursos del dispositivo importan; ficheros mayores
+  de 512 MiB pueden alcanzar el límite de preparación. Probar fallback nativo.
+- Ads/compras: requieren servicios externos; su fallo no debe impedir organizar
+  medios locales. Restauración y caducidad necesitan sandbox/TestFlight.
+
+## Criterio para subir una fila a probada
+
+Registrar modelo real/identificador o UDID sintético de simulador, OS y build,
+Xcode/SDK, SHA de fuente, permisos, conjunto demo, pasos, resultado y artefactos.
+Una captura Edge, un build arm64 o un test en otro iPhone no satisfacen ese criterio.

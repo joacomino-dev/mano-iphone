@@ -1,0 +1,51 @@
+{
+  "at": "2026-11-07T18:55:40.994Z",
+  "baseline": {
+    "nodeTests": {
+      "pass": 119,
+      "fail": 0
+    },
+    "protectedRuntimeFiles": 28,
+    "typescript": "PASS",
+    "webBuild": "PASS",
+    "nativeWebBuild": "PASS",
+    "sitesTests": {
+      "pass": 4,
+      "fail": 0
+    }
+  },
+  "final": {
+    "nodeTests": {
+      "pass": 119,
+      "fail": 0
+    },
+    "protectedRuntimeFiles": 28,
+    "typescript": "PASS",
+    "webBuild": "PASS",
+    "nativeWebBuild": "PASS",
+    "sitesTests": {
+      "pass": 4,
+      "fail": 0
+    },
+    "browserScenarios": {
+      "pass": 19,
+      "fail": 0
+    }
+  },
+  "environment": {
+    "node": "v24.22.1",
+    "npm": "unavailable",
+    "pnpm": "11.25.0",
+    "browser": "installed Microsoft Edge via existing Playwright"
+  },
+  "limitations": [
+    "pnpm run build wrapper fails because npm is unavailable; equivalent script steps pass",
+    "Vite chunk warning >500 kB retained",
+    "Native Swift/PhotoKit/device tests of this diff not executed",
+    "Existing protected Playwright runtime suite not executed"
+  ],
+  "existingSourceChanged": [
+    "mano/src/ManoApp.tsx",
+    "mano/src/prototype.css"
+  ]
+}
