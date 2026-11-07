@@ -60,6 +60,8 @@ textos), **U+C** = juntos.
       AAB, comprobación de paquete/SDK/16 KB, arranque en emulador propio
       (`scripts/android-emulator.sh`: límites de tiempo, un reinicio, fallos como anotaciones
       legibles sin iniciar sesión).
+- [x] CI en verde ([42387226062](https://github.com/joacomino-dev/mano-iphone/actions/runs/42387226062))
+      y primer APK en Descargas: `CocoWash-0.9.9.1-android-build1-4412172.apk`.
 
 ## Fase 2 · `PhotoLibrary` en Kotlin (C) → primera build de la prueba cerrada
 

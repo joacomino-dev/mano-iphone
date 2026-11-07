@@ -575,3 +575,14 @@ Cambios realizados:
 - CI `build-android.yml` (`ubuntu-latest`): tests, runtime, `sync:android`, APK + AAB,
   paquete/SDK/16 KB, emulador propio con límites y un reinicio (fallos como anotaciones).
 Abierto (usuario): favoritas (diálogo por gesto o lote al terminar) y álbum en Android.
+Incidencia: `work/` en los `.gitignore` (carpeta de capturas de QA) también excluía
+`android/app/src/main/java/work/joaquin/mano/`; las clases Kotlin no llegaban al repositorio
+y la CI compilaba un APK sin `MainActivity` (la prueba del emulador lo detectó). Reglas
+ancladas a `/work/`; la CI ahora exige esas clases en el APK y publica errores de Gradle y
+causas de fallos como anotaciones.
+Validaciones: 120 Node (incluye la capa Android de i18n), tsc estricto, runtime 28;
+[CI 42387226062](https://github.com/joacomino-dev/mano-iphone/actions/runs/42387226062)
+correcta: APK + AAB, minSdk 30 / targetSdk 36, 16 KB, emulador Android 15 (arranque y
+relanzamiento sin fallos, introducción visible de borde a borde, permiso `notDetermined`).
+APK de desarrollo `C:/Users/Joaco/Downloads/CocoWash-0.9.9.1-android-build1-4412172.apk`,
+14 551 790 bytes, sha256 `73c72c85…8f42` (clave de depuración desechable). AAB sin firmar.
