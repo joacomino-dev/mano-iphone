@@ -2,3 +2,6 @@
 "NSPhotoLibraryUsageDescription" = "写真とビデオの比較、お気に入りの登録、アルバムの整理、確認したものだけの削除のために、CocoWashは写真ライブラリへのアクセスが必要です。解析はすべてiPhone上で行われます。";
 "NSPhotoLibraryAddUsageDescription" = "CocoWashは、選んだ写真を「写真」アプリのアルバムに追加します。";
 "NSUserTrackingUsageDescription" = "許可すると、Googleが広告識別子を使って、より興味に合った広告を表示できるようになります。";
+
+/* Native Live Photo viewer control; same bundled localized table. */
+"CocoWashClose" = "閉じる";

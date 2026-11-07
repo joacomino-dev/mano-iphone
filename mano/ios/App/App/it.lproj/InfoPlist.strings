@@ -2,3 +2,6 @@
 "NSPhotoLibraryUsageDescription" = "CocoWash ha bisogno di accedere alla libreria per confrontare foto e video, segnare le preferite, ordinare gli album ed eliminare solo ciò che confermi. L’analisi avviene sul tuo iPhone.";
 "NSPhotoLibraryAddUsageDescription" = "CocoWash aggiunge le foto che scegli ai tuoi album in Foto.";
 "NSUserTrackingUsageDescription" = "Se lo consenti, Google può usare l’identificatore pubblicitario per mostrarti annunci più pertinenti.";
+
+/* Native Live Photo viewer control; same bundled localized table. */
+"CocoWashClose" = "Chiudi";

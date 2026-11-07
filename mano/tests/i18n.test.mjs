@@ -36,6 +36,22 @@ function sourceKeys() {
 const placeholders = text => [...text.matchAll(/\{(\w+)\}/g)].map(m => m[1]).sort().join(',');
 const tables = { en, fr, de, it, ar, ja };
 
+test('PhotoLibrary literal error fallbacks are registered for translation', () => {
+  const swift = fs.readFileSync(new URL('../ios/App/App/PhotoLibrary.swift', import.meta.url), 'utf8');
+  const visible = new Set();
+  for (const line of swift.split('\n')) {
+    if (!/call\.reject\(|message = "/.test(line)) continue;
+    for (const match of line.matchAll(/"([^"\n]+)"/g)) {
+      const text = match[1];
+      // Error codes and cancellation's control message are not displayed.
+      if (text === 'Cancelado' || !/[a-záéíóúñ].*[ .]/i.test(text) || /^[A-Z_]+$/.test(text)) continue;
+      visible.add(text);
+    }
+  }
+  assert.ok(visible.size >= 30, 'Swift fallback extraction must not silently stop working');
+  assert.deepEqual([...visible].filter(text => !NATIVE_MESSAGES.includes(text)), []);
+});
+
 test('every visible text exists in English, French, German, Italian, Arabic and Japanese, with the same placeholders', () => {
   const keys = sourceKeys();
   assert.ok(keys.size > 350, `found ${keys.size} keys`);

@@ -316,7 +316,6 @@ const table: Record<string, string> = {
   'Precio no disponible.': 'Prix indisponible.',
   '¡Gracias por el café!': 'Merci pour le café !',
   'Listo: ya no verás anuncios.': 'C’est fait : plus de pubs.',
-  'Pronto': 'Bientôt',
   'Activo': 'Actif',
   'Cargar precios': 'Charger les prix',
   'Compras consultadas.': 'Achats vérifiés.',
@@ -433,5 +432,14 @@ const table: Record<string, string> = {
   'Para vaciarlo ya': 'Pour le vider maintenant',
   'en «Eliminado recientemente»': 'dans Suppressions récentes',
   'En 30 días, Fotos lo vacía solo.': 'Dans 30 jours, Photos le vide tout seul.',
+  "Fotos no confirmó el cambio. Tu cola se conserva.": "Photos n’a pas confirmé la modification. Votre file est conservée.",
+  "Fotos no confirmó la creación del álbum.": "Photos n’a pas confirmé la création de l’album.",
+  "Sin conexión con iCloud. Inténtalo con conexión.": "Pas de connexion à iCloud. Réessayez en ligne.",
+  "No se pudo abrir el vídeo.": "Impossible d’ouvrir la vidéo.",
+  "El vídeo supera 512 MB. Puedes abrirlo con el reproductor de Fotos.": "La vidéo dépasse 512 Mo. Vous pouvez l’ouvrir dans le lecteur de Photos.",
+  "La caché de vídeos de esta sesión está llena. Termina la sesión para liberar espacio.": "Le cache vidéo de cette session est plein. Terminez la session pour libérer de l’espace.",
+  "Preparación cancelada.": "Préparation annulée.",
+  "El archivo del vídeo no está disponible. Comprueba iCloud y reintenta.": "Le fichier vidéo n’est pas disponible. Vérifiez iCloud et réessayez.",
+  "No se pudo guardar el vídeo para reproducirlo. Comprueba el espacio libre y reintenta.": "Impossible d’enregistrer la vidéo pour la lire. Vérifiez l’espace libre et réessayez.",
 };
 export default table;

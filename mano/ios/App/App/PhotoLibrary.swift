@@ -1326,7 +1326,7 @@ final class LivePhotoController: UIViewController {
         let live = PHLivePhotoView(); live.livePhoto = photo; live.contentMode = .scaleAspectFit; live.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(live)
         NSLayoutConstraint.activate([live.leadingAnchor.constraint(equalTo: view.leadingAnchor), live.trailingAnchor.constraint(equalTo: view.trailingAnchor), live.topAnchor.constraint(equalTo: view.topAnchor), live.bottomAnchor.constraint(equalTo: view.bottomAnchor)])
-        let close = UIButton(type: .system); close.setTitle("Cerrar", for: .normal); close.tintColor = .white; close.translatesAutoresizingMaskIntoConstraints = false
+        let close = UIButton(type: .system); close.setTitle(Bundle.main.localizedString(forKey: "CocoWashClose", value: "Close", table: "InfoPlist"), for: .normal); close.tintColor = .white; close.translatesAutoresizingMaskIntoConstraints = false
         close.addTarget(self, action: #selector(done), for: .touchUpInside); view.addSubview(close)
         NSLayoutConstraint.activate([close.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12), close.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20), close.heightAnchor.constraint(equalToConstant: 44)])
         live.startPlayback(with: .full)
