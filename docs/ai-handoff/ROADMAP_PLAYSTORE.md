@@ -1,8 +1,32 @@
 # CocoWash · Hoja de ruta a Google Play (Android)
 
-Estado (2026-11-07): **fase 1 hecha, fase 2 en curso** en la rama `android` (worktree
-`C:\Users\Joaco\Developer\CocoWash-android`). iOS no se toca: `main` y `release` siguen
-como estaban. Plan aprobado por el usuario el 2026-11-07.
+Estado (2026-11-07, tarde): **fases 1–5 hechas en código y documentos** en la rama `android`
+(worktree `C:\Users\Joaco\Developer\CocoWash-android`); falta lo que necesita cuentas, un
+teléfono o modelos (tabla). iOS no se toca: `main` y `release` siguen como estaban. Plan
+aprobado por el usuario el 2026-11-07.
+
+## Equivalencia con iOS (0.9.9.1)
+
+| Pieza | iOS | Android | Cómo se comprueba sin teléfono |
+|---|---|---|---|
+| Interfaz, gestos, 7 idiomas, RTL | React | La misma | Vista previa del navegador con «Pixel 10» (textos Android) |
+| Permiso completo / limitado | PhotoKit | MediaStore, «Seleccionar fotos» (14+) | E2E en emulador (completo) |
+| Pila, miniaturas, tamaños, metadatos, lugar | PhotoKit, CLGeocoder | MediaStore, loadThumbnail, EXIF, Geocoder | E2E |
+| Vídeo en la carta | Esquema `cocowash-media` | Rangos 206 desde MediaStore | E2E (206, 100 bytes) |
+| Eliminar | Fotos confirma, 30 días | Android confirma, papelera 30 días | E2E (cancelar y confirmar) |
+| Favoritas nunca se borran | Recomprobación | Recomprobación | E2E |
+| Favoritas | Al instante | **Juntas al terminar** (decisión) | Tests de la cola |
+| Parecidas | Vision feature prints | dHash 64 bits (casi iguales) | — (pendiente: embedder LiteRT) |
+| Borrosas / oscuras / caras | Vision + laplaciano | Laplaciano, brillo, FaceDetector | — |
+| Texto y documentos | Vision OCR | **Pendiente** (modelo de detección) | — |
+| Mejor toma | Estética iOS 18 o nitidez | Nitidez | — |
+| Atrás / gesto predictivo | — | Cierra hojas y vista anclada | E2E |
+| Pantalla completa del vídeo | AVPlayer | Reproductor del sistema | — |
+| Live Photos, «ocultas», iCloud | Sí | No existen en Android (ocultos) | — |
+| Álbum | Sí | **Decisión pendiente** (hoy da aviso) | — |
+| Anuncios + consentimiento | AdMob nativo, UMP + ATT | AdMob nativo, UMP (sin ATT) | E2E con anuncio de prueba |
+| Compras | StoreKit 2 | Play Billing 8 | Solo con Play Console (licencias de prueba) |
+| Modo developer, cerrar hojas deslizando, resumen sin «Abrir Fotos» | Sí | Sí (mismo código web) | Vista previa |
 
 Quién: **U** = usuario (cuentas, dinero, testers, arte), **C** = Claude (código, CI,
 textos), **U+C** = juntos.
@@ -97,7 +121,9 @@ Live Photos). Textos del resumen con la papelera de Android en 7 idiomas.
 
 ## Fase 3 · Análisis en el dispositivo (C)
 
-LiteRT con modelos incluidos; caché de vectores como en iOS; comprobar `.so` a 16 KB.
+Hecho sin modelos (CW-CL-056): nitidez, brillo y caras; «parecidas» por dHash con caché.
+Pendiente: embedder LiteRT para «parecidas» de verdad y detector de texto (modelos incluidos,
+licencia y `.so` a 16 KB); la caché de `classify` ya está versionada para recalcular.
 
 ## Fase 4 · Anuncios y compras (C, con U en AdMob/Play)
 
@@ -106,12 +132,20 @@ huérfanos al recargar, oculta mientras el hueco se mueve), UMP (sin ATT en Andr
 Billing 8 (`acknowledge`, consumo del café, `queryPurchasesAsync`). U: app Android y bloque
 nativo en AdMob; productos en Play Console con los mismos IDs que iOS.
 
+Hecho en código (CW-CL-056): `CocoMonetizationPlugin.kt` + `CocoNativeAdCard.kt`. Pendiente U:
+IDs reales de AdMob Android (prompt en `PROMPT_WEB_ANDROID.md`), productos en Play Console
+(`docs/playstore/in-app-products.md`), clave pública de licencias para verificar compras.
+
 ## Fase 5 · Tienda y web (U+C)
 
 `docs/playstore/`: seguridad de los datos, declaraciones (anuncios, acceso, público objetivo,
 IARC, Fotografía, permiso de fotos), ficha en 7 idiomas (título ≤ 30, breve ≤ 80, completa
 ≤ 4000, comprobado con script), icono 512, gráfico destacado 1024 × 500, capturas con el modo
 de prueba. Web es/en con Android y prompt de redespliegue.
+
+Hecho (CW-CL-056): `docs/playstore/` (ficha comprobada por la CI, seguridad de los datos,
+declaraciones con el texto del permiso de fotos, productos, plan gráfico), web es/en con la
+sección Android (sin publicar: `PROMPT_WEB_ANDROID.md`). Pendiente U: gráfico destacado y capturas.
 
 ## Fase 6 · Pruebas y producción (U+C)
 
