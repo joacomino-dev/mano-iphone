@@ -9,3 +9,7 @@ build/
 *.ipa
 *.xcarchive
 work/
+*.jks
+*.keystore
+*.aab
+*.apk

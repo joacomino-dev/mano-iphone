@@ -1,0 +1,162 @@
+name: Verify CocoWash Android
+on:
+  workflow_dispatch:
+  push:
+    branches: [android]
+    paths: ['mano/**', '.github/workflows/build-android.yml']
+permissions:
+  contents: read
+concurrency:
+  group: cocowash-android-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  android:
+    if: github.event.repository.private == false
+    # Standard public-repository runner (free); no large/paid runner, no deployment.
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    defaults:
+      run:
+        working-directory: mano
+    env:
+      COCO_VERSION: '0.9.9.1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: npm ci --no-audit --no-fund
+        timeout-minutes: 10
+      - name: Verify logic and protected preview
+        run: npm test && npm run check:runtime
+      - name: Build web and sync the Android project
+        run: npm run sync:android
+
+      # Keys never live in the repository or the logs. Each one is optional: without
+      # COCO_DEV_* the APK uses the runner's throw-away debug key (cannot update a
+      # previous install); without COCO_UPLOAD_* the AAB is unsigned (not uploadable).
+      - name: Write signing keys from secrets
+        env:
+          DEV_KEYSTORE_B64: ${{ secrets.COCO_DEV_KEYSTORE_B64 }}
+          DEV_KEYSTORE_PASSWORD: ${{ secrets.COCO_DEV_KEYSTORE_PASSWORD }}
+          DEV_KEY_ALIAS: ${{ secrets.COCO_DEV_KEY_ALIAS }}
+          DEV_KEY_PASSWORD: ${{ secrets.COCO_DEV_KEY_PASSWORD }}
+          UPLOAD_KEYSTORE_B64: ${{ secrets.COCO_UPLOAD_KEYSTORE_B64 }}
+          UPLOAD_KEYSTORE_PASSWORD: ${{ secrets.COCO_UPLOAD_KEYSTORE_PASSWORD }}
+          UPLOAD_KEY_ALIAS: ${{ secrets.COCO_UPLOAD_KEY_ALIAS }}
+          UPLOAD_KEY_PASSWORD: ${{ secrets.COCO_UPLOAD_KEY_PASSWORD }}
+        run: |
+          if [ -n "$DEV_KEYSTORE_B64" ]; then
+            printf '%s' "$DEV_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/dev.jks"
+            {
+              echo "COCO_DEV_KEYSTORE=$RUNNER_TEMP/dev.jks"
+              echo "COCO_DEV_KEYSTORE_PASSWORD=$DEV_KEYSTORE_PASSWORD"
+              echo "COCO_DEV_KEY_ALIAS=$DEV_KEY_ALIAS"
+              echo "COCO_DEV_KEY_PASSWORD=$DEV_KEY_PASSWORD"
+            } >> "$GITHUB_ENV"
+            echo 'Development key: configured'
+          else echo 'Development key: not configured (throw-away debug key)'; fi
+          if [ -n "$UPLOAD_KEYSTORE_B64" ]; then
+            printf '%s' "$UPLOAD_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+            {
+              echo "COCO_UPLOAD_KEYSTORE=$RUNNER_TEMP/upload.jks"
+              echo "COCO_UPLOAD_KEYSTORE_PASSWORD=$UPLOAD_KEYSTORE_PASSWORD"
+              echo "COCO_UPLOAD_KEY_ALIAS=$UPLOAD_KEY_ALIAS"
+              echo "COCO_UPLOAD_KEY_PASSWORD=$UPLOAD_KEY_PASSWORD"
+            } >> "$GITHUB_ENV"
+            echo 'Upload key: configured'
+          else echo 'Upload key: not configured (unsigned AAB)'; fi
+
+      - name: Compile development APK and Play bundle
+        working-directory: mano/android
+        run: ./gradlew --no-daemon --stacktrace assembleDebug bundleRelease
+
+      - name: Verify package, SDK levels and 16 KB alignment
+        run: |
+          BT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          AAB=android/app/build/outputs/bundle/release/app-release.aab
+          "$BT/aapt2" dump badging "$APK" > build-badging.txt
+          grep -q "package: name='work.joaquin.mano'" build-badging.txt
+          grep -q "versionName='$COCO_VERSION'" build-badging.txt
+          grep -q "minSdkVersion:'30'" build-badging.txt
+          grep -q "targetSdkVersion:'36'" build-badging.txt
+          # Play's 16 KB page-size rule: every native library page-aligned (none today).
+          "$BT/zipalign" -c -P 16 -v 4 "$APK" > build-zipalign.txt
+          test -s "$AAB"
+          CODE=$(sed -n "s/.*versionCode='\([0-9]*\)'.*/\1/p" build-badging.txt)
+          SHORT=$(echo "$GITHUB_SHA" | cut -c1-7)
+          NAME="CocoWash-$COCO_VERSION-android-build$CODE-$SHORT"
+          mkdir -p build/android
+          cp "$APK" "build/android/$NAME.apk"
+          cp "$AAB" "build/android/$NAME.aab"
+          echo "COCO_ARTIFACT=$NAME" >> "$GITHUB_ENV"
+          {
+            echo 'DEVELOPMENT ONLY. Not a published or accepted release.'
+            echo "APK: debug build for side-loading on the developer's phone."
+            if [ -n "${COCO_DEV_KEYSTORE:-}" ]; then echo 'APK signed with the CocoWash development key.'; else echo 'APK signed with a throw-away debug key: uninstall the previous development APK first.'; fi
+            if [ -n "${COCO_UPLOAD_KEYSTORE:-}" ]; then echo 'AAB signed with the Play upload key.'; else echo 'AAB unsigned: not uploadable to Play.'; fi
+            echo 'Ads and in-app purchases: not active on Android yet.'
+            echo "Source SHA: $GITHUB_SHA"
+            sha256sum "build/android/$NAME.apk" "build/android/$NAME.aab"
+          } > build/android/VALIDATION.txt
+          cat build/android/VALIDATION.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.COCO_ARTIFACT }}
+          path: |
+            mano/build/android/*.apk
+            mano/build/android/*.aab
+            mano/build/android/VALIDATION.txt
+          retention-days: 7
+          if-no-files-found: error
+
+      # Emulator smoke test: launch, stay alive, relaunch; no photos are granted.
+      # A hosted emulator occasionally fails to boot: one retry, then fail.
+      - name: Enable KVM for the emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Verify native startup on the emulator
+        id: startup
+        continue-on-error: true
+        timeout-minutes: 15
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          working-directory: mano
+          script: bash scripts/test-android-startup.sh android/app/build/outputs/apk/debug/app-debug.apk
+      - name: Verify native startup on the emulator (retry)
+        if: steps.startup.outcome == 'failure'
+        timeout-minutes: 15
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          working-directory: mano
+          script: bash scripts/test-android-startup.sh android/app/build/outputs/apk/debug/app-debug.apk
+      - name: Keep native startup evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CocoWash-android-startup-evidence
+          path: |
+            mano/build/android-startup/*
+            mano/build-badging.txt
+          retention-days: 7
+          if-no-files-found: warn

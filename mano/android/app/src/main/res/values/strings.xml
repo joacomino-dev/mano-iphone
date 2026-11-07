@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CocoWash</string>
+    <string name="title_activity_main">CocoWash</string>
+    <string name="package_name">work.joaquin.mano</string>
+    <string name="custom_url_scheme">work.joaquin.mano</string>
+</resources>

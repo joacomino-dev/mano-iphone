@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- «Sello y papel»: paper #F3ECE1, ink #253A3A, turquoise #1E7470. -->
+    <color name="cocowash_paper">#F3ECE1</color>
+    <color name="cocowash_ink">#253A3A</color>
+    <color name="cocowash_turquoise">#1E7470</color>
+    <color name="colorPrimary">#1E7470</color>
+    <color name="colorPrimaryDark">#253A3A</color>
+    <color name="colorAccent">#1E7470</color>
+</resources>

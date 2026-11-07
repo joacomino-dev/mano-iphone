@@ -8,6 +8,7 @@
     "test": "node --experimental-strip-types --test tests/domain.test.mjs tests/preload.test.mjs tests/session.test.mjs tests/meta.test.mjs tests/album-preview.test.mjs tests/cleanup.test.mjs tests/sequence.test.mjs tests/review.test.mjs tests/requests.test.mjs tests/index-state.test.mjs tests/video-plan.test.mjs tests/media.test.mjs tests/app-flow.test.mjs tests/ad-cadence.test.mjs tests/i18n.test.mjs",
     "build:native": "tsc && vite build --config vite.native.config.ts && node scripts/prepare-native.mjs",
     "sync:ios": "npm run build:native && cap sync ios && node scripts/configure-ios.mjs",
+    "sync:android": "npm run build:native && cap sync android",
     "update:runtime-lock": "node scripts/update-mobile-runtime-lock.mjs",
     "test:runtime": "playwright test",
     "test:sites": "node --test tests/sites-worker.test.mjs",
@@ -17,6 +18,7 @@
     "build": "tsc && vite build && node scripts/prepare-sites-build.mjs"
   },
   "dependencies": {
+    "@capacitor/android": "8.6.0",
     "@capacitor/cli": "8.6.0",
     "@capacitor/core": "8.6.0",
     "@capacitor/ios": "8.6.0",
