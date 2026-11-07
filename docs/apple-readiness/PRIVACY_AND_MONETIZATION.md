@@ -70,6 +70,14 @@ verificables. Nombre/ciudad/email confirmados no aportan dirección postal,
 teléfono, representante cuando proceda ni acuerdos con proveedores. No se declara
 cumplimiento legal universal por tener un HTML.
 
+Se retiró el plazo universal de un mes: [la fuente oficial ecuatoriana](https://www.registrospublicos.gob.ec/marco-legal-protege-tus-datos/)
+recoge quince días para determinados derechos, mientras
+[RGPD art.12](https://eur-lex.europa.eu/eli/reg/2016/679/oj/) establece su propio
+régimen. La política promete atender sin demora en el plazo legal aplicable;
+el titular debe operar esos plazos y evaluar ámbito territorial, no asumir uno
+solo por traducir la política al inglés. El aviso de EE.UU. es condicionado a
+la normativa aplicable, sin afirmar que todos sus umbrales se cumplen.
+
 ## Monetización conservada y congelada
 
 | ID existente | Diseño/implementación | Estado real |
