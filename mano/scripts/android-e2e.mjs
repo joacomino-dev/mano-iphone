@@ -73,7 +73,7 @@ async function tap(label, name) {
       await adb("shell", "uiautomator", "dump", "/sdcard/window.xml");
       const xml = await adb("shell", "cat", "/sdcard/window.xml");
       const node = [...xml.matchAll(/<node [^>]*>/g)].map(m => m[0]).find(n => label.test(/text="([^"]*)"/.exec(n)?.[1] ?? "") && /clickable="true"/.test(n));
-      const bounds = node && /bounds="[(d+),(d+)][(d+),(d+)]"/.exec(node);
+      const bounds = node && /bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/.exec(node);
       if (bounds) {
         if (name) await capture(name);
         const [x1, y1, x2, y2] = bounds.slice(1).map(Number);
@@ -90,7 +90,7 @@ const ALLOW = /^(Allow|ALLOW|Permitir|PERMITIR)$/;
 const DENY = /^(Deny|DENY|Cancel|CANCEL|Don.t allow|Denegar|Cancelar)$/;
 /** One step: a failure or a timeout is recorded and the next step still runs. */
 async function step(name, body) {
-  try { await body(); } catch (error) { failures.push(`${name}: ${error.message}`); await capture(`${name.replace(/W+/g, "-")}-error`); }
+  try { await body(); } catch (error) { failures.push(`${name}: ${error.message}`); await capture(`${name.replace(/\W+/g, "-")}-error`); }
 }
 
 try {

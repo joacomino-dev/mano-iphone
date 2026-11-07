@@ -70,6 +70,8 @@ class CocoMonetizationPlugin : Plugin() {
     private var prepared: Pair<NativeAd, Long>? = null
     private var card: CocoNativeAdCard? = null
     private var generation = 0
+    /** Debug builds only: consent unavailable with the sample app ID (see prepare). */
+    private var testWithoutConsent = false
 
     private val consent: ConsentInformation get() = UserMessagingPlatform.getConsentInformation(context)
 
@@ -275,19 +277,32 @@ class CocoMonetizationPlugin : Plugin() {
                 preparing = true
                 val requestGeneration = generation
                 val start = {
-                    if (!consent.canRequestAds() || generation != requestGeneration) { preparing = false; call.resolve(JSObject().apply { put("ready", false) }) }
+                    if (!(consent.canRequestAds() || testWithoutConsent) || generation != requestGeneration) { preparing = false; call.resolve(JSObject().apply { put("ready", false) }) }
                     else load(unit, call)
                 }
                 if (initialized) { start(); return@adFree }
+                val initialize = {
+                    // Family-safe ads only (G), whatever the AdMob console says.
+                    MobileAds.setRequestConfiguration(RequestConfiguration.Builder()
+                        .setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_G).build())
+                    MobileAds.initialize(context) { main.post { initialized = true; start() } }
+                }
+                // Development builds carry Google's sample app ID, which has no consent
+                // messages: UMP answers with an error. There, and only with the test unit,
+                // the letter is still tried (non-personalised test ads). Store builds never
+                // request an ad without the consent flow.
+                val developmentFallback = { reason: String ->
+                    devLog("COCOWASH_ADS_CONSENT_UNAVAILABLE $reason")
+                    if (BuildConfig.DEBUG && unit == TEST_UNIT) { testWithoutConsent = true; initialize() }
+                    else { preparing = false; call.resolve(JSObject().apply { put("ready", false) }) }
+                }
                 consent.requestConsentInfoUpdate(activity, ConsentRequestParameters.Builder().build(), {
                     UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) { formError ->
-                        if (formError != null || !consent.canRequestAds()) { preparing = false; call.resolve(JSObject().apply { put("ready", false) }); return@loadAndShowConsentFormIfRequired }
-                        // Family-safe ads only (G), whatever the AdMob console says.
-                        MobileAds.setRequestConfiguration(RequestConfiguration.Builder()
-                            .setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_G).build())
-                        MobileAds.initialize(context) { main.post { initialized = true; start() } }
+                        if (formError != null) { developmentFallback("form ${formError.errorCode}"); return@loadAndShowConsentFormIfRequired }
+                        if (!consent.canRequestAds()) { devLog("COCOWASH_ADS_NO_CONSENT"); preparing = false; call.resolve(JSObject().apply { put("ready", false) }); return@loadAndShowConsentFormIfRequired }
+                        initialize()
                     }
-                }, { preparing = false; call.resolve(JSObject().apply { put("ready", false) }) })
+                }, { error -> developmentFallback("update ${error.errorCode} ${error.message}") })
             }
         }
     }
@@ -303,7 +318,10 @@ class CocoMonetizationPlugin : Plugin() {
                 }
             }
             .withAdListener(object : AdListener() {
-                override fun onAdFailedToLoad(error: LoadAdError) { main.post { if (loader != null) finishLoad(false) } }
+                override fun onAdFailedToLoad(error: LoadAdError) {
+                    devLog("COCOWASH_AD_LOAD_FAILED ${error.code} ${error.message}")
+                    main.post { if (loader != null) finishLoad(false) }
+                }
             })
             .withNativeAdOptions(NativeAdOptions.Builder()
                 .setVideoOptions(VideoOptions.Builder().setStartMuted(true).build())
@@ -344,7 +362,7 @@ class CocoMonetizationPlugin : Plugin() {
             val w = (width * density).toInt(); val h = (height * density).toInt()
             val inside = x >= -1 && y >= -1 && (x + width) * density <= web.width + density && (y + height) * density <= web.height + density
             val hidden = call.getBoolean("hidden") == true || !inside
-            if (!consent.canRequestAds()) { invalidateAd(); call.resolve(JSObject().apply { put("shown", false) }); return@post }
+            if (!(consent.canRequestAds() || testWithoutConsent)) { invalidateAd(); call.resolve(JSObject().apply { put("shown", false) }); return@post }
             // Leaving or coming back (not resumed yet): keep the ad, hide the letter, ask again.
             if (!resumed()) {
                 card?.conceal(true)
