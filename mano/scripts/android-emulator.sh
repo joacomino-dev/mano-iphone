@@ -15,8 +15,13 @@ note() { echo "::error title=Android emulator::$*"; echo "$*" >> "$OUT/emulator-
 if ! timeout 600 bash -c "yes | sdkmanager --install '$IMAGE' 'emulator' 'platform-tools' > '$OUT/sdkmanager.txt' 2>&1"; then
   note "sdkmanager failed: $(tail -c 600 "$OUT/sdkmanager.txt" | tr '\n' ' ')"; exit 1
 fi
-echo no | avdmanager create avd -n coco -k "$IMAGE" -d pixel_6 --force > "$OUT/avdmanager.txt" 2>&1 || { note "avdmanager failed: $(tail -c 600 "$OUT/avdmanager.txt" | tr '\n' ' ')"; exit 1; }
+# One explicit AVD folder for both tools (the runner's avdmanager and emulator
+# otherwise look in different places).
+export ANDROID_AVD_HOME="$HOME/.android/avd"
+mkdir -p "$ANDROID_AVD_HOME"
+echo no | avdmanager create avd -n coco -k "$IMAGE" -d pixel_6 -p "$ANDROID_AVD_HOME/coco.avd" --force > "$OUT/avdmanager.txt" 2>&1 || { note "avdmanager failed: $(tail -c 600 "$OUT/avdmanager.txt" | tr '\n' ' ')"; exit 1; }
 ls -l /dev/kvm >> "$OUT/emulator-errors.txt" 2>&1 || note 'no /dev/kvm on this runner'
+emulator -list-avds | grep -qx coco || note "AVD coco not listed: $(ls "$ANDROID_AVD_HOME" 2>&1 | tr '\n' ' ') / $(tail -c 400 "$OUT/avdmanager.txt" | tr '\n' ' ')"
 
 boot() {
   adb kill-server >/dev/null 2>&1 || true

@@ -548,3 +548,30 @@ Validaciones: 119 Node, tsc estricto; resumen medido en es, de y ar con y sin ca
 una línea, nada bajo la carta ni recortado.
 CI de la build 43: `main` `42385089470` y `release` `42385092530` correctas. IPA 0.9.9 (43) de
 `5e620b4`, 6 808 120 bytes, sha256 `2e7272dc…ac80`.
+
+### CW-CL-054 — Android: plataforma, CI y `PhotoLibrary` en Kotlin (rama `android`)
+Fecha: 2026-11-07, America/Bogota
+Agente: Claude
+Estado: en curso (fases 1–2 de `docs/ai-handoff/ROADMAP_PLAYSTORE.md`); pendiente de teléfono real.
+Base Git / commit: rama `android` desde `main` (`e65fffd`), con `main` (build 43) fusionada;
+worktree `C:\Users\Joaco\Developer\CocoWash-android` porque otra sesión trabajaba en
+`CocoWash-b24` (se le devolvió su rama al instante; sus cambios quedaron intactos).
+Decisiones del usuario: plan por fases aprobado; `applicationId` `work.joaquin.mano`;
+`minSdk 30`, `targetSdk 36`; LiteRT con modelos incluidos (ML Kit envía métricas); «Un año
+sin anuncios» como producto único que no se consume hasta caducar; instalar
+`@capacitor/android`, crear y subir la rama `android`.
+Cambios realizados:
+- `@capacitor/android` 8.6.0 (sin npm en el PC: tarball del registro, integridad sha512
+  verificada, lockfile actualizado como lo haría npm). Proyecto `mano/android`: Kotlin,
+  0.9.9.1 (1), vertical, sin copia de seguridad ni transferencia, idiomas por app, tema claro
+  con barras transparentes, arranque en papel liso, icono adaptativo y temático
+  (`brand/generate-android-icons.mjs`). Firma solo por secretos de la CI.
+- `PhotoLibraryPlugin.kt` (misma API JS), `CocoWebViewClient.kt` (vídeo por rangos desde
+  MediaStore), `MainActivity.kt` (Atrás). Papelera con `createTrashRequest` y favoritas
+  recomprobadas; favoritas con `createFavoriteRequest`; álbumes no soportados.
+- Web: `androidBack.ts` (Atrás cierra hojas y vista anclada), `locales/android.ts` (29
+  textos × 7 idiomas: galería, papelera, teléfono, rutas de permisos), Ajustes sin iCloud en
+  Android. iOS sin cambios de comportamiento.
+- CI `build-android.yml` (`ubuntu-latest`): tests, runtime, `sync:android`, APK + AAB,
+  paquete/SDK/16 KB, emulador propio con límites y un reinicio (fallos como anotaciones).
+Abierto (usuario): favoritas (diálogo por gesto o lote al terminar) y álbum en Android.
