@@ -88,7 +88,7 @@ la normativa aplicable, sin afirmar que todos sus umbrales se cumplen.
 
 Precios de diseño no se convierten en precios configurados. El catálogo vacío o
 fallido ahora ofrece reintento y no muestra sellos de compra indisponibles/«Pronto».
-PASS ocho contratos Edge con fixtures, sin compras ni solicitudes reales.
+PASS diez contratos Edge con fixtures, sin compras ni solicitudes reales.
 Restaurar compras y privacidad siguen accesibles. El canal RC oculta developer y
 Release usa los IDs ya existentes en release4c43d0c; Debug conserva configuración
 de pruebas. La existencia de IDs no acredita propiedad o aprobación de AdMob.
@@ -96,3 +96,10 @@ de pruebas. La existencia de IDs no acredita propiedad o aprobación de AdMob.
 Una primera versión sin anuncios/compras fue alternativa considerada, **no elegida**
 por el propietario. Los bloqueos de monetización deben resolverse antes del envío;
 no se cambian silenciosamente estrategia, cadencia ni composiciones de las cartas.
+
+## Paquete local para publicar tras autorización
+
+`work/apple-readiness/rc-policy-handoff.zip` contiene solo las dos políticas HTML
+corregidas. SHA256 `d21212a96535f53b7c826e1d6df6aabcf574f26f3713a63814c7ba9a047c6de8`.
+No incluye claves ni modifica la web. Conservar los demás recursos del sitio y
+comparar los archivos descargados después de un despliegue autorizado.

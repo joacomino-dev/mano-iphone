@@ -1,5 +1,7 @@
 # Compras dentro de la app · App Store Connect
 
+**RC:** mantener monetización confirmado por el propietario. IDs/tipos siguientes existen en fuente; configuración/precios/catálogos ASC y sandbox BLOCKED. La app oculta productos ausentes y ofrece reintento; no hay compra real validada. No confundir nombres de diseño con productos aprobados.
+
 Tres productos. Los IDs tienen que ser **exactamente** estos: la app los busca por nombre
 (`CocoMonetization.swift`). Los nombres coinciden con los que se ven en Ajustes › Apoyo.
 Límites de Apple: nombre visible ≤ 30 caracteres, descripción ≤ 45 (comprobados).

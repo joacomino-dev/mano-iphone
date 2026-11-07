@@ -1,0 +1,16 @@
+
+Running 8 tests using 1 worker
+
+
+
+(node:74588) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[1/8] tests\mobile-runtime.spec.ts:25:1 › horizontal intent stays in Carousel and cannot create parent momentum
+[2/8] tests\mobile-runtime.spec.ts:42:1 › vertical intent over a carousel is handed to MobileScroll in both directions
+[3/8] tests\mobile-runtime.spec.ts:58:1 › tap activates a card but a completed drag does not
+[4/8] tests\mobile-runtime.spec.ts:67:1 › Carousel preserves momentum and edge rubber-banding
+[5/8] tests\mobile-runtime.spec.ts:90:1 › BottomSheet remains mounted while its default exit animation plays
+[6/8] tests\mobile-runtime.spec.ts:107:1 › keyboard and its attached footer dismiss on the same transition
+[7/8] tests\mobile-runtime.spec.ts:136:1 › switching to Pixel keeps the composer above Android navigation
+[8/8] tests\mobile-runtime.spec.ts:223:1 › FlowStack pushes and pops screens while dismissing the keyboard
+  8 passed (12.1s)

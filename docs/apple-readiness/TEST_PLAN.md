@@ -1,5 +1,7 @@
 # Plan de validación reproducible
 
+RC: añadir6 tests Release y nuevos10 flujos/6 escenarios accesibles. [Comandos y evidencia](evidence/rc/README.md), [gate Mac/archivo](NATIVE_GATE.md) y [checklist de envío](APP_STORE_SUBMISSION_CHECKLIST.md). El gate estricto de privacidad devuelve FAIL ante dominios ausentes; no omitirlo.
+
 2026-11-07 · cada ejecución debe identificar SHA y diff, canal, versión/build,
 herramientas, modelo/OS, permisos, fixtures y resultado. No usar fotos personales
 para QA destructiva ni subir medios, cachés, sesiones, certificados o diagnósticos

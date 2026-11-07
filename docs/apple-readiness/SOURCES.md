@@ -1,5 +1,20 @@
 # Fuentes y trazabilidad
 
+RC consultada7noviembre2026: [SDK mínimo26](https://developer.apple.com/news/upcoming-requirements/?id=04282026a),
+[Guidelines](https://developer.apple.com/app-store/review/guidelines/),
+[TN3182](https://developer.apple.com/documentation/technotes/tn3182-adding-privacy-tracking-keys-to-your-privacy-manifest),
+[manifest](https://developer.apple.com/documentation/bundleresources/privacy-manifest-files),
+[Google13.12.0](https://developers.google.com/admob/ios/privacy/data-disclosure),
+[SDK Apple](https://developer.apple.com/support/third-party-SDK-requirements/),
+[DSA](https://developer.apple.com/help/app-store-connect/manage-compliance-information/manage-european-union-digital-services-act-trader-requirements/),
+[campos](https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information/),
+[capturas](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/),
+[runners](https://github.com/actions/runner-images), [costes CI](https://docs.github.com/en/billing/concepts/product-billing/github-actions)
+y [Xcode Cloud](https://developer.apple.com/xcode-cloud/get-started/).
+Binarios fijados: [checksums/manifiestos](evidence/rc-sdk-summary.json).
+URLs propias: [GET público actual](evidence/rc-public-web.json). Consulta no implica
+aceptación Apple ni ejecución de esta RC. [Conclusiones](RELEASE_CANDIDATE.md).
+
 Consultadas el 2026-11-07. Fuentes primarias; sus requisitos pueden cambiar:
 reconsultar al producir el archivo de envío. Los enlaces a fuentes no prueban que
 una herramienta esté instalada ni que una cuenta esté configurada.

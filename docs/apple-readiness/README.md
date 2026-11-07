@@ -1,5 +1,7 @@
 # CocoWash: compatibilidad Apple y preparación internacional
 
+**Cierre RC actual:** [RELEASE_CANDIDATE](RELEASE_CANDIDATE.md) y [checklist operativo](APP_STORE_SUBMISSION_CHECKLIST.md). Sobre b0cf83d:120 Node +6 Release +4 contratos estáticos +Sites4 y52 casos de navegador/runtime PASS; runtime28/arte intactos, TS/builds/sync Windows PASS. **No apta para envío:** privacidad estricta FAIL por dominios; compilación/QA Apple, comercio, firma y distribución BLOCKED. [Privacidad](PRIVACY_AND_MONETIZATION.md), [Mac/CI](NATIVE_GATE.md), [ES/EN](storefront/metadata.json). El resto conserva el historial de fases anteriores.
+
 Fecha: 2026-11-07 · responsable de esta intervención: Codex (CW-CX-018).
 
 **Actualización Fase 2 — CW-CX-019:** [resultados ejecutados](PHASE2.md) y

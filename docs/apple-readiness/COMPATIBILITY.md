@@ -1,5 +1,7 @@
 # Matriz técnica inicial de compatibilidad
 
+**RC:** mínimo17 conservado. Ninguna nueva fila física/simulador Apple probada. PASS ES/EN en Edge375×667,390×844,440×956 con teclado y texto raíz200%; no acredita Dynamic Type/VoiceOver/Island. Se reconsultaron listas oficiales iOS27 y fichas18 Pro/Max/Duo. Continúan candidatos, sin promesa de Duo optimizado ni cambios de orientación/API basados en suposiciones. [Resultados](RELEASE_CANDIDATE.md).
+
 2026-11-07 · base y alcance en [README](README.md).
 
 **Mínimo configurado: iOS 17.0, arm64, target iPhone.** No es todavía una

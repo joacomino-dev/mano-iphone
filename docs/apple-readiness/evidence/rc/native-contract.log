@@ -1,0 +1,12 @@
+✔ static bridge: PhotoLibrary TypeScript methods have native registration and handlers (5.0352ms)
+✔ static bridge: CocoMonetization TypeScript methods have native registration and handlers (2.3614ms)
+✔ static entry: native scene instantiates the bridge that registers both plugins (1.2722ms)
+✔ static configuration: deployment, bundle, privacy and localization resources agree (8.5869ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 87.1877

@@ -1,0 +1,46 @@
+{
+  "at": "2026-11-07T20:56:12.841Z",
+  "boundary": "Edge and synthetic bridge/catalog only; not native PhotoKit, ads or StoreKit validation",
+  "results": [
+    {
+      "name": "favorite: stale manual snapshot cannot undo a confirmed favorite",
+      "status": "PASS"
+    },
+    {
+      "name": "catalog empty: no unavailable purchase buttons or coming-soon claims",
+      "status": "PASS"
+    },
+    {
+      "name": "favorite undo: old favored snapshot cannot restore an undone favorite",
+      "status": "PASS"
+    },
+    {
+      "name": "favorite failure: neither history nor Photos fixture claims success",
+      "status": "PASS"
+    },
+    {
+      "name": "catalog error and retry: only available real IDs are offered",
+      "status": "PASS"
+    },
+    {
+      "name": "purchase cancelled: confirmation follows the bridge result",
+      "status": "PASS"
+    },
+    {
+      "name": "purchase pending: confirmation follows the bridge result",
+      "status": "PASS"
+    },
+    {
+      "name": "purchase error: confirmation follows the bridge result",
+      "status": "PASS"
+    },
+    {
+      "name": "purchase purchased: confirmation follows the bridge result",
+      "status": "PASS"
+    },
+    {
+      "name": "restore failure is never presented as restored",
+      "status": "PASS"
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "kind": "synthetic flat RGB patterns, not real photo/video benchmarks",
+  "count": 12,
+  "entries": [
+    {
+      "file": "cocowash-synthetic-00000.png",
+      "width": 240,
+      "height": 320,
+      "bytes": 189367,
+      "sha256": "ecd492ea56ba32dec86bbe75f4506817693a8f0bc4b4df3415cfb44a69606142"
+    },
+    {
+      "file": "cocowash-synthetic-00001.png",
+      "width": 320,
+      "height": 240,
+      "bytes": 189402,
+      "sha256": "b7a69e38a3ee4c493bcc5b0e419fcd4cce63743cdd6fda96015007c98f0490ba"
+    },
+    {
+      "file": "cocowash-synthetic-00002.png",
+      "width": 240,
+      "height": 320,
+      "bytes": 189804,
+      "sha256": "4132f0cc0f6d0fd787bd984d259ba4a97a2d173a94b2d16329190d1c71cf234a"
+    },
+    {
+      "file": "cocowash-synthetic-00003.png",
+      "width": 320,
+      "height": 240,
+      "bytes": 189975,
+      "sha256": "4afb7ed6366509d3193332a1453b520721ee543ac2fa1d9a6e624d8bd2c7e0cb"
+    },
+    {
+      "file": "cocowash-synthetic-00004.png",
+      "width": 240,
+      "height": 320,
+      "bytes": 190833,
+      "sha256": "85ae52a599f140b5d6015362d807ab698de8e6e98ed1c6209b5d0874113274c7"
+    },
+    {
+      "file": "cocowash-synthetic-00005.png",
+      "width": 320,
+      "height": 240,
+      "bytes": 189967,
+      "sha256": "be31eb080b9ad3fd5598ce6ce22c4bf623aaf31a00a39ac997c32cf8e02db9b1"
+    },
+    {
+      "file": "cocowash-synthetic-00006.png",
+      "width": 240,
+      "height": 320,
+      "bytes": 190991,
+      "sha256": "10b58494deb5e8b05242c8edfb5faf179c68cc775b5a50bd9b3516af4d8861a9"
+    },
+    {
+      "file": "cocowash-synthetic-00007.png",
+      "width": 320,
+      "height": 240,
+      "bytes": 190233,
+      "sha256": "276070f5fe2ad1b8dcd2c4b44c47fb81f72504ed4be98c41a2192220e7f8ef7c"
+    },
+    {
+      "file": "cocowash-synthetic-00008.png",
+      "width": 240,
+      "height": 320,
+      "bytes": 191111,
+      "sha256": "f24bc3a8c701cfe7dff23c68805856dc55992e6e56e119893d90f1ee77109431"
+    },
+    {
+      "file": "cocowash-synthetic-00009.png",
+      "width": 320,
+      "height": 240,
+      "bytes": 189714,
+      "sha256": "c9f1fb447f7433c8c92330dfafb0523234b0979df780b25a5c75c1eaf11719cb"
+    },
+    {
+      "file": "cocowash-synthetic-00010.png",
+      "width": 240,
+      "height": 320,
+      "bytes": 190494,
+      "sha256": "5329a828bcb8e7125af01698958c72b0a7acf8d0ea8b4443624d30c299c279ec"
+    },
+    {
+      "file": "cocowash-synthetic-00011.png",
+      "width": 320,
+      "height": 240,
+      "bytes": 189708,
+      "sha256": "ab52764218df3afa1ffad1f1c48ff85d3d637ea134186acd7b79fb3ed337e8e0"
+    }
+  ]
+}

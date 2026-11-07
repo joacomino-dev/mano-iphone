@@ -274,3 +274,16 @@ Decisiones relevantes: mínimo17/identidad/Swift/dependencias/monetización cons
 Validaciones: 119 Node, 19 regresiones, 9 seguridad, 8 runtime Edge, 4 contratos estáticos, Sites4, runtime28, tsc/builds; métricas Node 1k/10k/50k. Fallos reproducidos antes y corregidos. Bash sintaxis PASS; nativo no disponible, exit78.
 Impacto para Claude: preservar commits locales y guards al integrar; no confundir fixture con PhotoKit real.
 Pendientes: macOS/PhotoKit, hardware/Duo, Instruments/accesibilidad, privacidad agregada, firma/ASC/TestFlight.
+
+### CW-CX-020 — RC local y puertas de distribución
+Fecha:2026-11-07, America/Bogota.
+Agente:Codex.
+Tarea:Cierre RC autorizado; conservar identidad/monetización/última base.
+Estado:completada local; envío bloqueado.
+Base Git / commit:b0cf83d limpio, CocoWash-b24; código/config dc5ffc9.
+Archivos modificados:ManoApp/Monetization, traducciones/close nativo, manifest/políticas, canal/config, tests/scripts/docs.
+Cambios realizados:favorita obsoleta/catálogo vacío corregidos645564f; i18n9824907; privacidadcb927ad; Release/versionado55c6951; gates880a9a0/ca668b7; plazos legalesdc5ffc9. [Informe](../apple-readiness/RELEASE_CANDIDATE.md).
+Decisiones relevantes:responsable/contacto y monetización confirmados; iOS17, arte,28 protegidos, dependencias y funciones conservados. Sin push/cuentas/subidas.
+Validaciones:120 Node+6 Release+4 estáticos+Sites4+52 navegador/runtime;TS/builds/sync Windows PASS. SDKs oficiales inspeccionados; NO Swift/PhotoKit nativo ejecutado.
+Impacto para Claude:preservar commits/configuración RC; no mostrar developer/«Pronto» ni copiar metadatos históricos como finales.
+Pendientes:P1 dominios tracking FAIL; macOS/hardware/Duo, privacidad agregada/tráfico/web, sandbox/comercio/firma/TestFlight BLOCKED.

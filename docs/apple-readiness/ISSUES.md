@@ -1,5 +1,7 @@
 # Registro priorizado de problemas y correcciones
 
+**RC:** [registro detallado y checkpoints](RELEASE_CANDIDATE.md), [evidencia](evidence/rc/README.md). Corregidos P1 favorita obsoleta/catálogo vacío (645564f), etiquetas/manifiesto (cb927ad), canal tienda/versionado tras sync (55c6951); P2 errores nativos traducidos (9824907). **P1 abierto FAIL:** tracking=true sin dominios (TN3182), gate estricto bloquea archivo (880a9a0). Validación nativa adversa/firma/comercio siguen BLOCKED. No hay P0 reproducidos abiertos en contratos JS; no se certifica PhotoKit nativo. APL-010 traducido, ejecución Apple pendiente. Las tablas siguientes son históricas.
+
 2026-11-07 · fuente inicial build 43. Estado **local**: no integrado/publicado.
 
 P0: pérdida de datos/operación destructiva incorrecta/fallo crítico.

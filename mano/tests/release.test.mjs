@@ -10,6 +10,8 @@ for (const kind of ['developer','testID','reset','longSubtitle']) test(`release 
 });
 test('Capacitor configuration preserves the selected marketing version and unique build',()=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cocowash-version-'));
+ assert.equal(path.dirname(path.resolve(dir)),path.resolve(os.tmpdir()));
+ assert.match(path.basename(dir),/^cocowash-version-/); // Check the owned target before recursive fixture cleanup.
  try{
   for(const file of ['App.xcodeproj/project.pbxproj','App/Base.lproj/Main.storyboard','App/SceneDelegate.swift','App/Info.plist']){
    const target=path.join(dir,'ios/App',file);fs.mkdirSync(path.dirname(target),{recursive:true});

@@ -1,0 +1,16 @@
+{
+  "at": "2026-11-07T20:15:54.922Z",
+  "boundary": "Edge and synthetic bridge/catalog only; not native PhotoKit, ads or StoreKit validation",
+  "results": [
+    {
+      "name": "favorite: stale manual snapshot cannot undo a confirmed favorite",
+      "status": "FAIL",
+      "error": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n+ []\n- [\n-   'fixture-2'\n- ]\n"
+    },
+    {
+      "name": "catalog empty: no unavailable purchase buttons or coming-soon claims",
+      "status": "FAIL",
+      "error": "unavailable offers are still visible\n\n3 !== 0\n"
+    }
+  ]
+}

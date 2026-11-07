@@ -1,5 +1,7 @@
 # Checklist de preparación para App Review
 
+**RC actual:** seguir [checklist operativo](APP_STORE_SUBMISSION_CHECKLIST.md) y [criterios](RELEASE_CANDIDATE.md). Privacidad estricta FAIL por dominios; vinculación/categorías corregidas contra SDKs. Políticas completas ES/EN preparadas, web aún anterior. Canal tienda corregido, compras faltantes ocultas y errores traducidos. App Completeness/privacidad/IAP/accesibilidad nativos siguen pendientes; la tabla siguiente conserva la auditoría inicial.
+
 Revisión técnica 2026-11-07 sobre build 43 y diff local CW-CX-018. **No enviado a
 Apple; no se acredita aprobación ni cumplimiento legal mundial.**
 

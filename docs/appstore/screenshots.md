@@ -1,5 +1,7 @@
 # Capturas de la App Store · plan
 
+**Plan histórico.** Para la RC usar [inventario/tamaños/procedimiento actual](../apple-readiness/storefront/SCREENSHOTS.md). No hay capturas nativas de esta RC, ni soporte Duo acreditado.
+
 Obligatorias: iPhone de **6,9"** (1320 × 2868 o 1290 × 2796 px, vertical). Apple reduce
 esas mismas para los iPhone más pequeños. Hasta 10; usamos 5.
 

@@ -24,6 +24,23 @@ try{
   assert.equal(await page.getByRole('button',{name:'Cargar precios',exact:true}).count(),1);
   assert.equal(await page.evaluate(()=>appleFixture.calls.some(c=>c.plugin==='CocoMonetization'&&c.method==='buy')),false);
  });
+ await scenario('favorite undo: old favored snapshot cannot restore an undone favorite',async page=>{
+  await page.getByRole('button',{name:'Añadir a Favoritas',exact:true}).click();await page.waitForTimeout(400);
+  assert.equal((await stored(page)).record.favorites.length,1);
+  await settings(page);await page.evaluate(()=>appleFixture.holdAssets=true);await page.getByRole('button',{name:'Actualizar biblioteca',exact:true}).click();
+  await page.waitForFunction(()=>appleFixture.pendingAssets?.length===1);await page.getByRole('button',{name:'Cerrar',exact:true}).click();
+  await page.getByRole('button',{name:'Deshacer la última decisión',exact:true}).click();await page.waitForTimeout(400);
+  assert.equal((await stored(page)).record.favorites.length,0);
+  await page.evaluate(()=>appleFixture.pendingAssets.splice(0).forEach(resolve=>resolve()));await page.waitForTimeout(400);
+  assert.equal((await stored(page)).record.favorites.length,0);assert.equal((await stored(page)).record.history.length,0);
+ });
+ await scenario('favorite failure: neither history nor Photos fixture claims success',async page=>{
+  const before=(await stored(page)).record;await page.evaluate(()=>appleFixture.favoriteError=true);
+  await page.getByRole('button',{name:'Añadir a Favoritas',exact:true}).click();
+  await page.getByText('Fixture: Photos favorite failed',{exact:true}).waitFor();await page.waitForTimeout(400);
+  assert.deepEqual((await stored(page)).record,before);
+  assert.equal(await page.evaluate(()=>appleFixture.assets.some(a=>a.favorite)),false);
+ });
  await scenario('catalog error and retry: only available real IDs are offered',async page=>{
   await page.evaluate(()=>{appleFixture.adFree=false;appleFixture.catalogError=true;document.dispatchEvent(new Event('visibilitychange'));});await support(page);
   await page.getByText('Los precios no están disponibles ahora. Prueba en un momento.',{exact:true}).waitFor();

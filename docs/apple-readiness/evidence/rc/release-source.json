@@ -1,0 +1,29 @@
+{
+  "status": "PASS",
+  "boundary": "Static source and metadata only; native build, signatures, SDK report, traffic and distribution remain separate gates",
+  "marketingVersion": "0.9.9",
+  "build": "43",
+  "appIconSHA256": "84ed91a8d86ed35fb3a442578bd28d3949990a8d01159914c52bc19e94a0a46f",
+  "metadataLengths": {
+    "es": {
+      "name": 8,
+      "subtitle": 24,
+      "keywords": 83,
+      "promotionalText": 120,
+      "description": 2044,
+      "releaseNotes": 152,
+      "supportURL": 34,
+      "privacyURL": 49
+    },
+    "en": {
+      "name": 8,
+      "subtitle": 18,
+      "keywords": 81,
+      "promotionalText": 128,
+      "description": 1792,
+      "releaseNotes": 142,
+      "supportURL": 46,
+      "privacyURL": 46
+    }
+  }
+}

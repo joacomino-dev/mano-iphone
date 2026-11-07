@@ -1,0 +1,3 @@
+PROFILE 1000 orderAssets(oldest)=0.04ms | orderAssets(random)=0.57ms | eligibleFrom(after 30 decisions)=0.39ms | SessionWriter: validate + serialize all marks=0.49ms | SessionWriter: same validated record=0.20ms | reviewRows(1000 pending, midpoint)=0.04ms
+PROFILE 10000 orderAssets(oldest)=0.24ms | orderAssets(random)=5.49ms | eligibleFrom(after 30 decisions)=2.54ms | SessionWriter: validate + serialize all marks=8.60ms | SessionWriter: same validated record=2.66ms | reviewRows(1000 pending, midpoint)=0.03ms
+PROFILE 50000 orderAssets(oldest)=1.44ms | orderAssets(random)=35.63ms | eligibleFrom(after 30 decisions)=8.45ms | SessionWriter: validate + serialize all marks=51.32ms | SessionWriter: same validated record=17.47ms | reviewRows(1000 pending, midpoint)=0.03ms

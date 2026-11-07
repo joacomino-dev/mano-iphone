@@ -1,5 +1,7 @@
 # Auditoría de interfaz adaptable
 
+RC:6/6 escenarios ES/EN de teclado/targets44CSSpx/texto raíz200% y acciones de revisión alcanzables en375×667,390×844,440×956. CSS/arte/animación intactos. No acredita Dynamic Type/VoiceOver ni safe areas nativas. [Evidencia](evidence/rc/accessibility.json).
+
 2026-11-07 · `frontend-craft`, modo revisión; identidad Coco Cream, Coqui/Memo,
 Polaroid/VHS, cartas, tipografías y gestos actuales conservados.
 

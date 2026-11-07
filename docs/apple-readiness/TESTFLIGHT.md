@@ -1,5 +1,7 @@
 # Protocolo de dispositivos físicos y TestFlight
 
+**RC:** fuente ya preparada con developer=false y ajustes comerciales Release existentes, sin cambio de estrategia. Archivo/subida no realizados. Seguir el [gate Mac actualizado](NATIVE_GATE.md) y [checklist de envío](APP_STORE_SUBMISSION_CHECKLIST.md); resolver P1 de dominios antes de firmar. El texto siguiente conserva procedimientos de Fase2.
+
 Preparado 2026-11-07; **PENDIENTE**, no ejecutado. Ninguna subida, publicación,
 compra o modificación de certificados se autoriza por este documento.
 

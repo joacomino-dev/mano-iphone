@@ -1,5 +1,7 @@
 # Notes for App Review (draft, English)
 
+**Borrador histórico, sustituido para la RC.** Usar [notas finales ES/EN](../apple-readiness/storefront/REVIEW_NOTES.md) y [checklist](../apple-readiness/APP_STORE_SUBMISSION_CHECKLIST.md). Reflejan compartir explícito, SDKs, consentimiento y pruebas con medios sintéticos; no usar las afirmaciones absolutas del borrador anterior.
+
 CocoWash helps people tidy their Photos library by swiping through their photos one by one.
 
 - **No account, no sign-in, no server.** Everything is analyzed on device; no photo is

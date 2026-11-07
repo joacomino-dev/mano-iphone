@@ -1,5 +1,7 @@
 # Política de privacidad de CocoWash
 
+**Actualización RC7noviembre2026:** responsable/ciudad/email confirmados. Políticas completas locales corregidas en web/cocowash, pendientes de publicación autorizada. GET público200 sigue mostrando la versión anterior. [Estado técnico/comercial](../apple-readiness/PRIVACY_AND_MONETIZATION.md) y [etiquetas propuestas](app-privacy.md) sustituyen las conclusiones de abajo para envío.
+
 La versión vigente (6 de noviembre de 2026) es la web, en `web/cocowash/`:
 
 - Español: https://joaquinmino.work/cocowash/privacidad.html

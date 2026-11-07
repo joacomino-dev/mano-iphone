@@ -1,0 +1,14 @@
+✔ release source, approved icon and ES/EN metadata pass static checks (5.3361ms)
+✔ release gate rejects developer (0.949ms)
+✔ release gate rejects testID (0.6577ms)
+✔ release gate rejects reset (0.4253ms)
+✔ release gate rejects longSubtitle (0.5036ms)
+✔ Capacitor configuration preserves the selected marketing version and unique build (54.0005ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 130.3205

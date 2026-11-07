@@ -1,0 +1,522 @@
+{
+  "at": "2026-11-07T20:38:47.781Z",
+  "boundary": "Edge DOM/layout with synthetic Capacitor bridge. Root font enlargement is not native Dynamic Type. VoiceOver, native focus order, contrast and real safe areas are not certified.",
+  "results": [
+    {
+      "name": "es 375x667 keyboard actions, reduced motion and enlarged root text",
+      "status": "PASS",
+      "geometry": [
+        {
+          "fontSize": "100%",
+          "label": "Conservar",
+          "rect": {
+            "x": 220.625,
+            "y": 532.8125,
+            "width": 142.359375,
+            "height": 53
+          }
+        },
+        {
+          "fontSize": "100%",
+          "label": "Añadir a Favoritas",
+          "rect": {
+            "x": 145.84375,
+            "y": 520.8125,
+            "width": 83.296875,
+            "height": 77
+          }
+        },
+        {
+          "fontSize": "100%",
+          "label": "Eliminar",
+          "rect": {
+            "x": 12,
+            "y": 532.8125,
+            "width": 142.359375,
+            "height": 53
+          }
+        },
+        {
+          "fontSize": "100%",
+          "label": "Dejar para más tarde",
+          "rect": {
+            "x": 151.484375,
+            "y": 605.8125,
+            "width": 72,
+            "height": 53.1875
+          }
+        },
+        {
+          "fontSize": "200%",
+          "label": "Conservar",
+          "rect": {
+            "x": 220.625,
+            "y": 493.21875,
+            "width": 142.359375,
+            "height": 53
+          }
+        },
+        {
+          "fontSize": "200%",
+          "label": "Añadir a Favoritas",
+          "rect": {
+            "x": 145.84375,
+            "y": 481.21875,
+            "width": 83.296875,
+            "height": 77
+          }
+        },
+        {
+          "fontSize": "200%",
+          "label": "Eliminar",
+          "rect": {
+            "x": 12,
+            "y": 493.21875,
+            "width": 142.359375,
+            "height": 53
+          }
+        },
+        {
+          "fontSize": "200%",
+          "label": "Dejar para más tarde",
+          "rect": {
+            "x": 130.328125,
+            "y": 566.21875,
+            "width": 114.328125,
+            "height": 92.78125
+          }
+        }
+      ]
+    },
+    {
+      "name": "es 390x844 keyboard actions, reduced motion and enlarged root text",
+      "status": "PASS",
+      "geometry": [
+        {
+          "fontSize": "100%",
+          "label": "Conservar",
+          "rect": {
+            "x": 229.6875,
+            "y": 698.8125,
+            "width": 148.296875,
+            "height": 59
+          }
+        },
+        {
+          "fontSize": "100%",
+          "label": "Añadir a Favoritas",
+          "rect": {
+            "x": 148.75,
+            "y": 685.8125,
+            "width": 92.5,
+            "height": 85
+          }
+        },
+        {
+          "fontSize": "100%",
+          "label": "Eliminar",
+          "rect": {
+            "x": 12,
+            "y": 698.8125,
+            "width": 148.296875,
+            "height": 59
+          }
+        },
+        {
+          "fontSize": "100%",
+          "label": "Dejar para más tarde",
+          "rect": {
+            "x": 158.984375,
+            "y": 782.8125,
+            "width": 72,
+            "height": 53.1875
+          }
+        },
+        {
+          "fontSize": "200%",
+          "label": "Conservar",
+          "rect": {
+            "x": 229.6875,
+            "y": 659.21875,
+            "width": 148.296875,
+            "height": 59
+          }
+        },
+        {
+          "fontSize": "200%",
+          "label": "Añadir a Favoritas",
+          "rect": {
+            "x": 148.75,
+            "y": 646.21875,
+            "width": 92.5,
+            "height": 85
+          }
+        },
+        {
+          "fontSize": "200%",
+          "label": "Eliminar",
+          "rect": {
+            "x": 12,
+            "y": 659.21875,
+            "width": 148.296875,
+            "height": 59
+          }
+        },
+        {
+          "fontSize": "200%",
+          "label": "Dejar para más tarde",
+          "rect": {
+            "x": 135.328125,
+            "y": 743.21875,
+            "width": 119.328125,
+            "height": 92.78125
+          }
+        }
+      ]
+    },
+    {
+      "name": "es 440x956 keyboard actions, reduced motion and enlarged root text",
+      "status": "PASS",
+      "geometry": [
+        {
+          "fontSize": "100%",
+          "label": "Conservar",
+          "rect": {
+            "x": 254.6875,
+            "y": 810.8125,
+            "width": 173.296875,
+            "height": 59
+          }
+        },
+        {
+          "fontSize": "100%",
+          "label": "Añadir a Favoritas",
+          "rect": {
+            "x": 173.75,
+            "y": 797.8125,
+            "width": 92.5,
+            "height": 85
+          }
+        },
+        {
+          "fontSize": "100%",
+          "label": "Eliminar",
+          "rect": {
+            "x": 12,
+            "y": 810.8125,
+            "width": 173.296875,
+            "height": 59
+          }
+        },
+        {
+          "fontSize": "100%",
+          "label": "Dejar para más tarde",
+          "rect": {
+            "x": 184,
+            "y": 894.8125,
+            "width": 72,
+            "height": 53.1875
+          }
+        },
+        {
+          "fontSize": "200%",
+          "label": "Conservar",
+          "rect": {
+            "x": 254.6875,
+            "y": 797.609375,
+            "width": 173.296875,
+            "height": 59
+          }
+        },
+        {
+          "fontSize": "200%",
+          "label": "Añadir a Favoritas",
+          "rect": {
+            "x": 173.75,
+            "y": 784.609375,
+            "width": 92.5,
+            "height": 85
+          }
+        },
+        {
+          "fontSize": "200%",
+          "label": "Eliminar",
+          "rect": {
+            "x": 12,
+            "y": 797.609375,
+            "width": 173.296875,
+            "height": 59
+          }
+        },
+        {
+          "fontSize": "200%",
+          "label": "Dejar para más tarde",
+          "rect": {
+            "x": 158.640625,
+            "y": 881.609375,
+            "width": 122.71875,
+            "height": 66.390625
+          }
+        }
+      ]
+    },
+    {
+      "name": "en 375x667 keyboard actions, reduced motion and enlarged root text",
+      "status": "PASS",
+      "geometry": [
+        {
+          "fontSize": "100%",
+          "label": "Keep",
+          "rect": {
+            "x": 220.625,
+            "y": 532.8125,
+            "width": 142.359375,
+            "height": 53
+          }
+        },
+        {
+          "fontSize": "100%",
+          "label": "Add to Favorites",
+          "rect": {
+            "x": 145.84375,
+            "y": 520.8125,
+            "width": 83.296875,
+            "height": 77
+          }
+        },
+        {
+          "fontSize": "100%",
+          "label": "Delete",
+          "rect": {
+            "x": 12,
+            "y": 532.8125,
+            "width": 142.359375,
+            "height": 53
+          }
+        },
+        {
+          "fontSize": "100%",
+          "label": "Leave for later",
+          "rect": {
+            "x": 151.484375,
+            "y": 605.8125,
+            "width": 72,
+            "height": 53.1875
+          }
+        },
+        {
+          "fontSize": "200%",
+          "label": "Keep",
+          "rect": {
+            "x": 220.625,
+            "y": 519.609375,
+            "width": 142.359375,
+            "height": 53
+          }
+        },
+        {
+          "fontSize": "200%",
+          "label": "Add to Favorites",
+          "rect": {
+            "x": 145.84375,
+            "y": 507.609375,
+            "width": 83.296875,
+            "height": 77
+          }
+        },
+        {
+          "fontSize": "200%",
+          "label": "Delete",
+          "rect": {
+            "x": 12,
+            "y": 519.609375,
+            "width": 142.359375,
+            "height": 53
+          }
+        },
+        {
+          "fontSize": "200%",
+          "label": "Leave for later",
+          "rect": {
+            "x": 151.484375,
+            "y": 592.609375,
+            "width": 72,
+            "height": 66.390625
+          }
+        }
+      ]
+    },
+    {
+      "name": "en 390x844 keyboard actions, reduced motion and enlarged root text",
+      "status": "PASS",
+      "geometry": [
+        {
+          "fontSize": "100%",
+          "label": "Keep",
+          "rect": {
+            "x": 229.6875,
+            "y": 698.8125,
+            "width": 148.296875,
+            "height": 59
+          }
+        },
+        {
+          "fontSize": "100%",
+          "label": "Add to Favorites",
+          "rect": {
+            "x": 148.75,
+            "y": 685.8125,
+            "width": 92.5,
+            "height": 85
+          }
+        },
+        {
+          "fontSize": "100%",
+          "label": "Delete",
+          "rect": {
+            "x": 12,
+            "y": 698.8125,
+            "width": 148.296875,
+            "height": 59
+          }
+        },
+        {
+          "fontSize": "100%",
+          "label": "Leave for later",
+          "rect": {
+            "x": 158.984375,
+            "y": 782.8125,
+            "width": 72,
+            "height": 53.1875
+          }
+        },
+        {
+          "fontSize": "200%",
+          "label": "Keep",
+          "rect": {
+            "x": 229.6875,
+            "y": 685.609375,
+            "width": 148.296875,
+            "height": 59
+          }
+        },
+        {
+          "fontSize": "200%",
+          "label": "Add to Favorites",
+          "rect": {
+            "x": 148.75,
+            "y": 672.609375,
+            "width": 92.5,
+            "height": 85
+          }
+        },
+        {
+          "fontSize": "200%",
+          "label": "Delete",
+          "rect": {
+            "x": 12,
+            "y": 685.609375,
+            "width": 148.296875,
+            "height": 59
+          }
+        },
+        {
+          "fontSize": "200%",
+          "label": "Leave for later",
+          "rect": {
+            "x": 158.984375,
+            "y": 769.609375,
+            "width": 72,
+            "height": 66.390625
+          }
+        }
+      ]
+    },
+    {
+      "name": "en 440x956 keyboard actions, reduced motion and enlarged root text",
+      "status": "PASS",
+      "geometry": [
+        {
+          "fontSize": "100%",
+          "label": "Keep",
+          "rect": {
+            "x": 254.6875,
+            "y": 810.8125,
+            "width": 173.296875,
+            "height": 59
+          }
+        },
+        {
+          "fontSize": "100%",
+          "label": "Add to Favorites",
+          "rect": {
+            "x": 173.75,
+            "y": 797.8125,
+            "width": 92.5,
+            "height": 85
+          }
+        },
+        {
+          "fontSize": "100%",
+          "label": "Delete",
+          "rect": {
+            "x": 12,
+            "y": 810.8125,
+            "width": 173.296875,
+            "height": 59
+          }
+        },
+        {
+          "fontSize": "100%",
+          "label": "Leave for later",
+          "rect": {
+            "x": 184,
+            "y": 894.8125,
+            "width": 72,
+            "height": 53.1875
+          }
+        },
+        {
+          "fontSize": "200%",
+          "label": "Keep",
+          "rect": {
+            "x": 254.6875,
+            "y": 797.609375,
+            "width": 173.296875,
+            "height": 59
+          }
+        },
+        {
+          "fontSize": "200%",
+          "label": "Add to Favorites",
+          "rect": {
+            "x": 173.75,
+            "y": 784.609375,
+            "width": 92.5,
+            "height": 85
+          }
+        },
+        {
+          "fontSize": "200%",
+          "label": "Delete",
+          "rect": {
+            "x": 12,
+            "y": 797.609375,
+            "width": 173.296875,
+            "height": 59
+          }
+        },
+        {
+          "fontSize": "200%",
+          "label": "Leave for later",
+          "rect": {
+            "x": 184,
+            "y": 881.609375,
+            "width": 72,
+            "height": 66.390625
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,5 +1,23 @@
 # CocoWash — estado vigente
 
+## Cierre RC — 2026-11-07 (CW-CX-020, completada local; envío bloqueado)
+
+Codex por petición del usuario sobre b0cf83d, limpio al iniciar; todos los gates
+locales anteriores repetidos PASS. Reserva: seguridad asíncrona en ManoApp,
+catálogo de Apoyo, localización/mensajes nativos, manifiesto/documentos de
+privacidad y herramientas/metadatos de distribución. El usuario confirma
+Joaquin Miño, Quito (Ecuador), cocowash@joaquinmino.work y mantener monetización.
+Sin arte, nuevas funciones/Personas, dependencias mayores, push, cuentas o envío.
+
+Correcciones locales645564f/9824907/cb927ad/55c6951; gates880a9a0/ca668b7.
+120 Node +6 Release +4 contratos estáticos +Sites4 +52 casos navegador/runtime,
+TS/builds/sync Windows y runtime28 PASS. Arte/CSS/personajes/icono intactos.
+**FAIL P1:** tracking=true sin dominios; gate estricto bloquea archivo. Nativo,
+hardware/Duo, privacidad agregada/tráfico, comercio, firma y distribución BLOCKED.
+[Entrega RC](../apple-readiness/RELEASE_CANDIDATE.md) y
+[checklist](../apple-readiness/APP_STORE_SUBMISSION_CHECKLIST.md). Preservar todos
+los commits al integrar; la rama release remota antigua no incluye esta RC.
+
 ## Fase 2 Apple — 2026-11-07 (CW-CX-019)
 
 Checkpoint autorizado: `9ff2734`, después de repetir todos los gates de Fase1.

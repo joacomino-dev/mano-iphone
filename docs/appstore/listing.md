@@ -1,5 +1,7 @@
 # CocoWash · Ficha de la App Store (borrador para revisar)
 
+**Borrador histórico conservado; no copiar directamente a envío.** La ficha RC final ES/EN y sus límites comprobados están en [metadata.json](../apple-readiness/storefront/metadata.json). Otros idiomas aquí preservan trabajo previo, sin aceptación lingüística/nativa final. No anunciar duplicados exactos, identidad facial ni privacidad sin SDKs.
+
 Límites de Apple: nombre 30, subtítulo 30, palabras clave 100 (separadas por comas, sin
 espacios), texto promocional 170. Las palabras clave no repiten el nombre ni el
 subtítulo (Apple ya los indexa). Revisión nativa recomendada antes de publicar.
