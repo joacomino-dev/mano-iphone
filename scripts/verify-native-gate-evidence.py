@@ -4,7 +4,7 @@ from pathlib import Path
 import re
 import sys
 
-CASES=['testFullPhotosAuthorizationStartsSession','testYGeneratedLivePhotoInlineAndAnchored','testZTenNativeDeletionRounds']
+CASES=['testFullPhotosAuthorizationStartsSession','testVGeneratedDeletionCancellation','testWGeneratedPendingSurvivesTermination','testYGeneratedLivePhotoInlineAndAnchored','testZTenNativeDeletionRounds']
 MARKERS=['COCOWASH_UI_AUTHORIZED_SESSION_OK','COCOWASH_UI_GENERATED_ALBUM_OK','COCOWASH_UI_LOCAL_METADATA_OK','COCOWASH_UI_LIVE_CARD_KEY_OK','COCOWASH_UI_LIVE_ANCHOR_TIMELINE_ZOOM_OK','COCOWASH_UI_NATIVE_TEN_CYCLES_OK','COCOWASH_UI_NATIVE_RELAUNCH_OK']
 
 def verify(folder,mode='full'):
@@ -14,8 +14,9 @@ def verify(folder,mode='full'):
     require((folder/'ui-test-exit-code.txt').read_text().strip()=='0','Missing successful completed xcodebuild invocation')
     log=(folder/'ui-test.log').read_text(errors='replace')
     native=(folder/'photos-read.log').read_text(errors='replace')
-    cases=CASES if mode=='full' else CASES[:2] if mode=='live' else ['testFullPhotosAuthorizationStartsSession'] if mode=='album' else ['testAdHostCaptureThroughRealConsent']
+    cases=CASES if mode=='full' else [CASES[0],'testYGeneratedLivePhotoInlineAndAnchored'] if mode=='live' else ['testFullPhotosAuthorizationStartsSession'] if mode=='album' else ['testAdHostCaptureThroughRealConsent']
     markers=MARKERS if mode=='full' else MARKERS[:5] if mode=='live' else MARKERS[:3] if mode=='album' else ['COCOWASH_UI_AD_HOST_RESEARCH_OK']
+    if mode=='full': markers=markers+['COCOWASH_UI_NATIVE_DELETE_CANCEL_OK','COCOWASH_UI_NATIVE_PENDING_RELAUNCH_OK']
     for case in cases: require(re.search(r'Test Case .*'+case+r'.* passed \(',log),'Case did not really pass: '+case)
     for marker in markers: require(marker in log,'UI marker missing: '+marker)
     require((folder/'PhotosSmoke.xcresult').is_dir(),'Actual xcresult missing')

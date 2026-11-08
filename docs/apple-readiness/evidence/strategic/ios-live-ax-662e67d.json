@@ -1,0 +1,11 @@
+{
+  "sourceSha": "662e67d4ce3e42d1feecb73b56628b670b1395d2",
+  "nativeRun": 42514969280,
+  "exportRun": 42517334811,
+  "status": "VERIFIED_SELECTOR_MISMATCH",
+  "evidence": [
+    "Other, 0x106b2e080, {{49.0, 187.0}, {304.0, 470.0}}, label: 'Live Photo 1 de 1, article' <AX element pid: 35092, elementOrHash.elementID: 5243337888.365>",
+    "Switch, 0x106b2e300, {{75.0, 586.0}, {66.0, 29.0}}, label: 'Reproducir Live Photo', value: 0 <AX element pid: 35092, elementOrHash.elementID: 5243332928.367>"
+  ],
+  "conclusion": "PhotoKit Live card exists. Playback control is a visible66x29 Switch, not XCUIElementTypeButton. This does not yet prove playback, which the next probe must execute."
+}

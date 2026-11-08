@@ -83,10 +83,14 @@ try{
  // Prove R-44 on the actual debug APK without enabling synthetic test mode.
  await click('#filter-trigger');await click('.sheet-tabs button:nth-child(2)');await wait(`!!document.querySelector('.test-mode-field')`);await shot('developer-channel-native');
  report.developerControlsVisible=true;await adb('shell','input','keyevent','4');await wait(`!document.querySelector('.native-sheet')`);report.nativeBackClosesSheet=true;
- await favoriteRefreshAndUndo();await pendingSurvivesTermination();
+ await favoriteRefreshAndUndo();
  await sleep(20000);await sample(0);
  for(let cycle=1;cycle<=10;cycle++){const favorite=cycle===10?await queueFavorite():null;await round(favorite,cycle===1);await sample(cycle);if(cycle===5||cycle===10)await shot('native-cycle-'+cycle);}
- report.status='PASS';report.functionalCycles=10;report.performanceAcceptance='PENDING: inspect renderer ownership and evaluate baseline/trend; collecting numbers alone is not P0 closure';
+ report.functionalCycles=10;
+ // Independent safety cases execute before the already-known crash-persistence
+ // failure. That assertion stays mandatory and still fails the complete gate.
+ await pendingSurvivesTermination();
+ report.status='PASS';report.performanceAcceptance='PENDING: inspect renderer ownership and evaluate baseline/trend; collecting numbers alone is not P0 closure';
 }catch(error){report.status='FAIL';report.error=error.stack;if(report.fixtureOwnershipVerified)await shot('native-cycle-failure').catch(()=>{});process.exitCode=1;}
 finally{await fs.writeFile(`${OUT}/native-cycles.json`,JSON.stringify(report,null,2));lab?.close();}
 console.log('ANDROID_NATIVE_CYCLES_'+report.status,JSON.stringify({cycles:report.functionalCycles??rows.length,error:report.error}));

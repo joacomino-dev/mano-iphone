@@ -492,6 +492,57 @@ final class PhotosSmokeTests: XCTestCase {
         }
     }
 
+    @MainActor private func ownedFullFixtureApp() throws -> XCUIApplication {
+        let url=try XCTUnwrap(Bundle(for:Self.self).url(forResource:"native-lab-contract",withExtension:"json"))
+        let contract=try XCTUnwrap(JSONSerialization.jsonObject(with:Data(contentsOf:url)) as? [String:Any])
+        guard contract["enabled"] as? Bool == true && contract["liveOnly"] as? Bool != true else { throw XCTSkip("Full fixture safety lab only") }
+        #if !targetEnvironment(simulator)
+        throw NSError(domain:"CocoWashFixtureQA",code:2,userInfo:[NSLocalizedDescriptionKey:"Fixture safety refuses physical libraries"])
+        #endif
+        XCTAssertEqual(contract["simulator"] as? String,ProcessInfo.processInfo.environment["SIMULATOR_UDID"])
+        let app=XCUIApplication();app.launchArguments=["-AppleLanguages","(es)","-AppleLocale","es_ES"];app.terminate();app.launch()
+        XCTAssertTrue(app.buttons["Eliminar"].firstMatch.waitForExistence(timeout:120))
+        return app
+    }
+
+    @MainActor
+    func testVGeneratedDeletionCancellation() throws {
+        let app=try ownedFullFixtureApp()
+        app.buttons["Eliminar"].firstMatch.tap()
+        let finish=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","Terminar")).firstMatch
+        finish.tap()
+        let confirm=app.buttons.matching(NSPredicate(format:"label == %@ OR label BEGINSWITH %@","Eliminar 1","Eliminar 1 (")).firstMatch
+        XCTAssertTrue(confirm.waitForExistence(timeout:20));confirm.tap()
+        let system=XCUIApplication(bundleIdentifier:"com.apple.springboard")
+        let cancel=system.buttons.matching(NSPredicate(format:"label IN %@",["Cancel","Cancelar","Don't Allow","No permitir"])).firstMatch
+        XCTAssertTrue(cancel.waitForExistence(timeout:30),"A real Photos cancellation button must be offered")
+        cancel.tap()
+        let retained=XCTNSPredicateExpectation(predicate:NSPredicate(format:"exists == true AND enabled == true"),object:confirm)
+        XCTAssertEqual(XCTWaiter().wait(for:[retained],timeout:20),.completed,"Cancellation must preserve the queued item, never report deletion")
+        XCTAssertFalse(app.buttons["Seguir revisando"].firstMatch.exists)
+        let recover=app.buttons["Recuperar"].firstMatch
+        XCTAssertTrue(recover.isHittable);recover.tap();XCTAssertTrue(closeOverlay(app,until:finish))
+        attachScreenshot(app,"Synthetic deletion canceled and recovered")
+        print("COCOWASH_UI_NATIVE_DELETE_CANCEL_OK")
+    }
+
+    @MainActor
+    func testWGeneratedPendingSurvivesTermination() throws {
+        let app=try ownedFullFixtureApp()
+        app.buttons["Eliminar"].firstMatch.tap()
+        let pendingFinish=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@ AND label CONTAINS %@","Terminar","1 para eliminar")).firstMatch
+        XCTAssertTrue(pendingFinish.waitForExistence(timeout:15),"Queue must first be acknowledged in the actual interface")
+        // No artificial save delay and no system deletion confirmation here.
+        app.terminate();app.launch()
+        XCTAssertTrue(pendingFinish.waitForExistence(timeout:120),"Acknowledged pending decision must survive actual process termination")
+        pendingFinish.tap()
+        let recover=app.buttons["Recuperar"].firstMatch
+        XCTAssertTrue(recover.waitForExistence(timeout:20));recover.tap()
+        let finish=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","Terminar")).firstMatch
+        XCTAssertTrue(closeOverlay(app,until:finish))
+        print("COCOWASH_UI_NATIVE_PENDING_RELAUNCH_OK")
+    }
+
     @MainActor
     func testYGeneratedLivePhotoInlineAndAnchored() throws {
         let url=try XCTUnwrap(Bundle(for:Self.self).url(forResource:"native-lab-contract",withExtension:"json"))

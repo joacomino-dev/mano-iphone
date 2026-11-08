@@ -52,11 +52,11 @@ una puerta nativa, comercial o de distribución.
 
 | ID | Qué | Quién | Estado | Evidencia / siguiente paso |
 |---|---|---|---|---|
-| R-01 | Smoke nativo: «Crear y añadir» no guarda el álbum ni cierra la hoja (`PhotosSmokeTests.swift:142`, simulador iPhone Duo iOS 27.1) | CX | **FAIL** | Run 42438304068. CW-CX-027: run42484697595 intento2 reproduce INPUT_MISMATCH, enabled=false antes de PhotoKit; aislar variante estándar frente a Duo y conservar xcresult. No cambiar onChange por hipótesis. [Evidencia](apple-readiness/NATIVE_FOLLOWUP.md) |
-| R-02 | Privacidad: `NSPrivacyTracking=true` sin dominios de rastreo; `check-apple-privacy.py --submission` exit 1 | CX (+U con AdMob) | **FAIL** | CW-CX-023: ZIPs oficiales revalidados, manifiestos sin dominios; gate exit1 conservado. [Fuentes/procedimiento](apple-readiness/NATIVE_FOLLOWUP.md#r-02--fail-estricto-conservado) |
+| R-01 | Álbum iOS: teclado no recibe texto con WKPreferences desactivada | CX | **PASS estándar; Duo/min17 pendientes** | Matriz42513277098 falseFAIL/truePASS; fix662e67d probado sin observer42514969280: nombreexacto/creación/relectura/avancePASS. Gestos pinch/anclajePASS. |
+| R-02 | Privacidad de distribución ydominios de tracking | CX + U | **PASS declaración; BLOCKED final** | Usuario aprueba2hosts;423e79eincorpora y5tests/strictPASS. Captura real anteriorATT2estadosPASS42514971530; repetir conmanifestnuevo42516799297. SDKfirmasPASS42516183457; archivo/exhaustividad/web pendientes. |
 | R-03 | Captura del fallo del smoke en dispositivos de 2 pantallas (`simctl io screenshot` exige `--display`) | CX | **PASS (colector)** | CW-CX-027/030:simctl real displays3/1 exit0 yxcresult42488119404 exporta la captura exacta durante el fallo. No acredita adaptación visual Duo |
 | R-04 | Revisar invalidación de snapshots alrededor de la cola de favoritas Android y el `flushFavorites()` de fin de ronda | CX | **Corregido localmente; QA nativa bloqueada** | CW-CX-024:4 fallos reproducidos,7 casos web+2 puros PASS; cola/acuse/undo y snapshots protegidos. [Evidencia](apple-readiness/ANDROID_FAVORITES.md) |
-| R-05 | QA destructiva en simulador con fixtures: borrar/cancelar/error, favorita externa, permiso revocado, cierre antes/después de confirmar | CX | Bloqueado | Procedimiento en `docs/apple-readiness/NATIVE_GATE.md` y `TEST_PLAN.md`; necesita Mac o CI ampliada |
+| R-05 | QA destructiva ypermisos adversos con fixtures | CX | **PASS confirmación/postaudit; pendiente adverso completo** | iOS42514969280:10rondas/10ausentes/unknown0PASS. Cancel/error/favorita externa/revocado/interrupción yR61 pendientes. AndroidE2E nativo enCI, ningún borrado personal. |
 | R-06 | Tamaño del bundle web (> 500 kB, aviso de Vite) | C | Pendiente | Solo con medición en Instruments; no tocar sin evidencia |
 
 ## B · Cuentas, legal y tienda Apple (usuario)
@@ -240,8 +240,8 @@ Autorizados push normal a main y workflows estándar públicos gratuitos, relanz
 
 | ID | Prioridad | Estado | Evidencia / siguiente paso |
 | --- | --- | --- | --- |
-| R-60 | P1 gate de CI | FAIL detectado; corrección preparada | Run42511286263/e48e62c figura success pero NO ejecutó XCTest:AppleBash3.2 `capture[@]: unbound variable`. No cuenta como PASS nativo. Wrapper ahora siempre contiene xcodebuild yse exige comprobación independiente de casos ejecutados/xcresult/PhotoKit/métricas.14 pruebas de infraestructura PASS local;repetir CI. |
-| R-61 | P0 persistencia | FAIL aplicación | Android42511282029/e48e62c:descartarfixture,persistedpending1,force-stop antes de confirmar,relaunch=>pending0. No borrado por ese gesto; pérdida de decisión guardada reproducida. Investigar durabilidad localStorage/arranque antes de cambiar almacenamiento. Fuente Chromium documenta commit diferido5s;hipótesis compatible, falta aislar. |
+| R-60 | P1 gate de CI | **PASS corrección de infraestructura** | Se excluye42511286263: noXCTest. Bash3.2 invoca xcodebuild real ypostcondición independiente verifica casos/xcresult/PhotoKit;25testsinfra actualesPASS. Nuevas suites fallidas no se ocultan. |
+| R-61 | P0 persistencia | **FAIL; aprobación de diario pendiente** | 42513754519:pending1→0 ya antes deReact alforce-stop inmediato; background6s retiene. No PhotoKitdelete en ese caso. ExperimentoIDBstrict separado retiene, no es fix de producto. |
 
 - 2026-11-08 · Codex CW-CX-036:se rechaza falsoverde42511286263(noXCTest), corrige arrayvacíoBash3.2 y añade postcondición independiente. NuevotestAndroid revelaR61P0 pérdida de descarte tras cierre forzado; prioridadsobre materiales. No declarar RC lista.
 
@@ -266,3 +266,5 @@ Autorizados push normal a main y workflows estándar públicos gratuitos, relanz
 - 2026-11-08 · CW-CX-045: R01PASS sin observer42514969280 (álbum exacto,metadata,avance,pinch/anclaje). TenrondasPASS314s+auditPhotoKit10ausentes/unknown0. FullsuiteFAIL Live selectorButton; solo consulta exacta se amplía a toggleconchipvisible, diagnósticoLive separado preparado.
 
 - 2026-11-08 · CW-CX-046: métricas662e67dBLOCKED por WebContent nuevo en ronda7(sincontadorCPUinicial); nuevasventanas reales yacotadas3intentos conservan todas lasmuestras,7regresiones/25infraPASS. No ponerCPU0 ni aceptar serie vieja.
+
+- 2026-11-08 · CW-CX-047: capturas nativas7idiomas28iOS+28AndroidPASS en813114c, no publicación. ATTcon2hosts423e79ePASSambos+Conservar. R07 AXrealSwitch66×29 confirma selector. R05añade cancelación ypendingrelaunchiOS; AndroidcasosindependientesantesdeR61sinomitirlo;25testsinfraPASS, nuevas ejecuciones pendientes.
