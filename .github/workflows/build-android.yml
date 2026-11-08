@@ -38,6 +38,11 @@ jobs:
         run: npm test && npm run check:runtime && node scripts/check-play-listing.mjs
       - name: Build web and sync the Android project
         run: npm run sync:android
+      - name: Record store-channel web assets
+        working-directory: .
+        run: |
+          python3 -B -m unittest discover -s scripts/tests -p test_android_channel.py -v
+          python3 scripts/check-android-channel.py --snapshot store --out mano/build/android/store-channel.json
 
       # Keys never live in the repository or the logs. Each one is optional: without
       # COCO_DEV_* the APK uses the runner's throw-away debug key (cannot update a
@@ -74,15 +79,34 @@ jobs:
             echo 'Upload key: configured'
           else echo 'Upload key: not configured (unsigned AAB)'; fi
 
-      - name: Compile development APK and Play bundle
+      - name: Compile Play bundle from the store channel
         working-directory: mano/android
         run: |
           set -o pipefail
-          if ! ./gradlew --no-daemon --stacktrace assembleDebug bundleRelease 2>&1 | tee ../build-gradle.txt; then
+          if ! ./gradlew --no-daemon --stacktrace bundleRelease 2>&1 | tee ../build-gradle.txt; then
             # Compiler errors as annotations (readable without signing in to GitHub).
             grep -E '^e: |error:|What went wrong' -A2 ../build-gradle.txt | head -20 | while IFS= read -r line; do echo "::error title=Gradle::$line"; done
             exit 1
           fi
+
+      - name: Build development web in this CI copy only
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const file='src/channel.ts', source=fs.readFileSync(file,'utf8');
+          if(!source.includes('export const DEVELOPER = false;'))throw new Error('Expected store source before CI-only development conversion');
+          fs.writeFileSync(file,source.replace('export const DEVELOPER = false;','export const DEVELOPER = true;'));
+          JS
+          npm run build:native
+          node node_modules/@capacitor/cli/bin/capacitor copy android
+          (cd .. && python3 scripts/check-android-channel.py --snapshot development --out mano/build/android/development-channel.json)
+          (cd android && ./gradlew --no-daemon --stacktrace assembleDebug)
+
+      - name: Verify APK and AAB contain their respective web builds
+        working-directory: .
+        run: |
+          python3 scripts/check-android-channel.py --verify mano/android/app/build/outputs/apk/debug/app-debug.apk --proof mano/build/android/development-channel.json --expected development
+          python3 scripts/check-android-channel.py --verify mano/android/app/build/outputs/bundle/release/app-release.aab --proof mano/build/android/store-channel.json --expected store
 
       - name: Verify package, SDK levels and 16 KB alignment
         run: |
@@ -114,7 +138,8 @@ jobs:
             echo "APK: debug build for side-loading on the developer's phone."
             if [ -n "${COCO_DEV_KEYSTORE:-}" ]; then echo 'APK signed with the CocoWash development key.'; else echo 'APK signed with a throw-away debug key: uninstall the previous development APK first.'; fi
             if [ -n "${COCO_UPLOAD_KEYSTORE:-}" ]; then echo 'AAB signed with the Play upload key.'; else echo 'AAB unsigned: not uploadable to Play.'; fi
-            echo 'Ads and in-app purchases: not active on Android yet.'
+            echo 'APK developer controls: enabled in this CI copy only. Store AAB: developer controls disabled.'
+            echo 'Ads: test Android IDs currently configured. Real Android IDs and Play purchase validation remain owner/release gates.'
             echo "Source SHA: $GITHUB_SHA"
             sha256sum "build/android/$NAME.apk" "build/android/$NAME.aab"
           } > build/android/VALIDATION.txt
@@ -126,6 +151,7 @@ jobs:
             mano/build/android/*.apk
             mano/build/android/*.aab
             mano/build/android/VALIDATION.txt
+            mano/build/android/*-channel.json
           retention-days: 7
           if-no-files-found: error
 

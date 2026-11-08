@@ -94,7 +94,7 @@ una puerta nativa, comercial o de distribución.
 | R-41 | Si corresponde por tipo/fecha de cuenta personal: mínimo12 testers inscritos continuamente14 días en prueba cerrada y solicitar acceso a producción | U | Pendiente | [Regla oficial Google](https://support.google.com/googleplay/android-developer/answer/14151465): cuentas personales posteriores al13-11-2023. Confirmar requisito de la cuenta real; no es regla universal de15–20 |
 | R-42 | Keystore de desarrollo en los secretos de GitHub | U | Pendiente | Clave en `C:\Users\Joaco\Developer\cocowash-keys` (LEEME) |
 | R-43 | IDs reales de AdMob Android y canal de tienda Android en `main` (ya no hay rama `release`) | U (IDs) + C | Pendiente | `PROMPT_WEB_ANDROID.md`; no usar los IDs iOS |
-| R-44 | Con `main` en canal de tienda, el APK de desarrollo oculta «Modo developer»: decidir si su CI cambia su copia a desarrollo como la IPA | CX | En curso | Misión estratégica2026-11-08 autoriza preparar CI developer como iOS; sin cambiar main tienda |
+| R-44 | Con `main` en canal de tienda, el APK de desarrollo oculta «Modo developer»: decidir si su CI cambia su copia a desarrollo como la IPA | CX | En curso | CW-CX-028: APK yAAB se construyen con frontend independiente;5 regresiones de hashes PASS, nueva CI pendiente. main sigue tienda |
 | R-45 | P3 posterior: detector de texto/embedder adicional Android | CX si se autoriza | Pendiente, fuera de primera publicación | Texto no disponible se mantiene oculto; parecido dHash existente no equivale a embedder. No incorporar modelos nuevos ni anunciar funciones incompletas para cerrar la primera versión |
 | R-46 | Verificar firma de compras con la clave de licencias | C + U | Pendiente | — |
 | R-47 | Carta de anuncio con Fredoka y espejo RTL; vídeo a pantalla completa | C | Pendiente | — |
@@ -217,3 +217,5 @@ Autorizados push normal a main y workflows estándar públicos gratuitos, relanz
 - 2026-11-08 · Codex CW-CX-026: misión estratégica registrada, autorización push/CI aplicada, criterios R-55…R-59 y paquete del usuario añadidos; R-44 pasa a implementación autorizada. Sin publicaciones ni cuentas modificadas.
 
 - 2026-11-08 · Codex CW-CX-027: gate nativo intento2 demuestra campo no recibido/guardar deshabilitado antes de PhotoKit. Se aísla variante estándar, sin omitir Duo; se añade valor/teclado y xcresult para diagnóstico. Tres CIs baseline PASS y generador de Live PASS.
+
+- 2026-11-08 · Codex CW-CX-028: R-44 separa compilación AAB tienda y APK developer solo en la copia CI; hashes del HTML/JS verifican cada archivo real del APK/AAB.5 regresiones Python PASS, aceptación de emulador/artefactos pendiente. Sin cambios de monetización/versiones.

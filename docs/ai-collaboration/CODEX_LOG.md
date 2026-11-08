@@ -366,3 +366,11 @@ Estado:en curso; R-01 sigue FAIL, no corrección de app sin evidencia.
 Evidencia:42484697595 intento2 supera compilación y llega a INPUT_MISMATCH enabled=false/hittable=true, antes de PhotoKit. Las dos capturas simctl tienen exit0 pero se toman después de teardown (Home/negro), por tanto no diagnostican el campo.
 Cambio mínimo:variante de simulador estándar explícita, mantiene auto/Duo; diagnóstico de valor/placeholder/teclado y captura previa a typeText; retención de xcresult real para inspeccionar attachments. Sin inyección JS ni cambio de permisos/resultados.
 Validaciones:Bash syntax y4 contratos PASS. Nueva ejecución nativa pendiente. [Baseline](../apple-readiness/evidence/strategic/baseline.json).
+
+### CW-CX-028 — Canal developer APK separado del AAB
+Fecha:2026-11-08, America/Bogota.
+Agente:Codex.
+Estado:implementación/pruebas locales PASS; CI nativa pendiente.
+Causa demostrada:el workflow anterior generaba assembleDebug ybundleRelease a partir del mismo frontend DEVELOPER=false. El APK developer ocultaba controles; cambiar el frontend común a true contaminaría el AAB.
+Corrección:construir AAB primero con fuente tienda; cambiar solo la copia CI a developer y copiar web para assembleDebug. Capturar hashes de index/JS y verificarlos dentro de ambos ZIP reales, con expectativa de canal explícita. Sin cambio de main/channel, iOS, productos, precios o arte.
+Validaciones:5 regresiones Python (mezcla/reemplazo de bundle/canal incorrecto rechazados) PASS. CI Android debe validar artefactos y E2E antes de cerrar R-44. VALIDATION ya no afirma monetización inexistente; distingue SDK de prueba y gates comerciales pendientes.
