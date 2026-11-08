@@ -40,9 +40,10 @@ class ManoBridgeController: CAPBridgeViewController {
         // Capacitor's file handler answers a <video> "bytes=0-" request by reading the
         // whole file into memory on the main thread. Prepared videos stream instead.
         configuration.mediaTypesRequiringUserActionForPlayback = []
-        // 9.8.6: no loupe, text selection or Live Text on long presses anywhere —
-        // holding a card is a CocoWash gesture. Text fields still take typing.
-        configuration.preferences.isTextInteractionEnabled = false
+        // WKPreferences disables editing as well as selection on current iOS.
+        // Keep real fields editable. App CSS disables selection/callouts on
+        // cards and text, with an explicit exception for editable fields.
+        configuration.preferences.isTextInteractionEnabled = true
         configuration.setURLSchemeHandler(mediaStream, forURLScheme: PreparedVideoStreamHandler.scheme)
         // The app's language as iOS resolved it (Settings › CocoWash › Language, or
         // the device languages matched against the bundle's lproj folders), read by

@@ -246,3 +246,5 @@ Autorizados push normal a main y workflows estándar públicos gratuitos, relanz
 - 2026-11-08 · Codex CW-CX-036:se rechaza falsoverde42511286263(noXCTest), corrige arrayvacíoBash3.2 y añade postcondición independiente. NuevotestAndroid revelaR61P0 pérdida de descarte tras cierre forzado; prioridadsobre materiales. No declarar RC lista.
 
 - 2026-11-08 · Codex CW-CX-037:diagnóstico deR61comparaalmacenamientoantesdeReact,force-stop/background6s yjournalIndexedDBstrictseparado,sinrestaurarlaappnifingirPASS. SetupemuladorrefusafueradeCIefímera.Fixdeproducto aúnpendiente deaislamiento.
+
+- 2026-11-08 · CW-CX-038: matriz WebKit42513277098 demuestra R01 falseFAIL/truePASS (XCTest201,847s + evidencia independiente). Fix mínimo listo para repetir sin observer; CSS/gestos intactos. R61 aislado antes de React (42513754519), aprobación de diario duradero solicitada. R60 deja de ocultar fallos. FullLab bloqueado por helper swiftc120s, hostlab por opcionalCFString; correcciones de infraestructura listas.

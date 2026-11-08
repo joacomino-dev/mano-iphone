@@ -442,3 +442,9 @@ Tambiénse corrigetestMediaFilter:la hoja recuerdaAjustes,eltestdebeescogertabFi
 Fecha:2026-11-08. Agente:Codex. Estado:diagnóstico pendienteCI.
 WorkflowAndroiddedicado añadeobserverSOLOLECTURAantesdeReactenCOPIACI ycompara3casos:force-stopinmediato,background6s,ackstrictIndexedDBdeunacopiaexperimental. Nunca restauraappdesdeDBexperimental;siCocoWashpierdependingelrunseguiráFAIL aunquejournalconserve. Reportacontadores/hashes,nosesionesSDK/valorespersonales. NativeMediaStoreIDs deben seguiridénticos(sinconfirmarborradoenestoscasos). Evidenciaextraaislarádisco vsreconciliaciónalarrancar antesdelafix.
 GuardadearranquedelsetupAVDrechazaentornosnoGitHubHostedantesdecrear/reiniciarAVD. SintaxisJS/Bash/hash28PASS,ejecuciónnativaaúnNOT TESTED. No cambiosdearquitectura/selección/recuperaciónimplementados.
+
+### CW-CX-038 — Causas nativas aisladas y corrección mínima del teclado
+Fecha: 2026-11-08, America/Bogota. Agente: Codex. Estado: corrección por validar sin instrumentación.
+Base: main 27b03ca, limpia. R-01: matriz42513277098 cambia una preferencia WebKit; false falla incluso tecla software, true pasa XCTest completo (201,847s) y postcondición independiente. Se habilita edición; CSS existente sigue prohibiendo selección/callouts fuera de campos. No cambian gestos ni PhotoKit. R60 wrapper ya ejecuta pruebas reales y rechaza fallos.
+R61:42513754519 confirma pérdida en disco antes de React al force-stop inmediato; background6s retiene. Experimento separado IDBstrict retiene, no corrige producto. Se solicita aprobación del diario duradero por límite arquitectónico del usuario; persistencia de app intacta mientras responde.
+Full gate42513279545 no llega a XCTest: compilación fría del helper excede120s. Se amplía solo swiftc a300s. Adhost42511283896 no midió tráfico: conversión opcional CFString no compilaba; se desenvuelve mediante API pública. Repetir ambos.

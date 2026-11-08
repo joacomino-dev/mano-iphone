@@ -30,7 +30,7 @@ def run(*args, timeout=120):
 app = out/'FixtureSeeder.app'
 app.mkdir(exist_ok=args.audit)
 if not (out/'generated/key-photo.jpg').exists():
-    run('xcrun','swiftc','-swift-version','5','scripts/apple-fixtures/make-live.swift','-o',str(out/'make-live'))
+    run('xcrun','swiftc','-swift-version','5','scripts/apple-fixtures/make-live.swift','-o',str(out/'make-live'),timeout=300)
     run(str(out/'make-live'),'mano/scripts/fixtures/postcard-fixture.png',str(out/'generated'))
 bundle = 'work.joaquin.coco.fixtureseeder'
 (app/'Info.plist').write_bytes(plistlib.dumps({'CFBundleIdentifier':bundle,'CFBundleExecutable':'FixtureSeeder','CFBundleName':'FixtureSeeder','CFBundlePackageType':'APPL','CFBundleShortVersionString':'1.0','CFBundleVersion':'1','MinimumOSVersion':'17.0','UIDeviceFamily':[1],'LSRequiresIPhoneOS':True,'NSPhotoLibraryUsageDescription':'Create and verify synthetic CocoWash CI fixtures only.','NSPhotoLibraryAddUsageDescription':'Create synthetic fixture photos only.','UISupportedInterfaceOrientations':['UIInterfaceOrientationPortrait'],'UIApplicationSceneManifest':{'UIApplicationSupportsMultipleScenes':False,'UISceneConfigurations':{'UIWindowSceneSessionRoleApplication':[{'UISceneConfigurationName':'Fixture','UISceneDelegateClassName':'FixtureSceneDelegate'}]}}}))
@@ -38,7 +38,7 @@ for name in ['key-photo.jpg','paired-motion.mov']:
     shutil.copy2(out/'generated'/name,app/name)
 sdk = run('xcrun','--sdk','iphonesimulator','--show-sdk-path')
 arch = run('uname','-m')
-run('xcrun','--sdk','iphonesimulator','swiftc','-swift-version','5','-sdk',sdk,'-target',arch+'-apple-ios17.0-simulator','-parse-as-library','scripts/apple-fixtures/Seeder.swift','-o',str(app/'FixtureSeeder'))
+run('xcrun','--sdk','iphonesimulator','swiftc','-swift-version','5','-sdk',sdk,'-target',arch+'-apple-ios17.0-simulator','-parse-as-library','scripts/apple-fixtures/Seeder.swift','-o',str(app/'FixtureSeeder'),timeout=300)
 run('codesign','--force','--sign','-',str(app))
 (out/'linked-libraries.txt').write_text(run('xcrun','otool','-L',str(app/'FixtureSeeder')))
 inventory = json.loads(run('xcrun','simctl','list','-j',timeout=180))

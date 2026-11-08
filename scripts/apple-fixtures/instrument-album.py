@@ -11,9 +11,10 @@ assert sys.platform=='darwin' and os.environ.get('GITHUB_ACTIONS')=='true' and o
 variant=sys.argv[1];assert variant in ['current','enabled']
 path=Path('ios/App/App/PhotoLibrary.swift')
 source=path.read_text()
-needle='configuration.preferences.isTextInteractionEnabled = false'
+needle='configuration.preferences.isTextInteractionEnabled = true'
 assert source.count(needle)==1,'Unexpected source; refusing broad replacement'
-if variant=='enabled': source=source.replace(needle,'configuration.preferences.isTextInteractionEnabled = true')
+# "current" preserves the pre-fix disabled control for reproducibility.
+if variant=='current': source=source.replace(needle,'configuration.preferences.isTextInteractionEnabled = false')
 handler=r'''
 // CI injected read-only observer; absent from committed/shipping app sources.
 @MainActor private final class CocoReadOnlyInputProbe: NSObject, WKScriptMessageHandler {

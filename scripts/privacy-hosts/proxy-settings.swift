@@ -16,7 +16,8 @@ if action=="apply" {
     let store=SCDynamicStoreCreate(nil,"CocoWash CI" as CFString,nil,nil)!
     var saved:[[String:Any]]=[]
     for service in services where SCNetworkServiceGetEnabled(service) {
-        let id=SCNetworkServiceGetServiceID(service) as String
+        guard let identifier=SCNetworkServiceGetServiceID(service) else { continue }
+        let id=identifier as String
         guard SCDynamicStoreCopyValue(store,"State:/Network/Service/\(id)/IPv4" as CFString) != nil,
               let proto=SCNetworkServiceCopyProtocol(service,kSCNetworkProtocolTypeProxies) else { continue }
         let config=SCNetworkProtocolGetConfiguration(proto) as? [String:Any]
@@ -26,7 +27,7 @@ if action=="apply" {
     try PropertyListSerialization.data(fromPropertyList:saved,format:.xml,options:0).write(to:url,options:.atomic)
     try FileManager.default.setAttributes([.posixPermissions:0o600],ofItemAtPath:url.path)
     for item in saved {
-        let service=services.first { (SCNetworkServiceGetServiceID($0) as String)==item["id"] as? String }!
+        let service=services.first { SCNetworkServiceGetServiceID($0).map { $0 as String } == (item["id"] as? String) }!
         let proto=SCNetworkServiceCopyProtocol(service,kSCNetworkProtocolTypeProxies)!
         var config=item["configuration"] as! [String:Any]
         config[kSCPropNetProxiesHTTPEnable as String]=1
@@ -40,7 +41,7 @@ if action=="apply" {
 } else if action=="restore" {
     let saved=try PropertyListSerialization.propertyList(from:Data(contentsOf:url),format:nil) as! [[String:Any]]
     for item in saved {
-        guard let service=services.first(where:{(SCNetworkServiceGetServiceID($0) as String)==item["id"] as? String}),
+        guard let service=services.first(where:{SCNetworkServiceGetServiceID($0).map { $0 as String } == (item["id"] as? String)}),
               let proto=SCNetworkServiceCopyProtocol(service,kSCNetworkProtocolTypeProxies) else { require(false,"Cannot restore original service");continue }
         let config=item["hadConfiguration"] as? Bool == true ? item["configuration"] as? [String:Any] : nil
         require(SCNetworkProtocolSetConfiguration(proto,config.map { $0 as CFDictionary }),"Cannot restore test proxy")

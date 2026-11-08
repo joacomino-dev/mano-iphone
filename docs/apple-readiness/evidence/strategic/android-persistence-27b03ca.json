@@ -1,0 +1,46 @@
+{
+  "status": "FAIL",
+  "boundary": "Owned hosted emulator only; synthetic library. Separate IndexedDB experiment is not a product fix.",
+  "cases": [
+    {
+      "mode": "immediate-force-stop",
+      "beforePending": 1,
+      "beforeRecordSha256": "77086607270c7dc0b496c47751b2f97f8e542d29903488d2ee3b282300e2f530",
+      "bootPending": 0,
+      "afterPending": 0,
+      "bootRecordSha256": "162d1a8984439643adc22f20f73d0d0a30a6ba0d1f29b43dc9e7f3ab7f027536",
+      "afterRecordSha256": "162d1a8984439643adc22f20f73d0d0a30a6ba0d1f29b43dc9e7f3ab7f027536",
+      "applicationRetained": false
+    },
+    {
+      "mode": "background-six-seconds",
+      "beforePending": 1,
+      "beforeRecordSha256": "f52e73a202a6e766448cc76920f1511fc1501594236a205b8450f2ab802dbaf8",
+      "bootPending": 1,
+      "afterPending": 1,
+      "bootRecordSha256": "f52e73a202a6e766448cc76920f1511fc1501594236a205b8450f2ab802dbaf8",
+      "afterRecordSha256": "f52e73a202a6e766448cc76920f1511fc1501594236a205b8450f2ab802dbaf8",
+      "applicationRetained": true
+    },
+    {
+      "mode": "strict-journal-experiment",
+      "beforePending": 1,
+      "beforeRecordSha256": "2c4dc25db114c0c88ecdd1bed9b17a22ea0c8866eab1cf95d3787c5a1917af0c",
+      "journal": {
+        "durability": "strict",
+        "commitMs": 1.900000000023283
+      },
+      "bootPending": 1,
+      "afterPending": 1,
+      "bootRecordSha256": "2c4dc25db114c0c88ecdd1bed9b17a22ea0c8866eab1cf95d3787c5a1917af0c",
+      "afterRecordSha256": "2c4dc25db114c0c88ecdd1bed9b17a22ea0c8866eab1cf95d3787c5a1917af0c",
+      "applicationRetained": true,
+      "experimentalJournalRetained": true
+    }
+  ],
+  "diagnosticsExecuted": true,
+  "sourceSha": "27b03ca0e79789b3fbd10e50b06cb49a9458b762",
+  "run": 42513754519,
+  "issue": "R-61",
+  "conclusion": "FAIL: the prior envelope is already present before React boots after immediate force-stop. Background 6s retains it. One strict experimental snapshot retained; not a product fix or a universal timing guarantee."
+}

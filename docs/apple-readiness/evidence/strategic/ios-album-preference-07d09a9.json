@@ -1,0 +1,27 @@
+{
+  "issue": "R-01",
+  "sourceSha": "07d09a924e8575596c665126bea89e5290eb4528",
+  "run": 42513277098,
+  "device": "iPhone 18 Pro",
+  "runtime": "iOS 27.0",
+  "conditions": "Same diagnostic observer and public test ad unit; only WKPreferences.isTextInteractionEnabled differs. No input-value injection or assertion changes.",
+  "disabled": {
+    "job": 128830726675,
+    "status": "FAIL",
+    "exactNameReceived": false,
+    "softwareKeyAlsoFailed": true
+  },
+  "enabled": {
+    "job": 128830726786,
+    "status": "PASS",
+    "test": "testFullPhotosAuthorizationStartsSession",
+    "elapsedSeconds": 201.847,
+    "independentExecutedEvidence": "PASS"
+  },
+  "fix": "Enable actual text interaction; keep existing CSS user-select:none and touch-callout:none outside editable fields.",
+  "pending": [
+    "Repeat uninstrumented production source",
+    "Long hold / card anchoring / Live Text regression on real iPhone",
+    "Duo and iOS17"
+  ]
+}
