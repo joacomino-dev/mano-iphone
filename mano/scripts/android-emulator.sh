@@ -56,6 +56,7 @@ for attempt in 1 2; do
       code=0
       timeout 420 bash scripts/android-e2e-library.sh || code=$?
       if [ "$code" = 0 ]; then timeout 600 node scripts/android-e2e.mjs || code=$?; fi
+      if [ "$code" = 0 ]; then timeout 900 node scripts/android-native-cycles.mjs || code=$?; fi
       [ "$code" = 0 ] || note "end-to-end checks failed (exit $code); see e2e.json in the evidence"
       stop; exit "$code"
     fi

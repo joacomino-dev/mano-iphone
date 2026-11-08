@@ -8,6 +8,7 @@ PKG=work.joaquin.mano
 sh() { timeout 60 adb shell "$@"; }
 sh mkdir -p /sdcard/DCIM/Camera /sdcard/Pictures/Screenshots /sdcard/Movies
 for i in 1 2 3; do sh screencap -p "/sdcard/DCIM/Camera/cocowash-test-$i.png"; sleep 1; done
+for i in $(seq 4 63); do sh cp /sdcard/DCIM/Camera/cocowash-test-1.png "/sdcard/DCIM/Camera/cocowash-test-$i.png"; done
 sh screencap -p /sdcard/Pictures/Screenshots/Screenshot_cocowash-test.png
 # A known-good 3 s test pattern when the runner has ffmpeg (the emulator's own screen
 # recording is sometimes almost empty); otherwise a screen recording.
