@@ -1,0 +1,181 @@
+{
+  "status": "PASS",
+  "platform": "ios",
+  "screens": [
+    {
+      "file": "es-01-cards.png",
+      "width": 1206,
+      "height": 2622,
+      "sha256": "937d18be3e39b8bb1fa7deff9e60545df0e477b545a4f51f6d087f4d7eaaca7a"
+    },
+    {
+      "file": "es-02-review.png",
+      "width": 1206,
+      "height": 2622,
+      "sha256": "5093ead0ea1fc56a9c7547190601f125a6c42e754ca1f252496ec097e905a84c"
+    },
+    {
+      "file": "es-03-filters.png",
+      "width": 1206,
+      "height": 2622,
+      "sha256": "004d88b94ba8ecef3829ee819ff0bf233bfdbcc021fa32efcb6980a0d3d8dd8a"
+    },
+    {
+      "file": "es-04-settings.png",
+      "width": 1206,
+      "height": 2622,
+      "sha256": "0e023df88089bd0489d3683d2039b01cb4b402939c456f4877cebe59a3eaf70b"
+    },
+    {
+      "file": "en-01-cards.png",
+      "width": 1206,
+      "height": 2622,
+      "sha256": "a24b5b0c99046d80e4e6782d11684fffad9fbff48f65200010fe054f93fbbf17"
+    },
+    {
+      "file": "en-02-review.png",
+      "width": 1206,
+      "height": 2622,
+      "sha256": "cd994e778576c7ee26b47c81154b5d49099e7a53fec8cb0c4bd46b0c32b2ca07"
+    },
+    {
+      "file": "en-03-filters.png",
+      "width": 1206,
+      "height": 2622,
+      "sha256": "5aea02dd807d2bcc3bcf035049b9ae8ef6511e0b30db816a80e1eba403aa9aec"
+    },
+    {
+      "file": "en-04-settings.png",
+      "width": 1206,
+      "height": 2622,
+      "sha256": "75a9fb12b9bfacacd518815605dc833c600eb661c7e29bb73f601883d0723cd6"
+    },
+    {
+      "file": "fr-01-cards.png",
+      "width": 1206,
+      "height": 2622,
+      "sha256": "e831bffedc5e18ed90dc1c18f654ce151299e9719272c02fa9dd0632a52315bf"
+    },
+    {
+      "file": "fr-02-review.png",
+      "width": 1206,
+      "height": 2622,
+      "sha256": "6a0f835255b7e4503fcdbd420aad4de7da8f986ff36dc0bcba90dae8b34bfc3e"
+    },
+    {
+      "file": "fr-03-filters.png",
+      "width": 1206,
+      "height": 2622,
+      "sha256": "59c931be710edda12823cb562b4e2696246b8e26ce50ae7cb788b51e0057561f"
+    },
+    {
+      "file": "fr-04-settings.png",
+      "width": 1206,
+      "height": 2622,
+      "sha256": "ba516bd7349f71f545f7e2781dcfeae4cea3b3c056e3f16b78174f9b46065355"
+    },
+    {
+      "file": "de-01-cards.png",
+      "width": 1206,
+      "height": 2622,
+      "sha256": "e48a00e542ead43f35e592e848d9a71986f0ee9f55f1eae2e9603c14ae11eb30"
+    },
+    {
+      "file": "de-02-review.png",
+      "width": 1206,
+      "height": 2622,
+      "sha256": "19278d0c9fc4f6b887c6f0a6bfe3a77b7e7d7c149ae140f16ce990a88159574d"
+    },
+    {
+      "file": "de-03-filters.png",
+      "width": 1206,
+      "height": 2622,
+      "sha256": "bee7caf3011ab767232258030d578eed010b7982818ef5a9d30a94a959a00878"
+    },
+    {
+      "file": "de-04-settings.png",
+      "width": 1206,
+      "height": 2622,
+      "sha256": "bf68cae1ee845a76da6bb65f9c66f9e4dae026366034a3eefa1cef7adf5cc36d"
+    },
+    {
+      "file": "it-01-cards.png",
+      "width": 1206,
+      "height": 2622,
+      "sha256": "c077c2bcf7b799a9d992838abe1d44f9e23b15d617d3d586d52f66e4ef980e8e"
+    },
+    {
+      "file": "it-02-review.png",
+      "width": 1206,
+      "height": 2622,
+      "sha256": "173dc3cea37b8c936bc1bc118ccb1c5062ef6a84f07c133ee07913993c47e06e"
+    },
+    {
+      "file": "it-03-filters.png",
+      "width": 1206,
+      "height": 2622,
+      "sha256": "56dc8554f8c47adf1cdb44e0a58c569ff4898dab7563044f7f569c9a4f009d2e"
+    },
+    {
+      "file": "it-04-settings.png",
+      "width": 1206,
+      "height": 2622,
+      "sha256": "6817adf69cd72775524d889deed6fd950ab011bad61cebe157ba8d9e06e539d1"
+    },
+    {
+      "file": "ar-01-cards.png",
+      "width": 1206,
+      "height": 2622,
+      "sha256": "c27e2273584730857bc23c901dd818a06eb878df7225534ad482b67c33d84f20"
+    },
+    {
+      "file": "ar-02-review.png",
+      "width": 1206,
+      "height": 2622,
+      "sha256": "02ab8117d96c10cf537941759016e73c6b572292ed3446b7ffcf21d30e5beebb"
+    },
+    {
+      "file": "ar-03-filters.png",
+      "width": 1206,
+      "height": 2622,
+      "sha256": "697abcd5d13e9408c4cdc5b3832094cc77723b2fa5bb78bd27f25cf8c3aa9bf9"
+    },
+    {
+      "file": "ar-04-settings.png",
+      "width": 1206,
+      "height": 2622,
+      "sha256": "d53fb613121aff8ed0f94851f3f40b9d3148dff2e2ea772fd269874dec742c47"
+    },
+    {
+      "file": "ja-01-cards.png",
+      "width": 1206,
+      "height": 2622,
+      "sha256": "db8001a0de9055affd32bb20e81f4b2b6aac7fa8cf1ff2a7710ff719300f979c"
+    },
+    {
+      "file": "ja-02-review.png",
+      "width": 1206,
+      "height": 2622,
+      "sha256": "548ddc86a6e39b08d036c35e460a2263079fb143f5179a054beca16c3b39db45"
+    },
+    {
+      "file": "ja-03-filters.png",
+      "width": 1206,
+      "height": 2622,
+      "sha256": "663e911253a48ddbd57d093b384f219af85b48e431973336a28e45d717a2947a"
+    },
+    {
+      "file": "ja-04-settings.png",
+      "width": 1206,
+      "height": 2622,
+      "sha256": "ca72b22984ace65dc7b68df2258d0caf4f2c44d91fb9634476fce247e5a07648"
+    }
+  ],
+  "boundary": "File validation only; source execution and visual review are separate evidence.",
+  "run": 42516036408,
+  "sourceSha": "813114c7ee1938b1fd777ff26bff4ba030aa804d",
+  "artifactId": 13631817588,
+  "device": "iPhone 18 Pro / iOS27.0",
+  "nativeTestSeconds": 509.609,
+  "visualReview": "Arabic main inspected; full visual review pending. Native screenshot acceptance is not device-family or physical-device acceptance."
+}

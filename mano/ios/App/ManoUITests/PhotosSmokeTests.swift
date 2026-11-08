@@ -587,7 +587,7 @@ final class PhotosSmokeTests: XCTestCase {
         XCTAssertNotEqual(motion1,motion2,"Paired video must actually render changing pixels inline")
         pause.tap();_ = try nativeLiveControl(app,"Reproducir Live Photo",timeout:15);Thread.sleep(forTimeInterval:2)
         let keyAfter=try nativePhotoCrop(app,card.frame,"Live key after pause")
-        let differences=zip(keyBefore,keyAfter).filter{$0 != $1}.count
+        let differences=zip(keyBefore,keyAfter).filter{$0.0 != $0.1}.count
         print("COCOWASH_UI_LIVE_KEY_PIXELS bytes=\(keyBefore.count) changedChannels=\(differences)")
         XCTAssertEqual(keyAfter,keyBefore,"Pausing on the card must restore its key photo, not freeze an arbitrary video frame")
         attachScreenshot(app,"Native Live Photo paused key photo")

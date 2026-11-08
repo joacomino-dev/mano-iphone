@@ -49,6 +49,7 @@ jobs:
             mano/build/simulator-smoke/ui-test-exit-code.txt
             mano/build/simulator-smoke/ui-test.log
             mano/build/simulator-smoke/photos-read.log
+            mano/build/simulator-smoke/packaged-privacy.json
             mano/build/simulator-smoke/*.png
             mano/build/simulator-smoke/*.xcresult/**
           retention-days: 7

@@ -270,3 +270,12 @@ Autorizados push normal a main y workflows estándar públicos gratuitos, relanz
 - 2026-11-08 · CW-CX-047: capturas nativas7idiomas28iOS+28AndroidPASS en813114c, no publicación. ATTcon2hosts423e79ePASSambos+Conservar. R07 AXrealSwitch66×29 confirma selector. R05añade cancelación ypendingrelaunchiOS; AndroidcasosindependientesantesdeR61sinomitirlo;25testsinfraPASS, nuevas ejecuciones pendientes.
 
 - 2026-11-08 · CW-CX-048: LiveSwitch/playreal yaejecutados5d20e6a; keypausefalla porcomparaciónPNG. Antesdealterarappse añadenRGBAexactos/crops/baselineestable,sintolerancia; diagnósticopendiente. Full44b64eecontinúaindependiente.
+
+
+## Incidencia de confirmación de favorita — CW-CX-049
+
+| ID | Prioridad | Estado | Evidencia / siguiente paso |
+| --- | --- | --- | --- |
+| R-63 | P1 validación nativa | INVESTIGATING | Android42517332458/5d20e6a:9rondas verificadas;en10 no aparece nuevaconfirmaciónfavorite. No se sabe si ya terminó/permiso previo/colisión ActivityResult/fallo de app. Diagnóstico DEBUG de resultado/cola/galería preparado; no relajar criterio por suposición. |
+
+- 2026-11-08 · CW-CX-049: R62nativo17checksPASScompilado; fullAndroidFAIL R63últimafavorite,no10PASS. ATTdosdominiosPASSfuncionalpero bloqueoNO VERIFICADO(adsTESTtambiénrecibidos); comprobar.app empaquetada yhardware. Capturas56totales reales completas,QAvisualpendiente.

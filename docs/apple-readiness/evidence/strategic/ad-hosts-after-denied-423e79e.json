@@ -1,0 +1,36 @@
+{
+  "status": "PASS",
+  "boundary": "Hosts only, no TLS decryption. Runner-wide system proxy: baseline subtraction is indicative, not proof of tracking or exclusive app attribution. QUIC/custom transports may bypass it.",
+  "testExitCode": 0,
+  "calibrationObserved": true,
+  "hostsByPhase": {
+    "baseline": [],
+    "app-att-allowed": [],
+    "app-att-denied": [
+      "bag.itunes.apple.com",
+      "configuration.apple.com",
+      "fonts.googleapis.com",
+      "fonts.gstatic.com",
+      "fundingchoicesmessages.google.com",
+      "gdmf.apple.com",
+      "googleads.g.doubleclick.net",
+      "gsa.apple.com",
+      "gsp-ssl.ls.apple.com",
+      "imasdk.googleapis.com",
+      "init.itunes.apple.com",
+      "lh3.googleusercontent.com",
+      "odf.app-ads-services.com",
+      "pagead2.googlesyndication.com",
+      "sandbox.itunes.apple.com",
+      "token.safebrowsing.apple",
+      "updates.cdn-apple.com",
+      "wps.apple.com",
+      "xp.apple.com"
+    ]
+  },
+  "restorationErrors": [],
+  "run": 42516799297,
+  "sourceSha": "423e79e8804b895f7d70fb8ec1f09157d5d4530c",
+  "functionalPhotosAfterATT": "PASS",
+  "networkBlocking": "NOT VERIFIED: approved hosts observed and test-ad callback received even with ATT denied; runner-wide capture does not prove exclusive attribution or request payload. Check packaged manifest and physical-device enforcement."
+}

@@ -1,0 +1,233 @@
+{
+  "results": {
+    "permission": {
+      "ok": true,
+      "detail": {
+        "value": {
+          "status": "authorized"
+        }
+      }
+    },
+    "library": {
+      "ok": true,
+      "detail": {
+        "count": 65,
+        "photos": 64,
+        "video": true
+      }
+    },
+    "screenshot flag": {
+      "ok": true,
+      "detail": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    },
+    "video duration": {
+      "ok": true,
+      "detail": 3
+    },
+    "thumbnail": {
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "type": "image/jpeg",
+        "bytes": 15285,
+        "cloud": false
+      }
+    },
+    "sizes": {
+      "ok": true,
+      "detail": {
+        "value": {
+          "sizes": {
+            "1000000018": 1996629,
+            "1000000085": 19529
+          }
+        }
+      }
+    },
+    "metadata": {
+      "ok": true,
+      "detail": {
+        "value": {
+          "id": "1000000018",
+          "kind": "photo",
+          "width": 1080,
+          "height": 2400,
+          "duration": 0,
+          "isFavorite": false,
+          "isHidden": false,
+          "creationDate": 1794167943000,
+          "modified": 1794167947000,
+          "filename": "cocowash-test-1.png",
+          "uniformTypeIdentifier": "image/png",
+          "exifStatus": "absent"
+        }
+      }
+    },
+    "video range": {
+      "ok": true,
+      "detail": {
+        "url": "https://localhost/_cocowash_media/1000000085",
+        "status": 206,
+        "bytes": 100,
+        "range": "bytes 0-99/19529",
+        "mime": "video/mp4"
+      }
+    },
+    "place (no location \u2192 empty)": {
+      "ok": true,
+      "detail": {
+        "value": {}
+      }
+    },
+    "favorite": {
+      "ok": true,
+      "detail": {
+        "dialog": false,
+        "result": {
+          "value": {
+            "missing": []
+          }
+        },
+        "isFavorite": true
+      }
+    },
+    "favourite protected": {
+      "ok": true,
+      "detail": {
+        "code": null,
+        "message": "No se borr\u00f3 nada: los elementos ya no est\u00e1n disponibles o ahora son favoritos."
+      }
+    },
+    "trash cancelled": {
+      "ok": true,
+      "detail": {
+        "denied": true,
+        "result": {
+          "code": "CANCELLED",
+          "message": "Cancelado"
+        },
+        "still": true
+      }
+    },
+    "trash confirmed": {
+      "ok": true,
+      "detail": {
+        "allowed": true,
+        "result": {
+          "value": {
+            "deleted": [
+              "1000000019"
+            ]
+          }
+        },
+        "gone": true
+      }
+    },
+    "back button": {
+      "ok": true,
+      "detail": {
+        "backs": 1,
+        "alive": true
+      }
+    },
+    "purchase status is explicit": {
+      "ok": true,
+      "detail": {
+        "code": "VERIFICATION_UNAVAILABLE",
+        "message": "Purchase verification unavailable"
+      }
+    },
+    "ad prepare": {
+      "ok": true,
+      "detail": {
+        "value": {
+          "ready": false
+        }
+      }
+    },
+    "unknown purchases never become false or purchasable offers": {
+      "ok": true,
+      "detail": {
+        "catalog": {
+          "code": "VERIFICATION_UNAVAILABLE",
+          "message": "Purchase verification unavailable"
+        },
+        "prepared": {
+          "value": {
+            "ready": false
+          }
+        }
+      }
+    }
+  },
+  "failures": [],
+  "run": 42517332458,
+  "sourceSha": "5d20e6a3b26849c77921d53d3449aa9941444718",
+  "boundary": "17 actual native plugin checks including missing-key fail-closed commerce passed. Full workflow failed later at queued favorite confirmation; not full safety acceptance."
+}

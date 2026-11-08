@@ -174,6 +174,14 @@ bounded 420 xcodebuild -project ios/App/App.xcodeproj -scheme ManoSmoke \
   > "$smoke_dir/build.log" 2>&1 || { tail -n 100 "$smoke_dir/build.log"; exit 1; }
 app="$smoke_dir/DerivedData/Build/Products/Release-iphonesimulator/App.app"
 test -d "$app" || { echo 'ERROR: simulator app was not built.' >&2; exit 1; }
+python3 - "$app/PrivacyInfo.xcprivacy" "$smoke_dir/packaged-privacy.json" <<'PYPACKAGED'
+import hashlib,json,plistlib,sys
+from pathlib import Path
+p=Path(sys.argv[1]);manifest=plistlib.loads(p.read_bytes())
+approved=json.loads(Path('../docs/apple-readiness/evidence/strategic/tracking-domain-approval-2026-11-08.json').read_text())['domains']
+assert manifest.get('NSPrivacyTracking') is True and set(manifest.get('NSPrivacyTrackingDomains',[]))==set(approved),'Compiled app must contain the approved declaration'
+Path(sys.argv[2]).write_text(json.dumps({'status':'PASS','manifestSha256':hashlib.sha256(p.read_bytes()).hexdigest(),'tracking':True,'domains':manifest['NSPrivacyTrackingDomains'],'boundary':'Packaged plist check only, not observed network enforcement'},indent=2)+'\n')
+PYPACKAGED
 bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.plist")"
 test "$bundle_id" = work.joaquin.mano || { echo 'ERROR: unexpected application bundle identifier.' >&2; exit 1; }
 test -f scripts/fixtures/postcard-fixture.png || { echo 'ERROR: generated test photo missing.' >&2; exit 1; }

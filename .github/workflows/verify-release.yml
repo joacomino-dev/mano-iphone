@@ -35,7 +35,11 @@ jobs:
       - name: App Store channel (no developer mode)
         run: grep -q 'export const DEVELOPER = false;' src/channel.ts
       - name: Verify logic and protected preview
-        run: npm test && npm run check:runtime
+        run: |
+          npm test
+          npm run check:runtime
+          python3 -B -m unittest discover -s ../scripts/tests -p test_tracking_declaration.py -v
+          python3 -B ../scripts/check-apple-privacy.py --submission
       - name: Build and sync sources
         run: npm run sync:ios
       - name: Compile the App Store configuration (unsigned, no artifact)

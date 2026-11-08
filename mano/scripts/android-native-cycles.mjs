@@ -12,7 +12,7 @@ const favorites=()=>lab.page(`return JSON.parse(localStorage.getItem('cocowash-a
 async function queueFavorite(){
  assert.equal(Object.keys(await favorites()).length,0,'Clean fixture queue required');
  await click('.bar-heart');await wait(`Object.keys(JSON.parse(localStorage.getItem('cocowash-android-favorites-v1')||'{}')).length===1`);
- const [id]=Object.keys(await favorites());assert.ok(ownedIds.has(id));assert.equal((await favorites())[id],true);
+ const [id]=Object.keys(await favorites());assert.ok(ownedIds.has(id));assert.equal((await favorites())[id],true);report.lastQueuedFavorite=id;
  assert.equal((await lab.call('assets')).assets.find(a=>a.id===id)?.favorite,false,'Queueing must not mutate gallery before confirmation');return id;
 }
 async function favoriteRefreshAndUndo(){
@@ -85,12 +85,19 @@ try{
  report.developerControlsVisible=true;await adb('shell','input','keyevent','4');await wait(`!document.querySelector('.native-sheet')`);report.nativeBackClosesSheet=true;
  await favoriteRefreshAndUndo();
  await sleep(20000);await sample(0);
- for(let cycle=1;cycle<=10;cycle++){const favorite=cycle===10?await queueFavorite():null;await round(favorite,cycle===1);await sample(cycle);if(cycle===5||cycle===10)await shot('native-cycle-'+cycle);}
+ for(let cycle=1;cycle<=10;cycle++){const favorite=cycle===10?await queueFavorite():null;await round(favorite,cycle===1);report.functionalCycles=cycle;await sample(cycle);if(cycle===5||cycle===10)await shot('native-cycle-'+cycle);}
  report.functionalCycles=10;
  // Independent safety cases execute before the already-known crash-persistence
  // failure. That assertion stays mandatory and still fails the complete gate.
  await pendingSurvivesTermination();
  report.status='PASS';report.performanceAcceptance='PENDING: inspect renderer ownership and evaluate baseline/trend; collecting numbers alone is not P0 closure';
-}catch(error){report.status='FAIL';report.error=error.stack;if(report.fixtureOwnershipVerified)await shot('native-cycle-failure').catch(()=>{});process.exitCode=1;}
+}catch(error){report.status='FAIL';report.error=error.stack;if(report.fixtureOwnershipVerified){
+ await shot('native-cycle-failure').catch(()=>{});
+ report.failureFavorites=await favorites().catch(()=>null);
+ report.failureInFlight=await lab.page(`return JSON.parse(localStorage.getItem('cocowash-android-favorites-inflight-v1')||'{}');`).catch(()=>null);
+ report.failureNativeFavorite=await lab.call('assets').then(r=>r.assets.find(a=>a.id===report.lastQueuedFavorite)?.favorite??null).catch(()=>null);
+ await fs.writeFile(`${OUT}/system-request-log.txt`,await adb('logcat','-d','-s','CocoWash:I')).catch(()=>{});
+ await adb('shell','uiautomator','dump','/sdcard/coco-failure.xml').then(()=>adb('shell','cat','/sdcard/coco-failure.xml')).then(r=>fs.writeFile(`${OUT}/failure-ui.xml`,r)).catch(()=>{});
+ }process.exitCode=1;}
 finally{await fs.writeFile(`${OUT}/native-cycles.json`,JSON.stringify(report,null,2));lab?.close();}
-console.log('ANDROID_NATIVE_CYCLES_'+report.status,JSON.stringify({cycles:report.functionalCycles??rows.length,error:report.error}));
+console.log('ANDROID_NATIVE_CYCLES_'+report.status,JSON.stringify({functionalCycles:report.functionalCycles??Math.max(0,rows.length-1),samples:rows.length,error:report.error}));

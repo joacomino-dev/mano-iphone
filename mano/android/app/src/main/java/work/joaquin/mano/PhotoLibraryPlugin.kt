@@ -89,6 +89,7 @@ class PhotoLibraryPlugin : Plugin() {
         systemRequestLauncher = bridge.registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
             val call = systemCall ?: return@registerForActivityResult
             val value = systemResult ?: JSObject()
+            devLog("COCOWASH_SYSTEM_RESULT method=${call.methodName} code=${result.resultCode}")
             systemCall = null; systemResult = null
             // «Cancelar» in Android's own confirmation: a choice, not a failure — the
             // web side keeps the queue quietly (same code as iOS).
@@ -511,8 +512,9 @@ class PhotoLibraryPlugin : Plugin() {
         main.post {
             if (systemCall != null) { call.reject("No se pudo abrir el selector de Fotos.", "BUSY"); return@post }
             systemCall = call; systemResult = result
+            devLog("COCOWASH_SYSTEM_LAUNCH method=${call.methodName} windowFocus=${activity.hasWindowFocus()} finishing=${activity.isFinishing}")
             try { systemRequestLauncher.launch(IntentSenderRequest.Builder(sender.intentSender).build()) }
-            catch (e: Exception) { systemCall = null; systemResult = null; call.reject("No se pudo abrir el selector de Fotos.") }
+            catch (e: Exception) { devLog("COCOWASH_SYSTEM_LAUNCH_FAILED type=${e.javaClass.simpleName}"); systemCall = null; systemResult = null; call.reject("No se pudo abrir el selector de Fotos.") }
         }
     }
 
