@@ -9,8 +9,9 @@ Antes de escribir, verifica todo con Git real; este texto es un resumen, no sust
 
 ## Fuente única
 
-- Repositorio `joacomino-dev/mano-iphone` (público). **Solo existe la rama `main`**, en
-  `376855de6a13798cb17f849b765b469655c5bfe3`. Las demás 20 ramas (incluidas `release`, `android`,
+- Repositorio `joacomino-dev/mano-iphone` (público). **Solo existe la rama `main`**. El código
+  verificado y la IPA corresponden a `376855de6a13798cb17f849b765b469655c5bfe3`; encima solo hay commits
+  de documentación (este prompt y el estado). Las demás 20 ramas (incluidas `release`, `android`,
   `claude/cocowash-9.8.6` y `codex/*`) se borraron del remoto por petición del usuario, tras una
   copia local verificada: `C:/Users/Joaco/Developer/CocoWash-android/work/backup/mano-iphone-all-branches-2026-11-07.bundle`
   (21 ramas + 3 etiquetas, sha256 `b547931d10bb4c8a618e6e433655393957aefe79089d0846e5e750134bfa5303`).
