@@ -485,3 +485,7 @@ XCTestATT exige además decisión real Conservar yprogreso cambiado después del
 Fecha: 2026-11-08. Agente: Codex. Estado: R01PASS estándar; Live aúnFAIL.
 42514969280/662e67d: XCTest sin observer crea/reconsulta álbum exacto, conserva yavanza; metadata/pinch/anclaje nativo PASS. Diez rondas nativas PASS314s, auditPhotoKit realPASS:70iniciales(64generados+6runtime),60restantes,10ausentes(9generados+1runtime),unknown0. SuiteFAIL porque playLive no aparece como Button. CSS/estado no cambiados para fingirPASS.
 InlineVideo usa aria-pressed, que WebKit expone como toggle. Se amplía solo consulta XCTest al nombreexacto/visible/chip≤64×180, excluyendo vídeo con mismo label; si falta exporta screenshot/AX. Mismas aserciones de píxeles/key/loop/timeline/pinch. ModoLive separado evita repetir borrados durante diagnóstico; gate independiente exige dos casos reales+bytesPhotoKit, no equivale a gatefull.18testsinfra PASS; repetir nativeLive.
+
+### CW-CX-046 — Medición real cuando nace otro WebContent
+Fecha: 2026-11-08. Agente: Codex. Estado: corrección de colector, repetir nativo.
+662e67d completa11muestras, pero presupuestoBLOCKED: en ronda7 apareceWebContent52693 entre las lecturas ysu CPU no tiene contador inicial. No se inventa cero ni se acepta serie parcial. Se mide una ventana nueva, máximo3intentos, conservando todas las lecturas descartadas; crecimiento persistente o contador inválido sigueBLOCKED.7regresiones nuevas PASS,25testsinfra totales. No cambia app ni umbrales ni el resultado anterior. R61 sigueFAIL; código de diario aún no autorizado.

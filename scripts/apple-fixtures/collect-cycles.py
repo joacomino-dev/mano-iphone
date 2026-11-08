@@ -11,6 +11,7 @@ import statistics
 import subprocess
 import sys
 import time
+from native_cpu_samples import measure
 
 assert sys.platform == 'darwin'
 assert os.environ.get('GITHUB_ACTIONS') == 'true' and os.environ.get('RUNNER_ENVIRONMENT') == 'github-hosted'
@@ -68,13 +69,9 @@ try:
         cycle=len(rows)
         if not (runner/f'native-cycle-{cycle}.request').exists(): time.sleep(.25);continue
         time.sleep(3)
-        before=snapshot();time.sleep(2);after=snapshot()
-        cpu=[]
-        for item in after:
-            previous=next((p for p in before if p['pid']==item['pid']),None)
-            cpu.append({'pid':item['pid'],'percent':100*(item['cpuSeconds']-previous['cpuSeconds'])/(item['monotonic']-previous['monotonic']) if previous else None})
-        complete=all(any(p['role']==role for p in after) for role in ['app','webcontent']) and all(c['percent'] is not None for c in cpu)
-        rows.append({'cycle':cycle,'processes':after,'combinedRssKiB':sum(p['rssKiB'] for p in after),'cpu':cpu,'complete':complete})
+        measurement=measure(snapshot,time.sleep,max_attempts=3)
+        complete=measurement['complete']
+        rows.append({'cycle':cycle,**measurement,'combinedRssKiB':sum(p['rssKiB'] for p in measurement['processes'])})
         save()
         (runner/f'native-cycle-{cycle}.response').write_text('native collection '+('complete' if complete else 'incomplete')+'\n')
     report['status']='PASS' if len(rows)==11 and all(r['complete'] for r in rows) else 'BLOCKED'
