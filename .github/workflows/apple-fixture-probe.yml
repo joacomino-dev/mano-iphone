@@ -7,7 +7,7 @@ jobs:
   pair:
     if: github.event.repository.private == false
     runs-on: xcode-27
-    timeout-minutes: 10
+    timeout-minutes: 20
     env:
       DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
     steps:
@@ -20,10 +20,15 @@ jobs:
           xcrun swiftc -swift-version 5 scripts/apple-fixtures/make-live.swift -o work/fixtures/make-live
           work/fixtures/make-live mano/scripts/fixtures/postcard-fixture.png work/fixtures/generated
           cat work/fixtures/generated/pair-report.json
+      - name: Import and re-read paired resources using real PhotoKit
+        run: python3 scripts/apple-fixtures/probe.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: generated-live-pair-${{ github.sha }}
-          path: work/fixtures/generated/
+          path: |
+            work/fixtures/generated/
+            work/fixtures/*.json
+            work/fixtures/*.log
           retention-days: 7
           if-no-files-found: warn

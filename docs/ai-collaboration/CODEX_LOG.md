@@ -356,3 +356,5 @@ Evidencia:Release42484614546 PASS compilando PhotoLibrary.swift arm64 SDK27.1 y 
 Cambios:criterios R-55…59 y paquete del usuario en roadmap; R-44 ya autorizado. Generador de pareja Live sintética y workflow manual de prueba, sin tocar app/dependencias; compilar en CI antes de afirmar que genera recursos válidos. Importación PhotoKit aún NO probada.
 Validaciones previas:130 Node,TypeScript,28 protegidos repetidos PASS. Nuevo Swift de fixtures NOT TESTED hasta su run.
 Pendientes:gate completo/álbum, importar Live con PhotoKit,QA destructiva/mediciones nativas,dominios y aprobación del usuario,canales/firma/material7 idiomas. No se espera al usuario para trabajo independiente.
+
+CW-CX-026 avance: pareja JPEG/MOV sintética PASS en Mac, run42485605288/c783b19; se amplía el probe con seeder PhotoKit separado y guardas de simulador efímero. La app y su permiso real no se cambian. CI baseline Android/desarrollo iOS también PASS sobre df983ad.
