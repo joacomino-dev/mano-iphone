@@ -1,16 +1,27 @@
 # Checklist operativo de envío — CocoWash RC
 
-7 noviembre2026. **Todavía no apta para envío.** Marcar cada paso solo con evidencia.
+Actualizado8 noviembre2026. Primera auditoría7 noviembre. **Todavía no apta para envío.** Marcar cada paso solo con evidencia.
 PASS=comprobado; FAIL=fallo comprobado; BLOCKED=falta herramienta/acceso/decisión;
 NOT TESTED=no ejecutado. Preparar un procedimiento no cambia BLOCKED a PASS.
 
-## 1. Fuente y punto de recuperación
+## 0. Revalidación de la entrega actual
+
+- [x] PASS local: main / C:/Users/Joaco/Developer/CocoWash-android; inicio f5c3546, código final ece507b. Checkpoints cd717f9,1bc2561,67dd04d,ece507b. Ver [entrega](FOLLOWUP_2026-11-08.md).
+- [x] PASS:130 Node,14 configuración,69 navegador,4 Python; hashes28,TS/builds/sync Windows. No acredita Swift/hardware.
+- [ ] BLOCKED: autorizar push normal y CI manual gratuita sobre SHA de entrega; sin push en esta fase.
+- [ ] BLOCKED: compilar puente Live nuevo y ejecutar R-01 con diagnósticos y R-03 con capturas de ambas pantallas. Último smoke sigue FAIL, no reinterpretar como PASS.
+- [ ] BLOCKED: aceptar R-00 en10 ciclos físicos/Instruments con fixtures y R-07 en Live Photo real.
+- [ ] FAIL: R-02 tracking sin dominios verificados. Conservar gate estricto.
+- [ ] BLOCKED: QA nativa R-04 Android, permisos/borrado/iCloud/VoiceOver; no biblioteca personal.
+- [ ] BLOCKED: políticas públicas verificadas tras despliegue autorizado (fetch actual403 en este entorno).
+
+## 1. Fuente y punto de recuperación (histórico CW-CX-020; usar main actual)
 
 - [x] PASS: checkout `C:/Users/Joaco/Developer/CocoWash-b24`, última base funcional
   `b0cf83d`; correcciones RC en commits locales. OneDrive antiguo intacto.
 - [x] PASS: bundle recuperable `work/apple-readiness/rc-start-b0cf83d.bundle`,
   SHA256 `42db9b129bfb82c9a64bb4802bc368c4d9631800f6292b6b70972dbfc6ac4e0f`.
-- [x] PASS: pruebas y archivos protegidos28; sin cambios en arte/CSS/personajes.
+- [x] PASS: pruebas y archivos protegidos28; arte/personajes intactos; CSS mínimo de Live conserva los controles aprobados.
 - [ ] Antes de mover/integrar: `git status --short`, `git rev-parse HEAD` y
   `git log --oneline b0cf83d..HEAD`. Revisar todos los commits, sin sobrescribir
   trabajo ajeno. No hacer push sin autorización específica para esta entrega.

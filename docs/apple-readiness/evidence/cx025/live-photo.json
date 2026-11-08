@@ -1,0 +1,25 @@
+{
+  "boundary": "Browser + synthetic postcard/video only. Native paired resource, Apple-selected key photo and iCloud require Apple QA.",
+  "results": [
+    {
+      "name": "Live card explicit play/loop/pause key photo (reduce)",
+      "status": "PASS"
+    },
+    {
+      "name": "Live card explicit play/loop/pause key photo (no-preference)",
+      "status": "PASS"
+    },
+    {
+      "name": "pause during preparation stays paused after ready and foreground",
+      "status": "PASS"
+    },
+    {
+      "name": "hold a playing Live Photo and drag to anchor returns to key photo",
+      "status": "PASS"
+    },
+    {
+      "name": "anchored Live Photo has in-place controls, timeline pause and photo pinch",
+      "status": "PASS"
+    }
+  ]
+}

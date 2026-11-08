@@ -335,3 +335,14 @@ Validaciones:7 escenarios Android sintéticos PASS;130 Node,14 configuración,4 
 Decisiones:no SDK/modelos/arte/monetización/versiones nuevos; ningún push/CI/distribución. La sincronización Windows no compila Swift.
 Impacto Claude:preservar cola y marcador; no mover invalidación de lote a la mera decisión; usar main actual y el relevo final.
 Pendientes:QA física R-00 y Live; R-01 sigue FAIL con diagnóstico; R-02 sigue FAIL; simctl y Kotlin/Swift nuevos sin ejecución nativa.
+
+### CW-CX-025 — Cierre documental y relevo completo
+Fecha:2026-11-08, America/Bogota.
+Agente:Codex.
+Estado:entrega local finalizada; publicación bloqueada, sin push/dispatch/distribución.
+Fuente:inicio f5c3546, código final ece507b; commit documental posterior identifica esta entrega.
+Documentación:FOLLOWUP, inventario de rutas, prompt completo Claude; matriz diferencia Duo27.1 histórico parcial del puente nuevo; README/RC/checklist/roadmap/estado actualizados.
+Verificaciones:todos los resultados CW-CX-024; sync Windows sin cambios sustantivos adicionales. Consulta pública políticas HTTP403 y web tool inaccesible, no se afirma disponibilidad ni caída global.
+Próximo:autorización de push/CI para Swift nuevo/álbum/capturas; luego fixtures físicos/Instruments, proveedor/domains y cuenta/firma/sandbox/TestFlight. Reservas liberadas para Claude integrar/cargar/verificar, no redesarrollar.
+
+Complemento CW-CX-025: quinta regresión Live (hold→anclar tras carga) PASS con código existente; hipótesis no reproducida, ninguna corrección especulativa. Total final69 navegador, resumen cx025.

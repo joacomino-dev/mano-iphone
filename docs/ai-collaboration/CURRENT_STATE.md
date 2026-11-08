@@ -1,15 +1,19 @@
 # CocoWash — estado vigente
 
-Actualizado: 2026-11-07, America/Bogota. Codex trabaja solo por indicación del usuario.
+Actualizado: 2026-11-08, America/Bogota. Codex trabaja solo por indicación del usuario.
 
-## Codex CW-CX-021/022 — en curso sobre main
+## Codex CW-CX-021–025 — entrega local cerrada, puertas nativas abiertas
 
-Base limpia f5c3546; checkpoint R-00 cd717f9. R-07 implementado localmente,4 flujos web PASS; Swift/PhotoKit pendiente. 128 Node, TypeScript, runtime28,
-6 Release y4 contratos estáticos repetidos. Reserva: R-00 (ManoApp/indexer/índices,
-pruebas de ciclos, cachés/cancelación nativas si la evidencia lo exige), después
-R-07/R-01/R-02/R-03/R-04 según alcance del usuario. Roadmap revisado primero.
-Sin otras ramas, cambios de identidad/monetización/versiones ni distribución.
-Windows sin Xcode/Swift/Instruments; no se atribuirán métricas web al iPhone.
+Actualizado2026-11-08. Fuente canónica única main en C:/Users/Joaco/Developer/CocoWash-android.
+Inicio f5c3546; código final ece507b. Checkpoints cd717f9 (R-00),1bc2561 (R-07),
+67dd04d (R-01/R-03 diagnóstico),ece507b (R-04). Sin push/CI nueva/IPA nueva.
+130 Node+14 configuración+4 Python+69 navegador PASS;TS/hash28/builds/sync Windows PASS.
+R-00:11→1 búsquedas/10 ciclos sintéticos, físico P0 sigue abierto. R-07 implementado,
+puente Swift/Live real sin compilar. R-01 yR-02 FAIL. R-03 listo para verificar simctl.
+R-04 corregido localmente, diálogo Android real pendiente. iOS17/versiones/arte/monetización intactos.
+Sin otros escritores detectados. Reserva terminada; Claude puede integrar/cargar/verificar,
+con el [relevo completo](../ai-handoff/PROMPT_CLAUDE_2026-11-08.md).
+No usar CocoWash-b24/OneDrive/stage1 como fuente. [Entrega/pruebas/bloqueos](../apple-readiness/FOLLOWUP_2026-11-08.md).
 
 ## Rama única `main` (Claude, CW-CL-060) — vigente
 

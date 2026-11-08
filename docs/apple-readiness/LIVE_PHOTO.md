@@ -12,6 +12,8 @@
 
 ## Evidencia y límites
 
+Cierre2026-11-08: [5 escenarios PASS](evidence/cx025/live-photo.json), añadiendo mantener pulsada una Live Photo en reproducción y arrastrar al anclaje tras cargar el vídeo. Esta transición ya pasaba: no se cambió código por una hipótesis. Se conserva debajo la evidencia original de4 escenarios.
+
 **PASS web**: [4 escenarios](evidence/cx022/live-photo.json), Edge 390×844 con postal/vídeo sintéticos: explícito/bucle/pausa con y sin Reduce Motion; pausa durante carga y retorno de visibilidad; visor, timeline, pinch y liberación. Inspección de captura local anchor.png: controles dentro del marco y composición conservada. Esto no representa una Live Photo nativa ni VoiceOver.
 
 **BLOCKED nativo**: Windows no compila Swift/PhotoKit. Hay que ejecutar rc-native-gate.yml sobre este commit tras autorizar su publicación en GitHub. No se declara compilada esta ampliación del puente, ni validada la foto clave elegida por Apple.

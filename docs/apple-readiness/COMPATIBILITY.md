@@ -1,6 +1,8 @@
 # Matriz técnica inicial de compatibilidad
 
-**RC:** mínimo17 conservado. Ninguna nueva fila física/simulador Apple probada. PASS ES/EN en Edge375×667,390×844,440×956 con teclado y texto raíz200%; no acredita Dynamic Type/VoiceOver/Island. Se reconsultaron listas oficiales iOS27 y fichas18 Pro/Max/Duo. Continúan candidatos, sin promesa de Duo optimizado ni cambios de orientación/API basados en suposiciones. [Resultados](RELEASE_CANDIDATE.md).
+**Actualización2026-11-08:** mínimo17 conservado. Run42438304068 identificado directamente: simulador iPhone Duo/iOS27.1, fuente83ff731, onboarding/acceso completo/sesión PASS, álbum FAIL. Postura/display activo no registrados; no acredita cerrado/abierto/transiciones ni los cambios actuales ece507b. Ningún dispositivo físico probado.
+
+**RC histórica:** mínimo17 conservado. Ninguna nueva fila física/simulador Apple probada en aquella intervención. PASS ES/EN en Edge375×667,390×844,440×956 con teclado y texto raíz200%; no acredita Dynamic Type/VoiceOver/Island. Se reconsultaron listas oficiales iOS27 y fichas18 Pro/Max/Duo. Continúan candidatos, sin promesa de Duo optimizado ni cambios de orientación/API basados en suposiciones. [Resultados](RELEASE_CANDIDATE.md).
 
 2026-11-07 · base y alcance en [README](README.md).
 
@@ -41,7 +43,7 @@ Los límites de OS proceden de las listas oficiales de
 | iOS 17.x | Mínimo configurado | PENDIENTE XCTest/WKWebView y dispositivo en este mínimo |
 | iOS 18.x | Candidato; estética opcional con guard de disponibilidad | PENDIENTE; fuente incluye fallback si Vision falla |
 | iOS 26.x | Candidato | PENDIENTE ejecución identificada sobre esta base |
-| iOS 27.x / 27.1 | Candidato; SDK 27.1 compila la base | VERIFICADO build de base, no matriz de ejecución. Modelo/OS del smoke no identificado |
+| iOS 27.x / 27.1 | Candidato; SDK 27.1 compila la base | VERIFICADO histórico: Duo27.1 en run42438304068, sesión autorizada PASS/álbum FAIL sobre83ff731. Posturas y fuente actual pendientes |
 | Betas o versiones posteriores | Sin promesa | NO VERIFICABLE hasta disponer del runtime y repetir gates |
 
 ## Otros dispositivos Apple

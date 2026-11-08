@@ -23,7 +23,13 @@ una puerta nativa, comercial o de distribución.
 **Estados:** Hecho · En curso · Pendiente · Bloqueado (falta herramienta, acceso o decisión) · FAIL
 (comprobado y fallando). **Quién:** U = usuario · CX = Codex · CL = Claude · C = cualquiera de los dos.
 
-## Dónde estamos (2026-11-07, CW-CL-060)
+## Dónde estamos (2026-11-08, CW-CX-025)
+
+- Fuente local actual main, código ece507b;4 checkpoints sobre f5c3546, sin push ni nuevo binario.130 Node,69 navegador,14 configuración,4 Python,TS/hash28/builds/sync Windows PASS. [Entrega](apple-readiness/FOLLOWUP_2026-11-08.md).
+- R-00/R-07 mejorados localmente, físicos pendientes; R-01/R-02 continúan FAIL; R-03 colector pendiente de ejecución; R-04 corregido con4 FAIL→7 PASS sintéticos. No apta para envío.
+- Los resultados nativos/IPA que siguen son históricos, anteriores a estos cambios.
+
+### Base integrada anterior (CW-CL-060)
 
 - Una sola rama: `main`. Código verificado `376855d`; IPA de desarrollo
   `C:/Users/Joaco/Downloads/CocoWash-0.9.9.1-build43-376855d.ipa`.
@@ -38,7 +44,7 @@ una puerta nativa, comercial o de distribución.
 | ID | Qué | Quién | Estado | Evidencia / siguiente paso |
 |---|---|---|---|---|
 | R-00 | **P0 · El iPhone se vuelve cada vez más lento** tras eliminar unas fotos y terminar la sesión 4–5 veces seguidas (reporte del usuario en su teléfono). Ver [detalle R-00](#detalle-r-00) | CX | **En curso (P0), QA física bloqueada** | CW-CX-021: recurrencia corregida localmente,11→1 búsquedas en10 ciclos y5 regresiones de estado. [Evidencia](apple-readiness/R00_CYCLES.md). No acredita RAM/CPU iPhone |
-| R-07 | **Live Photo**: reproducción en la carta y en la vista anclada. Ver [detalle R-07](#detalle-r-07) | CX (+CL visual) | **En curso (P1), nativo bloqueado** | CW-CX-022: reproducción inline, foto clave en pausa, anclaje/timeline/pinch implementados;4 escenarios web PASS. [Evidencia y QA nativa](apple-readiness/LIVE_PHOTO.md) |
+| R-07 | **Live Photo**: reproducción en la carta y en la vista anclada. Ver [detalle R-07](#detalle-r-07) | CX (+CL visual) | **En curso (P1), nativo bloqueado** | CW-CX-022/025: reproducción inline, foto clave en pausa, anclaje/timeline/pinch implementados;5 escenarios web PASS. [Evidencia y QA nativa](apple-readiness/LIVE_PHOTO.md) |
 
 ## A · Código y pruebas iOS (antes de firmar)
 
@@ -172,3 +178,7 @@ Una línea por intervención: fecha · agente · entrada · puntos cerrados/abie
 - 2026-11-07 · Codex CW-CX-023: R-01 mantiene FAIL, diagnósticos añadidos sin alterar el formulario por hipótesis; R-03 preparado y4 casos PASS, macOS pendiente; R-02 revalidado con SDKs oficiales y fuentes, sigue FAIL sin dominios probados. [Detalle](apple-readiness/NATIVE_FOLLOWUP.md).
 
 - 2026-11-08 · Codex CW-CX-024: R-04 corregido con evidencia antes/después y7 escenarios;130 Node,68 navegador,4 Python,14 configuración/builds/sync/hash28 y10 ciclos PASS. QA física/nativa y R-00/R-01/R-02 continúan bloqueando publicación.
+
+- 2026-11-08 · Codex CW-CX-025: cierre trazable y relevo para Claude; estado/matriz/checklist actualizados a fuente local ece507b, se separa evidencia histórica Duo de código nuevo sin compilar. Consulta de políticas públicas403 aquí, sin concluir caída global. Ningún push ni distribución.
+
+- 2026-11-08 · Codex CW-CX-025 (QA final): añadida transición hold→anclar con vídeo cargado; PASS sin cambio adicional de aplicación.69 casos de navegador en total; evidencia cx025.

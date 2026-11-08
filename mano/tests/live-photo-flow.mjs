@@ -26,6 +26,16 @@ try{
   await page.waitForTimeout(300);assert.equal(await page.locator('.photo-card video').evaluate(v=>v.paused),true);
   assert.equal(await page.locator('.photo-card .inline-media.is-started').count(),0);
  });
+ await run('hold a playing Live Photo and drag to anchor returns to key photo', 'reduce',async page=>{
+  await page.getByRole('button',{name:'Reproducir Live Photo',exact:true}).click();
+  await page.waitForFunction(()=>document.querySelector('.photo-card video')?.currentTime>.2);
+  const b=await page.locator('.photo-card.front .photo-window').boundingBox();await page.mouse.move(b.x+b.width/2,b.y+b.height/2);await page.mouse.down();
+  await page.locator('.inspection:not(.is-pinned)').waitFor();await page.waitForFunction(()=>document.querySelector('.inspection video')?.readyState>=2);await page.waitForTimeout(350);const dock=await page.locator('[data-inspection-hook]').boundingBox();
+  await page.mouse.move(dock.x+dock.width/2,dock.y+dock.height/2,{steps:8});await page.mouse.up();
+  const anchored=page.locator('.inspection.is-pinned');await anchored.waitFor();await page.waitForTimeout(150);
+  assert.equal(await anchored.locator('.inline-media.is-started').count(),0,'Anchoring must start on the key photo, not a retained motion frame');
+  assert.equal(await anchored.locator('video').evaluate(v=>v.paused),true);
+ });
  await run('anchored Live Photo has in-place controls, timeline pause and photo pinch', 'reduce',async page=>{
   await page.getByRole('button',{name:'Anclar',exact:true}).focus();await page.keyboard.press('Enter');const inspector=page.locator('.inspection.is-pinned');await inspector.waitFor();
   assert.equal(await inspector.locator('video').count(),0);

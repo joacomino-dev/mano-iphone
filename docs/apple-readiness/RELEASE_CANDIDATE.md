@@ -1,5 +1,7 @@
 # CocoWash — Release Candidate local
 
+**Actualización2026-11-08:** fuente canónica main en CocoWash-android, último código `ece507b`;4 checkpoints nuevos sobre f5c3546. [Estado actual, pruebas y bloqueos](FOLLOWUP_2026-11-08.md). R-00 físico sigue abierto, R-01/R-02 FAIL, nuevo puente Live sin compilar: NO APTA para enviar. Lo que sigue conserva el informe histórico CW-CX-020, no identifica el checkout o SHA actuales.
+
 Fecha:2026-11-07 · Codex CW-CX-020.
 
 **Estado final: preparación local ejecutada; NO APTA todavía para enviar a Apple.**
