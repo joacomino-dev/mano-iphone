@@ -1,0 +1,1006 @@
+{
+  "status": "BLOCKED",
+  "boundary": "Native simulator host RSS/CPU; RSS is not device physical footprint or Android PSS. All WebContent scoped to the owned simulator.",
+  "rows": [
+    {
+      "cycle": 0,
+      "processes": [
+        {
+          "pid": 43263,
+          "role": "app",
+          "rssKiB": 479952,
+          "cpuSeconds": 8.64,
+          "monotonic": 1839.677925708,
+          "ownership": "app-container-executable"
+        },
+        {
+          "pid": 43277,
+          "role": "webcontent",
+          "rssKiB": 363472,
+          "cpuSeconds": 5.8,
+          "monotonic": 1839.72261875,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43329,
+          "role": "webcontent",
+          "rssKiB": 308384,
+          "cpuSeconds": 5.28,
+          "monotonic": 1839.7361275,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43331,
+          "role": "webcontent",
+          "rssKiB": 331744,
+          "cpuSeconds": 5.55,
+          "monotonic": 1839.760924291,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43343,
+          "role": "webcontent",
+          "rssKiB": 311952,
+          "cpuSeconds": 4.12,
+          "monotonic": 1839.775202958,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43351,
+          "role": "webcontent",
+          "rssKiB": 295824,
+          "cpuSeconds": 4.34,
+          "monotonic": 1839.784594708,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43362,
+          "role": "webcontent",
+          "rssKiB": 214800,
+          "cpuSeconds": 2.9,
+          "monotonic": 1839.863143833,
+          "ownership": "simulator-udid-environment"
+        }
+      ],
+      "combinedRssKiB": 2306128,
+      "cpu": [
+        {
+          "pid": 43263,
+          "percent": 0.7660843071750877
+        },
+        {
+          "pid": 43277,
+          "percent": 0.25374452914075785
+        },
+        {
+          "pid": 43329,
+          "percent": 0.0
+        },
+        {
+          "pid": 43331,
+          "percent": 0.25277360316483727
+        },
+        {
+          "pid": 43343,
+          "percent": 0.5060451254992481
+        },
+        {
+          "pid": 43351,
+          "percent": 0.0
+        },
+        {
+          "pid": 43362,
+          "percent": 0.0
+        }
+      ],
+      "complete": true
+    },
+    {
+      "cycle": 1,
+      "processes": [
+        {
+          "pid": 43263,
+          "role": "app",
+          "rssKiB": 457184,
+          "cpuSeconds": 12.49,
+          "monotonic": 1875.892071791,
+          "ownership": "app-container-executable"
+        },
+        {
+          "pid": 43277,
+          "role": "webcontent",
+          "rssKiB": 359696,
+          "cpuSeconds": 7.61,
+          "monotonic": 1875.908504458,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43329,
+          "role": "webcontent",
+          "rssKiB": 284848,
+          "cpuSeconds": 5.49,
+          "monotonic": 1875.915598541,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43331,
+          "role": "webcontent",
+          "rssKiB": 299984,
+          "cpuSeconds": 5.75,
+          "monotonic": 1875.921306,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43351,
+          "role": "webcontent",
+          "rssKiB": 265952,
+          "cpuSeconds": 4.35,
+          "monotonic": 1875.926302208,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43362,
+          "role": "webcontent",
+          "rssKiB": 198240,
+          "cpuSeconds": 2.93,
+          "monotonic": 1875.933410208,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 45829,
+          "role": "webcontent",
+          "rssKiB": 323840,
+          "cpuSeconds": 6.98,
+          "monotonic": 1875.951547708,
+          "ownership": "simulator-udid-environment"
+        }
+      ],
+      "combinedRssKiB": 2189744,
+      "cpu": [
+        {
+          "pid": 43263,
+          "percent": 0.749523373589568
+        },
+        {
+          "pid": 43277,
+          "percent": 0.0
+        },
+        {
+          "pid": 43329,
+          "percent": 0.0
+        },
+        {
+          "pid": 43331,
+          "percent": 0.0
+        },
+        {
+          "pid": 43351,
+          "percent": 0.0
+        },
+        {
+          "pid": 43362,
+          "percent": 0.3754753635908635
+        },
+        {
+          "pid": 45829,
+          "percent": 0.0
+        }
+      ],
+      "complete": true
+    },
+    {
+      "cycle": 2,
+      "processes": [
+        {
+          "pid": 43263,
+          "role": "app",
+          "rssKiB": 434416,
+          "cpuSeconds": 14.5,
+          "monotonic": 1898.38635225,
+          "ownership": "app-container-executable"
+        },
+        {
+          "pid": 43277,
+          "role": "webcontent",
+          "rssKiB": 384352,
+          "cpuSeconds": 8.86,
+          "monotonic": 1898.394521208,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43329,
+          "role": "webcontent",
+          "rssKiB": 283984,
+          "cpuSeconds": 5.63,
+          "monotonic": 1898.399236291,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43331,
+          "role": "webcontent",
+          "rssKiB": 309536,
+          "cpuSeconds": 5.84,
+          "monotonic": 1898.403747791,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43351,
+          "role": "webcontent",
+          "rssKiB": 265456,
+          "cpuSeconds": 4.35,
+          "monotonic": 1898.434100875,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43362,
+          "role": "webcontent",
+          "rssKiB": 198672,
+          "cpuSeconds": 2.97,
+          "monotonic": 1898.440967958,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 46422,
+          "role": "webcontent",
+          "rssKiB": 331840,
+          "cpuSeconds": 6.4,
+          "monotonic": 1898.4490615,
+          "ownership": "simulator-udid-environment"
+        }
+      ],
+      "combinedRssKiB": 2208256,
+      "cpu": [
+        {
+          "pid": 43263,
+          "percent": 0.7292020521837042
+        },
+        {
+          "pid": 43277,
+          "percent": 0.36576436408093815
+        },
+        {
+          "pid": 43329,
+          "percent": 0.0
+        },
+        {
+          "pid": 43331,
+          "percent": 0.0
+        },
+        {
+          "pid": 43351,
+          "percent": 0.0
+        },
+        {
+          "pid": 43362,
+          "percent": 0.724273772951177
+        },
+        {
+          "pid": 46422,
+          "percent": 1.808693466844522
+        }
+      ],
+      "complete": true
+    },
+    {
+      "cycle": 3,
+      "processes": [
+        {
+          "pid": 43263,
+          "role": "app",
+          "rssKiB": 496656,
+          "cpuSeconds": 23.71,
+          "monotonic": 1918.841149,
+          "ownership": "app-container-executable"
+        },
+        {
+          "pid": 43277,
+          "role": "webcontent",
+          "rssKiB": 378496,
+          "cpuSeconds": 10.0,
+          "monotonic": 1918.849337083,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43329,
+          "role": "webcontent",
+          "rssKiB": 283200,
+          "cpuSeconds": 5.78,
+          "monotonic": 1918.854797166,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43331,
+          "role": "webcontent",
+          "rssKiB": 303600,
+          "cpuSeconds": 5.87,
+          "monotonic": 1918.860103583,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43351,
+          "role": "webcontent",
+          "rssKiB": 265408,
+          "cpuSeconds": 4.36,
+          "monotonic": 1918.8753245,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43362,
+          "role": "webcontent",
+          "rssKiB": 199200,
+          "cpuSeconds": 2.99,
+          "monotonic": 1918.880869166,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 46422,
+          "role": "webcontent",
+          "rssKiB": 320144,
+          "cpuSeconds": 6.47,
+          "monotonic": 1918.886163625,
+          "ownership": "simulator-udid-environment"
+        }
+      ],
+      "combinedRssKiB": 2246704,
+      "cpu": [
+        {
+          "pid": 43263,
+          "percent": 81.74563522100092
+        },
+        {
+          "pid": 43277,
+          "percent": 0.39199013888596346
+        },
+        {
+          "pid": 43329,
+          "percent": 0.0
+        },
+        {
+          "pid": 43331,
+          "percent": 0.0
+        },
+        {
+          "pid": 43351,
+          "percent": 0.0
+        },
+        {
+          "pid": 43362,
+          "percent": 0.39281275745663247
+        },
+        {
+          "pid": 46422,
+          "percent": 0.39297407545109936
+        }
+      ],
+      "complete": true
+    },
+    {
+      "cycle": 4,
+      "processes": [
+        {
+          "pid": 43263,
+          "role": "app",
+          "rssKiB": 544656,
+          "cpuSeconds": 34.12,
+          "monotonic": 1941.127226708,
+          "ownership": "app-container-executable"
+        },
+        {
+          "pid": 43277,
+          "role": "webcontent",
+          "rssKiB": 381792,
+          "cpuSeconds": 11.18,
+          "monotonic": 1941.141400708,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43329,
+          "role": "webcontent",
+          "rssKiB": 282560,
+          "cpuSeconds": 5.93,
+          "monotonic": 1941.147568458,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43331,
+          "role": "webcontent",
+          "rssKiB": 298096,
+          "cpuSeconds": 5.91,
+          "monotonic": 1941.15306425,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43351,
+          "role": "webcontent",
+          "rssKiB": 264848,
+          "cpuSeconds": 4.36,
+          "monotonic": 1941.159219375,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43362,
+          "role": "webcontent",
+          "rssKiB": 198208,
+          "cpuSeconds": 3.03,
+          "monotonic": 1941.163922916,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 48614,
+          "role": "webcontent",
+          "rssKiB": 330560,
+          "cpuSeconds": 5.4,
+          "monotonic": 1941.168620041,
+          "ownership": "simulator-udid-environment"
+        }
+      ],
+      "combinedRssKiB": 2300720,
+      "cpu": [
+        {
+          "pid": 43263,
+          "percent": 88.9865717557642
+        },
+        {
+          "pid": 43277,
+          "percent": 0.0
+        },
+        {
+          "pid": 43329,
+          "percent": 0.0
+        },
+        {
+          "pid": 43331,
+          "percent": 0.0
+        },
+        {
+          "pid": 43351,
+          "percent": 0.0
+        },
+        {
+          "pid": 43362,
+          "percent": 0.7829877256439979
+        },
+        {
+          "pid": 48614,
+          "percent": 0.0
+        }
+      ],
+      "complete": true
+    },
+    {
+      "cycle": 5,
+      "processes": [
+        {
+          "pid": 43263,
+          "role": "app",
+          "rssKiB": 535088,
+          "cpuSeconds": 43.45,
+          "monotonic": 1962.815530833,
+          "ownership": "app-container-executable"
+        },
+        {
+          "pid": 43277,
+          "role": "webcontent",
+          "rssKiB": 409312,
+          "cpuSeconds": 12.56,
+          "monotonic": 1962.822359625,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43329,
+          "role": "webcontent",
+          "rssKiB": 282672,
+          "cpuSeconds": 6.08,
+          "monotonic": 1962.848998791,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43331,
+          "role": "webcontent",
+          "rssKiB": 294352,
+          "cpuSeconds": 5.92,
+          "monotonic": 1962.856213375,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43351,
+          "role": "webcontent",
+          "rssKiB": 264848,
+          "cpuSeconds": 4.36,
+          "monotonic": 1962.863174333,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43362,
+          "role": "webcontent",
+          "rssKiB": 197760,
+          "cpuSeconds": 3.05,
+          "monotonic": 1962.868703,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 48614,
+          "role": "webcontent",
+          "rssKiB": 317888,
+          "cpuSeconds": 5.49,
+          "monotonic": 1962.879430041,
+          "ownership": "simulator-udid-environment"
+        }
+      ],
+      "combinedRssKiB": 2301920,
+      "cpu": [
+        {
+          "pid": 43263,
+          "percent": 58.14258976069005
+        },
+        {
+          "pid": 43277,
+          "percent": 0.0
+        },
+        {
+          "pid": 43329,
+          "percent": 0.0
+        },
+        {
+          "pid": 43331,
+          "percent": 0.0
+        },
+        {
+          "pid": 43351,
+          "percent": 0.0
+        },
+        {
+          "pid": 43362,
+          "percent": 0.0
+        },
+        {
+          "pid": 48614,
+          "percent": 0.3819669093640085
+        }
+      ],
+      "complete": true
+    },
+    {
+      "cycle": 6,
+      "processes": [
+        {
+          "pid": 43263,
+          "role": "app",
+          "rssKiB": 530880,
+          "cpuSeconds": 53.28,
+          "monotonic": 1985.754811291,
+          "ownership": "app-container-executable"
+        },
+        {
+          "pid": 43277,
+          "role": "webcontent",
+          "rssKiB": 419728,
+          "cpuSeconds": 14.09,
+          "monotonic": 1985.771199041,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43329,
+          "role": "webcontent",
+          "rssKiB": 288064,
+          "cpuSeconds": 6.25,
+          "monotonic": 1985.77671875,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43331,
+          "role": "webcontent",
+          "rssKiB": 304352,
+          "cpuSeconds": 6.0,
+          "monotonic": 1985.782164541,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43351,
+          "role": "webcontent",
+          "rssKiB": 264432,
+          "cpuSeconds": 4.37,
+          "monotonic": 1985.788719833,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43362,
+          "role": "webcontent",
+          "rssKiB": 198624,
+          "cpuSeconds": 3.08,
+          "monotonic": 1985.793646583,
+          "ownership": "simulator-udid-environment"
+        }
+      ],
+      "combinedRssKiB": 2006080,
+      "cpu": [
+        {
+          "pid": 43263,
+          "percent": 42.158597425791086
+        },
+        {
+          "pid": 43277,
+          "percent": 1.1454043405912298
+        },
+        {
+          "pid": 43329,
+          "percent": 0.0
+        },
+        {
+          "pid": 43331,
+          "percent": 0.0
+        },
+        {
+          "pid": 43351,
+          "percent": 0.0
+        },
+        {
+          "pid": 43362,
+          "percent": 0.38656562051121596
+        }
+      ],
+      "complete": true
+    },
+    {
+      "cycle": 7,
+      "processes": [
+        {
+          "pid": 43263,
+          "role": "app",
+          "rssKiB": 514656,
+          "cpuSeconds": 55.09,
+          "monotonic": 2005.887308458,
+          "ownership": "app-container-executable"
+        },
+        {
+          "pid": 43277,
+          "role": "webcontent",
+          "rssKiB": 399504,
+          "cpuSeconds": 15.42,
+          "monotonic": 2005.89215325,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43329,
+          "role": "webcontent",
+          "rssKiB": 286608,
+          "cpuSeconds": 6.39,
+          "monotonic": 2005.915492916,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43331,
+          "role": "webcontent",
+          "rssKiB": 300768,
+          "cpuSeconds": 6.03,
+          "monotonic": 2005.920829208,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43351,
+          "role": "webcontent",
+          "rssKiB": 264672,
+          "cpuSeconds": 4.38,
+          "monotonic": 2005.92804725,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43362,
+          "role": "webcontent",
+          "rssKiB": 202640,
+          "cpuSeconds": 3.18,
+          "monotonic": 2005.932972208,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 52693,
+          "role": "webcontent",
+          "rssKiB": 171040,
+          "cpuSeconds": 1.73,
+          "monotonic": 2005.937919666,
+          "ownership": "simulator-udid-environment"
+        }
+      ],
+      "combinedRssKiB": 2139888,
+      "cpu": [
+        {
+          "pid": 43263,
+          "percent": 2.663810090086225
+        },
+        {
+          "pid": 43277,
+          "percent": 0.3807912337288427
+        },
+        {
+          "pid": 43329,
+          "percent": 0.0
+        },
+        {
+          "pid": 43331,
+          "percent": 0.7563073076074694
+        },
+        {
+          "pid": 43351,
+          "percent": 0.0
+        },
+        {
+          "pid": 43362,
+          "percent": 0.7552548984659732
+        },
+        {
+          "pid": 52693,
+          "percent": null
+        }
+      ],
+      "complete": false
+    },
+    {
+      "cycle": 8,
+      "processes": [
+        {
+          "pid": 43263,
+          "role": "app",
+          "rssKiB": 514640,
+          "cpuSeconds": 57.08,
+          "monotonic": 2028.872305458,
+          "ownership": "app-container-executable"
+        },
+        {
+          "pid": 43277,
+          "role": "webcontent",
+          "rssKiB": 397840,
+          "cpuSeconds": 16.62,
+          "monotonic": 2028.878235208,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43329,
+          "role": "webcontent",
+          "rssKiB": 283136,
+          "cpuSeconds": 6.53,
+          "monotonic": 2028.885127,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43331,
+          "role": "webcontent",
+          "rssKiB": 303456,
+          "cpuSeconds": 6.1,
+          "monotonic": 2028.899659166,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43351,
+          "role": "webcontent",
+          "rssKiB": 264672,
+          "cpuSeconds": 4.38,
+          "monotonic": 2028.90407375,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43362,
+          "role": "webcontent",
+          "rssKiB": 202704,
+          "cpuSeconds": 3.23,
+          "monotonic": 2028.908967333,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 52770,
+          "role": "webcontent",
+          "rssKiB": 327968,
+          "cpuSeconds": 5.53,
+          "monotonic": 2028.91562275,
+          "ownership": "simulator-udid-environment"
+        }
+      ],
+      "combinedRssKiB": 2294416,
+      "cpu": [
+        {
+          "pid": 43263,
+          "percent": 0.7582175738172431
+        },
+        {
+          "pid": 43277,
+          "percent": 0.0
+        },
+        {
+          "pid": 43329,
+          "percent": 0.0
+        },
+        {
+          "pid": 43331,
+          "percent": 0.0
+        },
+        {
+          "pid": 43351,
+          "percent": 0.0
+        },
+        {
+          "pid": 43362,
+          "percent": 1.1328334013663053
+        },
+        {
+          "pid": 52770,
+          "percent": 0.37882238893355114
+        }
+      ],
+      "complete": true
+    },
+    {
+      "cycle": 9,
+      "processes": [
+        {
+          "pid": 43263,
+          "role": "app",
+          "rssKiB": 491072,
+          "cpuSeconds": 58.95,
+          "monotonic": 2049.622413,
+          "ownership": "app-container-executable"
+        },
+        {
+          "pid": 43277,
+          "role": "webcontent",
+          "rssKiB": 403824,
+          "cpuSeconds": 17.81,
+          "monotonic": 2049.6281275,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43329,
+          "role": "webcontent",
+          "rssKiB": 283120,
+          "cpuSeconds": 6.66,
+          "monotonic": 2049.635658625,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43331,
+          "role": "webcontent",
+          "rssKiB": 304832,
+          "cpuSeconds": 6.19,
+          "monotonic": 2049.64354025,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43351,
+          "role": "webcontent",
+          "rssKiB": 264448,
+          "cpuSeconds": 4.39,
+          "monotonic": 2049.648716541,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43362,
+          "role": "webcontent",
+          "rssKiB": 203984,
+          "cpuSeconds": 3.37,
+          "monotonic": 2049.661486375,
+          "ownership": "simulator-udid-environment"
+        }
+      ],
+      "combinedRssKiB": 1951280,
+      "cpu": [
+        {
+          "pid": 43263,
+          "percent": 0.4078667849426498
+        },
+        {
+          "pid": 43277,
+          "percent": 0.0
+        },
+        {
+          "pid": 43329,
+          "percent": 0.0
+        },
+        {
+          "pid": 43331,
+          "percent": 0.40944947277878885
+        },
+        {
+          "pid": 43351,
+          "percent": 0.0
+        },
+        {
+          "pid": 43362,
+          "percent": 2.45285760977612
+        }
+      ],
+      "complete": true
+    },
+    {
+      "cycle": 10,
+      "processes": [
+        {
+          "pid": 43263,
+          "role": "app",
+          "rssKiB": 460832,
+          "cpuSeconds": 60.67,
+          "monotonic": 2068.792094416,
+          "ownership": "app-container-executable"
+        },
+        {
+          "pid": 43277,
+          "role": "webcontent",
+          "rssKiB": 404544,
+          "cpuSeconds": 19.14,
+          "monotonic": 2068.797047041,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43329,
+          "role": "webcontent",
+          "rssKiB": 282960,
+          "cpuSeconds": 6.8,
+          "monotonic": 2068.813154166,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43331,
+          "role": "webcontent",
+          "rssKiB": 304064,
+          "cpuSeconds": 6.19,
+          "monotonic": 2068.818362875,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43351,
+          "role": "webcontent",
+          "rssKiB": 264064,
+          "cpuSeconds": 4.39,
+          "monotonic": 2068.823359416,
+          "ownership": "simulator-udid-environment"
+        },
+        {
+          "pid": 43362,
+          "role": "webcontent",
+          "rssKiB": 211440,
+          "cpuSeconds": 3.71,
+          "monotonic": 2068.828522541,
+          "ownership": "simulator-udid-environment"
+        }
+      ],
+      "combinedRssKiB": 1927904,
+      "cpu": [
+        {
+          "pid": 43263,
+          "percent": 0.38832228178558925
+        },
+        {
+          "pid": 43277,
+          "percent": 0.0
+        },
+        {
+          "pid": 43329,
+          "percent": 0.0
+        },
+        {
+          "pid": 43331,
+          "percent": 0.0
+        },
+        {
+          "pid": 43351,
+          "percent": 0.0
+        },
+        {
+          "pid": 43362,
+          "percent": 3.107730347315605
+        }
+      ],
+      "complete": true
+    }
+  ],
+  "performanceAcceptance": {
+    "status": "BLOCKED",
+    "budgets": {
+      "maxLateMemoryGrowthKiB": 24576,
+      "maxSlopeKiBPerCycle": 1024,
+      "maxLateIdleCpuPercent": 15,
+      "maxIdleCpuGrowthPercentagePoints": 5
+    },
+    "boundary": "Small owned fixture library, ten rounds, simulator only. Not physical iPhone/Android or large-library acceptance.",
+    "reason": "CPU counters missing or invalid"
+  },
+  "review": "Offline evaluation of real measurements; suite failed Live control selector",
+  "run": 42514969280
+}

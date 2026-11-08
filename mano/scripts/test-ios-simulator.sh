@@ -135,7 +135,7 @@ if [ "${COCO_NATIVE_LAB:-0}" = 1 ] || [ "${COCO_AD_TRAFFIC:-none}" != none ] || 
   python3 - "$simulator_id" <<'PYCONTRACT'
 import json,os,sys
 from pathlib import Path
-Path('ios/App/ManoUITests/native-lab-contract.json').write_text(json.dumps({'enabled':True,'run':os.environ['GITHUB_RUN_ID'],'simulator':sys.argv[1],'adTraffic':os.environ.get('COCO_AD_TRAFFIC','none'),'storeScreens':os.environ.get('COCO_STORE_SCREENS')=='1'}))
+Path('ios/App/ManoUITests/native-lab-contract.json').write_text(json.dumps({'enabled':True,'run':os.environ['GITHUB_RUN_ID'],'simulator':sys.argv[1],'adTraffic':os.environ.get('COCO_AD_TRAFFIC','none'),'storeScreens':os.environ.get('COCO_STORE_SCREENS')=='1','liveOnly':os.environ.get('COCO_NATIVE_LIVE_ONLY')=='1'}))
 PYCONTRACT
   if [ "${COCO_STORE_SCREENS:-0}" = 1 ]; then
     node --experimental-strip-types ../scripts/apple-fixtures/store-labels.mjs ios/App/ManoUITests/native-lab-contract.json
@@ -335,7 +335,7 @@ run_ui_test() {
   return "$test_code"
 }
 collector_pid=''
-if [ "${COCO_NATIVE_LAB:-0}" = 1 ]; then
+if [ "${COCO_NATIVE_LAB:-0}" = 1 ] && [ "${COCO_NATIVE_LIVE_ONLY:-0}" != 1 ]; then
   runner_app="$smoke_dir/DerivedData/Build/Products/Release-iphonesimulator/ManoUITests-Runner.app"
   runner_bundle="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$runner_app/Info.plist")"
   python3 ../scripts/apple-fixtures/collect-cycles.py "$simulator_id" "$smoke_dir" "$runner_bundle" > "$smoke_dir/cycle-collector.log" 2>&1 &
@@ -381,7 +381,7 @@ if [ "${COCO_AD_TRAFFIC:-none}" != none ]; then
   echo 'Host-only research completed; this is NOT release/native-smoke acceptance.'
   exit 0
 fi
-if [ "${COCO_NATIVE_LAB:-0}" = 1 ]; then
+if [ "${COCO_NATIVE_LAB:-0}" = 1 ] && [ "${COCO_NATIVE_LIVE_ONLY:-0}" != 1 ]; then
   grep -q COCOWASH_UI_NATIVE_TEN_CYCLES_OK "$smoke_dir/ui-test.log" || { echo 'Native ten cycles did not complete'; exit 1; }
   wait "$collector_pid"
   ( cd ..; COCO_FIXTURE_OUTPUT="$smoke_dir/fixtures" python3 scripts/apple-fixtures/probe.py --seed-existing "$simulator_id" --audit )

@@ -516,21 +516,22 @@ final class PhotosSmokeTests: XCTestCase {
         if (geek.value as? String) != "1" { geek.tap() }
         XCTAssertTrue(closeOverlay(app,until:finish))
         try nativeMediaFilter(app,"Live Photos")
-        let play=app.buttons["Reproducir Live Photo"].firstMatch
-        XCTAssertTrue(play.waitForExistence(timeout:60),"PhotoKit Live subtype must reach a real card")
+        // aria-pressed is exposed by WebKit as a toggle rather than Button.
+        // Keep the exact accessible name and require a real visible chip, not
+        // the video element that shares this accessible label after loading.
+        let play=try nativeLiveControl(app,"Reproducir Live Photo",timeout:60)
         Thread.sleep(forTimeInterval:3)
         let card=app.descendants(matching:.any).matching(NSPredicate(format:"label BEGINSWITH %@","Live Photo 1 de")).firstMatch
         XCTAssertTrue(card.exists)
         let keyBefore=try nativePhotoCrop(app,card.frame)
         play.tap()
-        let pause=app.buttons["Pausar"].firstMatch
-        XCTAssertTrue(pause.waitForExistence(timeout:30))
+        let pause=try nativeLiveControl(app,"Pausar",timeout:30)
         Thread.sleep(forTimeInterval:2)
         let motion1=try nativePhotoCrop(app,card.frame)
         Thread.sleep(forTimeInterval:0.7)
         let motion2=try nativePhotoCrop(app,card.frame)
         XCTAssertNotEqual(motion1,motion2,"Paired video must actually render changing pixels inline")
-        pause.tap();XCTAssertTrue(play.waitForExistence(timeout:15));Thread.sleep(forTimeInterval:2)
+        pause.tap();_ = try nativeLiveControl(app,"Reproducir Live Photo",timeout:15);Thread.sleep(forTimeInterval:2)
         let keyAfter=try nativePhotoCrop(app,card.frame)
         XCTAssertEqual(keyAfter,keyBefore,"Pausing on the card must restore its key photo, not freeze an arbitrary video frame")
         attachScreenshot(app,"Native Live Photo paused key photo")
@@ -565,6 +566,21 @@ final class PhotosSmokeTests: XCTestCase {
         XCTAssertTrue(closeOverlay(app,until:finish))
         try nativeMediaFilter(app,"Todo")
         print("COCOWASH_UI_LIVE_ANCHOR_TIMELINE_ZOOM_OK")
+    }
+
+    @MainActor private func nativeLiveControl(_ app:XCUIApplication,_ label:String,timeout:TimeInterval) throws -> XCUIElement {
+        let query=app.descendants(matching:.any).matching(NSPredicate(format:"label == %@",label))
+        let deadline=Date().addingTimeInterval(timeout)
+        repeat {
+            if let control=query.allElementsBoundByIndex.last(where:{$0.isHittable && $0.frame.height<=64 && $0.frame.width<=180}) {
+                print("COCOWASH_UI_LIVE_CONTROL label=\(label) type=\(control.elementType.rawValue) frame=\(control.frame)")
+                return control
+            }
+            Thread.sleep(forTimeInterval:0.4)
+        } while Date()<deadline
+        attachScreenshot(app,"Live control missing")
+        print("COCOWASH_UI_LIVE_AX \(app.debugDescription)")
+        throw NSError(domain:"CocoWashFixtureQA",code:1,userInfo:[NSLocalizedDescriptionKey:"Exact visible Live control missing: \(label)"])
     }
 
     @MainActor private func nativeMediaFilter(_ app:XCUIApplication,_ media:String) throws {
@@ -608,6 +624,7 @@ final class PhotosSmokeTests: XCTestCase {
     func testZTenNativeDeletionRounds() throws {
         let url = try XCTUnwrap(Bundle(for:Self.self).url(forResource:"native-lab-contract",withExtension:"json"))
         let contract = try XCTUnwrap(JSONSerialization.jsonObject(with:Data(contentsOf:url)) as? [String:Any])
+        if contract["liveOnly"] as? Bool == true { throw XCTSkip("Dedicated Live probe; no destructive-cycle acceptance claimed") }
         guard contract["enabled"] as? Bool == true else { throw XCTSkip("Native destructive lab disabled; no generated CI ownership contract") }
         #if !targetEnvironment(simulator)
         XCTFail("Native destructive lab refuses physical devices");return

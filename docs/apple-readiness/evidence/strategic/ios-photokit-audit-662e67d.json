@@ -1,0 +1,13 @@
+{
+  "createdCount": 64,
+  "preloadedRuntimeDemoCount": 6,
+  "remainingCount": 60,
+  "removedCount": 10,
+  "removedGeneratedCount": 9,
+  "removedRuntimeDemoCount": 1,
+  "status": "PASS",
+  "unknownCount": 0,
+  "runtime": "27.0",
+  "simulatorModel": "MemSwipe-smoke-42514969280-21161",
+  "run": 42514969280
+}

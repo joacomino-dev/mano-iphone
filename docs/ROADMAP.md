@@ -262,3 +262,5 @@ Autorizados push normal a main y workflows estándar públicos gratuitos, relanz
 - 2026-11-08 · CW-CX-043: verificación codesign de SDK oficial fijado preparada, pendiente macOS; binarios atribuyen dos endpoints publicitarios y UMP, no se adivina dueño deODF. Manifiesto intacto.
 
 - 2026-11-08 · CW-CX-044: propietario aprueba dos hosts exactos; manifiesto actualizado y5regresiones/declaraciónstrictPASS. Captura/Conservar después deATT con nuevosdominios pendiente; privacidad global sigue BLOCKED por archivo/exhaustividad yweb. R61 continúaFAIL.
+
+- 2026-11-08 · CW-CX-045: R01PASS sin observer42514969280 (álbum exacto,metadata,avance,pinch/anclaje). TenrondasPASS314s+auditPhotoKit10ausentes/unknown0. FullsuiteFAIL Live selectorButton; solo consulta exacta se amplía a toggleconchipvisible, diagnósticoLive separado preparado.

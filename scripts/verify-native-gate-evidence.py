@@ -14,14 +14,15 @@ def verify(folder,mode='full'):
     require((folder/'ui-test-exit-code.txt').read_text().strip()=='0','Missing successful completed xcodebuild invocation')
     log=(folder/'ui-test.log').read_text(errors='replace')
     native=(folder/'photos-read.log').read_text(errors='replace')
-    cases=CASES if mode=='full' else ['testFullPhotosAuthorizationStartsSession'] if mode=='album' else ['testAdHostCaptureThroughRealConsent']
-    markers=MARKERS if mode=='full' else MARKERS[:3] if mode=='album' else ['COCOWASH_UI_AD_HOST_RESEARCH_OK']
+    cases=CASES if mode=='full' else CASES[:2] if mode=='live' else ['testFullPhotosAuthorizationStartsSession'] if mode=='album' else ['testAdHostCaptureThroughRealConsent']
+    markers=MARKERS if mode=='full' else MARKERS[:5] if mode=='live' else MARKERS[:3] if mode=='album' else ['COCOWASH_UI_AD_HOST_RESEARCH_OK']
     for case in cases: require(re.search(r'Test Case .*'+case+r'.* passed \(',log),'Case did not really pass: '+case)
     for marker in markers: require(marker in log,'UI marker missing: '+marker)
     require((folder/'PhotosSmoke.xcresult').is_dir(),'Actual xcresult missing')
     require(any(int(x)>0 for x in re.findall(r'COCOWASH_PHOTOS_READ_OK count=(\d+)',native)),'No actual PhotoKit enumeration')
-    if mode=='full':
+    if mode in ['full','live']:
         require(any(int(x)>0 for x in re.findall(r'COCOWASH_LIVE_PREPARED_OK bytes=(\d+)',native)),'No nonempty paired resource from PhotoKit')
+    if mode=='full':
         metrics=json.loads((folder/'native-cycles.json').read_text())
         require(metrics.get('performanceAcceptance',{}).get('status')=='PASS','Native performance budget not passed')
         require(len(metrics['rows'])==11,'Native baseline+10 rounds missing')
