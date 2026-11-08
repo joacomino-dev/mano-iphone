@@ -2,6 +2,20 @@
 
 Actualizado: 2026-11-07, America/Bogota. Codex trabaja solo por indicación del usuario.
 
+## Rama única `main` (Claude, CW-CL-060) — vigente
+
+Por decisión del usuario, GitHub tiene **una sola rama: `main`**, con la integración RC iOS + Android
+(CW-CL-059) más los arreglos de CI. Las demás 20 ramas se borraron del remoto tras guardarlas en
+`work/backup/mano-iphone-all-branches-2026-11-07.bundle` (24 refs, sha256 `b547931d…5303`, local).
+`main` es el canal de **tienda**: `DEVELOPER=false` e IDs AdMob iOS comerciales en Release
+(`verify-release.yml`, antes en la rama `release`). La IPA de desarrollo la genera
+`build-people-dev.yml` cambiando solo su copia de CI a canal developer (ID de muestra, anuncios de
+prueba); no se confirma nada de vuelta. Android: `build-android.yml` en `main`.
+Gate nativo RC (manual, `rc-native-gate.yml`), run 42438304068: compilación Release arm64 sin firma
+PASS (Xcode 27.1), oráculos Swift PASS, acceso completo real a Fotos y sesión en simulador PASS;
+smoke **FAIL** al crear álbum («Crear y añadir» no cierra la hoja en el simulador iPhone Duo), sin
+cambios de la RC en ese flujo → para Codex. Sigue FAIL el gate de privacidad `--submission` (P1 dominios).
+
 ## Integración RC iOS + Android — `claude/rc-android-integration` `bc6db8c` (Claude, CW-CL-059)
 
 Local, sin push. `main`/`android` (`a4f765d`, Android build 3) + RC Codex `8fdd2bf` (cadena completa

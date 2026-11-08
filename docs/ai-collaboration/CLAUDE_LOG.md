@@ -695,3 +695,25 @@ Carga: `vite preview` de `dist/client` en 4187; JS servido sha256 `18c919cf…04
 Impacto para Codex: revisar que la invalidación alrededor de la cola Android (sin mutación nativa inmediata) es aceptable
 y si el `flushFavorites()` de fin de ronda necesita la misma protección. Pendiente variante de desarrollo para `main`.
 Pendientes: P1 dominios; Swift/PhotoKit/simulador/hardware; APK/AAB de esta base en CI; publicar políticas; push/CI.
+
+### CW-CL-060 — CI nativa de la integración y GitHub en una sola rama (`main`)
+Fecha: 2026-11-07, America/Bogota
+Agente: Claude
+Tarea: push y CI de la integración (autorizado: «Sí, push y CI»); después dejar GitHub en una sola rama
+(«ya deja todo el github en una sola rama. no tengo versiones ni nada en trabajo») e IPA del último build.
+Estado: completada; smoke nativo con un FAIL pendiente para Codex.
+Base Git / commit: `claude/rc-android-integration` → `main` por fast-forward (sin forzar).
+Archivos modificados: `.github/workflows/{rc-native-gate,verify-release,build-people-dev,build-android,build-ios-package}.yml`,
+`mano/ios/App/ManoUITests/PhotosSmokeTests.swift`, `CURRENT_STATE`, esta bitácora.
+Cambios realizados:
+- Android CI 42427171361 PASS (APK/AAB, 16 KB, emulador E2E).
+- Gate RC 42427192285: build nativo PASS; smoke falló en «Continuar» porque desde 9.8.1 la app sigue el idioma
+  del dispositivo y el simulador nuevo es inglés → el test lanza la app con `-AppleLanguages (es)`.
+- Gate RC 42438304068: onboarding, acceso completo real a Fotos y sesión PASS; FAIL al crear álbum (3 toques,
+  la hoja no se cierra). La RC/fusión no tocan ese flujo; simulador «iPhone Duo» (2 pantallas: `simctl io
+  screenshot` falla sin `--display`). Aparece el aviso ATT (canal de tienda) y XCTest lo atiende por defecto.
+- Rama única: `main` = canal de tienda; `verify-release.yml` corre en `main`; la IPA de desarrollo cambia solo
+  su copia de CI a canal developer. Copia previa de las 21 ramas + 3 etiquetas en bundle local verificado.
+Impacto para Codex: reproducir el FAIL del álbum (¿`typeText` en `AlbumInput` dentro de WKWebView en iPhone
+Duo, botón deshabilitado o error de PhotoKit?) y añadir `--display` a la captura del script de smoke.
+Pendientes: P1 dominios; QA física; firma/TestFlight; publicar políticas.
