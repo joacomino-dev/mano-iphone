@@ -1,3 +1,11 @@
+# Seguimiento nativo actual — CW-CX-030,2026-11-08
+
+R-01 reproducido en Duo27.1 y18Pro27.0: campo sigue en placeholder tras typeText, guardar deshabilitado, teclado visible y ninguna transacción PhotoKit. [Captura real después de escribir](evidence/strategic/album-native-before.png), run42486432883; exportación xcresult42488119404. La captura de Home después de teardown no era prueba del campo.
+
+Se demuestra por regresión DOM que un input con value-tracking ya actualizado no dispara onChange aunque llegue input. [Antes](evidence/strategic/album-input-before.json):1 FAIL/2 PASS. Corrección mínima candidata: onInput actualiza el mismo estado, conservando onChange; ninguna escritura adicional. [Después](evidence/strategic/album-input-after.json):3 PASS, incluida escritura única y texto japonés. TypeScript/130Node/hash28 PASS. La causa exacta del camino WebKit sigue como inferencia hasta repetir el mismo XCTest sin cambiar sus asserts; no cerrar R-01 por el test de navegador.
+
+La misión estratégica autoriza push/CI. El texto siguiente conserva el seguimiento anterior.
+
 # R-01 / R-02 / R-03 · CW-CX-023
 
 2026-11-07. Base local main1bc2561. Windows sin Swift/Xcode. Sin push ni ejecución nueva de CI.

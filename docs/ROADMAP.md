@@ -221,3 +221,5 @@ Autorizados push normal a main y workflows estándar públicos gratuitos, relanz
 - 2026-11-08 · Codex CW-CX-028: R-44 separa compilación AAB tienda y APK developer solo en la copia CI; hashes del HTML/JS verifican cada archivo real del APK/AAB.5 regresiones Python PASS, aceptación de emulador/artefactos pendiente. Sin cambios de monetización/versiones.
 
 - 2026-11-08 · Codex CW-CX-029: ficha Apple ynotas7 idiomas,guardas de UTF-8 eidioma ausente probadas FAIL→PASS;8 Release y7 Play listings PASS. Data safety corregido: dos decimales del geocodificador se consideran ubicación precisa por definición Play; cifrado/retención/proveedor no se dan por verificados. R-44 cerrado con run42486725664.
+
+- 2026-11-08 · Codex CW-CX-030: captura xcresult real confirma R-01 también en18Pro/27.0, no solo Duo. Regresión input con tracker sincronizado1FAIL→3PASS tras fallbackonInput; candidato de app mínimo, repetir XCTest exacto sin debilitarlo. R-01 sigue abierto hasta CI.

@@ -1,0 +1,17 @@
+{
+  "boundary": "Browser input event emulation only; native XCTest must prove iOS behavior",
+  "results": [
+    {
+      "name": "input event after native-style value assignment updates controlled state",
+      "status": "PASS"
+    },
+    {
+      "name": "ordinary input and composition text create exactly one album",
+      "status": "PASS"
+    },
+    {
+      "name": "empty and whitespace-only names remain disabled",
+      "status": "PASS"
+    }
+  ]
+}

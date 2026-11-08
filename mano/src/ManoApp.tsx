@@ -153,7 +153,7 @@ function Sheet({ open, close, title, description, children, error, returnTo, foo
   return <Dialog.Root open={open} onOpenChange={v=>!v&&close()}><Dialog.Portal><Dialog.Overlay className="native-shade"/><Dialog.Content ref={setSheetNode} className="native-sheet" aria-describedby={undefined} onCloseAutoFocus={e=>{e.preventDefault();restoreFocus();}}><span className="sheet-grabber" aria-hidden="true"/><header><div><Dialog.Title asChild><h2>{title}</h2></Dialog.Title><p>{description}</p></div><Dialog.Close asChild><button aria-label={t('Cerrar')}><XIcon size={22}/></button></Dialog.Close></header>{content}{footer&&<div className="sheet-footer">{footer}</div>}</Dialog.Content></Dialog.Portal></Dialog.Root>;
 }
 function AlbumInput({value,change}:{value:string;change:(value:string)=>void}) {
-  return isNative?<input value={value} onChange={e=>change(e.target.value)} maxLength={100} placeholder={t('Por ejemplo, Verano')}/>:<PreviewAlbumInput value={value} change={change}/>;
+  return isNative?<input value={value} onInput={e=>change(e.currentTarget.value)} onChange={e=>change(e.target.value)} maxLength={100} placeholder={t('Por ejemplo, Verano')}/>:<PreviewAlbumInput value={value} change={change}/>;
 }
 function PreviewAlbumInput({value,change}:{value:string;change:(value:string)=>void}) {
   const keyboard=useKeyboard();return <KeyboardInput value={value} onChange={e=>change(e.target.value)} onBlur={()=>keyboard.hide()} maxLength={100} placeholder={t('Por ejemplo, Verano')}/>;

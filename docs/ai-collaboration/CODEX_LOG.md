@@ -386,3 +386,11 @@ Estado:ficha/notas/límites preparados y probados; capturas/edad final/proveedor
 Cambios:metadata Apple añadefr/de/it/ar/ja conservandoES/EN; notas/explicación permisos7,locales explícitos ychecklist edad sin aprobación inventada. Guardas Release para7 idiomas/100bytes UTF-8:2 FAIL antes,8 pruebas PASS después. Play7 listings PASS.
 Privacidad:Data safety no puede llamar aproximada a una celda de≈1,24km²: Play define precise<3km², Apple usa3decimales. Se corrige borrador yse retiran afirmaciones no demostradas de retención efímera/transporte universal del Geocoder. Sin cambiar redondeo,SDK,política pública ni manifiesto Apple;R-02 sigue FAIL.
 Evidencia adicional:R-44 run42486725664 PASS:APK/AAB con hashes/canales distintos yE2E. No versiones/arte/monetización nuevos ni envío a tiendas.
+
+### CW-CX-030 — Entrada de álbum compatible con input nativo
+Fecha:2026-11-08, America/Bogota.
+Agente:Codex.
+Estado:corrección candidata local; aceptación nativa pendiente.
+Evidencia:campo vacío/placeholder,teclado1,guardar disabled en18Pro27.0 yDuo27.1. Export dexcresult42488119404 permite inspección visual real antes de teardown. No se llegó aPhotoKit.
+Reproducción adicional:evento input con value-tracking ya sincronizado deja Reactstate vacío;1FAIL/2PASS antes. FallbackonInput al mismo estado además deonChange:3PASS después,una sola creación con texto latino/japonés yvacíos prohibidos.
+Validaciones:130Node/TypeScript/hash28 PASS;38 regresiones de permisos/borrado/compras/layout PASS antes del checkpoint. No cambian álbum/transacción/gestos ni arte. Repetir mismo XCTest estándar yDuo para establecer el efecto nativo; no convertir el mock en aceptación Apple.

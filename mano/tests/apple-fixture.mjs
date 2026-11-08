@@ -55,6 +55,10 @@ export function installAppleFixture({ onboarded = true, status = 'authorized', l
           return result;
         }
         case 'albums': return { albums: [{id:'fixture-album',title:'Fixture'}] };
+        case 'createAlbum': {
+          if(fixture.albumError)throw new Error('Fixture: album creation failed');
+          return {album:{id:'fixture-created-album',title:args.title},added:args.ids.length};
+        }
         case 'favorite': {
           if(fixture.holdFavorite)await new Promise(resolve=>(fixture.pendingFavorites ||= []).push(resolve));
           if(fixture.favoriteError)throw new Error('Fixture: Photos favorite failed');
