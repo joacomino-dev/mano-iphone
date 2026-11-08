@@ -437,3 +437,8 @@ Fecha:2026-11-08. Agente:Codex. Estado:fallos comprobados,nopublicable.
 42511286263/e48e62c sale0peroantesdeXCTest `capture[@]: unbound variable` (arrayvacío enBash3.2). Artefacto103KB sinxcresult. NO esNativePASS,Node/Swiftbuild sí. Se inicializa arrayconxcodebuild,yse guardaRUNNING/exitcode real. Postcondición independiente exige casosPASSED,marcadores,xcresult,PhotoKitpostaudit,métricas.Hostprobe/albumtambiénrecibenpostcondición.14 tests unitdeinfraestructura PASSinclwrapperrealcon/sinproxy,yexit9nooculto. Cambios deappnofingidos.
 42511282029Android ejecutaE2E yfallanuevocasoforce-stop:pending1guardado→pending0trasrelaunch. R61P0abierto(datosdedecisión,noborradoPhotosenesecaso). InvestigarChromiumcommitdeferred5syarranquerealantesdefix. Se mantieneNSPrivacyTrackingDomainsyarteintactos.
 Tambiénse corrigetestMediaFilter:la hoja recuerdaAjustes,eltestdebeescogertabFiltros;no se cambiaappparahacerlopasar.
+
+### CW-CX-037 — Aislamiento de persistencia sin cambiar la app
+Fecha:2026-11-08. Agente:Codex. Estado:diagnóstico pendienteCI.
+WorkflowAndroiddedicado añadeobserverSOLOLECTURAantesdeReactenCOPIACI ycompara3casos:force-stopinmediato,background6s,ackstrictIndexedDBdeunacopiaexperimental. Nunca restauraappdesdeDBexperimental;siCocoWashpierdependingelrunseguiráFAIL aunquejournalconserve. Reportacontadores/hashes,nosesionesSDK/valorespersonales. NativeMediaStoreIDs deben seguiridénticos(sinconfirmarborradoenestoscasos). Evidenciaextraaislarádisco vsreconciliaciónalarrancar antesdelafix.
+GuardadearranquedelsetupAVDrechazaentornosnoGitHubHostedantesdecrear/reiniciarAVD. SintaxisJS/Bash/hash28PASS,ejecuciónnativaaúnNOT TESTED. No cambiosdearquitectura/selección/recuperaciónimplementados.

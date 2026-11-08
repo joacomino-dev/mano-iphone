@@ -3,6 +3,10 @@
 # Every step has a time limit; a failed boot or test restarts the emulator once.
 # Failures are written as GitHub annotations (readable without signing in).
 set -uo pipefail
+if [ "${GITHUB_ACTIONS:-}" != true ] || [ "${RUNNER_ENVIRONMENT:-}" != github-hosted ]; then
+  echo 'REFUSED: emulator setup/reset is restricted to a disposable hosted CI runner.' >&2
+  exit 78
+fi
 APK=${1:?usage: android-emulator.sh <apk>}
 API=${COCO_EMULATOR_API:-35}
 IMAGE="system-images;android-$API;google_apis;x86_64"
@@ -56,8 +60,15 @@ for attempt in 1 2; do
       code=0
       timeout 420 bash scripts/android-e2e-library.sh || code=$?
       if [ "$code" = 0 ]; then timeout 600 node scripts/android-e2e.mjs || code=$?; fi
-      if [ "$code" = 0 ]; then timeout 900 node scripts/android-native-cycles.mjs || code=$?; fi
-      if [ "$code" = 0 ]; then python3 ../scripts/evaluate-native-cycles.py build/android-startup/native-cycles.json || code=$?; fi
+      if [ "$code" = 0 ]; then
+        if [ "${COCO_ANDROID_PROBE:-}" = persistence ]; then
+          # Separate diagnostic, still fails when the application loses a decision.
+          timeout 900 node ../scripts/android-persistence-probe.mjs || code=$?
+        else
+          timeout 900 node scripts/android-native-cycles.mjs || code=$?
+          if [ "$code" = 0 ]; then python3 ../scripts/evaluate-native-cycles.py build/android-startup/native-cycles.json || code=$?; fi
+        fi
+      fi
       [ "$code" = 0 ] || note "end-to-end checks failed (exit $code); see e2e.json in the evidence"
       stop; exit "$code"
     fi

@@ -244,3 +244,5 @@ Autorizados push normal a main y workflows estándar públicos gratuitos, relanz
 | R-61 | P0 persistencia | FAIL aplicación | Android42511282029/e48e62c:descartarfixture,persistedpending1,force-stop antes de confirmar,relaunch=>pending0. No borrado por ese gesto; pérdida de decisión guardada reproducida. Investigar durabilidad localStorage/arranque antes de cambiar almacenamiento. Fuente Chromium documenta commit diferido5s;hipótesis compatible, falta aislar. |
 
 - 2026-11-08 · Codex CW-CX-036:se rechaza falsoverde42511286263(noXCTest), corrige arrayvacíoBash3.2 y añade postcondición independiente. NuevotestAndroid revelaR61P0 pérdida de descarte tras cierre forzado; prioridadsobre materiales. No declarar RC lista.
+
+- 2026-11-08 · Codex CW-CX-037:diagnóstico deR61comparaalmacenamientoantesdeReact,force-stop/background6s yjournalIndexedDBstrictseparado,sinrestaurarlaappnifingirPASS. SetupemuladorrefusafueradeCIefímera.Fixdeproducto aúnpendiente deaislamiento.
