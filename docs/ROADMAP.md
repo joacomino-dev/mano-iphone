@@ -256,3 +256,5 @@ Autorizados push normal a main y workflows estándar públicos gratuitos, relanz
 | R-62 | P1 comercio | Corrección implementada, CI pendiente | Consulta Android desconocida ya no informa adFree=false ni ofrece catálogo/anuncios. E2E prueba rechazo sin clave. Compras reales siguen BLOCKED propietario. |
 
 - 2026-11-08 · CW-CX-041: se corrige fallback comercial desconocido=>adFreefalse en status/catalog/ads; sin modificar monetización ni inventar productos. Kotlin/E2E pendientes.
+
+- 2026-11-08 · CW-CX-042: ATTallowed/denied42514971530 PASS en captura calibrada, propósito de dominios aúnpendiente/aprobación. DryrunApple42515287168 ejecutado ycorrectamente78(privacidadFAIL/credencialesBLOCKED). Android12capturas ES/EN/FR reales, conjunto7idiomasFAIL en alemán; diagnóstico añadido. iOS capturas preparado, aúnNOT TESTED.

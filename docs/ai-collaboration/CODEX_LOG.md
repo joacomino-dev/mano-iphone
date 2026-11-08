@@ -464,3 +464,9 @@ Reevaluación offline de las series nativas reales59912d8: iOS yAndroid PASS tam
 Fecha: 2026-11-08. Agente: Codex. Estado: implementada, compilación/emulador pendientes.
 R62 P1 demostrado por código Android: status/catalog convertían entitlements=null (sin clave o error Play) en adFree=false, y prepare/show podían ofrecer anuncios ante estado desconocido. Ahora status/catalog rechazan explícitamente; JS existente conserva el último status al error. Nuevos anuncios esperan un estado verificado false; no se concede ni se revoca compra por un fallo de red. Sin productos/precios/estrategia nuevos ni bypass de firma Debug.
 E2E exige VERIFICATION_UNAVAILABLE, ausencia de catálogo y ready=false cuando no hay clave; con configuración separa error de consulta de estado confirmado. No compra real en esta prueba. SintaxisJS/diff PASS; Kotlin, puente y E2E pendientes CI. R61 sigue P0 abierto, esperando decisión del diario duradero.
+
+### CW-CX-042 — Tráfico ATT ejecutado, dry-run macOS y capturas parciales
+Fecha: 2026-11-08. Agente: Codex. Estado: en curso.
+42514971530/662e67d: ambos ATT PASS con XCTest real, llamada SDK, calibración y restauración sin error. Se guardan reportes de hosts; no se afirma atribución exclusiva ni propósito de tracking. Dominios del manifiesto intactos, propuesta requiere revisión.
+42515287168/4f610da: archivo --dry-run real enmacOS ejecutado, salida78 por privacidadFAIL/credencialesBLOCKED. Runtime/fuentes/min17 PASS; ninguna firma/cuenta/upload.
+Android42515289335 genera12 capturas nativas RGB24 ES/EN/FR y falla al volver a cartas después de elegir alemán. Conjunto incompleto FAIL; se añade diagnóstico solo en biblioteca sintética. No se cambia app por hipótesis. Preparado workflowiOS capturas7idiomas con XCTest/PhotoKit reales y formato RGB24 sin reescalar; pendientes Swift/ejecución. Se usan las traducciones enviadas como contratos, no otra UI.

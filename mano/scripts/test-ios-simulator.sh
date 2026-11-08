@@ -130,13 +130,16 @@ simulator_id="$(bounded 60 xcrun simctl create "MemSwipe-smoke-${GITHUB_RUN_ID:-
 [[ "$simulator_id" =~ ^[0-9A-Fa-f-]{36}$ ]] || { echo 'ERROR: simulator creation returned no valid UUID.' >&2; exit 1; }
 
 # Test-bundle-only ownership contract; never copied into CocoWash.app.
-if [ "${COCO_NATIVE_LAB:-0}" = 1 ] || [ "${COCO_AD_TRAFFIC:-none}" != none ]; then
+if [ "${COCO_NATIVE_LAB:-0}" = 1 ] || [ "${COCO_AD_TRAFFIC:-none}" != none ] || [ "${COCO_STORE_SCREENS:-0}" = 1 ]; then
   test "${GITHUB_ACTIONS:-}" = true && test "${RUNNER_ENVIRONMENT:-}" = github-hosted || { echo 'Native lab refuses non-hosted environments'; exit 1; }
   python3 - "$simulator_id" <<'PYCONTRACT'
 import json,os,sys
 from pathlib import Path
-Path('ios/App/ManoUITests/native-lab-contract.json').write_text(json.dumps({'enabled':True,'run':os.environ['GITHUB_RUN_ID'],'simulator':sys.argv[1],'adTraffic':os.environ.get('COCO_AD_TRAFFIC','none')}))
+Path('ios/App/ManoUITests/native-lab-contract.json').write_text(json.dumps({'enabled':True,'run':os.environ['GITHUB_RUN_ID'],'simulator':sys.argv[1],'adTraffic':os.environ.get('COCO_AD_TRAFFIC','none'),'storeScreens':os.environ.get('COCO_STORE_SCREENS')=='1'}))
 PYCONTRACT
+  if [ "${COCO_STORE_SCREENS:-0}" = 1 ]; then
+    node --experimental-strip-types ../scripts/apple-fixtures/store-labels.mjs ios/App/ManoUITests/native-lab-contract.json
+  fi
 fi
 
 # SwiftPM: run 41140716793 failed because the runner's global SwiftPM state pointed at
@@ -312,6 +315,7 @@ run_ui_test() {
   local selection='-only-testing:ManoUITests/PhotosSmokeTests/testFullPhotosAuthorizationStartsSession'
   if [ "${COCO_NATIVE_LAB:-0}" = 1 ]; then selection='-only-testing:ManoUITests/PhotosSmokeTests'; fi
   local capture=(xcodebuild)
+  if [ "${COCO_STORE_SCREENS:-0}" = 1 ]; then selection='-only-testing:ManoUITests/PhotosSmokeTests/testStoreScreensSevenLanguages'; fi
   if [ "${COCO_AD_TRAFFIC:-none}" != none ]; then
     selection='-only-testing:ManoUITests/PhotosSmokeTests/testAdHostCaptureThroughRealConsent'
     capture=(python3 ../scripts/privacy-hosts/run_with_proxy.py "$smoke_dir/traffic" "$COCO_AD_TRAFFIC" xcodebuild)
@@ -356,6 +360,16 @@ if ! run_ui_test; then
   else
     report_ui_failure; exit 1
   fi
+fi
+if [ "${COCO_STORE_SCREENS:-0}" = 1 ]; then
+  grep -q COCOWASH_UI_NATIVE_STORE_SCREENS_OK "$smoke_dir/ui-test.log"
+  runner_app="$smoke_dir/DerivedData/Build/Products/Release-iphonesimulator/ManoUITests-Runner.app"
+  runner_bundle="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$runner_app/Info.plist")"
+  runner_data="$(bounded 30 xcrun simctl get_app_container "$simulator_id" "$runner_bundle" data)"
+  cp -R "$runner_data/Documents/StoreScreens" "$smoke_dir/store-screens"
+  bounded 300 xcrun swiftc ../scripts/apple-fixtures/screens-rgb.swift -o "$smoke_dir/screens-rgb"
+  "$smoke_dir/screens-rgb" "$smoke_dir/store-screens/"*.png
+  python3 ../scripts/verify-store-screens.py "$smoke_dir/store-screens" ios
 fi
 if [ "${COCO_AD_TRAFFIC:-none}" != none ]; then
   grep -q COCOWASH_UI_AD_HOST_RESEARCH_OK "$smoke_dir/ui-test.log"

@@ -9,6 +9,49 @@ final class PhotosSmokeTests: XCTestCase {
     }
 
     @MainActor
+    func testStoreScreensSevenLanguages() throws {
+        let contractURL=try XCTUnwrap(Bundle(for:Self.self).url(forResource:"native-lab-contract",withExtension:"json"))
+        let contract=try XCTUnwrap(JSONSerialization.jsonObject(with:Data(contentsOf:contractURL)) as? [String:Any])
+        guard contract["storeScreens"] as? Bool == true else { throw XCTSkip("Store screenshots use a separate workflow") }
+        #if !targetEnvironment(simulator)
+        XCTFail("Store fixture capture refuses physical libraries");return
+        #endif
+        XCTAssertEqual(contract["simulator"] as? String,ProcessInfo.processInfo.environment["SIMULATOR_UDID"])
+        // Real onboarding, Photos prompt, album and native metadata assertions.
+        try testFullPhotosAuthorizationStartsSession()
+        let tables=try XCTUnwrap(contract["storeScreenLabels"] as? [String:[String:String]])
+        let directory=FileManager.default.urls(for:.documentDirectory,in:.userDomainMask)[0].appendingPathComponent("StoreScreens")
+        try FileManager.default.createDirectory(at:directory,withIntermediateDirectories:true)
+        let app=XCUIApplication()
+        func capture(_ lang:String,_ screen:String) throws {
+            Thread.sleep(forTimeInterval:1)
+            let image=XCUIScreen.main.screenshot()
+            try image.pngRepresentation.write(to:directory.appendingPathComponent("\(lang)-\(screen).png"),options:.atomic)
+            print("COCOWASH_UI_STORE_SCREEN lang=\(lang) screen=\(screen)")
+        }
+        for lang in ["es","en","fr","de","it","ar","ja"] {
+            let labels=try XCTUnwrap(tables[lang])
+            app.terminate();app.launchArguments=["-AppleLanguages","(\(lang))","-AppleLocale",lang];app.launch()
+            let finish=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@",try XCTUnwrap(labels["Terminar"]))).firstMatch
+            XCTAssertTrue(finish.waitForExistence(timeout:120),"Native launch must render the requested language")
+            let filters=app.buttons[try XCTUnwrap(labels["Filtros"])].firstMatch
+            XCTAssertTrue(filters.isHittable);try capture(lang,"01-cards")
+            let discard=app.buttons[try XCTUnwrap(labels["Eliminar"])].firstMatch
+            XCTAssertTrue(discard.isEnabled && discard.isHittable);discard.tap();finish.tap()
+            let recover=app.buttons[try XCTUnwrap(labels["Recuperar"])].firstMatch
+            XCTAssertTrue(recover.waitForExistence(timeout:20));XCTAssertTrue(recover.isHittable);try capture(lang,"02-review");recover.tap()
+            let close=app.buttons[try XCTUnwrap(labels["Cerrar"])].firstMatch
+            XCTAssertTrue(close.isHittable);close.tap();XCTAssertTrue(filters.isHittable);filters.tap()
+            let filterTab=app.descendants(matching:.any).matching(NSPredicate(format:"label == %@",try XCTUnwrap(labels["Filtros"]))).allElementsBoundByIndex.filter{$0.isHittable}.last
+            try XCTUnwrap(filterTab).tap();try capture(lang,"03-filters")
+            let settings=app.descendants(matching:.any).matching(NSPredicate(format:"label == %@",try XCTUnwrap(labels["Ajustes"]))).allElementsBoundByIndex.filter{$0.isHittable}.last
+            try XCTUnwrap(settings).tap();try capture(lang,"04-settings")
+            XCTAssertTrue(close.isHittable);close.tap()
+        }
+        print("COCOWASH_UI_NATIVE_STORE_SCREENS_OK count=28")
+    }
+
+    @MainActor
     func testAdHostCaptureThroughRealConsent() throws {
         let contractURL=try XCTUnwrap(Bundle(for:Self.self).url(forResource:"native-lab-contract",withExtension:"json"))
         let contract=try XCTUnwrap(JSONSerialization.jsonObject(with:Data(contentsOf:contractURL)) as? [String:Any])

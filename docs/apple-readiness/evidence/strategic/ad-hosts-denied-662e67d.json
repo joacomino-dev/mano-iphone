@@ -1,0 +1,42 @@
+{
+  "status": "PASS",
+  "boundary": "Hosts only, no TLS decryption. Runner-wide system proxy: baseline subtraction is indicative, not proof of tracking or exclusive app attribution. QUIC/custom transports may bypass it.",
+  "testExitCode": 0,
+  "calibrationObserved": true,
+  "hostsByPhase": {
+    "baseline": [
+      "amd-infra.itunes.apple.com",
+      "apps.mzstatic.com",
+      "bag.itunes.apple.com",
+      "fpinit.itunes.apple.com",
+      "images-mercury.mzstatic.com",
+      "sandbox.itunes.apple.com",
+      "xp.apple.com"
+    ],
+    "app-att-allowed": [],
+    "app-att-denied": [
+      "bag.itunes.apple.com",
+      "configuration.apple.com",
+      "fonts.googleapis.com",
+      "fonts.gstatic.com",
+      "fundingchoicesmessages.google.com",
+      "gdmf-ados.apple.com",
+      "gdmf.apple.com",
+      "googleads.g.doubleclick.net",
+      "gsp-ssl.ls.apple.com",
+      "iadsdk.apple.com",
+      "imasdk.googleapis.com",
+      "lh3.googleusercontent.com",
+      "ocsp2.apple.com",
+      "odf.app-ads-services.com",
+      "pagead2.googlesyndication.com",
+      "token.safebrowsing.apple",
+      "updates.cdn-apple.com",
+      "wps.apple.com"
+    ]
+  },
+  "restorationErrors": [],
+  "sourceSha": "662e67d4ce3e42d1feecb73b56628b670b1395d2",
+  "run": 42514971530,
+  "att": "denied"
+}

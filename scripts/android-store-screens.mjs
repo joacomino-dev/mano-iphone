@@ -46,6 +46,11 @@ try{
   await click('#filter-trigger');await click('.sheet-tabs button:first-child');await shot(lang,'03-filters');await click('.sheet-tabs button:nth-child(2)');await shot(lang,'04-settings');await click('.native-sheet header button');
  }
  assert.equal(report.screens.length,28);report.status='PASS';
-}catch(error){report.status='FAIL';report.error=String(error.stack);process.exitCode=1;}
+}catch(error){report.status='FAIL';report.error=String(error.stack);process.exitCode=1;
+ if(report.fixtureOwnershipVerified && lab){
+  report.failureScreen=await lab.page(`const s=JSON.parse(localStorage.getItem('cocowash-library-session-v1')||'null');return {lang:document.documentElement.lang,body:document.body.innerText.slice(0,5000),recordCounts:s?.record?{pending:s.record.pending.length,marks:Object.keys(s.record.marks).length,history:s.record.history.length}:null,active:s?.active};`).catch(e=>({diagnosticError:String(e)}));
+  await run('adb',['exec-out','screencap','-p'],{encoding:'buffer',timeout:30000,maxBuffer:12<<20}).then(r=>fs.writeFile(`${OUT}/failure-native.png`,r.stdout)).catch(()=>{});
+ }
+}
 finally{lab?.close();await fs.writeFile(`${OUT}/report.json`,JSON.stringify(report,null,2));}
 console.log('NATIVE_STORE_SCREENS_'+report.status,JSON.stringify({count:report.screens.length,error:report.error}));

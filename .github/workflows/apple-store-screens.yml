@@ -1,0 +1,46 @@
+name: Capture real iPhone store screens in seven languages
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  capture:
+    if: github.event.repository.private == false
+    runs-on: xcode-27
+    timeout-minutes: 60
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
+      COCO_SIMULATOR_MODE: standard
+      COCO_STORE_SCREENS: '1'
+    defaults:
+      run:
+        working-directory: mano
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+      - name: Execute real Photos session and capture native screenshots
+        run: bash scripts/validate-apple-native.sh --simulator-smoke
+      - name: Require actual executed screenshot case and complete files
+        run: |
+          grep -E 'Test Case .*testStoreScreensSevenLanguages.* passed \(' build/simulator-smoke/ui-test.log
+          test "$(cat build/simulator-smoke/ui-test-exit-code.txt)" = 0
+          python3 ../scripts/verify-store-screens.py build/simulator-smoke/store-screens ios
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: iphone-native-store-screens-${{ github.sha }}
+          path: |
+            mano/build/simulator-smoke/store-screens/**
+            mano/build/simulator-smoke/ui-test.log
+            mano/build/simulator-smoke/ui-test-exit-code.txt
+            mano/build/simulator-smoke/photos-read.log
+            mano/build/simulator-smoke/selection.txt
+            mano/build/simulator-smoke/*.png
+            mano/build/simulator-smoke/*.xcresult/**
+          retention-days: 7
+          if-no-files-found: warn
