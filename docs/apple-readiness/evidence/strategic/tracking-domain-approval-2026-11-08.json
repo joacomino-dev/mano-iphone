@@ -1,0 +1,8 @@
+{
+  "decision": "Approved by owner in this conversation on 2026-11-08",
+  "answer": "Aprobar los dos hosts y sus pruebas",
+  "domains": ["googleads.g.doubleclick.net", "pagead2.googlesyndication.com"],
+  "basis": "Real ATT allowed/denied capture run42514971530, pinned GMA binary references and Google advertising policy",
+  "acceptedImpact": "Declared hosts may be blocked without ATT authorization, including non-personalized ads. Core photo organization must remain functional.",
+  "boundary": "Initial list only. Not an exhaustive vendor domain certification or App Store approval. Final archive/report and remaining host attribution pending."
+}

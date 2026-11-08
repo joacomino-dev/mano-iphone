@@ -260,3 +260,5 @@ Autorizados push normal a main y workflows estándar públicos gratuitos, relanz
 - 2026-11-08 · CW-CX-042: ATTallowed/denied42514971530 PASS en captura calibrada, propósito de dominios aúnpendiente/aprobación. DryrunApple42515287168 ejecutado ycorrectamente78(privacidadFAIL/credencialesBLOCKED). Android12capturas ES/EN/FR reales, conjunto7idiomasFAIL en alemán; diagnóstico añadido. iOS capturas preparado, aúnNOT TESTED.
 
 - 2026-11-08 · CW-CX-043: verificación codesign de SDK oficial fijado preparada, pendiente macOS; binarios atribuyen dos endpoints publicitarios y UMP, no se adivina dueño deODF. Manifiesto intacto.
+
+- 2026-11-08 · CW-CX-044: propietario aprueba dos hosts exactos; manifiesto actualizado y5regresiones/declaraciónstrictPASS. Captura/Conservar después deATT con nuevosdominios pendiente; privacidad global sigue BLOCKED por archivo/exhaustividad yweb. R61 continúaFAIL.

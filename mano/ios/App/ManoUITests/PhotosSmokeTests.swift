@@ -183,6 +183,15 @@ final class PhotosSmokeTests: XCTestCase {
         }
         print("COCOWASH_UI_ATT_CHOICE mode=\(mode)")
         Thread.sleep(forTimeInterval:35)
+        let keep=app.buttons["Conservar"].firstMatch
+        XCTAssertTrue(keep.waitForExistence(timeout:20) && keep.isEnabled && keep.isHittable,"Photos must remain usable after the chosen ATT state and ad attempt")
+        let progress=app.descendants(matching:.any).matching(NSPredicate(format:"label BEGINSWITH %@","Revisados ")).firstMatch
+        XCTAssertTrue(progress.waitForExistence(timeout:15),"Actual reviewed progress must be exposed")
+        let before=progress.label
+        keep.tap()
+        let changed=XCTNSPredicateExpectation(predicate:NSPredicate(format:"exists == true AND label != %@",before),object:progress)
+        XCTAssertEqual(XCTWaiter().wait(for:[changed],timeout:15),.completed)
+        print("COCOWASH_UI_PHOTOS_AFTER_ATT_OK")
         attachScreenshot(app,"After real ATT choice, test ad request only")
         print("COCOWASH_UI_AD_HOST_RESEARCH_OK")
     }

@@ -1,5 +1,6 @@
 """Static privacy consistency check. Not a substitute for Xcode's archive report."""
 import json, pathlib, plistlib, sys
+from privacy_tracking import validate_tracking
 root = pathlib.Path(__file__).resolve().parent.parent
 data = json.loads((root/'docs/apple-readiness/evidence/rc-sdk-summary.json').read_text(encoding='utf8'))
 app = plistlib.loads((root/'mano/ios/App/App/PrivacyInfo.xcprivacy').read_bytes())
@@ -23,4 +24,7 @@ if app.get('NSPrivacyTracking') and not app.get('NSPrivacyTrackingDomains'):
     print('FAIL for submission: tracking enabled but no tracking domains declared (Apple TN3182). Provider confirmation/native traffic inspection required; do not invent domains.')
     if '--submission' in sys.argv:
         sys.exit(1)
-print('BLOCKED: signatures, traffic, public policy deployment and aggregate archive report.')
+approval=json.loads((root/'docs/apple-readiness/evidence/strategic/tracking-domain-approval-2026-11-08.json').read_text(encoding='utf8'))
+validate_tracking(app,approval['domains'])
+print('PASS (declaration only): exact owner-approved tracking domains. Not exhaustive runtime/privacy acceptance.')
+print('BLOCKED: final archive signatures/report, runtime enforcement and public policy deployment. Vendor source signature evidence is separate.')
