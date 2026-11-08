@@ -1,9 +1,6 @@
 name: Build CocoWash personal IPA
 on:
   workflow_dispatch:
-  push:
-    branches: [codex/stage1-review]
-    paths: ['mano/**', '.github/workflows/build-ios-package.yml']
 permissions:
   contents: read
 concurrency:

@@ -11,9 +11,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   development:
-    # Also on demand for the android branch, to check that shared web changes keep
-    # iOS working before merging (never on a push to that branch).
-    if: github.event.repository.private == false && (github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/android'))
+    if: github.event.repository.private == false && github.ref == 'refs/heads/main'
     # Standard public-repository runner; no large/paid runner, no deployment.
     runs-on: xcode-27
     timeout-minutes: 30
@@ -40,6 +38,16 @@ jobs:
           build/signature-tests
           swiftc ios/App/App/DevelopmentSafety.swift tests/swift-safety/main.swift -o build/safety-tests
           build/safety-tests
+      # `main` holds the App Store channel (verify-release.yml checks it). This job
+      # switches only its own checkout to the development channel: «Modo developer»
+      # and Google's sample app ID (test ads). Nothing is committed back.
+      - name: Switch this CI copy to the development channel
+        run: |
+          grep -q 'export const DEVELOPER = false;' src/channel.ts
+          sed -i '' 's/export const DEVELOPER = false;/export const DEVELOPER = true;/' src/channel.ts
+          sed -i '' -e 's#COCO_ADMOB_APP_ID = "ca-app-pub-5676353604168025~4587143429";#COCO_ADMOB_APP_ID = "ca-app-pub-3940256099942544~1458002511";#' -e 's#COCO_ADMOB_NATIVE_UNIT_ID = "ca-app-pub-5676353604168025/8219266678";#COCO_ADMOB_NATIVE_UNIT_ID = "";#' ios/App/App.xcodeproj/project.pbxproj
+          grep -q 'export const DEVELOPER = true;' src/channel.ts
+          if grep -q 'ca-app-pub-5676353604168025' ios/App/App.xcodeproj/project.pbxproj; then echo 'Real AdMob ID left in the development copy'; exit 1; fi
       - name: Build and sync development sources
         run: npm run sync:ios
       - name: Compile development IPA for physical testing
@@ -50,8 +58,8 @@ jobs:
           if /usr/libexec/PlistBuddy -c 'Print :CocoWashDevelopmentReset' build/ios/Build/Products/Release-iphoneos/App.app/Info.plist; then echo 'Unexpected development reset flag'; exit 1; fi
           # Development IPA: Google's public test ads so the ad card can be tried on the phone.
           /usr/libexec/PlistBuddy -c 'Add :CocoWashTestAds bool true' build/ios/Build/Products/Release-iphoneos/App.app/Info.plist
-          # 0.9.9.1 (40): main is the development branch — Google's sample app ID and
-          # test unit only; the real IDs live on the `release` branch (verify-release.yml).
+          # Development IPA: Google's sample app ID and test unit only (switched above);
+          # the committed source keeps the real IDs (verify-release.yml).
           plist=build/ios/Build/Products/Release-iphoneos/App.app/Info.plist
           test "$(/usr/libexec/PlistBuddy -c 'Print :GADApplicationIdentifier' "$plist")" = 'ca-app-pub-3940256099942544~1458002511'
           test "$(/usr/libexec/PlistBuddy -c 'Print :CocoWashTestAds' "$plist")" = 'true'
@@ -62,7 +70,7 @@ jobs:
           ditto -c -k --keepParent Payload CocoWash-0.9.9.1-development-unsigned.ipa
       - name: Record verification boundary
         run: |
-          printf '%s\n' 'DEVELOPMENT ONLY. Not a published or accepted release.' 'No development reset: installing over 9.7.x keeps decisions and settings; People/Breakup data is deleted on launch.' 'Ads: Google sample app ID and public test ad unit only (CocoWashTestAds); real IDs live on the release branch. StoreKit products need App Store Connect; not available in this unsigned IPA.' > build/development/VALIDATION.txt
+          printf '%s\n' 'DEVELOPMENT ONLY. Not a published or accepted release.' 'No development reset: installing over 9.7.x keeps decisions and settings; People/Breakup data is deleted on launch.' 'Ads: Google sample app ID and public test ad unit only (CocoWashTestAds); the committed main source is the App Store channel; this CI copy was switched to development. StoreKit products need App Store Connect; not available in this unsigned IPA.' > build/development/VALIDATION.txt
           printf 'Source SHA: %s\n' "$GITHUB_SHA" >> build/development/VALIDATION.txt
       - uses: actions/upload-artifact@v4
         with:

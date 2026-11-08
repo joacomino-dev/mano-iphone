@@ -1,11 +1,13 @@
 name: Verify CocoWash release
-# The `release` branch is `main` plus the App Store channel: real AdMob IDs and no
+# `main` is the only branch and holds the App Store channel: real AdMob IDs and no
 # «Modo developer» (src/channel.ts). This compiles it unsigned and checks both,
 # with no artifact: an App Store build is signed and uploaded separately.
+# (Until 2026-11-07 this lived on a separate `release` branch.)
 on:
   workflow_dispatch:
   push:
-    branches: [release]
+    branches: [main]
+    paths: ['mano/**', '.github/workflows/verify-release.yml']
 permissions:
   contents: read
 concurrency:
@@ -13,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   release:
-    if: github.event.repository.private == false && github.ref == 'refs/heads/release'
+    if: github.event.repository.private == false && github.ref == 'refs/heads/main'
     runs-on: xcode-27
     timeout-minutes: 30
     env:
