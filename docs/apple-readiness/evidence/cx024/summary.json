@@ -1,0 +1,60 @@
+{
+  "date": "2026-11-08",
+  "environment": "Windows11 / Node24.22.1 / Edge(headless) / synthetic Capacitor only",
+  "native": "BLOCKED: no Xcode/Swift/Instruments; no new CI or native artifact",
+  "node": {
+    "tests": 130,
+    "pass": 130,
+    "fail": 0
+  },
+  "configuration": {
+    "Release": 6,
+    "nativeStaticContracts": 4,
+    "Sites": 4,
+    "status": "PASS"
+  },
+  "pythonRecordedSimctlCases": 4,
+  "runtimeBrowserCases": 8,
+  "runtimeProtectedFiles": 28,
+  "typeScript": "PASS",
+  "webBuild": "PASS",
+  "nativeWebBuild": "PASS",
+  "capacitorSyncIosWindows": "PASS, not native compilation",
+  "submissionPrivacy": "FAIL exit1: tracking=true / domains empty",
+  "browser": {
+    "apple-readiness": {
+      "pass": 19,
+      "fail": 0
+    },
+    "apple-safety": {
+      "pass": 9,
+      "fail": 0
+    },
+    "rc-flow": {
+      "pass": 10,
+      "fail": 0
+    },
+    "rc-accessibility": {
+      "pass": 6,
+      "fail": 0
+    },
+    "similarity-flow": {
+      "pass": 5,
+      "fail": 0
+    },
+    "live-photo-flow": {
+      "pass": 4,
+      "fail": 0
+    },
+    "after": {
+      "pass": 7,
+      "fail": 0
+    }
+  },
+  "browserTotal": 68,
+  "cycleRegression": {
+    "cycles": 10,
+    "errors": [],
+    "boundary": "JS retained state only; not iPhone RAM/CPU. Full results in cycles.json."
+  }
+}

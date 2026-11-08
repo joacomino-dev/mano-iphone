@@ -47,7 +47,7 @@ una puerta nativa, comercial o de distribución.
 | R-01 | Smoke nativo: «Crear y añadir» no guarda el álbum ni cierra la hoja (`PhotosSmokeTests.swift:142`, simulador iPhone Duo iOS 27.1) | CX | **FAIL** | Run 42438304068. CW-CX-023: diagnóstico de valor/enabled/hittable y transacción preparado; causa sin demostrar, nueva ejecución bloqueada. [Evidencia](apple-readiness/NATIVE_FOLLOWUP.md) |
 | R-02 | Privacidad: `NSPrivacyTracking=true` sin dominios de rastreo; `check-apple-privacy.py --submission` exit 1 | CX (+U con AdMob) | **FAIL** | CW-CX-023: ZIPs oficiales revalidados, manifiestos sin dominios; gate exit1 conservado. [Fuentes/procedimiento](apple-readiness/NATIVE_FOLLOWUP.md#r-02--fail-estricto-conservado) |
 | R-03 | Captura del fallo del smoke en dispositivos de 2 pantallas (`simctl io screenshot` exige `--display`) | CX | **En curso, macOS bloqueado** | CW-CX-023: colector descubre pantallas del error real;4 regresiones Python PASS; log/PNG retenidos en CI. Falta ejecutar simctl |
-| R-04 | Revisar invalidación de snapshots alrededor de la cola de favoritas Android y el `flushFavorites()` de fin de ronda | CX | Pendiente | CW-CL-059; en iOS el comportamiento es el de la RC |
+| R-04 | Revisar invalidación de snapshots alrededor de la cola de favoritas Android y el `flushFavorites()` de fin de ronda | CX | **Corregido localmente; QA nativa bloqueada** | CW-CX-024:4 fallos reproducidos,7 casos web+2 puros PASS; cola/acuse/undo y snapshots protegidos. [Evidencia](apple-readiness/ANDROID_FAVORITES.md) |
 | R-05 | QA destructiva en simulador con fixtures: borrar/cancelar/error, favorita externa, permiso revocado, cierre antes/después de confirmar | CX | Bloqueado | Procedimiento en `docs/apple-readiness/NATIVE_GATE.md` y `TEST_PLAN.md`; necesita Mac o CI ampliada |
 | R-06 | Tamaño del bundle web (> 500 kB, aviso de Vite) | C | Pendiente | Solo con medición en Instruments; no tocar sin evidencia |
 
@@ -170,3 +170,5 @@ Una línea por intervención: fecha · agente · entrada · puntos cerrados/abie
 - 2026-11-07 · Codex CW-CX-022: R-07 implementado localmente con controles existentes;4 regresiones web PASS. Swift/Live Photo real pendientes; no se cierra R-07 ni se atribuye prueba física.
 
 - 2026-11-07 · Codex CW-CX-023: R-01 mantiene FAIL, diagnósticos añadidos sin alterar el formulario por hipótesis; R-03 preparado y4 casos PASS, macOS pendiente; R-02 revalidado con SDKs oficiales y fuentes, sigue FAIL sin dominios probados. [Detalle](apple-readiness/NATIVE_FOLLOWUP.md).
+
+- 2026-11-08 · Codex CW-CX-024: R-04 corregido con evidencia antes/después y7 escenarios;130 Node,68 navegador,4 Python,14 configuración/builds/sync/hash28 y10 ciclos PASS. QA física/nativa y R-00/R-01/R-02 continúan bloqueando publicación.

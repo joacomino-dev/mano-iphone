@@ -4,10 +4,10 @@
  * ends leaves nothing to send. Pure, for tests. */
 export type PendingFavorites = Record<string, boolean>;
 
-export function queueFavorites(pending: PendingFavorites, ids: readonly string[], value: boolean): PendingFavorites {
+export function queueFavorites(pending: PendingFavorites, ids: readonly string[], value: boolean, inFlight: PendingFavorites = {}): PendingFavorites {
   const next = { ...pending };
   for (const id of ids) {
-    if (id in next && next[id] !== value) delete next[id];
+    if (!Object.hasOwn(inFlight,id) && id in next && next[id] !== value) delete next[id];
     else next[id] = value;
   }
   return next;
@@ -23,4 +23,9 @@ export function withoutFavorites(pending: PendingFavorites, ids: readonly string
   const next = { ...pending };
   for (const id of ids) delete next[id];
   return next;
+}
+
+/** An old confirmation must not acknowledge a newer, opposite intention. */
+export function acknowledgeFavorites(pending: PendingFavorites, ids: readonly string[], sent: boolean): PendingFavorites {
+  return withoutFavorites(pending, ids.filter(id=>pending[id]===sent));
 }

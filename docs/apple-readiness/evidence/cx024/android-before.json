@@ -1,0 +1,29 @@
+{
+  "boundary": "Edge + synthetic Android bridge; not native execution",
+  "results": [
+    {
+      "name": "queued decision survives a fresh gallery enumeration",
+      "status": "FAIL",
+      "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n+ actual - expected\n\n+ []\n- [\n-   'fixture-1'\n- ]\n\n    at file:///C:/Users/Joaco/Developer/CocoWash-android/mano/tests/android-favorite-flow.mjs:20:61\n    at async run (file:///C:/Users/Joaco/Developer/CocoWash-android/mano/tests/android-favorite-flow.mjs:11:2)\n    at async file:///C:/Users/Joaco/Developer/CocoWash-android/mano/tests/android-favorite-flow.mjs:16:2"
+    },
+    {
+      "name": "queueing alone does not discard a useful pending external snapshot",
+      "status": "FAIL",
+      "error": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert.ok((await stored(page)).record.favorites.includes('external-favorite'))\n\n    at file:///C:/Users/Joaco/Developer/CocoWash-android/mano/tests/android-favorite-flow.mjs:27:10\n    at async run (file:///C:/Users/Joaco/Developer/CocoWash-android/mano/tests/android-favorite-flow.mjs:11:2)\n    at async file:///C:/Users/Joaco/Developer/CocoWash-android/mano/tests/android-favorite-flow.mjs:22:2"
+    },
+    {
+      "name": "end-of-round native flush invalidates pre-mutation snapshots",
+      "status": "FAIL",
+      "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n+ actual - expected\n\n+ []\n- [\n-   'fixture-1'\n- ]\n\n    at file:///C:/Users/Joaco/Developer/CocoWash-android/mano/tests/android-favorite-flow.mjs:36:10\n    at async run (file:///C:/Users/Joaco/Developer/CocoWash-android/mano/tests/android-favorite-flow.mjs:11:2)\n    at async file:///C:/Users/Joaco/Developer/CocoWash-android/mano/tests/android-favorite-flow.mjs:29:2"
+    },
+    {
+      "name": "undo during in-flight gallery confirmation is not lost",
+      "status": "FAIL",
+      "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\ntrue !== false\n\n    at file:///C:/Users/Joaco/Developer/CocoWash-android/mano/tests/android-favorite-flow.mjs:39:466\n    at async run (file:///C:/Users/Joaco/Developer/CocoWash-android/mano/tests/android-favorite-flow.mjs:11:2)\n    at async file:///C:/Users/Joaco/Developer/CocoWash-android/mano/tests/android-favorite-flow.mjs:38:2"
+    },
+    {
+      "name": "native error retains queue for retry; system cancellation drops only its batch",
+      "status": "PASS"
+    }
+  ]
+}

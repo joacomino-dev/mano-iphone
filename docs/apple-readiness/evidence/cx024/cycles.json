@@ -1,0 +1,330 @@
+{
+  "url": "http://127.0.0.1:4186/native.html",
+  "cycles": 10,
+  "errors": [],
+  "rows": [
+    {
+      "label": "start",
+      "heapMB": 37.25,
+      "nodes": 219,
+      "listeners": 194,
+      "documents": 4,
+      "layoutObjects": 156,
+      "elements": 112,
+      "videos": 0,
+      "images": 2,
+      "storageBytes": 1158,
+      "removed": 0,
+      "calls": {
+        "permissionStatus": 1,
+        "hide": 2,
+        "status": 2,
+        "assets": 1,
+        "removeListener": 3,
+        "sizes": 2,
+        "analyze": 1,
+        "classify": 4
+      },
+      "items": {
+        "permissionStatus": 0,
+        "hide": 0,
+        "status": 0,
+        "assets": 0,
+        "removeListener": 0,
+        "sizes": 400,
+        "analyze": 400,
+        "classify": 400
+      }
+    },
+    {
+      "label": "cycle 1",
+      "heapMB": 38.46,
+      "nodes": 197,
+      "listeners": 333,
+      "documents": 3,
+      "layoutObjects": 154,
+      "elements": 112,
+      "videos": 0,
+      "images": 2,
+      "storageBytes": 1293,
+      "removed": 4,
+      "calls": {
+        "haptic": 6,
+        "deleteAssets": 1,
+        "status": 2,
+        "permissionStatus": 2,
+        "assets": 1,
+        "cancelClassify": 2
+      },
+      "items": {
+        "haptic": 0,
+        "deleteAssets": 4,
+        "status": 0,
+        "permissionStatus": 0,
+        "assets": 0,
+        "cancelClassify": 0
+      }
+    },
+    {
+      "label": "cycle 2",
+      "heapMB": 38.97,
+      "nodes": 209,
+      "listeners": 333,
+      "documents": 3,
+      "layoutObjects": 170,
+      "elements": 112,
+      "videos": 0,
+      "images": 2,
+      "storageBytes": 1405,
+      "removed": 8,
+      "calls": {
+        "haptic": 6,
+        "deleteAssets": 1,
+        "status": 2,
+        "permissionStatus": 2,
+        "assets": 1,
+        "cancelClassify": 2
+      },
+      "items": {
+        "haptic": 0,
+        "deleteAssets": 4,
+        "status": 0,
+        "permissionStatus": 0,
+        "assets": 0,
+        "cancelClassify": 0
+      }
+    },
+    {
+      "label": "cycle 3",
+      "heapMB": 39.2,
+      "nodes": 197,
+      "listeners": 333,
+      "documents": 3,
+      "layoutObjects": 154,
+      "elements": 112,
+      "videos": 0,
+      "images": 2,
+      "storageBytes": 1517,
+      "removed": 12,
+      "calls": {
+        "haptic": 6,
+        "deleteAssets": 1,
+        "status": 2,
+        "permissionStatus": 2,
+        "assets": 1,
+        "cancelClassify": 2
+      },
+      "items": {
+        "haptic": 0,
+        "deleteAssets": 4,
+        "status": 0,
+        "permissionStatus": 0,
+        "assets": 0,
+        "cancelClassify": 0
+      }
+    },
+    {
+      "label": "cycle 4",
+      "heapMB": 39.38,
+      "nodes": 192,
+      "listeners": 333,
+      "documents": 3,
+      "layoutObjects": 152,
+      "elements": 112,
+      "videos": 0,
+      "images": 2,
+      "storageBytes": 1630,
+      "removed": 16,
+      "calls": {
+        "haptic": 6,
+        "deleteAssets": 1,
+        "status": 2,
+        "permissionStatus": 2,
+        "assets": 1,
+        "cancelClassify": 1
+      },
+      "items": {
+        "haptic": 0,
+        "deleteAssets": 4,
+        "status": 0,
+        "permissionStatus": 0,
+        "assets": 0,
+        "cancelClassify": 0
+      }
+    },
+    {
+      "label": "cycle 5",
+      "heapMB": 39.48,
+      "nodes": 192,
+      "listeners": 333,
+      "documents": 3,
+      "layoutObjects": 152,
+      "elements": 112,
+      "videos": 0,
+      "images": 2,
+      "storageBytes": 1742,
+      "removed": 20,
+      "calls": {
+        "haptic": 5,
+        "deleteAssets": 1,
+        "status": 2,
+        "permissionStatus": 2,
+        "assets": 1,
+        "cancelClassify": 2
+      },
+      "items": {
+        "haptic": 0,
+        "deleteAssets": 4,
+        "status": 0,
+        "permissionStatus": 0,
+        "assets": 0,
+        "cancelClassify": 0
+      }
+    },
+    {
+      "label": "cycle 6",
+      "heapMB": 39.54,
+      "nodes": 186,
+      "listeners": 333,
+      "documents": 3,
+      "layoutObjects": 148,
+      "elements": 112,
+      "videos": 0,
+      "images": 2,
+      "storageBytes": 1853,
+      "removed": 24,
+      "calls": {
+        "haptic": 5,
+        "deleteAssets": 1,
+        "status": 2,
+        "permissionStatus": 2,
+        "assets": 1,
+        "cancelClassify": 2
+      },
+      "items": {
+        "haptic": 0,
+        "deleteAssets": 4,
+        "status": 0,
+        "permissionStatus": 0,
+        "assets": 0,
+        "cancelClassify": 0
+      }
+    },
+    {
+      "label": "cycle 7",
+      "heapMB": 39.64,
+      "nodes": 186,
+      "listeners": 333,
+      "documents": 3,
+      "layoutObjects": 148,
+      "elements": 112,
+      "videos": 0,
+      "images": 2,
+      "storageBytes": 1958,
+      "removed": 28,
+      "calls": {
+        "haptic": 5,
+        "deleteAssets": 1,
+        "status": 2,
+        "permissionStatus": 2,
+        "assets": 1,
+        "cancelClassify": 2
+      },
+      "items": {
+        "haptic": 0,
+        "deleteAssets": 4,
+        "status": 0,
+        "permissionStatus": 0,
+        "assets": 0,
+        "cancelClassify": 0
+      }
+    },
+    {
+      "label": "cycle 8",
+      "heapMB": 39.7,
+      "nodes": 192,
+      "listeners": 333,
+      "documents": 3,
+      "layoutObjects": 152,
+      "elements": 112,
+      "videos": 0,
+      "images": 2,
+      "storageBytes": 2068,
+      "removed": 32,
+      "calls": {
+        "haptic": 5,
+        "deleteAssets": 1,
+        "status": 2,
+        "permissionStatus": 2,
+        "assets": 1,
+        "cancelClassify": 2
+      },
+      "items": {
+        "haptic": 0,
+        "deleteAssets": 4,
+        "status": 0,
+        "permissionStatus": 0,
+        "assets": 0,
+        "cancelClassify": 0
+      }
+    },
+    {
+      "label": "cycle 9",
+      "heapMB": 39.85,
+      "nodes": 186,
+      "listeners": 333,
+      "documents": 3,
+      "layoutObjects": 148,
+      "elements": 112,
+      "videos": 0,
+      "images": 2,
+      "storageBytes": 2176,
+      "removed": 36,
+      "calls": {
+        "haptic": 5,
+        "deleteAssets": 1,
+        "status": 2,
+        "permissionStatus": 2,
+        "assets": 1,
+        "cancelClassify": 1
+      },
+      "items": {
+        "haptic": 0,
+        "deleteAssets": 4,
+        "status": 0,
+        "permissionStatus": 0,
+        "assets": 0,
+        "cancelClassify": 0
+      }
+    },
+    {
+      "label": "cycle 10",
+      "heapMB": 39.93,
+      "nodes": 191,
+      "listeners": 333,
+      "documents": 3,
+      "layoutObjects": 153,
+      "elements": 112,
+      "videos": 0,
+      "images": 2,
+      "storageBytes": 2287,
+      "removed": 40,
+      "calls": {
+        "haptic": 5,
+        "deleteAssets": 1,
+        "status": 2,
+        "permissionStatus": 2,
+        "assets": 1,
+        "cancelClassify": 2
+      },
+      "items": {
+        "haptic": 0,
+        "deleteAssets": 4,
+        "status": 0,
+        "permissionStatus": 0,
+        "assets": 0,
+        "cancelClassify": 0
+      }
+    }
+  ]
+}

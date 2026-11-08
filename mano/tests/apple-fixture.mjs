@@ -56,7 +56,9 @@ export function installAppleFixture({ onboarded = true, status = 'authorized', l
         }
         case 'albums': return { albums: [{id:'fixture-album',title:'Fixture'}] };
         case 'favorite': {
+          if(fixture.holdFavorite)await new Promise(resolve=>(fixture.pendingFavorites ||= []).push(resolve));
           if(fixture.favoriteError)throw new Error('Fixture: Photos favorite failed');
+          if(fixture.favoriteCancel)throw Object.assign(new Error('Cancelado'),{code:'CANCELLED'});
           fixture.assets=fixture.assets.map(a=>args.ids.includes(a.id)?{...a,favorite:args.value}:a);
           return { missing: [] };
         }

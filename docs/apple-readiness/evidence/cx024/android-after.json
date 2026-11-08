@@ -1,0 +1,33 @@
+{
+  "boundary": "Edge + synthetic Android bridge; not native execution",
+  "results": [
+    {
+      "name": "queued decision survives a fresh gallery enumeration",
+      "status": "PASS"
+    },
+    {
+      "name": "queueing alone does not discard a useful pending external snapshot",
+      "status": "PASS"
+    },
+    {
+      "name": "end-of-round native flush invalidates pre-mutation snapshots",
+      "status": "PASS"
+    },
+    {
+      "name": "undo during in-flight gallery confirmation is not lost",
+      "status": "PASS"
+    },
+    {
+      "name": "native error retains queue for retry; system cancellation drops only its batch",
+      "status": "PASS"
+    },
+    {
+      "name": "interrupted confirmation marker keeps an undo explicit after restart",
+      "status": "PASS"
+    },
+    {
+      "name": "failed persistence never records a successful queued favorite",
+      "status": "PASS"
+    }
+  ]
+}

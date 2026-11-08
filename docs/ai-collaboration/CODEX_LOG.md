@@ -322,3 +322,16 @@ Cambio:separa input/React/tap/transacción en próximo run; captura cada display
 Validaciones:log GitHub42438304068 revisado directamente;4 Python/4 contratos/Bash syntax PASS; checksum oficial Ads13.12.0/UMP3.1.0 repetido. Manifest sin dominios; gate submission sigue exit1. [Detalle](../apple-readiness/NATIVE_FOLLOWUP.md).
 Impacto Claude:no llamar resuelto al álbum, simctl o tracking. Nueva compilación del puente R-07 también pendiente. No hay publicación ni datos personales.
 Pendientes:autorizar push/run para diagnóstico y QA nativa; proveedor/tráfico para R-02; R-04 siguiente.
+
+### CW-CX-024 — Cola de favoritas Android sin pérdida de intenciones
+Fecha:2026-11-08, America/Bogota.
+Agente:Codex.
+Tarea:R-04; mantener contrato inmediato iOS y lotes Android.
+Estado:corregido y verificado en navegador; QA Android real BLOCKED.
+Archivos:ManoApp/favoriteQueue/favoritePending, fixture y pruebas, docs/evidencias.
+Fallos:4 FAIL reproducidos (reconciliar cola, invalidación innecesaria, snapshot durante flush, undo perdido en vuelo); almacenamiento se tragaba errores.
+Cambios:overlay solo de reconciliación; invalidar en llamadas reales; acuse condicional y marcador persistente; fallo de persistencia no registra éxito. Sin cambios en borrado/nativo Kotlin.
+Validaciones:7 escenarios Android sintéticos PASS;130 Node,14 configuración,4 Python,68 navegador incl.runtime;TS/hash28/builds/sync iOS Windows PASS;10 ciclos R-00 repetidos PASS. [Resultados](../apple-readiness/ANDROID_FAVORITES.md).
+Decisiones:no SDK/modelos/arte/monetización/versiones nuevos; ningún push/CI/distribución. La sincronización Windows no compila Swift.
+Impacto Claude:preservar cola y marcador; no mover invalidación de lote a la mera decisión; usar main actual y el relevo final.
+Pendientes:QA física R-00 y Live; R-01 sigue FAIL con diagnóstico; R-02 sigue FAIL; simctl y Kotlin/Swift nuevos sin ejecución nativa.

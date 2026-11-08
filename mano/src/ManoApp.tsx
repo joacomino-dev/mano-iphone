@@ -28,7 +28,7 @@ import { AdRoom, AdSlot, PurchaseOptions, useMonetization } from './Monetization
 import { readTestMode, setTestMode, readTestRounds, saveTestRounds, readAdsOff, saveAdsOff } from './testMode';
 import { useSheetDrag } from './sheetDrag';
 import { useAndroidBack } from './androidBack';
-import { setFavorite, flushFavorites } from './favoriteQueue';
+import { setFavorite, flushFavorites, withPendingFavorites } from './favoriteQueue';
 import { onAndroid } from './locales/android';
 import { DEVELOPER } from './channel';
 import { DisplaySettingsPanel } from './DisplaySettings';
@@ -349,7 +349,7 @@ export function ManoApp() {
   const invalidateLibrary=useCallback(()=>{initialLibrary.current=null;setLoading(false);return ++libraryRevision.current;},[]);
   const clearLibraryAccess=useCallback(()=>{analysisEpoch.current++;analysisCoverage.clear();if(analysisRunning.current)void Library.cancelAnalysis().catch(()=>{});cancelWarmup();setConnected(false);setAssets([]);setInspect(null);setPinnedInspect(false);setSelected([]);setSheet(null);},[]);
   const loadLibrary=useCallback(()=>{if(demo)return;let alive=true;const revision=libraryRevision.current;setLoadError('');const request=initialLibrary.current??(initialLibrary.current=Library.permissionStatus().then(({status})=>{if(revision!==libraryRevision.current)return {assets:[] as Asset[],status};setPermission(status as PhotoPermission);return ['authorized','limited'].includes(status)?Library.assets():{assets:[] as Asset[],status};}));
-    request.then(result=>{if(!alive||revision!==libraryRevision.current)return;setPermission(result.status as PhotoPermission);setLimited(result.status==='limited');if(['authorized','limited'].includes(result.status)){setAssets(savedGroups(result.assets));setConnected(true);setState(s=>reconcileLibrary(s,result.assets));setInspect(a=>a&&result.assets.some(fresh=>fresh.id===a.id)?a:null);}else clearLibraryAccess();}).catch(e=>{if(revision!==libraryRevision.current)return;initialLibrary.current=null;if(alive)setLoadError(e instanceof Error?t(e.message):t('Inténtalo de nuevo en un momento.'));});return()=>{alive=false;};},[clearLibraryAccess]);
+    request.then(result=>{if(!alive||revision!==libraryRevision.current)return;setPermission(result.status as PhotoPermission);setLimited(result.status==='limited');if(['authorized','limited'].includes(result.status)){setAssets(savedGroups(result.assets));setConnected(true);setState(s=>reconcileLibrary(s,withPendingFavorites(result.assets)));setInspect(a=>a&&result.assets.some(fresh=>fresh.id===a.id)?a:null);}else clearLibraryAccess();}).catch(e=>{if(revision!==libraryRevision.current)return;initialLibrary.current=null;if(alive)setLoadError(e instanceof Error?t(e.message):t('Inténtalo de nuevo en un momento.'));});return()=>{alive=false;};},[clearLibraryAccess]);
   useEffect(()=>loadLibrary(),[]);
   // Photos may change both the permission and the selected limited set while
   // away. Refresh even when its status is unchanged; keep decisions and the
@@ -428,7 +428,7 @@ export function ManoApp() {
   const messageError=(e:unknown)=>cancelled(e)?undefined:setError(e instanceof Error?t(e.message):t('No se pudo completar la acción. Inténtalo de nuevo.'));
   const connect=useCallback(async()=>{const permission=++permissionRevision.current;const revision=invalidateLibrary();setLoading(true);setError('');try{
     const access=await Library.authorize();if(permission!==permissionRevision.current)return false;setPermission(access.status as PhotoPermission);if(!['authorized','limited'].includes(access.status)){clearLibraryAccess();return false;}if(revision!==libraryRevision.current)return false;
-    const result=await Library.assets();if(revision!==libraryRevision.current)return false;setPermission(result.status as PhotoPermission);if(!['authorized','limited'].includes(result.status)){clearLibraryAccess();return false;}setAssets(savedGroups(result.assets));setState(s=>reconcileLibrary(s,result.assets));setLimited(result.status==='limited');setConnected(true);analysisCoverage.retry();return savedGroups(result.assets);
+    const result=await Library.assets();if(revision!==libraryRevision.current)return false;setPermission(result.status as PhotoPermission);if(!['authorized','limited'].includes(result.status)){clearLibraryAccess();return false;}setAssets(savedGroups(result.assets));setState(s=>reconcileLibrary(s,withPendingFavorites(result.assets)));setLimited(result.status==='limited');setConnected(true);analysisCoverage.retry();return savedGroups(result.assets);
   }catch(e){if(revision===libraryRevision.current)messageError(e);return false;}finally{if(revision===libraryRevision.current)setLoading(false);}},[invalidateLibrary,clearLibraryAccess]);
   const beginSession=async()=>{
     if(loading||warming)return;
@@ -483,12 +483,12 @@ export function ManoApp() {
     const action:Action=favView&&requested==='favorite'?'unfavorite':requested;
     if(favView&&action==='discard'){haptic('warning');setNotice(t('Las favoritas\nno se eliminan'));return false;}
     setBusy(true);setError('');haptic(action==='favorite'||action==='unfavorite'?'medium':action==='later'?'soft':'light');try{
-    if((action==='favorite'||action==='unfavorite')&&!demo){invalidateLibrary();await setFavorite(ids,action==='favorite');invalidateLibrary();}
+    if((action==='favorite'||action==='unfavorite')&&!demo){if(!onAndroid())invalidateLibrary();await setFavorite(ids,action==='favorite');if(!onAndroid())invalidateLibrary();}
     record(action,ids);return true;
   }catch(e){haptic('error');messageError(e);return false;}finally{setBusy(false);}};
   const undoLast=async()=>{if(busy)return;const last=state.history.at(-1);if(!last)return;setBusy(true);try{
     let missing=0;let missingIds:string[]=[];
-    if((last.action==='favorite'||last.action==='unfavorite')&&!demo){invalidateLibrary();const result=await setFavorite(last.ids,last.action==='unfavorite',true);invalidateLibrary();missing=result.missing.length;missingIds=result.missing;}
+    if((last.action==='favorite'||last.action==='unfavorite')&&!demo){if(!onAndroid())invalidateLibrary();const result=await setFavorite(last.ids,last.action==='unfavorite',true);if(!onAndroid())invalidateLibrary();missing=result.missing.length;missingIds=result.missing;}
     const undone=last.action;haptic('soft');if(undone!=='unfavorite')setStats(previous=>({...previous,[undone]:Math.max(0,previous[undone]-last.ids.length)}));
     // Back to the very hand the decision was made on, in the order it was shown.
     setState(undo);const previous=last.context;setLock(restoreHand(previous,last.ids));setSelected(previous?.selected??[]);if(previous?.filter)setFilter(previous.filter);if(missing)setNotice(missing===last.ids.length?t('Ya no está\nen Fotos'):t('Algunas ya no\nestán en Fotos'));setSpoken(t('Última decisión deshecha'));
@@ -601,7 +601,7 @@ export function ManoApp() {
   const commitDelete=async()=>{if(busy)return;invalidateLibrary();setBusy(true);setError('');const ids=reviewAssets.map(a=>a.id);try{
     // Android: a heart removed this round reaches the gallery first, or the system
     // would still protect that item as a favourite (no-op on the iPhone).
-    if(!demo)await flushFavorites(ids);
+    if(!demo)await flushFavorites(ids,invalidateLibrary);
     const result=demo?{deleted:ids}:await Library.deleteAssets({ids});
     // A foreground snapshot begun before Photos confirmed this change must
     // never reconcile those confirmed removals back into the live library.
@@ -622,7 +622,7 @@ export function ManoApp() {
   // No landing page: once onboarded and allowed, the session (or its resume) starts by itself.
   useEffect(()=>{if(onboarded&&allowed&&connected&&!session&&!showDone&&!warming&&!loading&&!loadError)void beginSession();},[onboarded,allowed,connected,session,showDone,warming,loading,loadError]);
   // Android: the round's favourites reach the gallery together, in one system dialog.
-  useEffect(()=>{if(showDone&&!demo)void flushFavorites();},[showDone,demo]);
+  useEffect(()=>{if(showDone&&!demo)void flushFavorites(undefined,invalidateLibrary);},[showDone,demo,invalidateLibrary]);
   useEffect(()=>{setDecidedHere(new Set());},[filterKey]);
   // «Modo de prueba» never runs out: when fewer than eight cards remain, another
   // round of postcards is dealt. A round that adds nothing (filters exclude it)
