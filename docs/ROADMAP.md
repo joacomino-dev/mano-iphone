@@ -250,3 +250,5 @@ Autorizados push normal a main y workflows estándar públicos gratuitos, relanz
 - 2026-11-08 · CW-CX-038: matriz WebKit42513277098 demuestra R01 falseFAIL/truePASS (XCTest201,847s + evidencia independiente). Fix mínimo listo para repetir sin observer; CSS/gestos intactos. R61 aislado antes de React (42513754519), aprobación de diario duradero solicitada. R60 deja de ocultar fallos. FullLab bloqueado por helper swiftc120s, hostlab por opcionalCFString; correcciones de infraestructura listas.
 
 - 2026-11-08 · CW-CX-039: dry-run real de archivo sin firma preparado (exit78, privacidadFAIL); capturas Android7idiomas nativas RGB24 preparadas con frontend tienda y8postales sintéticas, pendientes de ejecución. No tienda/web/keys modificados.
+
+- 2026-11-08 · CW-CX-040: evaluador rechaza4falsosverdes demostrados y18testsPASS. Series reales59912d8 iOS/Android pasan también límites por rol/PID; reevaluación offline, no nueva ejecución. R61 sigue abierto.

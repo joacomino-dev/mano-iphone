@@ -454,3 +454,8 @@ Fecha: 2026-11-08. Agente: Codex. Estado: infraestructura preparada, ejecución 
 Se añade --dry-run al archivo real sin firma: verifica fuentes/runtime/privacy y devuelve78 aunque prepare el reporte. Ejecución Windows: runtime/config PASS, privacidad FAIL; no certificados, Keychain, cuentas ni uploads. Workflow macOS gratuito sin secretos pendiente.
 Capturas Android: workflow separado conserva frontend tienda, APK Debug solo con anuncios TEST; biblioteca8 postales sintéticas existentes rasterizadas como MediaStore. Usa UI real para idiomas/revisión/filtros/ajustes, no fototeca personal ni borrado. Captura screencap1080x1920 real (wm size del emulador efímero); RGB24 solo cambia encoding, sin reescalar. Reporta SHA y layout;28 capturas previstas, no se anuncian generadas antes de ejecutar.
 Validaciones: sintaxis Python/JS/Bash PASS. R61 sigue sin cambios de producto, esperando aprobación del diario duradero. CI662e67d iOS/hosts en ejecución.
+
+### CW-CX-040 — Presupuestos por proceso y validación de atribución
+Fecha: 2026-11-08. Agente: Codex. Estado: completada local.
+Demostración: cuatro casos rechazables recibían PASS del evaluador: fuga de app compensada por WebContent, una WebView compensada por otra, PID CPU erróneo y suma de memoria inconsistente. Tests fallan antes, pasan después. Mismos límites previos, ahora por rol y cada PID estable, además del agregado; rechaza datos no atribuibles.18 pruebas Python PASS.
+Reevaluación offline de las series nativas reales59912d8: iOS yAndroid PASS también con límites por proceso. Conserva originales y añade informes derivados explícitos; no afirma nueva ejecución/hardware ni cierra R61. Fuente de producto sin cambios.

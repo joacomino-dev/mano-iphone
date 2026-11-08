@@ -63,3 +63,12 @@ Referencias oficiales:
 [recursos Live](https://developer.apple.com/documentation/photos/phassetcreationrequest).
 
 Android posterior42493904052/4a63ddc PASS: Kotlin/Java compilados, testDebugUnitTest,16checks nativos y10rondas. El verificador de firma se probó además en42493903317(7JVM). Configuración real y sandbox Play siguen BLOCKED por propietario.
+
+## Refuerzo del evaluador (CW-CX-040)
+
+Los mismos límites se aplican también por rol y por PID presente en las once muestras,
+para que la liberación de otro proceso no esconda un crecimiento sostenido. CPU debe
+estar vinculada a los mismos PID y el total debe coincidir con las lecturas por proceso.
+Cuatro regresiones fallaron antes y pasan después;18 tests del gate PASS. Las series
+nativas59912d8 conservadas también pasan esta reevaluación offline, documentada en
+`evidence/strategic/*-process-budget.json`. No es nueva QA de dispositivo.

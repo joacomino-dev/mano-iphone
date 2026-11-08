@@ -1,0 +1,106 @@
+{
+  "status": "PASS",
+  "budgets": {
+    "maxLateMemoryGrowthKiB": 24576,
+    "maxSlopeKiBPerCycle": 1024,
+    "maxLateIdleCpuPercent": 15,
+    "maxIdleCpuGrowthPercentagePoints": 5
+  },
+  "boundary": "Small owned fixture library, ten rounds, simulator only. Not physical iPhone/Android or large-library acceptance.",
+  "baselineMemoryKiB": 1884928,
+  "lateMemoryKiB": 1504544,
+  "slopeKiBPerCycle": -40240.0,
+  "checks": {
+    "lateMemoryGrowth": true,
+    "memorySlope": true,
+    "rolesWithinMemoryBudget": true,
+    "stableProcessesWithinMemoryBudget": true,
+    "lateIdleCpu": true,
+    "idleCpuGrowth": true
+  },
+  "roleTrends": {
+    "webcontent": {
+      "baselineMemoryKiB": 1468016,
+      "lateMemoryKiB": 1156048,
+      "slopeKiBPerCycle": -31825.333333333332,
+      "checks": {
+        "lateMemoryGrowth": true,
+        "memorySlope": true
+      }
+    },
+    "app": {
+      "baselineMemoryKiB": 416336,
+      "lateMemoryKiB": 348496,
+      "slopeKiBPerCycle": -8414.666666666666,
+      "checks": {
+        "lateMemoryGrowth": true,
+        "memorySlope": true
+      }
+    }
+  },
+  "stableProcessTrends": {
+    "33251": {
+      "baselineMemoryKiB": 416336,
+      "lateMemoryKiB": 348496,
+      "slopeKiBPerCycle": -8414.666666666666,
+      "checks": {
+        "lateMemoryGrowth": true,
+        "memorySlope": true
+      },
+      "role": "app"
+    },
+    "33316": {
+      "baselineMemoryKiB": 383680,
+      "lateMemoryKiB": 335408,
+      "slopeKiBPerCycle": -5150.666666666667,
+      "checks": {
+        "lateMemoryGrowth": true,
+        "memorySlope": true
+      },
+      "role": "webcontent"
+    },
+    "33691": {
+      "baselineMemoryKiB": 301728,
+      "lateMemoryKiB": 235984,
+      "slopeKiBPerCycle": -7726.666666666667,
+      "checks": {
+        "lateMemoryGrowth": true,
+        "memorySlope": true
+      },
+      "role": "webcontent"
+    },
+    "33692": {
+      "baselineMemoryKiB": 324880,
+      "lateMemoryKiB": 244704,
+      "slopeKiBPerCycle": -7821.6,
+      "checks": {
+        "lateMemoryGrowth": true,
+        "memorySlope": true
+      },
+      "role": "webcontent"
+    },
+    "33707": {
+      "baselineMemoryKiB": 159040,
+      "lateMemoryKiB": 125408,
+      "slopeKiBPerCycle": -3124.266666666667,
+      "checks": {
+        "lateMemoryGrowth": true,
+        "memorySlope": true
+      },
+      "role": "webcontent"
+    },
+    "33708": {
+      "baselineMemoryKiB": 293936,
+      "lateMemoryKiB": 216496,
+      "slopeKiBPerCycle": -8002.133333333333,
+      "checks": {
+        "lateMemoryGrowth": true,
+        "memorySlope": true
+      },
+      "role": "webcontent"
+    }
+  },
+  "baselineIdleCpuPercent": 1.456916566204919,
+  "lateIdleCpuPercent": 0.2763064745824921,
+  "review": "Offline re-evaluation of retained actual native measurements, stricter per-role and stable-PID budgets; no new simulator or hardware run."
+}
