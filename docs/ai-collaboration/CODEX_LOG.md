@@ -470,3 +470,8 @@ Fecha: 2026-11-08. Agente: Codex. Estado: en curso.
 42514971530/662e67d: ambos ATT PASS con XCTest real, llamada SDK, calibración y restauración sin error. Se guardan reportes de hosts; no se afirma atribución exclusiva ni propósito de tracking. Dominios del manifiesto intactos, propuesta requiere revisión.
 42515287168/4f610da: archivo --dry-run real enmacOS ejecutado, salida78 por privacidadFAIL/credencialesBLOCKED. Runtime/fuentes/min17 PASS; ninguna firma/cuenta/upload.
 Android42515289335 genera12 capturas nativas RGB24 ES/EN/FR y falla al volver a cartas después de elegir alemán. Conjunto incompleto FAIL; se añade diagnóstico solo en biblioteca sintética. No se cambia app por hipótesis. Preparado workflowiOS capturas7idiomas con XCTest/PhotoKit reales y formato RGB24 sin reescalar; pendientes Swift/ejecución. Se usan las traducciones enviadas como contratos, no otra UI.
+
+### CW-CX-043 — Firmas del proveedor y atribución de hosts
+Fecha: 2026-11-08. Agente: Codex. Estado: firmas pendientes CI.
+ZIPs oficiales fijados Ads13.12/UMP3.1 tienen firma raíz XCFramework. Nuevo workflow macOS verifica checksum esperado, codesign estricto, identidad no ad-hoc y manifiestos; no firma app ni consulta cuentas. Windows comprueba sintaxis, no declara firmas PASS.
+Inspección binaria local de ZIPs verificados: GoogleMobileAds contiene googleads.g.doubleclick.net, pagead2.googlesyndication.com eimasdk.googleapis.com; UMP contiene fundingchoicesmessages.google.com. Todos observados en captura real. odf.app-ads-services.com no aparece: no atribuir por nombre ni listas de terceros. Documentación Google reconoce los dos dominios publicitarios generales; falta decisión específica, bloqueo ATT y exhaustividad. No modificar manifiesto sin propuesta/aprobación.

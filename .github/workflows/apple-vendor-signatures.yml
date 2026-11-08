@@ -1,0 +1,24 @@
+name: Verify pinned Apple vendor SDK signatures
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.event.repository.private == false
+    runs-on: xcode-27
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: python3 scripts/verify-apple-vendor-signatures.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apple-vendor-signatures-${{ github.sha }}
+          path: |
+            mano/build/vendor-signatures/report.json
+            mano/build/vendor-signatures/*-codesign.log
+          retention-days: 7
+          if-no-files-found: error
