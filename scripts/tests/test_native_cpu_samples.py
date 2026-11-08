@@ -11,7 +11,8 @@ def snapshot(second,extra=False):
 
 class NativeCpuSamples(unittest.TestCase):
     def test_actual_counter_difference(self):
-        result,complete=cpu.counters(snapshot(1),snapshot(3));self.assertTrue(complete);self.assertEqual([c['percent'] for c in result],[1,2])
+        result,complete=cpu.counters(snapshot(1),snapshot(3));self.assertTrue(complete)
+        for actual,expected in zip(result,[1,2]):self.assertAlmostEqual(actual['percent'],expected,places=7)
     def test_new_process_is_unknown_not_zero(self):
         result,complete=cpu.counters(snapshot(1),snapshot(3,True));self.assertFalse(complete);self.assertIsNone(result[-1]['percent'])
     def test_new_process_requires_measured_second_window(self):

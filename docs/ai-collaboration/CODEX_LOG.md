@@ -489,3 +489,5 @@ InlineVideo usa aria-pressed, que WebKit expone como toggle. Se amplía solo con
 ### CW-CX-046 — Medición real cuando nace otro WebContent
 Fecha: 2026-11-08. Agente: Codex. Estado: corrección de colector, repetir nativo.
 662e67d completa11muestras, pero presupuestoBLOCKED: en ronda7 apareceWebContent52693 entre las lecturas ysu CPU no tiene contador inicial. No se inventa cero ni se acepta serie parcial. Se mide una ventana nueva, máximo3intentos, conservando todas las lecturas descartadas; crecimiento persistente o contador inválido sigueBLOCKED.7regresiones nuevas PASS,25testsinfra totales. No cambia app ni umbrales ni el resultado anterior. R61 sigueFAIL; código de diario aún no autorizado.
+
+CW-CX-046 corrección de trazabilidad: la primera ejecución tuvo24PASS/1FAIL por comparar floats1,9999999999999998 con2exacto. El shell continuó yse consolidó antes de advertirlo; no correspondía declarar25PASSentonces. AssertAlmostEqual7decimales ahora valida la misma diferencia real; nueva ejecución25/25PASS. Se añade corte explícito ante error antes de commits. No cambió el cálculo ni los umbrales para aceptar una medición.
