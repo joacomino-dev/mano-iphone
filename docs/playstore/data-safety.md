@@ -1,9 +1,11 @@
-# Seguridad de los datos (Data safety) · respuestas para Play Console
+# Seguridad de los datos (Data safety) · borrador para Play Console
+
+Revisado2026-11-08. No enviado ni aprobado. El redondeo a dos decimales del geocodificador es **ubicación precisa según Play**, aunque Apple lo clasifique como coarse. Retención, rol del proveedor y cifrado de todo el geocodificador necesitan evidencia; no marcar esas casillas como verificadas.
 
 Deben coincidir con tres cosas: la política publicada
 (https://joaquinmino.work/cocowash/privacidad.html, sección Android), el manifiesto de la
 app (`mano/android/app/src/main/AndroidManifest.xml` + los que añaden los SDK de Google) y lo
-que hace el código (rama `android`). Si cambia qué datos salen del teléfono, se actualizan
+que hace el código (rama única `main`). Si cambia qué datos salen del teléfono, se actualizan
 los tres a la vez.
 
 Definiciones de Play: **recoger** = transmitir datos fuera del dispositivo (la app o un SDK
@@ -19,7 +21,7 @@ integrado (AdMob/UMP) o el geocodificador del sistema.
 | Pregunta | Respuesta |
 |---|---|
 | ¿Tu app recoge o comparte alguno de los tipos de datos de usuario obligatorios? | **Sí** |
-| ¿Todos los datos de usuario recogidos están cifrados en tránsito? | **Sí** (HTTPS en los SDK de Google y en el geocodificador) |
+| ¿Todos los datos de usuario recogidos están cifrados en tránsito? | **PENDIENTE**: contrastar SDKs y el backend efectivo del geocodificador; no generalizar el transporte de cualquier proveedor Android |
 | ¿Ofreces una forma de que los usuarios soliciten que se eliminen sus datos? | **Sí**: por correo a cocowash@joaquinmino.work (y desinstalar borra todo lo local). Ver «Eliminación». |
 | ¿Has hecho una revisión de seguridad independiente (MASA)? | No |
 
@@ -28,7 +30,7 @@ integrado (AdMob/UMP) o el geocodificador del sistema.
 | Categoría › tipo | Recogido | Compartido | Efímero | Obligatorio u opcional | Finalidades |
 |---|---|---|---|---|---|
 | Ubicación › **Ubicación aproximada** | Sí | Sí (Google, anuncios) | No | Obligatorio para la versión con anuncios | Publicidad o marketing; Analítica; Prevención de fraude, seguridad y cumplimiento |
-| Ubicación › Ubicación aproximada (nombres de lugar) | Sí | No (Google actúa como proveedor del sistema) | **Sí** | **Opcional** (Ajustes › «Ubicación») | Funciones de la app |
+| Ubicación › **Ubicación precisa (nombres de lugar)** | Sí | PENDIENTE: verificar excepción de proveedor de servicios/backend concreto | NO VERIFICADO; no asumir procesamiento efímero del proveedor | **Opcional** (Ajustes › «Ubicación») | Funciones de la app |
 | Actividad en la app › **Interacciones con la app** (anuncios vistos y tocados) | Sí | Sí (Google) | No | Obligatorio para la versión con anuncios | Publicidad o marketing; Analítica; Prevención de fraude |
 | Información y rendimiento de la app › **Registros de fallos** | Sí | Sí (Google) | No | Obligatorio para la versión con anuncios | Analítica; Prevención de fraude |
 | Información y rendimiento de la app › **Diagnóstico** | Sí | Sí (Google) | No | Obligatorio para la versión con anuncios | Analítica; Prevención de fraude |
@@ -36,10 +38,7 @@ integrado (AdMob/UMP) o el geocodificador del sistema.
 | Dispositivo u otros identificadores › **ID de dispositivo u otros ID** (ID de publicidad de Android, conjunto de ID de la app) | Sí | Sí (Google) | No | Obligatorio para la versión con anuncios | Publicidad o marketing; Analítica; Prevención de fraude |
 
 Notas para rellenar:
-- La ubicación aproximada aparece dos veces porque Play pide una fila por tipo con todas sus
-  finalidades: en el formulario es **un solo tipo** («Ubicación aproximada») marcado como
-  recogido y compartido, con las finalidades de ambas filas. En la pregunta «¿es opcional?»
-  responde **No** (la de los anuncios no se puede apagar sin comprar «sin anuncios»).
+- Anuncios y geocodificación son finalidades y precisiones distintas: no fusionar ambas como una única ubicación aproximada. La definición de Play usa un área de3 km²; dos decimales forman celdas de como máximo≈1,24 km². Es una inferencia geométrica de la precisión que el código transmite, no una medición de retención del proveedor.
 - La de los nombres de lugar son coordenadas de una foto redondeadas a ~1 km, enviadas al
   geocodificador de Android (`android.location.Geocoder`, que en la mayoría de teléfonos
   resuelve Google Play Services); el nombre se guarda solo en el teléfono.
@@ -52,9 +51,8 @@ Notas para rellenar:
 - **Fotos y vídeos**: se leen y analizan en el teléfono (MediaStore, miniaturas del sistema,
   nitidez, caras con el detector de Android, «casi iguales» por firma de la imagen). Nunca se
   transmiten. No hay ML Kit ni otra librería que envíe métricas.
-- **Ubicación precisa**: las coordenadas EXIF se leen en el teléfono; solo salen redondeadas.
-- **Historial de compras**: Google Play procesa los pagos; la app consulta las compras en el
-  propio teléfono (`queryPurchasesAsync`) y no las envía a ningún sitio.
+- Las coordenadas EXIF completas permanecen locales, pero las que salen con dos decimales deben tratarse como **ubicación precisa** bajo la definición de Play, aunque estén redondeadas. Véase la fila anterior.
+- **Historial de compras**: PENDIENTE contrastar la guía de Play Billing y sus operaciones query/acknowledge/consume. No equiparar automáticamente una llamada al servicio de Play con ausencia de tratamiento fuera del dispositivo. CocoWash no tiene backend propio de pagos.
 - **Información personal, contactos, mensajes, archivos, calendario, salud**: no.
 - **Analítica propia o telemetría**: no hay. Los registros de la app (`devLog`) solo existen
   en compilaciones de depuración.
@@ -82,3 +80,10 @@ Notas para rellenar:
    `FOREGROUND_SERVICE`, `RECEIVE_BOOT_COMPLETED` si los añaden). Si aparece otro, se revisa.
 2. Repasar la guía de datos de AdMob y UMP para la versión del SDK incluida.
 3. Que la política publicada tenga la sección Android con la misma lista.
+
+## Fuentes y verificación pendiente
+
+- [Definiciones oficiales Play](https://support.google.com/googleplay/android-developer/answer/10787469?hl=en): la distinción es por área, no por el nombre del permiso. Se revisó2026-11-08.
+- [Definición Apple](https://developer.apple.com/app-store/app-privacy-details/): precise incluye resolución de tres o más decimales; no trasladar su clasificación directamente a Play.
+- Código comprobado: PhotoLibraryPlugin.place redondea lat/lng a dos decimales y llama Geocoder.getFromLocation; el permiso no es ACCESS_FINE_LOCATION y no se solicita posición actual del teléfono.
+- Antes de enviar: contrato/proveedor y tráfico real, coherencia con política pública tras despliegue autorizado, reglas de excepción y respuestas finales del titular. Este borrador no cambia la conducta de geocodificación ni el manifiesto Apple, que sigue bloqueado por R-02.

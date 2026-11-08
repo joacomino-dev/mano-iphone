@@ -1,0 +1,35 @@
+{
+  "status": "Draft review/permission explanations in seven languages. Native QA, products/sandbox and owner submission checks remain mandatory. These are review notes, not replacements for localized Info.plist.",
+  "contact": "cocowash@joaquinmino.work",
+  "responsible": "Joaquin Miño",
+  "localizations": {
+    "es": {
+      "photosPermission": "CocoWash lee las fotos y vídeos que permitas para mostrarlos, organizarlos en álbumes y gestionar favoritas. Solo elimina desde revisión y tras la confirmación de Fotos. El análisis se realiza en el dispositivo.",
+      "reviewNotes": "No se necesita cuenta ni inicio de sesión. Completa el onboarding y concede acceso completo o limitado a una fototeca de prueba. Descartar solo encola; revisa y confirma en Fotos para eliminar. Deshacer corrige decisiones previas a la eliminación confirmada. Google gestiona anuncios y consentimiento; las compras permiten quitar anuncios por un año (pago único sin renovación) o para siempre, además de una propina que no quita anuncios. Prueba compras y restauración en sandbox."
+    },
+    "en": {
+      "photosPermission": "CocoWash reads the photos and videos you allow to display them, organize albums and manage favorites. Deletion requires review and confirmation in Photos. Analysis runs on the device.",
+      "reviewNotes": "No account or login is required. Complete onboarding and grant full or limited access to a test library. Discard only queues items; review and confirm in Photos to delete. Undo corrects decisions before confirmed deletion. Google provides ads and consent. Purchases remove ads for one year (one-time, no automatic renewal) or forever; the coffee tip does not remove ads. Test purchases and restoration in sandbox."
+    },
+    "fr": {
+      "photosPermission": "CocoWash lit les photos et vidéos autorisées pour les afficher, organiser les albums et gérer les favoris. La suppression exige une révision puis la confirmation dans Photos. L’analyse reste sur l’appareil.",
+      "reviewNotes": "Aucun compte nécessaire. Termine la présentation et autorise un accès complet ou limité à une photothèque de test. Écarter place seulement dans la file de révision. Confirme dans Photos pour supprimer. Annuler corrige les décisions avant une suppression confirmée. Google gère publicité et consentement. Les achats retirent les annonces pour un an, sans renouvellement automatique, ou définitivement. Le café est un pourboire sans retrait des annonces. Teste achats et restauration en sandbox."
+    },
+    "de": {
+      "photosPermission": "CocoWash liest freigegebene Fotos und Videos zum Anzeigen, Ordnen von Alben und Verwalten von Favoriten. Löschen erfordert Prüfung und Bestätigung in Fotos. Die Analyse läuft auf dem Gerät.",
+      "reviewNotes": "Kein Konto nötig. Einführung abschließen und vollständigen oder eingeschränkten Zugriff auf eine Testmediathek erlauben. Vormerken löscht nichts; erst Prüfung und Bestätigung in Fotos löschen. Rückgängig gilt vor bestätigtem Löschen. Google verwaltet Werbung und Einwilligung. Käufe entfernen Werbung für ein Jahr ohne automatische Verlängerung oder dauerhaft. Kaffee ist ein Trinkgeld ohne Werbeentfernung. Käufe und Wiederherstellung in der Sandbox testen."
+    },
+    "it": {
+      "photosPermission": "CocoWash legge foto e video autorizzati per mostrarli, organizzare album e gestire i preferiti. L’eliminazione richiede revisione e conferma in Foto. L’analisi avviene sul dispositivo.",
+      "reviewNotes": "Non serve un account. Completa l’introduzione e consenti accesso completo o limitato a una libreria di prova. Scartare mette solo in coda; conferma in Foto per eliminare. Annulla corregge le decisioni prima del consenso definitivo all’eliminazione. Google gestisce pubblicità e consenso. Gli acquisti rimuovono gli annunci per un anno senza rinnovo automatico o per sempre; il caffè è una mancia che non rimuove gli annunci. Prova acquisti e ripristino in sandbox."
+    },
+    "ar": {
+      "photosPermission": "يقرأ CocoWash الصور والفيديوهات التي تسمح بها لعرضها وتنظيم الألبومات وإدارة المفضلة. يتطلب الحذف مراجعة وتأكيدًا في «الصور». يتم التحليل على الجهاز.",
+      "reviewNotes": "لا يلزم حساب أو تسجيل دخول. أكمل المقدمة واسمح بوصول كامل أو محدود إلى مكتبة اختبار. الاستبعاد يضع العناصر في قائمة فقط؛ يلزم تأكيد «الصور» للحذف. يصحح «تراجع» القرارات قبل تأكيد الحذف. تدير Google الإعلانات والموافقة. تزيل المشتريات الإعلانات لسنة دون تجديد تلقائي أو إلى الأبد. القهوة إكرامية لا تزيل الإعلانات. اختبر الشراء والاستعادة في بيئة الاختبار."
+    },
+    "ja": {
+      "photosPermission": "CocoWashは、許可された写真と動画を表示し、アルバムやお気に入りを管理するために読み取ります。削除には見直しと「写真」での確認が必要です。解析は端末内で行います。",
+      "reviewNotes": "アカウントやログインは不要です。初回案内を完了し、テスト用ライブラリの全体または一部へのアクセスを許可してください。削除候補にしても消えず、「写真」での確認が必要です。「取り消す」は削除確定前の判断を修正します。広告と同意はGoogleが管理します。広告非表示は自動更新のない1年間の買い切り、または無期限です。コーヒーのチップでは広告は消えません。購入と復元はサンドボックスで確認してください。"
+    }
+  }
+}

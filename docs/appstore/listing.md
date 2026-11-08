@@ -1,3 +1,5 @@
+> Historial de propuestas de ficha. Para esta entrega usa `docs/apple-readiness/storefront/metadata.json` (7 idiomas y límites verificados). No copies afirmaciones históricas absolutas de que las fotos nunca salen del teléfono: el usuario puede compartir y Fotos/iCloud funcionan por separado; CocoWash no las sube para análisis ni anuncios.
+
 # CocoWash · Ficha de la App Store (borrador para revisar)
 
 **Borrador histórico conservado; no copiar directamente a envío.** La ficha RC final ES/EN y sus límites comprobados están en [metadata.json](../apple-readiness/storefront/metadata.json). Otros idiomas aquí preservan trabajo previo, sin aceptación lingüística/nativa final. No anunciar duplicados exactos, identidad facial ni privacidad sin SDKs.

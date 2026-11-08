@@ -1,6 +1,14 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import os from 'node:os';import path from 'node:path';import {execFileSync} from 'node:child_process';
 import {checkRelease,inputs} from '../scripts/check-release.mjs';
-test('release source, approved icon and ES/EN metadata pass static checks',()=>assert.equal(checkRelease(inputs()).status,'PASS'));
+test('release source, approved icon and seven-language metadata pass static checks',()=>assert.equal(checkRelease(inputs()).status,'PASS'));
+test('release gate rejects UTF-8 keywords above 100 bytes even below 100 characters',()=>{
+ const value=inputs();value.metadata.localizations.ja.keywords='写真整理'.repeat(9);
+ assert.throws(()=>checkRelease(value),/keywords.*bytes/);
+});
+test('release gate rejects a missing shipped language',()=>{
+ const value=inputs();delete value.metadata.localizations.ar;
+ assert.throws(()=>checkRelease(value),/Missing ar/);
+});
 for (const kind of ['developer','testID','reset','longSubtitle']) test(`release gate rejects ${kind}`,()=>{
  const value=inputs();if(kind==='developer')value.channel=value.channel.replace('= false;','= true;');
  if(kind==='testID')value.project=value.project.replace('ca-app-pub-5676353604168025/8219266678','');

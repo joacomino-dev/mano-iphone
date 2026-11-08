@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import crypto from 'node:crypto';
 import assert from 'node:assert/strict';
 const read = path => fs.readFileSync(path, 'utf8');
+const LANGUAGES = ['es','en','fr','de','it','ar','ja'];
 export function checkRelease({ channel, project, info, metadata, icon }) {
   assert.match(channel, /export const DEVELOPER = false;/, 'App Store channel must hide developer controls');
   const release = [...project.matchAll(/\/\* Release \*\/ = \{[\s\S]*?buildSettings = \{([\s\S]*?)\};\s*name = Release;/g)]
@@ -14,7 +15,7 @@ export function checkRelease({ channel, project, info, metadata, icon }) {
   assert.match(release, /IPHONEOS_DEPLOYMENT_TARGET = 17\.0;/);
   assert.doesNotMatch(info, /<key>CocoWash(?:TestAds|DevelopmentReset)<\/key>/, 'Development-only flags must be absent');
   assert.match(info, /<key>GADApplicationIdentifier<\/key>\s*<string>\$\(COCO_ADMOB_APP_ID\)<\/string>/);
-  for (const language of ['es', 'en']) {
+  for (const language of LANGUAGES) {
     const text = metadata.localizations[language];
     assert.ok(text, `Missing ${language}`);
     for (const [key, limit] of Object.entries({name:30,subtitle:30,keywords:100,promotionalText:170,description:4000,releaseNotes:4000})) {
@@ -23,13 +24,14 @@ export function checkRelease({ channel, project, info, metadata, icon }) {
       assert.ok(text[key].trim().length, `${language}.${key} is empty`);
     }
     assert.doesNotMatch(text.description, /Breakup|recognition|reconocimiento facial|personas agrupadas/i);
+    assert.ok(Buffer.byteLength(text.keywords,'utf8') <= 100, `${language}.keywords exceeds 100 UTF-8 bytes`);
     for (const key of ['supportURL','privacyURL']) assert.equal(new URL(text[key]).protocol, 'https:');
   }
   assert.equal(icon.readUInt32BE(16), 1024); assert.equal(icon.readUInt32BE(20), 1024);
   assert.equal(icon[24], 8); assert.equal(icon[25], 2, 'Approved icon must be RGB without alpha');
   return {status:'PASS',boundary:'Static source and metadata only; native build, signatures, SDK report, traffic and distribution remain separate gates',
     marketingVersion:release.match(/MARKETING_VERSION = ([^;]+);/)[1],build:release.match(/CURRENT_PROJECT_VERSION = ([^;]+);/)[1],
-    appIconSHA256:crypto.createHash('sha256').update(icon).digest('hex'),metadataLengths:Object.fromEntries(['es','en'].map(lang=>[lang,Object.fromEntries(Object.entries(metadata.localizations[lang]).filter(([,v])=>typeof v==='string').map(([k,v])=>[k,[...v].length]))]))};
+    appIconSHA256:crypto.createHash('sha256').update(icon).digest('hex'),metadataLengths:Object.fromEntries(LANGUAGES.map(lang=>[lang,Object.fromEntries(Object.entries(metadata.localizations[lang]).filter(([,v])=>typeof v==='string').map(([k,v])=>[k,[...v].length]))]))};
 }
 export function inputs() { return {
   channel:read('src/channel.ts'),project:read('ios/App/App.xcodeproj/project.pbxproj'),info:read('ios/App/App/Info.plist'),

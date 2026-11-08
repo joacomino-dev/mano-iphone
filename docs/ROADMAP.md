@@ -94,7 +94,7 @@ una puerta nativa, comercial o de distribución.
 | R-41 | Si corresponde por tipo/fecha de cuenta personal: mínimo12 testers inscritos continuamente14 días en prueba cerrada y solicitar acceso a producción | U | Pendiente | [Regla oficial Google](https://support.google.com/googleplay/android-developer/answer/14151465): cuentas personales posteriores al13-11-2023. Confirmar requisito de la cuenta real; no es regla universal de15–20 |
 | R-42 | Keystore de desarrollo en los secretos de GitHub | U | Pendiente | Clave en `C:\Users\Joaco\Developer\cocowash-keys` (LEEME) |
 | R-43 | IDs reales de AdMob Android y canal de tienda Android en `main` (ya no hay rama `release`) | U (IDs) + C | Pendiente | `PROMPT_WEB_ANDROID.md`; no usar los IDs iOS |
-| R-44 | Con `main` en canal de tienda, el APK de desarrollo oculta «Modo developer»: decidir si su CI cambia su copia a desarrollo como la IPA | CX | En curso | CW-CX-028: APK yAAB se construyen con frontend independiente;5 regresiones de hashes PASS, nueva CI pendiente. main sigue tienda |
+| R-44 | Con `main` en canal de tienda, el APK de desarrollo oculta «Modo developer»: decidir si su CI cambia su copia a desarrollo como la IPA | CX | **PASS** | CW-CX-028: run42486725664 valida hashes de APK developer/AAB tienda,5 regresiones yE2E emulador PASS. IDs reales/firma/compras siguen en sus gates |
 | R-45 | P3 posterior: detector de texto/embedder adicional Android | CX si se autoriza | Pendiente, fuera de primera publicación | Texto no disponible se mantiene oculto; parecido dHash existente no equivale a embedder. No incorporar modelos nuevos ni anunciar funciones incompletas para cerrar la primera versión |
 | R-46 | Verificar firma de compras con la clave de licencias | C + U | Pendiente | — |
 | R-47 | Carta de anuncio con Fredoka y espejo RTL; vídeo a pantalla completa | C | Pendiente | — |
@@ -192,7 +192,7 @@ Autorizados push normal a main y workflows estándar públicos gratuitos, relanz
 | R-55 | Laboratorio iOS: Live Photo emparejada real y matriz destructiva de fixtures, xcresult/capturas reales,10 ciclos con XCTMemoryMetric/XCTCPUMetric y app+WebContent | CX | NOT TESTED; ampliar gate sin falsear permisos |
 | R-56 | Tráfico de anuncios de prueba en simulador, solo hosts; ATT/UMP por estado; Privacy Report y propuesta fundamentada de dominios | CX investiga, U aprueba | NOT TESTED; no inferir tracking de cualquier endpoint |
 | R-57 | Firma iOS/Android preparada y dry-run ejecutado sin secretos; export local sin upload | CX + U secretos | NOT TESTED; la firma real permanece BLOCKED hasta secretos/autorización |
-| R-58 | Fichas, revisión, edad, compras y capturas reales con fixtures en7 idiomas por tienda | CX + CL visual | NOT TESTED cobertura completa; revisar inventario actual |
+| R-58 | Fichas, revisión, edad, compras y capturas reales con fixtures en7 idiomas por tienda | CX + CL visual | CW-CX-029: ficha/notas7 idiomas y límites PASS; compras7 existentes. Capturas reales multilingües y clasificación final NOT TESTED/propietario |
 | R-59 | E2E Android ampliado: favoritas/undo, Atrás, destrucción con fixtures y10 ciclos con medidas nativas | CX | NOT TESTED ampliación; CI base en curso |
 
 ### Evidencia del inicio
@@ -219,3 +219,5 @@ Autorizados push normal a main y workflows estándar públicos gratuitos, relanz
 - 2026-11-08 · Codex CW-CX-027: gate nativo intento2 demuestra campo no recibido/guardar deshabilitado antes de PhotoKit. Se aísla variante estándar, sin omitir Duo; se añade valor/teclado y xcresult para diagnóstico. Tres CIs baseline PASS y generador de Live PASS.
 
 - 2026-11-08 · Codex CW-CX-028: R-44 separa compilación AAB tienda y APK developer solo en la copia CI; hashes del HTML/JS verifican cada archivo real del APK/AAB.5 regresiones Python PASS, aceptación de emulador/artefactos pendiente. Sin cambios de monetización/versiones.
+
+- 2026-11-08 · Codex CW-CX-029: ficha Apple ynotas7 idiomas,guardas de UTF-8 eidioma ausente probadas FAIL→PASS;8 Release y7 Play listings PASS. Data safety corregido: dos decimales del geocodificador se consideran ubicación precisa por definición Play; cifrado/retención/proveedor no se dan por verificados. R-44 cerrado con run42486725664.

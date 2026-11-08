@@ -378,3 +378,11 @@ Validaciones:5 regresiones Python (mezcla/reemplazo de bundle/canal incorrecto r
 CW-CX-026 probe PhotoKit:315348e/run42485975362 compila y genera pareja,pero no produce receipt del seeder. No se marca importado. Se añaden hitos locales de arranque/auth/import y capturas/log unificado antes de borrar el simulador; segunda hipótesis se decidirá con evidencia.
 
 CW-CX-026/027 avance:probe seeder termina SIGTRAP antes de DID_LAUNCH; se captura consola/dyld ycrash sin cambiar comportamiento por hipótesis. Variante iPhone18Pro/iOS27.0 también falla con placeholder/keyboard1, descartando causa exclusiva Duo. Workflow de exportación xcresult separado permitirá ver attachments reales del fallo ya retenido. R-44 CI42486725664 PASS con ambos hashes yE2E.
+
+### CW-CX-029 — Material7 idiomas y precisión de declaraciones
+Fecha:2026-11-08, America/Bogota.
+Agente:Codex.
+Estado:ficha/notas/límites preparados y probados; capturas/edad final/proveedor siguen pendientes.
+Cambios:metadata Apple añadefr/de/it/ar/ja conservandoES/EN; notas/explicación permisos7,locales explícitos ychecklist edad sin aprobación inventada. Guardas Release para7 idiomas/100bytes UTF-8:2 FAIL antes,8 pruebas PASS después. Play7 listings PASS.
+Privacidad:Data safety no puede llamar aproximada a una celda de≈1,24km²: Play define precise<3km², Apple usa3decimales. Se corrige borrador yse retiran afirmaciones no demostradas de retención efímera/transporte universal del Geocoder. Sin cambiar redondeo,SDK,política pública ni manifiesto Apple;R-02 sigue FAIL.
+Evidencia adicional:R-44 run42486725664 PASS:APK/AAB con hashes/canales distintos yE2E. No versiones/arte/monetización nuevos ni envío a tiendas.

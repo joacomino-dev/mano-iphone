@@ -1,5 +1,5 @@
 {
-  "status": "Prepared local ES/EN copy; not submitted or approved. Screenshots and commercial configuration remain blocked.",
+  "status": "Prepared local copy in es/en/fr/de/it/ar/ja. Native screenshots, legal/commercial checks and submission remain pending; not approved or published.",
   "copyright": "2026 Joaquin Miño",
   "primaryCategory": "PHOTO_AND_VIDEO",
   "secondaryCategory": "UTILITIES",
@@ -23,6 +23,86 @@
       "releaseNotes": "The first version of CocoWash: organize photos and videos, keep your favorites and review discards before confirming deletion in Apple Photos.",
       "supportURL": "https://joaquinmino.work/cocowash/support.html",
       "privacyURL": "https://joaquinmino.work/cocowash/privacy.html"
+    },
+    "fr": {
+      "subtitle": "Ce qui compte reste",
+      "keywords": "photos,vidéos,galerie,rangement,espace,favoris,albums,souvenirs",
+      "promotionalText": "Retrouve tes souvenirs avec Coqui et Memo. Garde ce qui compte, mets le reste à revoir et décide à ton rythme.",
+      "description": "Ce qui compte reste.\n\nCocoWash t’aide à organiser les photos et vidéos de ton iPhone, avec Coqui et Memo à tes côtés.\n\nÀ TON RYTHME\nGarde une photo, ajoute-la aux favoris, remets-la à plus tard ou place-la dans la file de révision. Utilise les gestes des cartes ou les boutons. Annuler permet de corriger tes décisions récentes.\n\nUN DERNIER REGARD\nÉcarter une photo ne la supprime pas. Récupère ce que tu veux garder avant de confirmer la suppression dans Photos d’Apple. CocoWash vérifie à nouveau les favoris. Après confirmation, la récupération dépend de Suppressions récentes dans Photos, et non d’Annuler dans CocoWash.\n\nSUR TON IPHONE\nL’analyse des photos reste sur l’appareil : CocoWash ne les envoie pas pour les analyser ni pour la publicité. Choisis un accès complet ou limité. Les originaux iCloud non téléchargés nécessitent une connexion. Décisions et réglages sont enregistrés localement. Les filtres et les outils locaux de ressemblance et de qualité dépendent des fichiers disponibles et de la version d’iOS.\n\nAVEC DES OPTIONS DE SOUTIEN\nL’app contient de la publicité et des achats pour la retirer pendant un an ou définitivement. Le pass annuel est un paiement unique, sans renouvellement automatique. Offrir un café est un pourboire qui ne retire pas la publicité. Prix et disponibilité sont affichés dans l’app selon ta région.\n\nLes services publicitaires de Google peuvent traiter des identifiants, des interactions et des données techniques selon tes autorisations et ton consentement. Consulte la politique de confidentialité.\n\nTes souvenirs, sans précipitation. Aucun geste ne supprime directement une photo.",
+      "releaseNotes": "Première version de CocoWash : organise tes photos et vidéos, garde tes favoris et revois les éléments écartés avant de confirmer leur suppression dans Photos.",
+      "name": "CocoWash",
+      "supportURL": "https://joaquinmino.work/cocowash/support.html",
+      "privacyURL": "https://joaquinmino.work/cocowash/privacy.html"
+    },
+    "de": {
+      "subtitle": "Was zählt, bleibt",
+      "keywords": "fotos,videos,galerie,ordnung,speicher,favoriten,alben,erinnerungen",
+      "promotionalText": "Sieh deine Erinnerungen mit Coqui und Memo neu an. Behalte, was zählt, und prüfe den Rest in deinem Tempo.",
+      "description": "Was zählt, bleibt.\n\nCocoWash hilft dir, Fotos und Videos auf deinem iPhone zu ordnen. Coqui und Memo begleiten dich dabei.\n\nIN DEINEM TEMPO\nBehalten, als Favorit markieren, auf später verschieben oder zur Prüfung vormerken: Nutze Kartengesten oder Tasten. Mit Rückgängig korrigierst du letzte Entscheidungen.\n\nEIN LETZTER BLICK\nVormerken löscht kein Foto. Hole zurück, was du behalten möchtest, und bestätige das Löschen erst in Apple Fotos. CocoWash prüft die Favoriten erneut. Nach bestätigtem Löschen erfolgt eine Wiederherstellung über Zuletzt gelöscht in Fotos, nicht über Rückgängig in CocoWash.\n\nAUF DEINEM IPHONE\nDie Fotoanalyse läuft auf dem Gerät. CocoWash lädt deine Bilder weder zur Analyse noch für Werbung hoch. Erlaube vollen oder eingeschränkten Zugriff. Nicht geladene iCloud-Originale benötigen eine Verbindung. Entscheidungen und Einstellungen werden lokal gespeichert. Filter sowie lokale Ähnlichkeits- und Qualitätshilfen hängen von verfügbaren Dateien und der iOS-Version ab.\n\nMIT MÖGLICHKEITEN ZUR UNTERSTÜTZUNG\nDie App enthält Werbung und In-App-Käufe, um sie für ein Jahr oder dauerhaft zu entfernen. Der Jahrespass ist ein einmaliger Kauf ohne automatische Verlängerung. Ein Kaffee ist ein Trinkgeld und entfernt keine Werbung. Preise und Verfügbarkeit zeigt die App für deine Region an.\n\nGoogles Werbedienste können je nach Einwilligung und Berechtigungen Kennungen, Interaktionen und technische Daten verarbeiten. Mehr dazu in der Datenschutzerklärung.\n\nZeit für deine Erinnerungen. Keine Geste löscht ein Foto direkt.",
+      "releaseNotes": "Erste Version von CocoWash: Fotos und Videos ordnen, Favoriten behalten und vorgemerkte Bilder vor dem bestätigten Löschen in Apple Fotos prüfen.",
+      "name": "CocoWash",
+      "supportURL": "https://joaquinmino.work/cocowash/support.html",
+      "privacyURL": "https://joaquinmino.work/cocowash/privacy.html"
+    },
+    "it": {
+      "subtitle": "Ciò che conta resta",
+      "keywords": "foto,video,galleria,ordine,spazio,preferiti,album,ricordi",
+      "promotionalText": "Riscopri i tuoi ricordi con Coqui e Memo. Tieni ciò che conta e rivedi il resto, con calma.",
+      "description": "Ciò che conta resta.\n\nCocoWash ti aiuta a mettere in ordine foto e video del tuo iPhone. Coqui e Memo ti accompagnano, un ricordo alla volta.\n\nAL TUO RITMO\nConserva, aggiungi ai preferiti, rimanda a più tardi o metti in revisione. Puoi usare i gesti delle schede o i pulsanti. Annulla corregge le decisioni recenti.\n\nUN’ULTIMA OCCHIATA\nScartare una foto non la elimina: la mette nella coda di revisione. Recupera ciò che vuoi tenere, poi conferma l’eliminazione in Foto di Apple. CocoWash ricontrolla i preferiti. Dopo la conferma, il recupero dipende da Eliminati di recente in Foto, non da Annulla in CocoWash.\n\nSUL TUO IPHONE\nL’analisi delle foto avviene sul dispositivo. CocoWash non carica le immagini per analizzarle né per la pubblicità. Puoi consentire l’accesso completo o limitato. Gli originali iCloud non scaricati richiedono una connessione. Decisioni e impostazioni restano locali. Filtri e strumenti locali di somiglianza e qualità dipendono dai file disponibili e dalla versione di iOS.\n\nCON OPZIONI DI SOSTEGNO\nL’app include pubblicità e acquisti per rimuoverla per un anno o per sempre. Il pass annuale è un pagamento unico, senza rinnovo automatico. Un caffè è una mancia e non rimuove gli annunci. Prezzi e disponibilità sono mostrati nell’app per la tua regione.\n\nI servizi pubblicitari di Google possono trattare identificativi, interazioni e dati tecnici in base a permessi e consenso. Consulta l’informativa sulla privacy.\n\nI tuoi ricordi, senza fretta. Nessun gesto elimina direttamente una foto.",
+      "releaseNotes": "Prima versione di CocoWash: organizza foto e video, conserva i preferiti e rivedi gli scarti prima di confermare l’eliminazione in Foto di Apple.",
+      "name": "CocoWash",
+      "supportURL": "https://joaquinmino.work/cocowash/support.html",
+      "privacyURL": "https://joaquinmino.work/cocowash/privacy.html"
+    },
+    "ar": {
+      "subtitle": "ما يهمّ يبقى",
+      "keywords": "صور,فيديو,تنظيم,معرض,ذكريات,ألبوم",
+      "promotionalText": "أعد اكتشاف ذكرياتك مع Coqui وMemo. احتفظ بما يهمّ، واترك الباقي للمراجعة، وقرّر على مهل.",
+      "description": "ما يهمّ يبقى.\n\nيساعدك CocoWash على تنظيم الصور والفيديوهات على iPhone، برفقة Coqui وMemo.\n\nعلى مهلك\nاحتفظ بالصورة، أو أضفها إلى المفضلة، أو أجّلها، أو ضعها في قائمة المراجعة. استخدم إيماءات البطاقات أو الأزرار. يتيح لك «تراجع» تصحيح القرارات الأخيرة.\n\nنظرة أخيرة\nاستبعاد الصورة لا يحذفها، بل يضعها في قائمة المراجعة. استعد ما تريد الاحتفاظ به، ثم أكّد الحذف في تطبيق «الصور» من Apple. يتحقق CocoWash من المفضلة مجددًا. بعد تأكيد الحذف، تعتمد الاستعادة على «المحذوفة مؤخرًا» في «الصور»، وليس على «تراجع» في CocoWash.\n\nعلى جهازك\nيتم تحليل مكتبة الصور على الجهاز. لا يرفع CocoWash صورك للتحليل أو للإعلانات. اختر الوصول الكامل أو المحدود. تحتاج أصول iCloud غير المحمّلة إلى اتصال. تُحفظ القرارات والإعدادات محليًا. تعتمد الفلاتر وأدوات التشابه والجودة المحلية على الملفات المتاحة وإصدار iOS.\n\nخيارات للدعم\nيتضمن التطبيق إعلانات ومشتريات لإزالتها لمدة سنة أو إلى الأبد. تصريح السنة دفعة واحدة دون تجديد تلقائي. تقديم قهوة إكرامية لا تزيل الإعلانات. تظهر الأسعار والتوافر داخل التطبيق بحسب منطقتك.\n\nقد تعالج خدمات Google الإعلانية معرّفات وتفاعلات وبيانات تقنية وفق الأذونات والموافقة. راجع سياسة الخصوصية.\n\nوقت لذكرياتك، دون تسرّع. لا تحذف أي إيماءة صورة مباشرة.",
+      "releaseNotes": "الإصدار الأول من CocoWash: نظّم الصور والفيديوهات، واحتفظ بالمفضلة، وراجع المستبعد قبل تأكيد الحذف في تطبيق «الصور» من Apple.",
+      "name": "CocoWash",
+      "supportURL": "https://joaquinmino.work/cocowash/support.html",
+      "privacyURL": "https://joaquinmino.work/cocowash/privacy.html"
+    },
+    "ja": {
+      "subtitle": "大切なものは、残そう",
+      "keywords": "写真整理,動画整理,アルバム,お気に入り,ストレージ,整理整頓",
+      "promotionalText": "CoquiとMemoと一緒に、思い出を見直そう。大切な写真を残して、迷ったものはあとで。自分のペースで整理できます。",
+      "description": "大切なものは、残そう。\n\nCocoWashは、iPhoneの写真と動画を整理するアプリです。CoquiとMemoが、一枚ずつの見直しに付き添います。\n\n自分のペースで\n残す、お気に入りにする、あとで見る、削除候補にする。カードのジェスチャーでもボタンでも操作できます。「取り消す」で直前の判断を修正できます。\n\n最後にもう一度\n削除候補にしても、その場では消えません。残したいものを戻してから、Appleの「写真」で削除を確認します。CocoWashは削除前にお気に入りを再確認します。削除確定後の復元は「写真」の「最近削除した項目」で行い、CocoWashの「取り消す」では復元できません。\n\niPhoneの中で\n写真の解析は端末内で行います。CocoWashが解析や広告のために写真をアップロードすることはありません。ライブラリ全体へのアクセスか、一部の写真だけへのアクセスを選べます。未ダウンロードのiCloudオリジナルには通信が必要です。判断と設定は端末内に保存します。フィルターや類似度・画質の補助機能は、利用できるファイルとiOSのバージョンによって異なります。\n\n応援の選択肢\n広告付きのアプリで、広告を1年間または無期限に非表示にするアプリ内課金があります。1年間のパスは自動更新のない買い切りです。コーヒーは応援のチップで、広告は非表示になりません。価格と提供状況は地域に応じてアプリ内に表示します。\n\nGoogleの広告サービスは、許可と同意に応じて識別子、広告とのやり取り、技術情報を処理する場合があります。詳しくはプライバシーポリシーをご覧ください。\n\n思い出の整理を、あわてずに。ジェスチャーだけで写真が削除されることはありません。",
+      "releaseNotes": "CocoWashの最初のバージョンです。写真と動画を整理し、お気に入りを残して、削除候補を見直してからAppleの「写真」で削除を確定できます。",
+      "name": "CocoWash",
+      "supportURL": "https://joaquinmino.work/cocowash/support.html",
+      "privacyURL": "https://joaquinmino.work/cocowash/privacy.html"
+    }
+  },
+  "localeMapping": {
+    "es": {
+      "apple": "es-ES",
+      "google": "es-419"
+    },
+    "en": {
+      "apple": "en-US",
+      "google": "en-US"
+    },
+    "fr": {
+      "apple": "fr-FR",
+      "google": "fr-FR"
+    },
+    "de": {
+      "apple": "de-DE",
+      "google": "de-DE"
+    },
+    "it": {
+      "apple": "it",
+      "google": "it-IT"
+    },
+    "ar": {
+      "apple": "ar-SA",
+      "google": "ar"
+    },
+    "ja": {
+      "apple": "ja",
+      "google": "ja-JP"
     }
   }
 }
