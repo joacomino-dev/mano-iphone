@@ -165,7 +165,11 @@ class CocoMonetizationPlugin : Plugin() {
 
     @PluginMethod
     fun status(call: PluginCall) {
-        entitlements { state -> call.resolve(state ?: JSObject().apply { put("adFree", false); put("expires", JSONObject.NULL) }) }
+        if (!verifier.isConfigured) { call.reject("Purchase verification unavailable", "VERIFICATION_UNAVAILABLE"); return }
+        entitlements { state ->
+            if (state == null) call.reject("Purchase status unavailable", "STATUS_UNAVAILABLE")
+            else call.resolve(state)
+        }
     }
 
     private fun details(ids: List<String>, done: (List<ProductDetails>?) -> Unit) {
@@ -184,7 +188,8 @@ class CocoMonetizationPlugin : Plugin() {
             details(PRODUCTS) { list ->
                 if (list.isNullOrEmpty()) { call.reject("Play catalog unavailable"); return@details }
                 entitlements { state ->
-                    val data = state ?: JSObject().apply { put("adFree", false); put("expires", JSONObject.NULL) }
+                    if (state == null) { call.reject("Purchase status unavailable", "STATUS_UNAVAILABLE"); return@entitlements }
+                    val data = state
                     data.put("products", JSArray(list.mapNotNull { p ->
                         p.oneTimePurchaseOfferDetails?.formattedPrice?.let { price -> JSObject().apply { put("id", p.productId); put("price", price) } }
                     }))
@@ -285,7 +290,9 @@ class CocoMonetizationPlugin : Plugin() {
 
     private fun resumed() = activity?.lifecycle?.currentState?.isAtLeast(Lifecycle.State.RESUMED) == true
 
-    private fun adFree(done: (Boolean) -> Unit) = entitlements { done(it?.optBoolean("adFree") == true) }
+    // Unknown billing state cannot establish the absence of paid access.
+    // Hold new ads until the query actually establishes adFree=false.
+    private fun adFree(done: (Boolean?) -> Unit) = entitlements { done(it?.optBoolean("adFree")) }
 
     @PluginMethod
     fun prepare(call: PluginCall) {
@@ -296,7 +303,7 @@ class CocoMonetizationPlugin : Plugin() {
                 call.resolve(JSObject().apply { put("ready", false) }); return@post
             }
             adFree { free ->
-                if (free) { call.resolve(JSObject().apply { put("ready", false) }); return@adFree }
+                if (free != false) { call.resolve(JSObject().apply { put("ready", false) }); return@adFree }
                 prepared?.let { (ad, at) ->
                     if (System.currentTimeMillis() - at < 30 * 60_000) { call.resolve(JSObject().apply { put("ready", true) }); return@adFree }
                     ad.destroy()
@@ -405,7 +412,7 @@ class CocoMonetizationPlugin : Plugin() {
             val requestGeneration = generation
             adFree { free ->
                 val ready = prepared
-                if (free || generation != requestGeneration || ready == null || System.currentTimeMillis() - ready.second > 30 * 60_000 || card != null) {
+                if (free != false || generation != requestGeneration || ready == null || System.currentTimeMillis() - ready.second > 30 * 60_000 || card != null) {
                     call.resolve(JSObject().apply { put("shown", card != null) }); return@adFree
                 }
                 prepared = null

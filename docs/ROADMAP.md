@@ -252,3 +252,7 @@ Autorizados push normal a main y workflows estándar públicos gratuitos, relanz
 - 2026-11-08 · CW-CX-039: dry-run real de archivo sin firma preparado (exit78, privacidadFAIL); capturas Android7idiomas nativas RGB24 preparadas con frontend tienda y8postales sintéticas, pendientes de ejecución. No tienda/web/keys modificados.
 
 - 2026-11-08 · CW-CX-040: evaluador rechaza4falsosverdes demostrados y18testsPASS. Series reales59912d8 iOS/Android pasan también límites por rol/PID; reevaluación offline, no nueva ejecución. R61 sigue abierto.
+
+| R-62 | P1 comercio | Corrección implementada, CI pendiente | Consulta Android desconocida ya no informa adFree=false ni ofrece catálogo/anuncios. E2E prueba rechazo sin clave. Compras reales siguen BLOCKED propietario. |
+
+- 2026-11-08 · CW-CX-041: se corrige fallback comercial desconocido=>adFreefalse en status/catalog/ads; sin modificar monetización ni inventar productos. Kotlin/E2E pendientes.

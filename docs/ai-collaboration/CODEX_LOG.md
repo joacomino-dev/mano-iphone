@@ -459,3 +459,8 @@ Validaciones: sintaxis Python/JS/Bash PASS. R61 sigue sin cambios de producto, e
 Fecha: 2026-11-08. Agente: Codex. Estado: completada local.
 Demostración: cuatro casos rechazables recibían PASS del evaluador: fuga de app compensada por WebContent, una WebView compensada por otra, PID CPU erróneo y suma de memoria inconsistente. Tests fallan antes, pasan después. Mismos límites previos, ahora por rol y cada PID estable, además del agregado; rechaza datos no atribuibles.18 pruebas Python PASS.
 Reevaluación offline de las series nativas reales59912d8: iOS yAndroid PASS también con límites por proceso. Conserva originales y añade informes derivados explícitos; no afirma nueva ejecución/hardware ni cierra R61. Fuente de producto sin cambios.
+
+### CW-CX-041 — No convertir una consulta de compras fallida en acceso gratuito
+Fecha: 2026-11-08. Agente: Codex. Estado: implementada, compilación/emulador pendientes.
+R62 P1 demostrado por código Android: status/catalog convertían entitlements=null (sin clave o error Play) en adFree=false, y prepare/show podían ofrecer anuncios ante estado desconocido. Ahora status/catalog rechazan explícitamente; JS existente conserva el último status al error. Nuevos anuncios esperan un estado verificado false; no se concede ni se revoca compra por un fallo de red. Sin productos/precios/estrategia nuevos ni bypass de firma Debug.
+E2E exige VERIFICATION_UNAVAILABLE, ausencia de catálogo y ready=false cuando no hay clave; con configuración separa error de consulta de estado confirmado. No compra real en esta prueba. SintaxisJS/diff PASS; Kotlin, puente y E2E pendientes CI. R61 sigue P0 abierto, esperando decisión del diario duradero.

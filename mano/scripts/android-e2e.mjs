@@ -169,9 +169,16 @@ try {
 
   // Ads: consent, Google's test native ad, the paper letter on screen.
   const money = await call('CocoMonetization', 'status');
-  check('purchases status', money?.value && money.value.adFree === false, money);
+  const missingVerification = !process.env.COCO_PLAY_LICENSE_PUBLIC_KEY?.trim();
+  check('purchase status is explicit', missingVerification
+    ? money?.code === 'VERIFICATION_UNAVAILABLE' && !money.value
+    : typeof money?.value?.adFree === 'boolean' || money?.code === 'STATUS_UNAVAILABLE', money);
   const prepared = await call('CocoMonetization', 'prepare');
   results['ad prepare'] = { ok: true, detail: prepared };
+  if (missingVerification) {
+    const catalog = await call('CocoMonetization', 'catalog');
+    check('unknown purchases never become false or purchasable offers', catalog?.code === 'VERIFICATION_UNAVAILABLE' && !catalog.value && prepared?.value?.ready === false, {catalog,prepared});
+  }
   if (prepared?.value?.ready) {
     const shown = await call('CocoMonetization', 'show', { x: 16, y: 120, width: 360, height: 560, deck: true, style: 'deck', hidden: false, labels: {} });
     await sleep(2500);
