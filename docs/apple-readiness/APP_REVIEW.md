@@ -1,3 +1,8 @@
+Actualización2026-11-08: declaración tracking estáticaPASS con los dos hosts
+aprobados; firmas oficiales GMA/UMP macOSPASS. No se acredita todavía PrivacyReport
+final ni AppReview. R61P0 yLive/R05 pendientes impiden AppCompleteness.
+Seguir el [checklist actual](APP_STORE_SUBMISSION_CHECKLIST.md); lo siguiente es histórico.
+
 # Checklist de preparación para App Review
 
 **RC actual:** seguir [checklist operativo](APP_STORE_SUBMISSION_CHECKLIST.md) y [criterios](RELEASE_CANDIDATE.md). Privacidad estricta FAIL por dominios; vinculación/categorías corregidas contra SDKs. Políticas completas ES/EN preparadas, web aún anterior. Canal tienda corregido, compras faltantes ocultas y errores traducidos. App Completeness/privacidad/IAP/accesibilidad nativos siguen pendientes; la tabla siguiente conserva la auditoría inicial.

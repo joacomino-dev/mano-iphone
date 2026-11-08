@@ -1,199 +1,122 @@
-# CocoWash — Release Candidate local
+# CocoWash — Release Candidate en estabilización
 
-**Actualización2026-11-08:** fuente canónica main en CocoWash-android, último código `ece507b`;4 checkpoints nuevos sobre f5c3546. [Estado actual, pruebas y bloqueos](FOLLOWUP_2026-11-08.md). R-00 físico sigue abierto, R-01/R-02 FAIL, nuevo puente Live sin compilar: NO APTA para enviar. Lo que sigue conserva el informe histórico CW-CX-020, no identifica el checkout o SHA actuales.
+Actualizado 2026-11-08, CW-CX-026…046. **NO APTA para enviar.** P0 R-61 reproducido:
+un cierre forzado Android puede perder una decisión que localStorage ya devuelve.
+Las fotografías no se borraron en esa prueba. No se cambia FAIL por documentación.
 
-Fecha:2026-11-07 · Codex CW-CX-020.
+## Actualización de cierre — CW-CX-050
 
-**Estado final: preparación local ejecutada; NO APTA todavía para enviar a Apple.**
-Existe un P1 de privacidad comprobado y faltan las puertas nativas, comerciales y
-de distribución. No se transforma un bloqueo en PASS por preparar scripts/documentos.
+R-61 está **aprobado**, todavía sin corrección aplicada. No hace falta otra autorización.
+R-07 reproduce movimiento, pero la foto clave tras pausa difiere incluso al comparar
+RGBA (run 42519482281); se conserva FAIL hasta explicar y corregir la diferencia.
+Android d362af4 compila, pero vuelve a fallar al esperar la última confirmación de
+favoritas (42519758181). El gate iOS completo 42518372819 también falla: álbum,
+cancelación, recuperación y Live requieren diagnóstico; el PASS anterior no se borra.
 
-## Fuente, versiones y recuperación
+Capturas reales: 28 iOS y 28 Android, siete idiomas, hashes y RGB verificados.
+La aceptación visual queda para Claude. ATT tras manifiesto funciona en ambos estados,
+pero el simulador no demuestra bloqueo de hosts; esa prueba pasa a TestFlight físico.
+Dry-run 42518375329 termina con el código 78 esperado: no firma ni distribución.
+La infraestructura de métricas queda congelada. Ninguno de estos resultados cierra
+el P0, el gate nativo del SHA final o los requisitos de cuentas y dispositivos físicos.
 
-Commit final de código/configuración: **`dc5ffc97feaf2823558f5adedb5da39753f6939f`**.
-Los tests/evidencias y este informe se consolidan en el commit documental posterior;
-su SHA se obtiene con `git log -1 --format=%H -- docs/apple-readiness/RELEASE_CANDIDATE.md`.
-La respuesta de entrega identifica también ese commit. Ningún push realizado.
+## Fuente y protección
 
-Base inicial limpia:`b0cf83deedfa2e510833c0b6149637e544d9cc7c`; checkpoint anterior
-`9ff2734`. Checkout canónico `C:/Users/Joaco/Developer/CocoWash-b24`, rama existente
-`claude/cocowash-9.8.6`. OneDrive0.7 no fue actualizado ni sobrescrito.
-Historial de fases1/2 conservado, sin reset/stash/clean ni dependencias actualizadas.
+Única fuente: `C:/Users/Joaco/Developer/CocoWash-android`, rama `main`, remoto
+`joacomino-dev/mano-iphone`. Checkpoint inicial estratégico df983ad; último checkpoint
+consolidado al redactar d362af4. El SHA del informe se obtiene mediante
+`git log -1 --format=%H -- docs/apple-readiness/RELEASE_CANDIDATE.md`.
+Push normal y CI pública estándar gratuita autorizados; sin subidas a tiendas/web,
+certificados, cuentas ni instalación en teléfono. No reset/stash/clean/force-push.
 
-Bundle `work.joaquin.mano`; marketing0.9.9/build43; producto visible0.9.9.1;
-package0.1.0. iOS mínimo17.0, familia iPhone, arm64 declarado, retrato.
-React19.2.7, TS7.0.2, Capacitor8.6.0; Ads13.12.0/UMP3.1.0 inspeccionados.
-Versión/build de envío únicos requieren consultar ASC; no se asumió que44 esté libre.
+Visible0.9.9.1; iOS0.9.9/build43; AndroidversionCode3. Bundlework.joaquin.mano.
+Mínimo iOS17, arm64, iPhone/retrato conservados. Versión/build de envío deben
+contrastarse con las consolas. Runtime28 intacto; sin reemplazar arte, personajes,
+lettering, icono ni animaciones aprobadas. Sin nuevos modelos/Personas/Breakup.
 
-Bundle inicial local completo verificado:
-`work/apple-readiness/rc-start-b0cf83d.bundle`, SHA256
-`42db9b129bfb82c9a64bb4802bc368c4d9631800f6292b6b70972dbfc6ac4e0f`.
-Los28 archivos protegidos pasan. Sin diff de arte/brand/assets/Characters/DecisionBar/
-Vhs/prototype.css frente a b0cf83d; icono y animaciones aprobados conservados.
+El [informe del 7 de noviembre](RELEASE_CANDIDATE_2026-11-07.md) queda histórico:
+sus rutas b24, rama antigua y ausencia de push no describen esta fuente integrada.
 
-## Correcciones y checkpoints
+## Estado de aceptación
 
-| Commit | Problema demostrado y corrección mínima |
-| --- | --- |
-| `645564f` | P1: snapshot manual antiguo quitaba una favorita confirmada. Invalidación antes/después de favorite/unfavorite y undo nativos. También catálogo vacío mostraba ofertas indisponibles/«Pronto»: ahora oculta faltantes, conserva entitlements y ofrece reintento |
-| `9824907` | P2:9 mensajes Swift quedaban en español en otros idiomas; registro/traducciones y test de cobertura. Cerrar de Live Photo utiliza recurso nativo localizado; compilación Swift pendiente |
-| `cb927ad` | P1: etiquetas/manifiesto minimizaban vinculación y omitían categorías del SDK real. Unión conservadora de manifiestos, política ES/EN y etiquetas corregidas con recibos oficiales |
-| `55c6951` | P1: canal developer y Release de prueba. Se aplican exclusivamente los ajustes comerciales ya existentes en release4c43d0c; Debug sigue de pruebas. Sync ya no fuerza0.9.9/build43 sobre una versión elegida. Gates/archivo local/workflow manual preparados |
-| `880a9a0` | P1 abierto: tracking=true sin dominios. Gate estricto falla y bloquea archivo de envío; no inventa dominios ni oculta el incumplimiento |
-| `dc5ffc9` | Política: plazo de respuesta según ley aplicable, sin generalizar un mes a Ecuador; fuente oficial contrastada |
-| `ca668b7` | Scripts exigen Xcode26+/SDK26+ y verifican destino iPhone/arm64 del archivo; sintaxis comprobada, ejecución Apple bloqueada |
-
-[Antes](evidence/rc/flow-before.json):2 FAIL reproducidos sobre b0cf83d.
-[Después](evidence/rc/flow-after.json):10 PASS, incluyendo catálogo/reintento,
-compra cancel/pending/error/confirmada y restore fallido. Todo con puente sintético;
-no son resultados StoreKit/PhotoKit reales. Fallos intermedios de nuevos selectores
-de pruebas se corrigieron según nombres accesibles reales, sin cambiar el producto.
-El test general detectó la traducción obsoleta «Pronto»; se retiró la clave, sin
-debilitar la validación i18n.
-
-## Congelación funcional
-
-Se mantienen navegación/onboarding, PhotoKit, tarjetas/fotos/vídeos, Conservar,
-Descartar a revisión, Favoritas, Más tarde, Deshacer, filtros/álbumes y revisión,
-permisos, persistencia, configuración y monetización existentes. No se añadieron
-funciones. Deshacer revierte decisiones recientes; **no recupera borrados ya
-confirmados**. Esa recuperación corresponde a Fotos/Eliminado recientemente.
-
-PASS inspección: Personas/Breakup/identificación facial avanzada no están expuestos
-ni se anuncian; fueron retirados en build43. Limpieza de datos antiguos no equivale
-a funcionalidad activa. Se preserva detección local existente de cantidad de caras
-como señal de clasificación, sin ampliar Vision ni crear perfiles de identidad.
-El canal candidato oculta controles developer. El catálogo no muestra funciones
-«Pronto» ni botones de compra sin producto disponible.
-
-## Pruebas ejecutadas y límites
-
-[Recibo principal](evidence/rc/results.json), logs/resultados en
-[evidence/rc](evidence/rc/README.md). Windows, Node24.22.1, Edge instalado, sin
-macOS/Xcode/Swift/SDK Apple/simuladores/dispositivo ni sesión administrativa ASC.
-
-| Comprobación | Resultado |
-| --- | --- |
-| Baseline antes de editar | PASS:119 Node,28 runtime,TS,builds,Sites4,19+9 fixtures y8 runtime |
-| Lógica/localización final | PASS120/120; incluye cobertura de fallbacks Swift |
-| Release/versión/metadatos | PASS6/6, incluyendo rechazos de developer/ID vacío/reset/subtítulo largo y preservación de versión tras sync |
-| Contratos TS↔Swift/config | PASS4/4 estáticos; no son compilación ni ejecución Swift |
-| Sites | PASS4/4 |
-| Regresión Apple JS | PASS19/19; permisos/eliminación cancel/error/parcial/éxito, layouts/insets/onboarding/secondary |
-| Seguridad ampliada JS | PASS9/9; reordenación, refresh, recuperación bloqueada, permisos, reload e iCloud simulado |
-| RC catálogo/favorita | PASS10/10 |
-| Accesibilidad/layout ES/EN | PASS6/6:375×667,390×844,440×956, teclado, controles44CSSpx, texto raíz200%, revisión accesible y recuperación sin borrar |
-| Runtime móvil original | PASS8/8 en Edge; también contrato Pixel conservado |
-| TypeScript / hashes | PASS sin errores /28 protegidos intactos |
-| Web / native-web | PASS ambos; warning de chunk>500kB no ocultado |
-| Capacitor sync iOS Windows | PASS copia/configuración/plugins/fuentes; después4 contratos y Release PASS |
-| SDK oficiales | PASS checksum de ambos ZIPs y manifiestos; firmas Apple y tráfico BLOCKED |
-| Política pública | PASS GET200 con PowerShell, contenido anterior; urllib recibió403. Actualización pública BLOCKED por autorización |
-| Fixtures nuevos | PASS12 PNG sintéticos generados y decodificados en Edge. Importación/formatos cámara/medios grandes NOT TESTED |
-| Gate nativo / archivo en Windows | BLOCKED:ambos exit78; Bash syntax PASS |
-| Gate privacidad `--submission` | **FAIL exit1** por dominios vacíos; P1 pendiente |
-| Swift/PhotoKit/AVFoundation/Vision nativos actuales | BLOCKED, no ejecutados |
-| Firma/archivo/IPA/TestFlight/App Review | BLOCKED, no generados/subidos/aprobados |
-
-El código nativo de borrado resuelve después de éxito PhotoKit y vuelve a comprobar
-favoritas; inspección estática PASS. Cancelación/error/parcial/asíncrono PASS en JS
-con datos sintéticos. **Eliminación nativa adversa sigue BLOCKED**, no se confirmó
-ningún borrado personal. No existe evidencia para certificar ausencia de P0 nativos.
-
-## Rendimiento comprobado
-
-Perfil de **metadatos sintéticos Node**, Windows AMD Ryzen AI9 HX370,5 repeticiones,
-GC explícito; incluye muestras de tiempo/CPU/heap/RSS en
-[JSON](evidence/rc/performance.json). No es rendimiento de iPhone ni de medios reales.
-Vite y pruebas Edge estaban activos: carga de fondo no aislada, sin benchmark
-controlado del sistema completo.
-
-| Elementos | Validar/serializar todas las marcas, mediana | Reutilizar record validado, mediana |
+| Requisito | Estado | Evidencia / límite |
 | --- | --- | --- |
-| 1.000 | 0,49ms | 0,20ms |
-| 10.000 | 8,60ms | 2,66ms |
-| 50.000 | 51,32ms | 17,47ms |
+| Cero P0 conocidos | FAIL | R61, run42513754519: pending1→0 ya antes de React; background6s conserva. Diario local propuesto, aprobación recibida; implementación pendiente |
+| Cero P1 de distribución | FAIL | R02 declaración estática corregida con aprobación; validar archivo, tráfico y seguridad nativa completos |
+| Pruebas JS / TypeScript / runtime28 | PASS | 130 Node, tsc y hashes repetidos;8 Release y4 contratos estáticos separados |
+| Web/native-web | PASS anterior | Compilados en fases anteriores; repetir al cerrar cambios de app |
+| Release arm64 sin firma / Swift | PASS por SHA | CI anterior y gate662e67d en curso; no equivale a distribución |
+| Álbum iOS | Corrección comprobada en experimento | 42513277098: preferenciafalse FAIL, true XCTest completo PASS201,847s +postcondición; confirmado sin observer42514969280; pinch/anclajePASS |
+| 10 ciclos nativos y métricas | PASS acotado | 59912d8: iOS42492831273 yAndroid42492831172; presupuestos agregados/porPID PASS. Solo biblioteca pequeña de fixtures |
+| Live Photo real | NOT TESTED completo | Fixture3Live/3pairedPASS;AXdemuestraSwitchvisible66×29, selectorcorregido yprobeplay/key/timeline/loop/pinch enejecución |
+| Cierre forzado y decisiones | FAIL | R61 Android. No prometer recuperación segura todavía |
+| ATT y tráfico real de SDK | PASS acotado | 42514971530: permitido/denegado, request+callback reales, calibración yrestauraciónPASS. Anuncios de prueba |
+| Privacidad de envío | FAIL | Declaración strict PASS con dos hosts aprobados; tráfico actualizado, exhaustividad y archivo final BLOCKED |
+| Firmas SDK proveedor | PASS | 42516183457 verifica ZIPs oficiales fijados, codesign/macOS,identidad ymanifiestos. No firma del archivo CocoWash |
+| Compras Android | Corrección por validar | RSA7vectores JVM PASS; R62 evita unknown=>false/catálogo/anuncios, CI pendiente. Sandbox/cuentas BLOCKED |
+| Política ES/EN | PASS borrador / BLOCKED pública | Responsable/contacto confirmados; documentos ajustados a SDK ygeocodificación. Publicación web requiere autorización y comprobación posterior |
+| Localización7idiomas | PASS fuente / NOT TESTED nativa completa | ES/EN/FR/DE/IT/AR/JA; límites Apple/Play PASS. Android42516038859 completa28capturas nativas; revisar artefactos yRTL. Primer intento12/28falló al recargar; causa no demostrada |
+| Accesibilidad | PASS parcial / NOT TESTED Apple | Alternativas de botones ypruebasweb existentes; VoiceOver/DynamicType/gestos físicos pendientes. No declarar etiquetas Accessibility completadas |
+| Metadatos/icono | PASS preparación |7fichas,notas,revisión/IAP;icono aprobado1024RGB. Capturas finales nativas completas/QA pendientes |
+| Archivo/firma/exportación | BLOCKED | Dryrun42515287168 ejecutado yexit78: fuentePASS,privacidadFAIL,credenciales/versión/autorizaciónBLOCKED. Sin firma niupload |
+| TestFlight / Play interno / App Review | BLOCKED | No enviado; requiere cerrar P0/P1, credenciales, cuentas yautorización explícita |
 
-Native-web JS917,13kB, gzip270,07kB según Vite. No se cambia el umbral para silenciar
-warning ni se reestructura arquitectura sin Instruments. RAM/CPU/batería/decodificación,
-sesiones prolongadas, biblioteca completa y review físicos: BLOCKED. La persistencia
-actual agrupa escrituras350ms y flush de lifecycle; muerte antes del flush requiere
-prueba física, sin garantía inventada de cero pérdida de la última decisión.
+## Correcciones verificables
 
-## Compatibilidad y accesibilidad
+- R01: habilitar interacción de texto real de WKWebView. La preferenciafalse
+  impedía incluso insertar mediante tecla software. CSS mantiene selección ycallout
+  desactivados fuera de campos; gestos de tarjetas requieren nueva regresión nativa.
+- R60: se rechazó un falsoverde de CI (arrayvacío Bash3.2 antes de XCTest). Wrapper
+  guarda RUNNING/exitcode real yotra comprobación exige casosPASSED,xcresult,PhotoKit,
+  métricas yauditoría. No se cuenta42511286263 como PASS nativo.
+- R46/R62: firma local de recibos Play, errores explícitos yno concesión/consumo de
+  compras no verificadas; unknown no se convierte en adFreefalse. Mantiene estrategia,
+  IDs/productos existentes; configuración comercial ycompras reales pendientes.
+- Pruebas: no sumar conteos entre entornos como una única aceptación.25 pruebas Python del
+  gate (incl4regresiones nuevas fallaronantes/pasandespués);4atribución Android;
+ 4parserhosts;4collector;8Release;130Node y4contratos separados.
 
-Se conserva17 por coherencia de dependencias/API/cobertura; no se rebaja por el
-mínimo15 de Capacitor ni se sube sin medida. [Matriz completa](COMPATIBILITY.md):
-SE2/3,XR/XS,mini,estándar/Plus/Pro/Max y recientes como candidatos dentro de sus
-OS admitidos. Apple confirma18 Pro/Max y Duo; no se inventan18 estándar/Plus.
-Sistemas candidatos17/18/26/27.1; disponibilidad real de runtime/hardware pendiente.
-**Ningún modelo físico ni simulador Apple nuevo probado en esta intervención.**
+## Métricas reales y límites
 
-PASS geometría web, safe areas simuladas y seis checks accesibles ES/EN. Root font200%
-no acredita Dynamic Type. VoiceOver, contraste actual completo, teclado iOS,
-Reduce Motion nativo, Dynamic Island, cámara/barras y pliegue/transición Duo BLOCKED.
-No hay promesa de Duo optimizado ni adaptación especial inventada.
+iOS59912d8:10rondas393,538s; CPUXCTestmedia2,739s/ronda; footprintabsoluto45,57→47,24MB,
+pico58,68MB. Ciclos/instrucciones0 delsimulador no son eficienciaPASS. RSS host
+app+5WebContent baja de mediana1,80→1,43GiB; páginas compartidas, noRAMfísica.
+Android mismafuente:PSS atribuido app+renderer mediana240689→243715KiB (+2,955MiB),
+pendiente−311,9KiB/ronda;CPUreposofinal2,22%,picos≈92% transitorios no ocultos.
+[Detalles ypresupuestos](NATIVE_LAB.md), [evidencia](evidence/strategic/).
+No extrapolar a bibliotecas grandes, teléfonos antiguos, batería ni Instruments.
 
-## Privacidad, monetización y localización
+## Privacidad y comercio
 
-[Informe específico](PRIVACY_AND_MONETIZATION.md) y
-[etiquetas propuestas](../appstore/app-privacy.md). Controller/contacto confirmados
-por el usuario; política completa ES/EN preparada localmente. Fotografías/decisiones
-locales se distinguen de Ads/UMP, IDFA, StoreKit, geocodificación y soporte.
-Hay detección de caras local sin identificación. Compartir explícito está explicado.
-SDK externo sí declara recogida: no marcar Data Not Collected.
+Fotos/vídeos ydecisiones se procesan/guardan localmente. Eso no significa que la app
+no recopile datos: GMA/UMP pueden recopilar ID,datos publicitarios,interacciones y
+rendimiento; geocodificación puede enviar coordenadas redondeadas al servicio nativo.
+Apple coarse yPlay precise se clasifican según definiciones distintas. No anunciar
+"todo offline" o "sin recopilación". La política publicada debe coincidir.
 
-**FAIL:** dominios de rastreo pendientes. **BLOCKED:** agregado, firmas, tráfico,
-consentimiento regional y publicación autorizada del texto actualizado. La regla
-[TN3182](https://developer.apple.com/documentation/technotes/tn3182-adding-privacy-tracking-keys-to-your-privacy-manifest)
-no se considera cumplida con array vacío. Datos comerciales/DSA/territorios y
-obligaciones legales del titular continúan pendientes.
+Monetización actual mantenida por decisión del propietario. Catálogo/precios deben
+proceder de StoreKit/Play; no hay productos o precios inventados. Compras/test ads no
+acreditan comercio funcional. Android necesita AdMobAndroid IDs yclave pública Play;
+las muestras yAABsin firma no son envío. No se elige unilateralmente versión gratuita.
 
-Se conserva monetización por elección expresa: Ads, año no autorrenovable,
-vitalicio y café consumible. No se inventaron precios/IDs ni activaron productos
-en ASC. PASS código y contratos UI; sandbox/restore/expiry/refund/catálogo comercial
-BLOCKED. No se seleccionó unilateralmente lanzar gratis sin monetización.
+## Procedimiento y siguiente cierre
 
-UI centralizada en los siete idiomas existentes con tests, errores nativos completados;
-ES/EN probados en flujos accesibles. Otros idiomas/RTL/prompts del sistema conservan
-trabajo, pero no tienen aceptación lingüística/nativa completa. No se anuncia un
-idioma por la mera existencia de un archivo de traducción.
+Seguir [checklist operativo](APP_STORE_SUBMISSION_CHECKLIST.md),
+[matriz](COMPATIBILITY.md), [laboratorio](NATIVE_LAB.md),
+[gate nativo](NATIVE_GATE.md), [TestFlight](TESTFLIGHT.md) y
+[Play](../playstore/PURCHASE_VERIFICATION.md). El [roadmap](../ROADMAP.md) es el registro vivo.
 
-## Recursos y aceptación de salida
+Primero implementar y validar R61 con pruebas de transacción abortada/errores/cierre forzado;
+terminar gate iOS estándar yDuo, LivePhoto yfixtures destructivas. Después cerrar
+privacidad con dominios aprobados y evidencia restante, SDKs/archivo ytráfico denegado/revocado.
+Repetir todos los gates del SHA final. Solo entonces preparar firma/exportación ysolicitar
+por separado autorización para subir a TestFlight/Playinterno.
 
-[Ficha ES/EN con límites](storefront/metadata.json),
-[notas de revisión/permisos](storefront/REVIEW_NOTES.md),
-[inventario/procedimiento de capturas](storefront/SCREENSHOTS.md), icono aprobado,
-[gate Mac/CI/archivo](NATIVE_GATE.md), ExportOptions sin secretos y plantilla QA.
-Capturas nativas de la RC no disponibles; no se fabricaron.
+Intervención humana: aprobación del diario (dominios aprobados); datos legales comerciales/DSA;
+cuentas/contratos/productos/precios; IDsAndroid/clave pública Play; versión/buildunused;
+credenciales enSecretsoKeychain (nunca chat); publicación de políticas;QAfixturefísica,
+iCloud/biblioteca grande/compras/accesibilidad; autorización expresa de cada envío.
 
-| Criterio del usuario | Estado final |
-| --- | --- |
-| Sin P0 conocidos | BLOCKED aceptación nativa adversa; ningún P0 abierto reproducido en los casos JS cubiertos |
-| Sin P1 de distribución | **FAIL** por dominios; otros gates BLOCKED |
-| Pruebas/TS/web/protegidos | PASS en el alcance ejecutado |
-| Configuración nativa coherente | BLOCKED compilación actual; estático/sync PASS como evidencia parcial |
-| Permisos/destrucción validados | BLOCKED nativo; contratos JS PASS como evidencia parcial |
-| Privacidad consistente/completa | FAIL dominios; agregado/tráfico/web/legal además pendientes |
-| Localización mínima funcional | BLOCKED prompts/nativo; ES/EN web y cobertura PASS |
-| Accesibilidad básica | BLOCKED aceptación iOS; DOM/teclado/targets PASS, contraste completo NOT TESTED |
-| Metadatos preparados | PASS borradores ES/EN y límites; campos de cuenta/edad BLOCKED |
-| Recursos distribución preparados | BLOCKED screenshots/asset catalog nativos; icono fuente PASS |
-| Monetización consistente | BLOCKED funcionamiento comercial; fuente/UX PASS, decisión conservada |
-| Procedimiento build/firma | PASS preparado/syntax; no acredita su ejecución Apple |
-| Nativo/distribución verificados | BLOCKED; no listo para enviar |
-
-## Acciones humanas y siguiente paso
-
-1. Revisar commits locales y autorizar cuando corresponda integración/push/CI
-   estándar público, o aportar Mac con Xcode27.1 estable. No enviar secretos.
-2. Ejecutar gate unsigned y QA sintética en Apple; medir en hardware y resolver
-   dominios con proveedor/tráfico. Mantener iOS17 hasta tener esa evidencia.
-3. Titular: cuenta/equipo, versión/build únicos, productos/precios/contratos,
-   consentimiento/AdMob, DSA/contacto/territorios y adopción de política. Autorizar
-   publicación de políticas y obtener capturas reales antes del envío.
-4. Solo con puertas cerradas y autorización: archivo firmado/IPA, revisión de
-   hash/configuración y subida a TestFlight; pruebas físicas; después App Review.
-
-Instrucciones exactas y orden: [APP_STORE_SUBMISSION_CHECKLIST](APP_STORE_SUBMISSION_CHECKLIST.md).
-Ni un build web, ni documentación, ni un workflow preparado sustituyen esas puertas.
+Serie662e67d: diez ciclos funcionales PASS314s ypostauditPhotoKit10ausentes/unknown0.
+El presupuesto de esa serie esBLOCKED por contadorCPU dePIDreciénnacido en ronda7;
+no hereda el PASS de59912d8. Colector corregido pendiente de ejecución.

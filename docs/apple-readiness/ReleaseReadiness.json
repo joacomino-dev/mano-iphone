@@ -1,0 +1,70 @@
+{
+  "updated": "2026-11-08",
+  "sourceCheckpoint": "d362af4",
+  "releaseState": "FAIL",
+  "publishAuthorized": false,
+  "bundle": "work.joaquin.mano",
+  "ios": {
+    "marketingVersion": "0.9.9",
+    "build": 43,
+    "minimum": "17.0",
+    "distribution": "BLOCKED"
+  },
+  "android": {
+    "versionName": "0.9.9.1",
+    "versionCode": 3,
+    "distribution": "BLOCKED"
+  },
+  "gates": {
+    "protected28": "PASS",
+    "node130": "PASS",
+    "typescript": "PASS",
+    "webBuild": "PASS",
+    "nativeWebBuild": "PASS",
+    "nativeContracts4": "PASS",
+    "releaseMetadata8": "PASS",
+    "playMetadata7": "PASS",
+    "nativeInfrastructure25": "PASS",
+    "trackingDeclaration5": "PASS",
+    "strictPrivacyDeclaration": "PASS",
+    "vendorSourceSignatures": "PASS",
+    "nativeAlbumStandard": "PASS",
+    "nativeFullSuite": "FAIL",
+    "nativeLiveBehavior": "FAIL",
+    "nativePersistence": "FAIL",
+    "nativeAdHostsBeforeDeclaration": "PASS",
+    "nativeAdHostsAfterDeclaration": "PASS",
+    "androidScreenshots28": "PASS",
+    "iphoneScreenshots28": "PASS",
+    "physicalDevices": "BLOCKED",
+    "signedArchive": "BLOCKED",
+    "testFlight": "BLOCKED",
+    "playInternal": "BLOCKED"
+  },
+  "blockers": [
+    "R61 durable local journal approved; implementation and native recovery gates pending",
+    "Live actual playback and complete adversarial native Photos tests",
+    "Physical TestFlight ATT enforcement and aggregate final archive privacy report/domain scope",
+    "Native font/RTL ad card and fullscreen validation",
+    "Claude visual acceptance of actual native captures",
+    "Owner accounts/contracts/products/real Android IDs and license verification key",
+    "Version/build and private signing material",
+    "Public privacy policy deployment authorization and verification",
+    "Physical-device/iCloud/Instruments/accessibility/purchase QA",
+    "Separate authorization for each store upload/submission"
+  ],
+  "evidence": {
+    "albumNativeRun": 42514969280,
+    "photokitAuditRun": 42514969280,
+    "androidPersistenceRun": 42513754519,
+    "adHostRun": 42514971530,
+    "vendorSignaturesRun": 42516183457,
+    "signingDryRun": 42518375329,
+    "androidScreensRun": 42516038859,
+    "adHostAfterDeclarationRun": 42516799297,
+    "iphoneScreensRun": 42516036408,
+    "livePixelsRun": 42519482281,
+    "androidFavoriteDiagnosticsRun": 42519758181
+  },
+  "scopeNote": "Preparation and scoped PASS do not establish store readiness. Current known P0 remains FAIL."
+}

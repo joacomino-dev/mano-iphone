@@ -23,13 +23,16 @@ una puerta nativa, comercial o de distribución.
 **Estados:** Hecho · En curso · Pendiente · Bloqueado (falta herramienta, acceso o decisión) · FAIL
 (comprobado y fallando). **Quién:** U = usuario · CX = Codex · CL = Claude · C = cualquiera de los dos.
 
-## Dónde estamos (2026-11-08, misión estratégica CW-CX-026/031)
+## Dónde estamos (2026-11-08, CW-CX-050)
 
-- Fuente canónica main en Developer/CocoWash-android; checkpoints enviados por push normal. Release arm64 Xcode27.1 PASS en df983ad y c03b042; Android y desarrollo c03b042 PASS. No subida a tiendas/web.
-- R-01 continúa FAIL en nativo:42489561340 no recibe el texto; onInput no lo resolvió. Nuevo experimento solo XCTest(app.typeText) run42491854605. R-02 sigue FAIL estricto.
-- PhotoKit probe42489613346 PASS:64 importaciones,3 Live reconocidas/3 recursos emparejados en18Pro/iOS27.2. Aún no demuestra playback CocoWash. Laboratorio de diez ciclos nativos en preparación.
-- Android42491859489 FAIL antes de ciclos: duración0 del screenrecord de emulador estático; se sustituye el fallback por vídeo animado ffmpeg con ffprobe independiente, sin relajar el assert del plugin. R-44 ya PASS en42486725664.
-- No apta para envío. R-00/R-07/R-01/R-02 y gates de propietario siguen abiertos. El historial siguiente no sustituye resultados actuales.
+- Fuente única: `main`, `C:/Users/Joaco/Developer/CocoWash-android`; checkpoint d362af4 enviado.
+- R-61 P0 reproducido y corrección de diario local **aprobada**. Siguiente tarea: implementarla y probarla.
+- R-01 tiene un PASS nativo anterior; el gate completo 42518372819 falla otra vez en álbum y otros casos. No hay aceptación global.
+- R-07 reproduce movimiento real, pero no restaura píxeles idénticos en pausa: 42519482281 FAIL.
+- R-63 Android: 42519758181 vuelve a fallar al esperar confirmación final de favoritas. Diagnósticos disponibles, causa pendiente.
+- Capturas nativas: 28 por plataforma, siete idiomas. Claude debe aceptar Live, anuncio y ausencia de selección/lupa. No se ha generado un IPA/APK final aceptado.
+- Dos hosts aprobados en manifiesto; declaración estática y firmas del proveedor PASS. Privacy Report del archivo y bloqueo ATT físico pendientes; no repetir sondas de bloqueo en simulador.
+- Medición e infraestructura congeladas. No apta para enviar; no se ha publicado ni cambiado cuentas.
 
 ### Base integrada anterior (CW-CL-060)
 
@@ -279,3 +282,17 @@ Autorizados push normal a main y workflows estándar públicos gratuitos, relanz
 | R-63 | P1 validación nativa | INVESTIGATING | Android42517332458/5d20e6a:9rondas verificadas;en10 no aparece nuevaconfirmaciónfavorite. No se sabe si ya terminó/permiso previo/colisión ActivityResult/fallo de app. Diagnóstico DEBUG de resultado/cola/galería preparado; no relajar criterio por suposición. |
 
 - 2026-11-08 · CW-CX-049: R62nativo17checksPASScompilado; fullAndroidFAIL R63últimafavorite,no10PASS. ATTdosdominiosPASSfuncionalpero bloqueoNO VERIFICADO(adsTESTtambiénrecibidos); comprobar.app empaquetada yhardware. Capturas56totales reales completas,QAvisualpendiente.
+
+## Decisiones pendientes del usuario
+
+Preguntar juntas al cierre del bloque; continuar el trabajo técnico independiente.
+
+- Estado de cuentas Apple Developer/Play Console, acuerdos y condición DSA.
+- Versión/build disponibles, productos/precios comerciales, IDs AdMob Android y clave pública de licencias Play (configuración segura, sin secretos por chat).
+- Autorización separada para publicar las políticas ES/EN y para cada subida a las tiendas.
+- Dispositivos y testers disponibles para iCloud, ATT físico, compras, accesibilidad y rendimiento.
+- Recursos gráficos pendientes R-20, si siguen abiertos tras la revisión visual de Claude.
+
+Ya resuelto: responsable legal/contacto, mantener monetización, dos hosts de tracking y diario duradero R-61. No volver a pedirlos.
+
+- 2026-11-08 · CW-CX-050: consolidados borradores y autorizaciones. [Live RGBA FAIL](https://github.com/joacomino-dev/mano-iphone/actions/runs/42519482281); R-61 pasa a implementación, no a PASS.

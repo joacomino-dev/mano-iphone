@@ -1,3 +1,21 @@
+# Incidencias vigentes — actualización 2026-11-08
+
+| Problema | Prioridad | Estado comprobado |
+| --- | --- | --- |
+| R61: decisión perdida tras force-stop Android | P0 | FAIL reproducido antes de React; diario duradero aprobado; implementación pendiente |
+| R01: edición de álbum bloqueada por WKPreferences | P1 | PASS iPhone18Pro/27.0 sin observer42514969280; Duo/mínimo17 pendientes |
+| R02: privacidad de distribución | P1 | Dos hosts aprobados incorporados, declaraciónstrictPASS; tráfico nuevo/archivo/exhaustividad/web pendientes |
+| R07: Live Photo completa | P1 | Movimiento nativo PASS; pausa difiere en RGBA, run 42519482281 FAIL |
+| R60: CI devolvía cero sin XCTest | P1 | Corregido; ejecución ypostcondiciones independientes verificadas en matriz07d09a9 |
+| R62: compras Android desconocidas=>adFreefalse | P1 | Compilación y 17 checks E2E PASS en 42517332458; sandbox BLOCKED por cuentas |
+| Rendimiento662e67d | Gate |11muestras peroCPUBLOCKED porPIDnuevo en ronda7; no aceptar comoPASS. Nuevo muestreo acotado25testsPASS |
+
+[Roadmap vivo](../ROADMAP.md), [RC actual](RELEASE_CANDIDATE.md) y
+[evidencias](evidence/strategic/) contienen los SHA ylos resultados completos.
+Las tablas siguientes pertenecen a auditorías anteriores, no al estado vigente.
+
+---
+
 # Registro priorizado de problemas y correcciones
 
 **RC:** [registro detallado y checkpoints](RELEASE_CANDIDATE.md), [evidencia](evidence/rc/README.md). Corregidos P1 favorita obsoleta/catálogo vacío (645564f), etiquetas/manifiesto (cb927ad), canal tienda/versionado tras sync (55c6951); P2 errores nativos traducidos (9824907). **P1 abierto FAIL:** tracking=true sin dominios (TN3182), gate estricto bloquea archivo (880a9a0). Validación nativa adversa/firma/comercio siguen BLOCKED. No hay P0 reproducidos abiertos en contratos JS; no se certifica PhotoKit nativo. APL-010 traducido, ejecución Apple pendiente. Las tablas siguientes son históricas.

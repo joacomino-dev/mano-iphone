@@ -1,6 +1,16 @@
 # Matriz técnica inicial de compatibilidad
 
-**Actualización2026-11-08:** mínimo17 conservado. Run42438304068 identificado directamente: simulador iPhone Duo/iOS27.1, fuente83ff731, onboarding/acceso completo/sesión PASS, álbum FAIL. Postura/display activo no registrados; no acredita cerrado/abierto/transiciones ni los cambios actuales ece507b. Ningún dispositivo físico probado.
+**Evidencia actual2026-11-08:** iPhone18Pro/iOS27.0, run42514969280,
+fuente662e67d: Releasearm64 sin firma, permiso completo, álbum exacto/relectura,
+metadata ygestos de anclaje/pinch PASS; diez ciclos XCTest PASS314s ypostaudit
+PhotoKit10ausentes/unknown0 PASS. Live UI FAIL al localizar toggle; test corregido
+pendiente. Métricas host BLOCKED por contador de proceso recién nacido; no se afirma
+presupuestoPASS de esa serie. 59912d8 sí conserva series previas conpresupuestoPASS.
+Ningún dispositivo físico probado. iOS17/18/26 siguen NOT TESTED nativos.
+La lista oficial iOS27 se reconsultó el8nov: SE2 yposteriores/11 yposteriores,
+18Pro/Max yDuo confirmados por Apple; eso no prueba la ejecución de CocoWash.
+
+**Auditoría previa:** mínimo17 conservado. Run42438304068 identificado directamente: simulador iPhone Duo/iOS27.1, fuente83ff731, onboarding/acceso completo/sesión PASS, álbum FAIL. Postura/display activo no registrados; no acredita cerrado/abierto/transiciones ni los cambios actuales ece507b. Ningún dispositivo físico probado.
 
 **RC histórica:** mínimo17 conservado. Ninguna nueva fila física/simulador Apple probada en aquella intervención. PASS ES/EN en Edge375×667,390×844,440×956 con teclado y texto raíz200%; no acredita Dynamic Type/VoiceOver/Island. Se reconsultaron listas oficiales iOS27 y fichas18 Pro/Max/Duo. Continúan candidatos, sin promesa de Duo optimizado ni cambios de orientación/API basados en suposiciones. [Resultados](RELEASE_CANDIDATE.md).
 
@@ -108,3 +118,18 @@ No se encontró enlace a Media Intelligence en el proyecto actual inspeccionado.
 hardware se acredita en esta fase. Windows no dispone de esos SDKs. Las listas
 oficiales 26/27 y las fichas 18 Pro/Max/Duo se reconsultaron; no se añadió una
 variante de iPhone que Apple no documentara. [Detalle](PHASE2.md).
+
+## Capturas ejecutadas y requisitos actuales
+
+AndroidAPI35/x86_64, fuente813114c, run42516038859:28capturas reales RGB24,
+1080×1920, ES/EN/FR/DE/IT/AR/JA, cuatro pantallas por idioma. Frontendtienda
+verificado porhash, nativoDebug/testads. Esto prueba renderizado en el emulador,
+no dispositivos físicos ni iPhone. Arabicmain yJapaneseReview inspeccionadas;
+revisiónvisual de todas las imágenes aúnpendiente. Primerintentoincompleto por
+recarga se conserva comoFAIL; no se da por corregido un bug sin causa demostrada.
+
+Apple ahora exige al menos una captura de DynamicIsland (mediumdisplay) ynoalpha.
+Duo tiene dimensiones propias yrequisito anunciado desdeabril2027 paraSDK27.1+.
+No subir capturas Duo que prometan optimización sin auditar posturas/transiciones.
+[Especificaciones oficiales](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/).
+[Modelos iOS27](https://www.apple.com/os/ios/).

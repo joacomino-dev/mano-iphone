@@ -1,2 +1,4 @@
 /work/
 outputs/
+
+/scripts/**/__pycache__/
