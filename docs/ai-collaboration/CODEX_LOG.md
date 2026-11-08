@@ -346,3 +346,13 @@ Verificaciones:todos los resultados CW-CX-024; sync Windows sin cambios sustanti
 Próximo:autorización de push/CI para Swift nuevo/álbum/capturas; luego fixtures físicos/Instruments, proveedor/domains y cuenta/firma/sandbox/TestFlight. Reservas liberadas para Claude integrar/cargar/verificar, no redesarrollar.
 
 Complemento CW-CX-025: quinta regresión Live (hold→anclar tras carga) PASS con código existente; hipótesis no reproducida, ninguna corrección especulativa. Total final69 navegador, resumen cx025.
+
+### CW-CX-026 — Misión estratégica, compilación nativa y laboratorio
+Fecha:2026-11-08, America/Bogota.
+Agente:Codex.
+Estado:en curso, nueva autorización explícita de push main/CI estándar pública.
+Base:df983ad limpio,5 commits enviados por push normal. Sin cuentas/certificados/tiendas/web/AdMob modificados.
+Evidencia:Release42484614546 PASS compilando PhotoLibrary.swift arm64 SDK27.1 y validando canal tienda. Gate42484697595 intento1 FAIL descarga Capacitor/Cordova8.6.0, antes de compilar; relanzado una vez por fallo demostrado de entorno. Developer/Android en curso.
+Cambios:criterios R-55…59 y paquete del usuario en roadmap; R-44 ya autorizado. Generador de pareja Live sintética y workflow manual de prueba, sin tocar app/dependencias; compilar en CI antes de afirmar que genera recursos válidos. Importación PhotoKit aún NO probada.
+Validaciones previas:130 Node,TypeScript,28 protegidos repetidos PASS. Nuevo Swift de fixtures NOT TESTED hasta su run.
+Pendientes:gate completo/álbum, importar Live con PhotoKit,QA destructiva/mediciones nativas,dominios y aprobación del usuario,canales/firma/material7 idiomas. No se espera al usuario para trabajo independiente.

@@ -94,7 +94,7 @@ una puerta nativa, comercial o de distribución.
 | R-41 | Si corresponde por tipo/fecha de cuenta personal: mínimo12 testers inscritos continuamente14 días en prueba cerrada y solicitar acceso a producción | U | Pendiente | [Regla oficial Google](https://support.google.com/googleplay/android-developer/answer/14151465): cuentas personales posteriores al13-11-2023. Confirmar requisito de la cuenta real; no es regla universal de15–20 |
 | R-42 | Keystore de desarrollo en los secretos de GitHub | U | Pendiente | Clave en `C:\Users\Joaco\Developer\cocowash-keys` (LEEME) |
 | R-43 | IDs reales de AdMob Android y canal de tienda Android en `main` (ya no hay rama `release`) | U (IDs) + C | Pendiente | `PROMPT_WEB_ANDROID.md`; no usar los IDs iOS |
-| R-44 | Con `main` en canal de tienda, el APK de desarrollo oculta «Modo developer»: decidir si su CI cambia su copia a desarrollo como la IPA | U decide, C implementa | Pendiente | CW-CL-060 |
+| R-44 | Con `main` en canal de tienda, el APK de desarrollo oculta «Modo developer»: decidir si su CI cambia su copia a desarrollo como la IPA | CX | En curso | Misión estratégica2026-11-08 autoriza preparar CI developer como iOS; sin cambiar main tienda |
 | R-45 | P3 posterior: detector de texto/embedder adicional Android | CX si se autoriza | Pendiente, fuera de primera publicación | Texto no disponible se mantiene oculto; parecido dHash existente no equivale a embedder. No incorporar modelos nuevos ni anunciar funciones incompletas para cerrar la primera versión |
 | R-46 | Verificar firma de compras con la clave de licencias | C + U | Pendiente | — |
 | R-47 | Carta de anuncio con Fredoka y espejo RTL; vídeo a pantalla completa | C | Pendiente | — |
@@ -142,7 +142,7 @@ Se conserva refresco de permisos/biblioteca y se reutiliza cobertura de fotograf
 sin editar tras borrados; añadidos/ediciones y revocación se prueban por separado.
 Con índices válidos, sizes/classify ya conservaban supervivientes; la recurrencia
 de todos esos IDs provenía del mock vacío. [Resultados y límites](apple-readiness/R00_CYCLES.md).
-R-00 no se cierra sin Instruments/hardware y estudio de memoria nativa/SDK.
+Misión estratégica2026-11-08: aceptación técnica exige10 ciclos nativos con métricas app+WebContent/CPU en simulador (XCTest/Instruments), umbrales y baseline; protocolo físico queda para el usuario. No basta benchmark JS; el resultado no acredita el iPhone físico.
 
 ## Detalle R-07
 
@@ -182,3 +182,36 @@ Una línea por intervención: fecha · agente · entrada · puntos cerrados/abie
 - 2026-11-08 · Codex CW-CX-025: cierre trazable y relevo para Claude; estado/matriz/checklist actualizados a fuente local ece507b, se separa evidencia histórica Duo de código nuevo sin compilar. Consulta de políticas públicas403 aquí, sin concluir caída global. Ningún push ni distribución.
 
 - 2026-11-08 · Codex CW-CX-025 (QA final): añadida transición hold→anclar con vídeo cargado; PASS sin cambio adicional de aplicación.69 casos de navegador en total; evidencia cx025.
+
+## Misión estratégica vigente (2026-11-08, CW-CX-026)
+
+Autorizados push normal a main y workflows estándar públicos gratuitos, relanzamientos y laboratorio sintético. No autorizados tiendas/TestFlight/Play/web, cuentas/certificados/claves/precios/productos/AdMob, runners de pago ni cambios de identidad/monetización/iOS17/hash28. Los secretos solo los añade el propietario en GitHub Secrets. La propuesta de dominios de R-02 debe aprobarla el usuario antes de editar el manifiesto.
+
+| ID | Criterio adicional | Responsable | Estado/evidencia |
+| --- | --- | --- | --- |
+| R-55 | Laboratorio iOS: Live Photo emparejada real y matriz destructiva de fixtures, xcresult/capturas reales,10 ciclos con XCTMemoryMetric/XCTCPUMetric y app+WebContent | CX | NOT TESTED; ampliar gate sin falsear permisos |
+| R-56 | Tráfico de anuncios de prueba en simulador, solo hosts; ATT/UMP por estado; Privacy Report y propuesta fundamentada de dominios | CX investiga, U aprueba | NOT TESTED; no inferir tracking de cualquier endpoint |
+| R-57 | Firma iOS/Android preparada y dry-run ejecutado sin secretos; export local sin upload | CX + U secretos | NOT TESTED; la firma real permanece BLOCKED hasta secretos/autorización |
+| R-58 | Fichas, revisión, edad, compras y capturas reales con fixtures en7 idiomas por tienda | CX + CL visual | NOT TESTED cobertura completa; revisar inventario actual |
+| R-59 | E2E Android ampliado: favoritas/undo, Atrás, destrucción con fixtures y10 ciclos con medidas nativas | CX | NOT TESTED ampliación; CI base en curso |
+
+### Evidencia del inicio
+
+- main df983ad enviada por push normal. Gate42484697595 intento1 FAIL de entorno: descarga Capacitor/Cordova8.6.0 "Could not connect to the server", antes de compilar. Relanzado una vez, no se cambia app por ese fallo.
+- Release42484614546 PASS: Xcode27.1/SDK27.1 compila PhotoLibrary.swift arm64 y valida canal tienda. Smoke RC sigue pendiente; una compilación no cierra R-01/R-07.
+- Línea base Windows repetida:130 Node,TypeScript y28 hashes PASS. iOSdev42484614885 yAndroid42484614502 en curso; APK/AAB compilan, E2E pendiente.
+
+## Paquete del usuario — pasos en orden
+
+1. Confirmar Apple Developer activo y crear/identificar CocoWash en App Store Connect con work.joaquin.mano. Desbloquea equipo/firma y ficha; no enviar contraseñas.
+2. Completar acuerdos de apps de pago, banco/impuestos y condición de comerciante DSA con datos veraces. Desbloquea distribución europea y compras.
+3. Configurar los productos existentes y precios en ASC/Play, sin inventar IDs. Confirmar versión/build libres en ambas consolas antes de numerar. Desbloquea sandbox y archivo final.
+4. Completar perfil de pagos AdMob y proporcionar IDs públicos de app/unidad Android (no credenciales); mantener estrategia aprobada. Desbloquea canal comercial real.
+5. Resolver con el proveedor la evidencia de dominios de tracking; aprobar lista e impacto cuando Codex entregue la propuesta. Desbloquea gate estricto Apple.
+6. Disponer de cuenta Play Console verificada y teléfono Android11+; confirmar tipo/fecha de cuenta y requisito real de testers. Organizar12 testers/14 días continuos cuando aplique; solicitar acceso a producción.
+7. Añadir secretos de firma a GitHub Secrets siguiendo el procedimiento revisado; jamás por chat ni repo. Apple: certificado/perfil y contraseña con permisos mínimos; Play: clave de subida y contraseñas, clave pública de licencias. Solo tras autorización de firma; todavía no upload.
+8. Autorizar publicación de políticas web corregidas y comprobar URLs públicas tras desplegar. No equivale a autorizar publicación de la app.
+9. Ejecutar QA física iPhone/Android con biblioteca sintética y plantilla device-results.template.csv: permisos, errores/cancelación/borrado, iCloud,10 ciclos, Live, compras/restore, accesibilidad e idiomas. Nunca borrar medios personales para QA.
+10. Tras cero P0/P1 y gates del SHA exacto, autorizar por separado upload a TestFlight/Play interno. Probar el binario distribuido; después autorizar App Review/producción.
+
+- 2026-11-08 · Codex CW-CX-026: misión estratégica registrada, autorización push/CI aplicada, criterios R-55…R-59 y paquete del usuario añadidos; R-44 pasa a implementación autorizada. Sin publicaciones ni cuentas modificadas.

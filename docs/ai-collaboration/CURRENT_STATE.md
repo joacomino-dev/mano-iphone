@@ -2,6 +2,11 @@
 
 Actualizado: 2026-11-08, America/Bogota. Codex trabaja solo por indicación del usuario.
 
+## Codex CW-CX-026 — misión estratégica en curso
+
+2026-11-08. Usuario autoriza push normal main y CI estándar pública gratuita; no tiendas/web/cuentas/certificados/AdMob ni secretos por chat. Base df983ad limpia ya enviada a main. Reserva de pruebas/gates nativos iOS/Android, privacidad con evidencia (cambio manifest requiere aprobación de dominios), firma dry-run y materiales7 idiomas. Sin modelos nuevos/arte/monetización/min17/hash28.
+Gate RC42484697595 sobre df983ad falló, diagnóstico en curso. Release42484614546 PASS; iOSdev42484614885 yAndroid42484614502 en curso. Nueva definición de aceptación y paquete del usuario en ROADMAP.
+
 ## Codex CW-CX-021–025 — entrega local cerrada, puertas nativas abiertas
 
 Actualizado2026-11-08. Fuente canónica única main en C:/Users/Joaco/Developer/CocoWash-android.
