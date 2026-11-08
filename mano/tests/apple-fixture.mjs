@@ -1,6 +1,6 @@
 // Browser-only contract fixture. No connection to PhotoKit or a personal library.
 // This is not native-device evidence. The app and Capacitor proxy run unchanged.
-export function installAppleFixture({ onboarded = true, status = 'authorized', language = 'es', video = false, resetStorage = true, nativeMedia = false, cloudOffline = false } = {}) {
+export function installAppleFixture({ onboarded = true, status = 'authorized', language = 'es', video = false, resetStorage = true, nativeMedia = false, cloudOffline = false, measured = false } = {}) {
   if(resetStorage)localStorage.clear();
   localStorage.setItem('cocowash-language-v1', language);
   if (onboarded) localStorage.setItem('cocowash-onboarding-v2', 'done');
@@ -43,13 +43,17 @@ export function installAppleFixture({ onboarded = true, status = 'authorized', l
           if(fixture.holdAssets) return new Promise(resolve => (fixture.pendingAssets ||= []).push(() => resolve({...snapshot,status:fixture.status})));
           return snapshot;
         }
-        case 'sizes': return { sizes: {} };
+        case 'sizes': return { sizes: measured ? Object.fromEntries(args.ids.map(id=>[id,1000000])) : {} };
         case 'thumbnail': {
           if(fixture.thumbnailMode==='offline')throw Object.assign(new Error(args.network?'Fixture: network unavailable':'Fixture: asset in iCloud'),{code:args.network?'NETWORK_ERROR':'IN_CLOUD'});
           return {path:'/assets/demo/postcard-1.svg',cloud:false};
         }
-        case 'classify': return { results: {}, skipped: 0, cancelled: false };
-        case 'analyze': return { groups: [], skipped: 0, cancelled: false };
+        case 'classify': return { results: measured ? Object.fromEntries(args.ids.map(id=>[id,{text:0,lines:0,faces:0,sharp:100,luma:.5}])) : {}, skipped: 0, cancelled: false };
+        case 'analyze': {
+          const result=structuredClone(fixture.analysisResult??{groups:[],skipped:0,cancelled:false});
+          if(fixture.holdAnalysis)return new Promise(resolve=>(fixture.pendingAnalyses ||= []).push(()=>resolve(result)));
+          return result;
+        }
         case 'albums': return { albums: [{id:'fixture-album',title:'Fixture'}] };
         case 'favorite': {
           if(fixture.favoriteError)throw new Error('Fixture: Photos favorite failed');

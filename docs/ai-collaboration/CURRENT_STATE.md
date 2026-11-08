@@ -2,6 +2,15 @@
 
 Actualizado: 2026-11-07, America/Bogota. Codex trabaja solo por indicación del usuario.
 
+## Codex CW-CX-021 — en curso sobre main f5c3546
+
+Base limpia y actualizada por fast-forward; 124 Node, TypeScript, runtime28,
+6 Release y4 contratos estáticos repetidos. Reserva: R-00 (ManoApp/indexer/índices,
+pruebas de ciclos, cachés/cancelación nativas si la evidencia lo exige), después
+R-07/R-01/R-02/R-03/R-04 según alcance del usuario. Roadmap revisado primero.
+Sin otras ramas, cambios de identidad/monetización/versiones ni distribución.
+Windows sin Xcode/Swift/Instruments; no se atribuirán métricas web al iPhone.
+
 ## Rama única `main` (Claude, CW-CL-060) — vigente
 
 **Qué falta y avance: [docs/ROADMAP.md](../ROADMAP.md)** (único, compartido). **Prioridad: R-00 (P0, el iPhone se vuelve lento tras varios ciclos de borrar y terminar) y R-07 (Live Photo)**, reportados por el usuario. Ciclo: leer la última

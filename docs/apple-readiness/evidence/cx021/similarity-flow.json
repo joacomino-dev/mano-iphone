@@ -1,0 +1,25 @@
+{
+  "boundary": "Edge + synthetic bridge; not iPhone, PhotoKit, Vision or native memory",
+  "results": [
+    {
+      "name": "unchanged refresh retained; additions and edits trigger a new pass",
+      "status": "PASS"
+    },
+    {
+      "name": "metadata edits outside the legacy fingerprint cannot hydrate an old marker again",
+      "status": "PASS"
+    },
+    {
+      "name": "partial pass is not complete; narrowing alone does not repeat failed media",
+      "status": "PASS"
+    },
+    {
+      "name": "late old analysis cannot overwrite an added photo set",
+      "status": "PASS"
+    },
+    {
+      "name": "revocation invalidates a pending analysis even if its result later succeeds",
+      "status": "PASS"
+    }
+  ]
+}

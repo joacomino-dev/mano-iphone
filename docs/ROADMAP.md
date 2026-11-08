@@ -37,7 +37,7 @@ una puerta nativa, comercial o de distribución.
 
 | ID | Qué | Quién | Estado | Evidencia / siguiente paso |
 |---|---|---|---|---|
-| R-00 | **P0 · El iPhone se vuelve cada vez más lento** tras eliminar unas fotos y terminar la sesión 4–5 veces seguidas (reporte del usuario en su teléfono). Ver [detalle R-00](#detalle-r-00) | CX | **Pendiente (P0)** | Medir en iPhone con Instruments y Web Inspector; corregir la causa; aceptación: 10 ciclos sin crecimiento sostenido de memoria ni de CPU |
+| R-00 | **P0 · El iPhone se vuelve cada vez más lento** tras eliminar unas fotos y terminar la sesión 4–5 veces seguidas (reporte del usuario en su teléfono). Ver [detalle R-00](#detalle-r-00) | CX | **En curso (P0), QA física bloqueada** | CW-CX-021: recurrencia corregida localmente,11→1 búsquedas en10 ciclos y5 regresiones de estado. [Evidencia](apple-readiness/R00_CYCLES.md). No acredita RAM/CPU iPhone |
 | R-07 | **Live Photo**: reproducción en la carta y en la vista anclada. Ver [detalle R-07](#detalle-r-07) | CX (+CL visual) | **Pendiente (P1)** | Especificación confirmada por el usuario |
 
 ## A · Código y pruebas iOS (antes de firmar)
@@ -85,14 +85,15 @@ una puerta nativa, comercial o de distribución.
 | ID | Qué | Quién | Estado | Evidencia / siguiente paso |
 |---|---|---|---|---|
 | R-40 | Teléfono Android 11+ y cuenta de Play Console verificada | U | Pendiente | Bloquea todo Play |
-| R-41 | 15–20 testers para la prueba cerrada (14 días) | U | Pendiente | — |
+| R-41 | Si corresponde por tipo/fecha de cuenta personal: mínimo12 testers inscritos continuamente14 días en prueba cerrada y solicitar acceso a producción | U | Pendiente | [Regla oficial Google](https://support.google.com/googleplay/android-developer/answer/14151465): cuentas personales posteriores al13-11-2023. Confirmar requisito de la cuenta real; no es regla universal de15–20 |
 | R-42 | Keystore de desarrollo en los secretos de GitHub | U | Pendiente | Clave en `C:\Users\Joaco\Developer\cocowash-keys` (LEEME) |
 | R-43 | IDs reales de AdMob Android y canal de tienda Android en `main` (ya no hay rama `release`) | U (IDs) + C | Pendiente | `PROMPT_WEB_ANDROID.md`; no usar los IDs iOS |
 | R-44 | Con `main` en canal de tienda, el APK de desarrollo oculta «Modo developer»: decidir si su CI cambia su copia a desarrollo como la IPA | U decide, C implementa | Pendiente | CW-CL-060 |
-| R-45 | Detector de texto y embedder LiteRT («Texto y documentos», «parecidas») | C | Pendiente | P1 del roadmap de Play |
+| R-45 | P3 posterior: detector de texto/embedder adicional Android | CX si se autoriza | Pendiente, fuera de primera publicación | Texto no disponible se mantiene oculto; parecido dHash existente no equivale a embedder. No incorporar modelos nuevos ni anunciar funciones incompletas para cerrar la primera versión |
 | R-46 | Verificar firma de compras con la clave de licencias | C + U | Pendiente | — |
 | R-47 | Carta de anuncio con Fredoka y espejo RTL; vídeo a pantalla completa | C | Pendiente | — |
 | R-48 | Prueba interna, cerrada (14 días) y solicitud de producción | U + C | Bloqueado | Tras R-40…R-43 |
+| R-49 | Firma de producción Android: Play App Signing, clave de subida/recuperación y AAB del canal real; contratos de pagos/productos Play y Data safety contrastado con SDK/tráfico | U configura + CX verifica | Pendiente | La clave de desarrollo R-42 y una CI verde no acreditan firma comercial ni productos Google Play funcionales |
 
 ## F · Repositorio y entorno
 
@@ -101,6 +102,8 @@ una puerta nativa, comercial o de distribución.
 | R-50 | Una sola rama `main`; copia de las 21 ramas en `work/backup/mano-iphone-all-branches-2026-11-07.bundle` | CL | Hecho | CW-CL-060 |
 | R-51 | Copias locales antiguas (`CocoWash-b24`, `CocoWash-stage1` con cambios sin confirmar, worktree de Codex, OneDrive) | U decide | Pendiente | No usarlas como base; archivar tras revisar los cambios de `CocoWash-stage1` |
 | R-52 | Workflows heredados (`build-ios.yml`, `build-ios-package.yml`) y avisos de Node 20 en acciones | C | Pendiente | Solo manuales; decidir si se retiran |
+| R-53 | Elegir/verificar disponibilidad efectiva iPhone en iPad, Mac Apple silicon y visionOS; pruebas y accesibilidad para destinos ofrecidos | U decide + CX/CL verifican | Pendiente | Familia iPhone no sustituye opciones de disponibilidad de ASC. No prometer destinos sin QA |
+| R-54 | Gate final por tienda: cero P0/P1 abiertos, recurso/capturas reales, accesibilidad/locales, privacidad/SDK/consentimiento y compras del artefacto exacto | CX técnico + CL visual + U envío | Bloqueado | Separar fuente, simulador, hardware y distribución. R-00 físico, R-01 y R-02 impiden aceptar la RC; scripts preparados no cierran gates |
 
 ## Detalle R-00
 
@@ -128,6 +131,13 @@ fixtures, nunca la personal.
 (app + WebContent) ni CPU en reposo; una actualización de biblioteca tras borrar solo procesa lo que cambió
 (o se difiere y se cancela al empezar otra ronda); prueba automatizada que lo vigile.
 
+**CW-CX-021:** confirmado11→1 búsquedas/4.180→400 IDs en10 ciclos sintéticos.
+Se conserva refresco de permisos/biblioteca y se reutiliza cobertura de fotografías
+sin editar tras borrados; añadidos/ediciones y revocación se prueban por separado.
+Con índices válidos, sizes/classify ya conservaban supervivientes; la recurrencia
+de todos esos IDs provenía del mock vacío. [Resultados y límites](apple-readiness/R00_CYCLES.md).
+R-00 no se cierra sin Instruments/hardware y estudio de memoria nativa/SDK.
+
 ## Detalle R-07
 
 Especificación del usuario (2026-11-07):
@@ -148,6 +158,9 @@ textos con hablantes nativos, 1.0.1 para lo que salga.
 ## Registro de avance
 
 Una línea por intervención: fecha · agente · entrada · puntos cerrados/abiertos.
+
+- 2026-11-07 · Codex · CW-CX-021 (inicio) · Contrastado roadmap con RC/Play: R-41 corregido a12 testers/14 días cuando aplica; R-45 pasa a P3 fuera del primer lanzamiento; añadidos R-49 firma/comercio Play, R-53 destinos Apple y R-54 aceptación del artefacto. R-00 en curso, sin cerrar QA física.
+- 2026-11-07 · Codex · CW-CX-021 · Corregida recurrencia R-00 en JS con cobertura/epochs y regresión10 ciclos;128 Node,5 flujos nuevos y38 regresiones PASS. R-00 físico sigue bloqueado, no se marca Hecho.
 
 - 2026-11-07 · Claude · CW-CL-062 · Añadidos R-00 (P0 lentitud tras varios ciclos, con medición web) y
   R-07 (Live Photo), ambos reportados por el usuario.

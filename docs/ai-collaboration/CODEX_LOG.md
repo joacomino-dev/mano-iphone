@@ -287,3 +287,15 @@ Decisiones relevantes:responsable/contacto y monetización confirmados; iOS17, a
 Validaciones:120 Node+6 Release+4 estáticos+Sites4+52 navegador/runtime;TS/builds/sync Windows PASS. SDKs oficiales inspeccionados; NO Swift/PhotoKit nativo ejecutado.
 Impacto para Claude:preservar commits/configuración RC; no mostrar developer/«Pronto» ni copiar metadatos históricos como finales.
 Pendientes:P1 dominios tracking FAIL; macOS/hardware/Duo, privacidad agregada/tráfico/web, sandbox/comercio/firma/TestFlight BLOCKED.
+
+### CW-CX-021 — Roadmap y recurrencia de análisis entre rondas
+Fecha:2026-11-07, America/Bogota.
+Agente:Codex.
+Tarea:R-00 primero sobre main actualizado f5c3546.
+Estado:corrección local verificada; aceptación física bloqueada.
+Archivos modificados:ManoApp,similarity-state,tests/fixtures/package scripts,roadmap/estado/evidencias.
+Cambios realizados:pasada completa reutilizada tras desapariciones; versiones reales, rechazo de respuestas tardías/revocadas; parcial no se declara completo; reintento explícito conservado. Roadmap corrige testers Play y alcance de modelos, añade firma/comercio Play y destinos/gate final.
+Validaciones:antes11 búsquedas/4.180 IDs; después1/400 en10 ciclos sintéticos;128 Node,5 flujos nuevos,19+9+10 regresiones,TS/runtime28/builds/contratos/Release PASS. [Evidencia](../apple-readiness/R00_CYCLES.md).
+Decisiones relevantes:no cambian borrado/undo/identidad/monetización/versiones; refresco de permisos conservado. No Instruments/Swift ejecutados aquí, sin push.
+Impacto para Claude:preservar cobertura y epochs; el mock vacío no prueba reindexación nativa global.
+Pendientes:R-00 físico y prioridades siguientes; R-02 sigue FAIL.

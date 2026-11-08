@@ -9,6 +9,7 @@ import { decide, undo, restore, eligible, eligibleFrom, orderAssets, readState, 
 import { NO_HAND, playable, lockedHand, dealHand, afterDecision, cycleHand, restoreHand, upcomingFrom, type HandLock } from './sequence';
 import { Library, isNative, demoAssets, demoRound, thumbnailInfo, inCloudError, type Album, type PhotoPermission } from './library';
 import { useLibraryIndex, enrich } from './indexer';
+import { SimilarityCoverage, unchangedPhotos } from './similarity-state';
 import { AssetPreloader } from './preload';
 import { prepareReviewAsset, VideoStore, prewarm, sharpPreview, subscribeSharp, cloudPreviews, resetPreviewPolicy, type PreparedMedia, type VideoState } from './media';
 import { CloudBadge, CloudPlaceholder, useCloud } from './Cloud';
@@ -295,7 +296,11 @@ export function ManoApp() {
   const register=useCallback((id:string,offset:Offset)=>{offsets.current.set(id,offset);return()=>{if(offsets.current.get(id)===offset)offsets.current.delete(id);};},[]);
   const springBack=(ids:readonly string[])=>{for(const id of ids){const o=offsets.current.get(id);if(!o)continue;if(reduced){o.x.set(0);o.y.set(0);}else{animate(o.x,0,CARD_SPRING);animate(o.y,0,CARD_SPRING);}}};
   const resetPeek=()=>{peekX.set(0);peekY.set(0);anchor.set(0);};
-  const analysisStarted=useRef('');
+  const [analysisCoverage]=useState(()=>new SimilarityCoverage());
+  const analysisMarkerRead=useRef(false);
+  const analysisRunning=useRef(false);const analysisEpoch=useRef(0);
+  const latestLibrary=useRef(rawAssets);latestLibrary.current=rawAssets;
+  const latestConnected=useRef(connected);latestConnected.current=connected;
   const [warming,setWarming]=useState(false);
   const warmingNow=useRef(false);
   const deferredGroups=useRef<Map<string,string>|null>(null);
@@ -340,7 +345,7 @@ export function ManoApp() {
   // A mutation invalidates asset snapshots, never the latest permission answer.
   const permissionRevision=useRef(0);
   const invalidateLibrary=useCallback(()=>{initialLibrary.current=null;setLoading(false);return ++libraryRevision.current;},[]);
-  const clearLibraryAccess=useCallback(()=>{cancelWarmup();setConnected(false);setAssets([]);setInspect(null);setPinnedInspect(false);setSelected([]);setSheet(null);},[]);
+  const clearLibraryAccess=useCallback(()=>{analysisEpoch.current++;analysisCoverage.clear();if(analysisRunning.current)void Library.cancelAnalysis().catch(()=>{});cancelWarmup();setConnected(false);setAssets([]);setInspect(null);setPinnedInspect(false);setSelected([]);setSheet(null);},[]);
   const loadLibrary=useCallback(()=>{if(demo)return;let alive=true;const revision=libraryRevision.current;setLoadError('');const request=initialLibrary.current??(initialLibrary.current=Library.permissionStatus().then(({status})=>{if(revision!==libraryRevision.current)return {assets:[] as Asset[],status};setPermission(status as PhotoPermission);return ['authorized','limited'].includes(status)?Library.assets():{assets:[] as Asset[],status};}));
     request.then(result=>{if(!alive||revision!==libraryRevision.current)return;setPermission(result.status as PhotoPermission);setLimited(result.status==='limited');if(['authorized','limited'].includes(result.status)){setAssets(savedGroups(result.assets));setConnected(true);setState(s=>reconcileLibrary(s,result.assets));setInspect(a=>a&&result.assets.some(fresh=>fresh.id===a.id)?a:null);}else clearLibraryAccess();}).catch(e=>{if(revision!==libraryRevision.current)return;initialLibrary.current=null;if(alive)setLoadError(e instanceof Error?t(e.message):t('Inténtalo de nuevo en un momento.'));});return()=>{alive=false;};},[clearLibraryAccess]);
   useEffect(()=>loadLibrary(),[]);
@@ -421,7 +426,7 @@ export function ManoApp() {
   const messageError=(e:unknown)=>cancelled(e)?undefined:setError(e instanceof Error?t(e.message):t('No se pudo completar la acción. Inténtalo de nuevo.'));
   const connect=useCallback(async()=>{const permission=++permissionRevision.current;const revision=invalidateLibrary();setLoading(true);setError('');try{
     const access=await Library.authorize();if(permission!==permissionRevision.current)return false;setPermission(access.status as PhotoPermission);if(!['authorized','limited'].includes(access.status)){clearLibraryAccess();return false;}if(revision!==libraryRevision.current)return false;
-    const result=await Library.assets();if(revision!==libraryRevision.current)return false;setPermission(result.status as PhotoPermission);if(!['authorized','limited'].includes(result.status)){clearLibraryAccess();return false;}setAssets(savedGroups(result.assets));setState(s=>reconcileLibrary(s,result.assets));setLimited(result.status==='limited');setConnected(true);analysisStarted.current='';return savedGroups(result.assets);
+    const result=await Library.assets();if(revision!==libraryRevision.current)return false;setPermission(result.status as PhotoPermission);if(!['authorized','limited'].includes(result.status)){clearLibraryAccess();return false;}setAssets(savedGroups(result.assets));setState(s=>reconcileLibrary(s,result.assets));setLimited(result.status==='limited');setConnected(true);analysisCoverage.retry();return savedGroups(result.assets);
   }catch(e){if(revision===libraryRevision.current)messageError(e);return false;}finally{if(revision===libraryRevision.current)setLoading(false);}},[invalidateLibrary,clearLibraryAccess]);
   const beginSession=async()=>{
     if(loading||warming)return;
@@ -562,15 +567,24 @@ export function ManoApp() {
     // On a video card the tap pauses or plays it (videos never come in groups).
     if(Math.hypot(x,y)<10){if(hand[0]?.id===g.id){if(hand[0].kind==='video')videoControl.current?.toggle();else if(hand.length>1)cycle();}else select(g.id);}};
   const cancel=()=>{const g=gesture.current;if(g?.timer)clearTimeout(g.timer);if(g){springBack(g.followers);if(g.review&&g.element)(g.element as HTMLElement).style.transform='';}gesture.current=null;pointers.current.clear();setPinnedInspect(false);setInspect(null);setZone('');resetPeek();hookHover.current=false;setOverHook(false);};
-  const analyze=async(manual=false)=>{if(analyzing)return;setAnalyzing(true);if(manual)setError('');let listener:{remove():Promise<void>}|undefined;try{
-    if(demo){if(manual)setNotice(t('Grupos de\ndemostración'));return;}listener=await Library.addListener('analysisProgress',setProgress);
+  const analyze=async(manual=false)=>{if(analysisRunning.current)return;analysisRunning.current=true;const snapshot=rawAssets,versions=analysisCoverage.begin(snapshot),epoch=analysisEpoch.current;setAnalyzing(true);if(manual)setError('');let listener:{remove():Promise<void>}|undefined;try{
+    if(demo){if(manual)setNotice(t('Grupos de\ndemostración'));return;}listener=await Library.addListener('analysisProgress',value=>{if(epoch===analysisEpoch.current)setProgress(value);});
     // Photos only: videos are never stacked, so they are not compared either.
-    const result=await Library.analyze({ids:assets.filter(a=>a.kind!=='video').map(a=>a.id),threshold:.28});const groups=new Map(result.groups.flatMap((ids,i)=>ids.map(id=>[id,`vision-${i}`] as const)));
+    const result=await Library.analyze({ids:snapshot.filter(a=>a.kind!=='video').map(a=>a.id),threshold:.28});
+    if(epoch!==analysisEpoch.current||!latestConnected.current||!unchangedPhotos(versions,latestLibrary.current))return;
+    const live=new Set(latestLibrary.current.map(a=>a.id));const groups=new Map(result.groups.flatMap((ids,i)=>ids.filter(id=>live.has(id)).map(id=>[id,`vision-${i}`] as const)));
     localStorage.setItem('mano-similarity-v1',JSON.stringify(Object.fromEntries(groups)));
-    if(!result.skipped&&!result.cancelled)localStorage.setItem('mano-analysis-complete-v1',fingerprint);else localStorage.removeItem('mano-analysis-complete-v1');
+    if(!result.skipped&&!result.cancelled){analysisCoverage.complete(latestLibrary.current);localStorage.setItem('mano-analysis-complete-v1',libraryFingerprint(latestLibrary.current));}else localStorage.removeItem('mano-analysis-complete-v1');
     if(warmingNow.current)deferredGroups.current=groups;else setAssets(prev=>prev.map(a=>({...a,group:groups.get(a.id)})));if(manual)setNotice(result.cancelled?t('Búsqueda\ndetenida'):result.groups.length?tn('similarGroups',result.groups.length):t('Sin fotos\nparecidas'));
-  }catch(e){if(manual)messageError(e);}finally{try{await listener?.remove();}finally{setAnalyzing(false);}}};
-  useEffect(()=>{if(!demo&&connected&&!loading&&!warming&&!analyzing&&assets.length&&analysisStarted.current!==fingerprint&&localStorage.getItem('mano-analysis-complete-v1')!==fingerprint){analysisStarted.current=fingerprint;void analyze();}},[connected,fingerprint,loading,warming,analyzing]);
+  }catch(e){if(manual)messageError(e);}finally{try{await listener?.remove();}finally{analysisRunning.current=false;setAnalyzing(false);}}};
+  useEffect(()=>{if(demo||!connected||loading||warming||analyzing||!assets.length)return;
+    if(analysisCoverage.reuse(rawAssets)){localStorage.setItem('mano-analysis-complete-v1',fingerprint);return;}
+    // Only hydrate once; a later metadata change must not be accepted merely
+    // because the legacy ID/edit fingerprint happens to stay the same.
+    if(!analysisMarkerRead.current){analysisMarkerRead.current=true;if(localStorage.getItem('mano-analysis-complete-v1')===fingerprint){analysisCoverage.complete(rawAssets);return;}}
+    if(analysisCoverage.needsPass(rawAssets))void analyze();
+  },[connected,fingerprint,rawAssets,loading,warming,analyzing]);
+  useEffect(()=>()=>{analysisEpoch.current++;if(analysisRunning.current)void Library.cancelAnalysis().catch(()=>{});},[]);
   const stopAnalysis=async()=>{try{await Library.cancelAnalysis();}catch(e){messageError(e);}};
   /** Album = assign, then keep and advance (undoable like a swipe). If Fotos
    * fails, nothing is kept and the card stays. */
