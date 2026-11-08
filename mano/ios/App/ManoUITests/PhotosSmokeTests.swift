@@ -574,16 +574,21 @@ final class PhotosSmokeTests: XCTestCase {
         Thread.sleep(forTimeInterval:3)
         let card=app.descendants(matching:.any).matching(NSPredicate(format:"label BEGINSWITH %@","Live Photo 1 de")).firstMatch
         XCTAssertTrue(card.exists)
-        let keyBefore=try nativePhotoCrop(app,card.frame)
+        let keyBefore=try nativePhotoCrop(app,card.frame,"Live key before")
+        Thread.sleep(forTimeInterval:0.7)
+        let keyStable=try nativePhotoCrop(app,card.frame,"Live paused baseline")
+        XCTAssertEqual(keyBefore,keyStable,"Paused key photo must be stable before evaluating playback")
         play.tap()
         let pause=try nativeLiveControl(app,"Pausar",timeout:30)
         Thread.sleep(forTimeInterval:2)
-        let motion1=try nativePhotoCrop(app,card.frame)
+        let motion1=try nativePhotoCrop(app,card.frame,"Live motion one")
         Thread.sleep(forTimeInterval:0.7)
-        let motion2=try nativePhotoCrop(app,card.frame)
+        let motion2=try nativePhotoCrop(app,card.frame,"Live motion two")
         XCTAssertNotEqual(motion1,motion2,"Paired video must actually render changing pixels inline")
         pause.tap();_ = try nativeLiveControl(app,"Reproducir Live Photo",timeout:15);Thread.sleep(forTimeInterval:2)
-        let keyAfter=try nativePhotoCrop(app,card.frame)
+        let keyAfter=try nativePhotoCrop(app,card.frame,"Live key after pause")
+        let differences=zip(keyBefore,keyAfter).filter{$0 != $1}.count
+        print("COCOWASH_UI_LIVE_KEY_PIXELS bytes=\(keyBefore.count) changedChannels=\(differences)")
         XCTAssertEqual(keyAfter,keyBefore,"Pausing on the card must restore its key photo, not freeze an arbitrary video frame")
         attachScreenshot(app,"Native Live Photo paused key photo")
         print("COCOWASH_UI_LIVE_CARD_KEY_OK")
@@ -606,11 +611,11 @@ final class PhotosSmokeTests: XCTestCase {
         attachScreenshot(app,"Native Live Photo anchored with timeline")
         // A paused, settled image isolates the real two-finger zoom from motion.
         let region=CGRect(x:app.frame.width*0.2,y:app.frame.height*0.2,width:app.frame.width*0.6,height:app.frame.height*0.45)
-        let beforePinch=try nativePhotoCrop(app,region)
+        let beforePinch=try nativePhotoCrop(app,region,"Live pinned before pinch")
         let timelineFrame=timeline.frame
         app.pinch(withScale:1.8,velocity:1)
         Thread.sleep(forTimeInterval:2)
-        let afterPinch=try nativePhotoCrop(app,region)
+        let afterPinch=try nativePhotoCrop(app,region,"Live pinned after pinch")
         XCTAssertEqual(timeline.frame,timelineFrame,"Pinch must zoom the photo without scaling its controls")
         XCTAssertNotEqual(beforePinch,afterPinch,"Native two-finger gesture must change the pinned photo's rendered zoom")
         attachScreenshot(app,"Native Live Photo after pinch zoom")
@@ -648,14 +653,23 @@ final class PhotosSmokeTests: XCTestCase {
         let gone=XCTNSPredicateExpectation(predicate:NSPredicate(format:"exists == false"),object:apply)
         XCTAssertEqual(XCTWaiter().wait(for:[gone],timeout:20),.completed)
     }
-    @MainActor private func nativePhotoCrop(_ app:XCUIApplication,_ bounds:CGRect) throws -> Data {
+    @MainActor private func nativePhotoCrop(_ app:XCUIApplication,_ bounds:CGRect,_ name:String) throws -> Data {
         let screenshot=XCUIScreen.main.screenshot()
         let image=try XCTUnwrap(screenshot.image.cgImage)
         let scale=CGFloat(image.width)/app.frame.width
         let inner=bounds.insetBy(dx:bounds.width*0.22,dy:bounds.height*0.24)
         let crop=CGRect(x:inner.minX*scale,y:inner.minY*scale,width:inner.width*scale,height:inner.height*scale)
         let raster=try XCTUnwrap(image.cropping(to:crop))
-        return try XCTUnwrap(UIImage(cgImage:raster).pngData())
+        let png=try XCTUnwrap(UIImage(cgImage:raster).pngData())
+        let attachment=XCTAttachment(data:png,uniformTypeIdentifier:"public.png")
+        attachment.name=name;attachment.lifetime = .keepAlways;add(attachment)
+        // Compare actual channels, without PNG metadata or row padding. No
+        // tolerance can hide an arbitrary frame left over from the video.
+        let color=try XCTUnwrap(CGColorSpace(name:CGColorSpace.sRGB))
+        let context=try XCTUnwrap(CGContext(data:nil,width:raster.width,height:raster.height,bitsPerComponent:8,bytesPerRow:raster.width*4,space:color,bitmapInfo:CGBitmapInfo.byteOrder32Big.rawValue|CGImageAlphaInfo.premultipliedLast.rawValue))
+        context.interpolationQuality = .none
+        context.draw(raster,in:CGRect(x:0,y:0,width:raster.width,height:raster.height))
+        return Data(bytes:try XCTUnwrap(context.data),count:raster.width*raster.height*4)
     }
     @MainActor private func nativeLivePosition(_ slider:XCUIElement) -> Double? {
         let value=(slider.value as? String ?? "").replacingOccurrences(of:",",with:".")

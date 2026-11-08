@@ -268,3 +268,5 @@ Autorizados push normal a main y workflows estándar públicos gratuitos, relanz
 - 2026-11-08 · CW-CX-046: métricas662e67dBLOCKED por WebContent nuevo en ronda7(sincontadorCPUinicial); nuevasventanas reales yacotadas3intentos conservan todas lasmuestras,7regresiones/25infraPASS. No ponerCPU0 ni aceptar serie vieja.
 
 - 2026-11-08 · CW-CX-047: capturas nativas7idiomas28iOS+28AndroidPASS en813114c, no publicación. ATTcon2hosts423e79ePASSambos+Conservar. R07 AXrealSwitch66×29 confirma selector. R05añade cancelación ypendingrelaunchiOS; AndroidcasosindependientesantesdeR61sinomitirlo;25testsinfraPASS, nuevas ejecuciones pendientes.
+
+- 2026-11-08 · CW-CX-048: LiveSwitch/playreal yaejecutados5d20e6a; keypausefalla porcomparaciónPNG. Antesdealterarappse añadenRGBAexactos/crops/baselineestable,sintolerancia; diagnósticopendiente. Full44b64eecontinúaindependiente.

@@ -17,7 +17,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: cocowash-rc-${{ github.ref }}
+  group: cocowash-rc-${{ github.ref }}-${{ inputs.gate || 'full' }}-${{ inputs.simulator || 'auto' }}
   cancel-in-progress: false
 jobs:
   native:
