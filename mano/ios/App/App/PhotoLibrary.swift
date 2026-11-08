@@ -796,6 +796,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                         self.pinnedVideos[key] = item.localIdentifier
                         try? FileManager.default.setAttributes([.modificationDate: Date()], ofItemAtPath: file.path)
                         devLog("COCOWASH_VIDEO_PREPARED_OK bytes=%lld cached=1", bytes)
+                        if item.mediaSubtypes.contains(.photoLive) { devLog("COCOWASH_LIVE_PREPARED_OK bytes=%lld cached=1",bytes) }
                         call.resolve(["path": file.path, "url": self.streamURL(file), "mimeType": self.videoMime(ext), "cached": true, "bytes": bytes]); return
                     }
                 }
@@ -1084,6 +1085,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
             videoJobs.removeValue(forKey: job.token)
             endMediaWork()
             devLog("COCOWASH_VIDEO_PREPARED_OK bytes=%lld cached=0", bytes)
+            if job.resourceRequest != nil { devLog("COCOWASH_LIVE_PREPARED_OK bytes=%lld cached=0",bytes) }
             job.source = nil
             job.call.resolve(["path": file.path, "url": streamURL(file), "mimeType": videoMime(ext), "cached": false, "bytes": bytes])
         } catch { failVideo(job, error: error) }

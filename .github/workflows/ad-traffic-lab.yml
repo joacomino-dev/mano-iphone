@@ -1,0 +1,51 @@
+name: Research test-ad hosts with real ATT choices
+# Research only. Never release acceptance, real ads, store upload or manifest edits.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  hosts:
+    if: github.event.repository.private == false
+    runs-on: xcode-27
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        att: [denied, allowed]
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
+      COCO_SIMULATOR_MODE: standard
+      COCO_AD_TRAFFIC: ${{ matrix.att }}
+    defaults:
+      run:
+        working-directory: mano
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+        timeout-minutes: 10
+      - name: Validate host-only parser and owned-runtime hashes
+        run: |
+          python3 -B -m unittest discover -s ../scripts/tests -p test_host_proxy.py -v
+          node scripts/check-mobile-runtime.mjs
+      - name: Build actual CocoWash and exercise real Photos/UMP/ATT with public test ad unit
+        run: bash scripts/validate-apple-native.sh --simulator-smoke
+      - name: Retain host-only research evidence (no proxy snapshot or network payloads)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ad-host-research-${{ matrix.att }}-${{ github.sha }}
+          path: |
+            mano/build/simulator-smoke/traffic/hosts.jsonl
+            mano/build/simulator-smoke/traffic/host-capture-report.json
+            mano/build/simulator-smoke/ui-test.log
+            mano/build/simulator-smoke/photos-read.log
+            mano/build/simulator-smoke/*.png
+            mano/build/simulator-smoke/*.xcresult/**
+          retention-days: 7
+          if-no-files-found: warn

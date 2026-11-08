@@ -62,7 +62,7 @@ for frame in 0..<90 {
     CVPixelBufferLockBaseAddress(buffer, [])
     guard let context = CGContext(data:CVPixelBufferGetBaseAddress(buffer),width:width,height:height,bitsPerComponent:8,bytesPerRow:CVPixelBufferGetBytesPerRow(buffer),space:CGColorSpaceCreateDeviceRGB(),bitmapInfo:CGImageAlphaInfo.noneSkipFirst.rawValue) else { fail("drawing context") }
     context.draw(image, in: CGRect(x:0,y:0,width:CGFloat(width),height:CGFloat(height)))
-    if frame > 0 { context.setFillColor(CGColor(red:CGFloat(frame%30)/30,green:0.7,blue:0.5,alpha:1));context.fill(CGRect(x:CGFloat(frame*2%280),y:30,width:40,height:40)) }
+    if frame > 0 { context.setFillColor(CGColor(red:CGFloat(frame%30)/30,green:0.7,blue:0.5,alpha:1));context.fill(CGRect(x:CGFloat(frame*2%280),y:CGFloat(height/2-20),width:40,height:40)) }
     CVPixelBufferUnlockBaseAddress(buffer, [])
     guard pixels.append(buffer,withPresentationTime:CMTime(value:Int64(frame),timescale:30)) else { fail("video frame append") }
 }

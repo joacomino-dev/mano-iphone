@@ -233,3 +233,5 @@ Autorizados push normal a main y workflows estándar públicos gratuitos, relanz
 - 2026-11-08 · Codex CW-CX-033:10rondas Android reales ypresupuestos nativos PASS,atribuida serie porActivityManager;memoria mediana+3MiB,CPUfinal2,22%,picos transitorios registrados. FirmaJava42493903317 PASS7. Nuevas pruebas favoritas/Back ycaptura hostsATT preparadas;ningún dominio modificado.
 
 - 2026-11-08 · Codex CW-CX-033 continuación:iOS42492831273 test10rondas PASS393s,XCTestCPU2,739s/ronda yappfootprint≈46–47MB;hostapp+WebContent sin crecimiento sostenido. GateFAILálbum no se oculta. Se corrige evidencia64→70total(6demos precargadas delruntime),auditoría finalenexit ycohortes separadas. Android42493904052 PASSinclKotlin/Java/10rondas.
+
+- 2026-11-08 · Codex CW-CX-035:tecla softwareR01tambiénFAIL42493905346;matriz depreferenciaWebKit enfoco/observaciónsololectura preparada. TestnativoLive real(píxeles/key/timeline/pinch) y2estadosATT/hosts preparados; pendientesCI,dominios intactos. NativeRelease/Git protegidos sin cambios visuales.

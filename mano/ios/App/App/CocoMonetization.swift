@@ -232,6 +232,10 @@ final class CocoMonetizationPlugin: CAPPlugin, CAPBridgedPlugin, NativeAdLoaderD
             self.loader = loader
             loadCall = call
             loadTracking = tracking
+            // Synthetic CI traffic research only: no user/ad identifiers logged.
+            if Bundle.main.object(forInfoDictionaryKey:"CocoWashTestAds") as? Bool == true {
+                NSLog("COCOWASH_TEST_AD_REQUEST att=%ld tracking=%d npa=%d",Int(ATTrackingManager.trackingAuthorizationStatus.rawValue),tracking ? 1 : 0,tracking ? 0 : 1)
+            }
             loader.load(request)
             Task { @MainActor [weak self, weak loader] in
                 try? await Task.sleep(for: .seconds(8))
@@ -245,6 +249,7 @@ final class CocoMonetizationPlugin: CAPPlugin, CAPBridgedPlugin, NativeAdLoaderD
         Task { @MainActor in
             guard loader === adLoader else { return }
             guard loadTracking == tracking else { finishLoad(ready: false); return }
+            if Bundle.main.object(forInfoDictionaryKey:"CocoWashTestAds") as? Bool == true { NSLog("COCOWASH_TEST_AD_RECEIVED") }
             prepared = (nativeAd, Date(), loadTracking)
             finishLoad(ready: true)
         }

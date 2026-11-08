@@ -424,3 +424,10 @@ Android42493904052 PASScompilaciónKotlin/Java,testDebugUnitTest,E2E16+10rondas;
 ### CW-CX-034 — Ampliación de seguridad Android sobre serie nativa válida
 Fecha:2026-11-08. Agente:Codex. Estado:nuevos casos NOT TESTED hasta CI.
 Añade atribución ActivityManager por cada muestra(4regresiones delparserPASS),cola favorita sobreviviendo foreground yDeshacer,Backreal cierrahoja,queuepersistida trasforce-stop antes de confirmación,recuperación sinborrar,cancelarconfirmaciónretieneIDs exactos/contador,yflushfavorita nativo trasronda10. Se validaresultado contraMediaStoreynopurascuentas. Métricas bajo mismo presupuesto;PSS/CPU se miden enAndroid. Guardas de emulador/fixtures preservadas;no app ni arte modificado.
+
+### CW-CX-035 — Live/ATT yaislamiento del bloqueo de escritura
+Fecha:2026-11-08. Agente:Codex. Estado:nuevos laboratorios NOT TESTED hasta CI.
+R-01:42493905346 confirma tecla software tampoco inserta(placeholdertrue,length19). Se descarta limitación exclusiva typeText; nueva matriz diagnóstica current/enabled cambia solo WKPreferences.isTextInteractionEnabled en copiaCI,conmismos anunciosdeprueba yobserverDOM/nativo soloestado/longitud/foco(sinvalor). APIApple dice interaccióntextual,defaulttrue;elcomentarioactualasumequeeditarfuncionaconfalse,hipótesis aúnNOdemostrada. No sehabilita globalmente enmain ni se añaden APIs de PhotoKit.
+Live:sintéticos3s;test nativo decambio real depíxeles,pausa→mismafotoclave,anclaje accesible,timeline/loop ypinch sin escalado decontroles. MarkersSwift solo trasbytespreparados;sin cambiar reproducción. Testnuevo yfixturesbaseline/audit pendienteCI.
+Privacidad:workflowATTallowed/denied usa realUMP/appID ysolo inventario TEST;proxyCONNECT sinTLS/interceptarcontenido,4parserPASS. Se mantieneNSPrivacyTrackingDomainsinmutable. La captura no prueba propósito deendpoint ni atribuciónexclusiva;necesita evidencia y aprobaciónowner.
+Todos lossmokeinteractivos pasanainventarioTEST(copiaCI); Releasearm64tienda sevalida antesdeañadirflag. No se distribuye esa copia.

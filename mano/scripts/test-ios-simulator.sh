@@ -52,6 +52,11 @@ cleanup() {
       --predicate "$failure_predicate" > "$smoke_dir/failure-unified.log" 2>&1
     tail -n 100 "$smoke_dir/failure-unified.log" >&2
   fi
+  if [ "${COCO_NATIVE_LAB:-0}" = 1 ] && [ -e "$smoke_dir/fixtures/photokit-report.json" ] && [ ! -e "$smoke_dir/fixtures/photokit-audit.json" ]; then
+    # Preserve the real post-test library audit even if another test (e.g. album)
+    # failed. The original failure status is never changed by this diagnostic.
+    ( cd ..; COCO_FIXTURE_OUTPUT="$smoke_dir/fixtures" python3 scripts/apple-fixtures/probe.py --seed-existing "$simulator_id" --audit ) > "$smoke_dir/fixture-cleanup-audit.log" 2>&1
+  fi
   if [ -n "$collector_pid" ]; then kill -TERM "$collector_pid" 2>/dev/null; fi
   if [ -n "$log_pid" ]; then
     kill -TERM "$log_pid" 2>/dev/null
@@ -125,12 +130,12 @@ simulator_id="$(bounded 60 xcrun simctl create "MemSwipe-smoke-${GITHUB_RUN_ID:-
 [[ "$simulator_id" =~ ^[0-9A-Fa-f-]{36}$ ]] || { echo 'ERROR: simulator creation returned no valid UUID.' >&2; exit 1; }
 
 # Test-bundle-only ownership contract; never copied into CocoWash.app.
-if [ "${COCO_NATIVE_LAB:-0}" = 1 ]; then
+if [ "${COCO_NATIVE_LAB:-0}" = 1 ] || [ "${COCO_AD_TRAFFIC:-none}" != none ]; then
   test "${GITHUB_ACTIONS:-}" = true && test "${RUNNER_ENVIRONMENT:-}" = github-hosted || { echo 'Native lab refuses non-hosted environments'; exit 1; }
   python3 - "$simulator_id" <<'PYCONTRACT'
 import json,os,sys
 from pathlib import Path
-Path('ios/App/ManoUITests/native-lab-contract.json').write_text(json.dumps({'enabled':True,'run':os.environ['GITHUB_RUN_ID'],'simulator':sys.argv[1]}))
+Path('ios/App/ManoUITests/native-lab-contract.json').write_text(json.dumps({'enabled':True,'run':os.environ['GITHUB_RUN_ID'],'simulator':sys.argv[1],'adTraffic':os.environ.get('COCO_AD_TRAFFIC','none')}))
 PYCONTRACT
 fi
 
@@ -149,6 +154,11 @@ test -d build/simulator-smoke/DerivedData/SourcePackages/checkouts/capacitor-swi
   exit 1
 }
 grep -E 'Resolved source packages|capacitor-swift-pm|CapApp-SPM' "$smoke_dir/resolve.log" || true
+
+# Every interactive smoke uses public TEST ad inventory with the configured
+# app/UMP. The arm64 store build was already verified before this CI-only flag.
+# This simulator copy never qualifies as a store archive.
+/usr/libexec/PlistBuddy -c 'Add :CocoWashTestAds bool true' ios/App/App/Info.plist
 
 # Build BEFORE booting. Run 41124449495 overlapped first-boot data migration with
 # compilation: ibtool/actool (which use CoreSimulator services) stalled 15 min
@@ -287,6 +297,9 @@ start_log_stream
 report_ui_failure() {
   echo '--- XCTest actions and markers ---'
   grep -aE ' t = +[0-9.]+s (Tap|Press|Double tap|Swipe|Waiting|Added attachment)|COCOWASH_|COCOWASH_|error:' "$smoke_dir/ui-test.log" | tail -n 80 || true
+  echo '--- All native markers/errors, including failures before later tests ---'
+  grep -aE '^COCOWASH_|PhotosSmokeTests.*error:' "$smoke_dir/ui-test.log" | tail -n 150 || true
+  grep -a 'COCOWASH_INPUT_PROBE' "$log_file" | tail -n 60 || true
   echo '--- App JS errors (COCOWASH_JS_ERROR) ---'
   grep -a 'COCOWASH_JS_ERROR' "$log_file" | tail -n 20 || true
   echo '--- ui-test.log tail ---'
@@ -298,7 +311,12 @@ run_ui_test() {
   # xcodebuild off right after the pass. 1320 s = 840 s test + bootstrap.
   local selection='-only-testing:ManoUITests/PhotosSmokeTests/testFullPhotosAuthorizationStartsSession'
   if [ "${COCO_NATIVE_LAB:-0}" = 1 ]; then selection='-only-testing:ManoUITests/PhotosSmokeTests'; fi
-  bounded 2200 xcodebuild -project ios/App/App.xcodeproj -scheme ManoSmoke \
+  local capture=()
+  if [ "${COCO_AD_TRAFFIC:-none}" != none ]; then
+    selection='-only-testing:ManoUITests/PhotosSmokeTests/testAdHostCaptureThroughRealConsent'
+    capture=(python3 ../scripts/privacy-hosts/run_with_proxy.py "$smoke_dir/traffic" "$COCO_AD_TRAFFIC")
+  fi
+  bounded 2200 "${capture[@]}" xcodebuild -project ios/App/App.xcodeproj -scheme ManoSmoke \
     -configuration Release -sdk iphonesimulator -destination "platform=iOS Simulator,id=$simulator_id" \
     -derivedDataPath build/simulator-smoke/DerivedData \
     -resultBundlePath build/simulator-smoke/PhotosSmoke.xcresult \
@@ -334,6 +352,16 @@ if ! run_ui_test; then
   else
     report_ui_failure; exit 1
   fi
+fi
+if [ "${COCO_AD_TRAFFIC:-none}" != none ]; then
+  grep -q COCOWASH_UI_AD_HOST_RESEARCH_OK "$smoke_dir/ui-test.log"
+  # Require the real SDK call after the chosen system permission, not only hosts.
+  sleep 3
+  local_tracking='tracking=0 npa=1'
+  if [ "$COCO_AD_TRAFFIC" = allowed ]; then local_tracking='tracking=1 npa=0'; fi
+  grep 'COCOWASH_TEST_AD_REQUEST' "$log_file" | grep -q "$local_tracking" || { echo 'No actual test-ad request matching the chosen ATT state; host research BLOCKED'; exit 1; }
+  echo 'Host-only research completed; this is NOT release/native-smoke acceptance.'
+  exit 0
 fi
 if [ "${COCO_NATIVE_LAB:-0}" = 1 ]; then
   grep -q COCOWASH_UI_NATIVE_TEN_CYCLES_OK "$smoke_dir/ui-test.log" || { echo 'Native ten cycles did not complete'; exit 1; }

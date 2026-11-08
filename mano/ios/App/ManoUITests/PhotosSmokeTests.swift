@@ -1,10 +1,147 @@
 import XCTest
+import UIKit
 
 final class PhotosSmokeTests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         // 0.9.3 passed in 527 s and 0.9.4 in 590 s on the free simulator runner.
         executionTimeAllowance = 840
+    }
+
+    @MainActor
+    func testAdHostCaptureThroughRealConsent() throws {
+        let contractURL=try XCTUnwrap(Bundle(for:Self.self).url(forResource:"native-lab-contract",withExtension:"json"))
+        let contract=try XCTUnwrap(JSONSerialization.jsonObject(with:Data(contentsOf:contractURL)) as? [String:Any])
+        guard let mode=contract["adTraffic"] as? String,["allowed","denied"].contains(mode) else { throw XCTSkip("Host-only ad research is a separate workflow, not release acceptance") }
+        #if !targetEnvironment(simulator)
+        XCTFail("Ad research refuses a physical device");return
+        #endif
+        XCTAssertEqual(contract["simulator"] as? String,ProcessInfo.processInfo.environment["SIMULATOR_UDID"])
+        // Only runs on the disposable CI simulator seeded with generated public
+        // photo + H.264 fixtures. No native deletion or personal device is used.
+        let app = XCUIApplication()
+        app.resetAuthorizationStatus(for: .photos)
+        // Since 9.8.1 the app follows the device language, and a fresh CI simulator
+        // is English. This test reads the Spanish source text («Continuar»,
+        // «Permitir acceso a Fotos»), so the app (not the system) runs in Spanish.
+        app.launchArguments += ["-AppleLanguages", "(es)", "-AppleLocale", "es_ES"]
+        // Log any system alert XCTest has to handle mid-test (run 41166497344 lost a
+        // «Cerrar» tap to one). Returning false keeps XCTest's default handling.
+        addUIInterruptionMonitor(withDescription: "System alert") { alert in
+            print("COCOWASH_UI_INTERRUPTION label=\(alert.label) buttons=\(alert.buttons.allElementsBoundByIndex.map(\.label))")
+            return false
+        }
+        app.launch()
+        defer {
+            let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            screenshot.name = "Photos authorization session"
+            screenshot.lifetime = .keepAlways
+            add(screenshot)
+        }
+
+        // First launch shows the onboarding cards; Photos is requested only on the
+        // last one, after the explanation. Every card must be passed (no skip).
+        let next = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Continuar")).firstMatch
+        let allow = app.buttons["Permitir acceso a Fotos"].firstMatch
+        // The first card waits for a cold simulator to start WebKit and load the
+        // bundle: run 41168418401 (CoreSimulator needed >180 s to answer simctl
+        // list) missed 120 s with unchanged app code. Same bound as Photos (240 s).
+        guard next.waitForExistence(timeout: 240) else {
+            attachScreenshot(app, "Onboarding card 1 missing")
+            XCTFail("Onboarding card 1 did not offer Continuar.")
+            return
+        }
+        // Three cards precede the privacy card. Tap «Continuar» once it is enabled
+        // (the gestures card keeps it disabled for one ~4 s demo cycle, first visit
+        // only) until the privacy card appears. Run 41222676883 lost one of three
+        // fixed taps and then looked for the privacy card one card too early, so a
+        // tap that does not advance is simply repeated, at most 8 times.
+        var taps = 0
+        while !allow.exists && taps < 8 {
+            guard next.waitForExistence(timeout: 30) else { break }
+            // Standalone waiter: not registered with the test case, so the later
+            // waitForExpectations(timeout:) never waits on it a second time.
+            let enabled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: next)
+            guard XCTWaiter().wait(for: [enabled], timeout: 30) == .completed else {
+                attachScreenshot(app, "Onboarding Continuar stayed disabled")
+                XCTFail("Continuar stayed disabled on the onboarding.")
+                return
+            }
+            next.tap()
+            taps += 1
+            _ = allow.waitForExistence(timeout: 2)
+        }
+        print("COCOWASH_UI_ONBOARDING taps=\(taps)")
+        guard allow.waitForExistence(timeout: 15) else {
+            attachScreenshot(app, "Privacy card missing")
+            XCTFail("The privacy card did not offer the Photos request.")
+            return
+        }
+        // Grant the real OS prompt. This prompt is an expected step: address
+        // SpringBoard directly rather than an interruption monitor or simulated response.
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let fullAccess = springboard.buttons.matching(NSPredicate(format:
+            "(label CONTAINS[c] 'Full Access' OR label CONTAINS[c] 'All Photos' OR " +
+            "label CONTAINS[c] 'todas las fotos' OR label CONTAINS[c] 'acceso completo' OR " +
+            "label CONTAINS[c] 'acceso total') AND NOT (label CONTAINS[c] 'Limited' OR " +
+            "label CONTAINS[c] 'Select' OR label BEGINSWITH[c] 'No ' OR " +
+            "label BEGINSWITH[c] %@ OR label BEGINSWITH[c] %@)", "Don’t", "Don't"
+        )).firstMatch
+        // A tap that started the request turns the button into «Esperando permiso…».
+        // Run 41231549707 tapped once and the request never started (no prompt in
+        // 240 s), like the lost onboarding tap of run 41222676883: repeat a tap
+        // that did not take, at most 3 times, before waiting for the prompt.
+        var requested = false
+        for attempt in 1...3 {
+            if allow.exists { allow.tap() }
+            let deadline = Date().addingTimeInterval(12)
+            while Date() < deadline {
+                if !allow.exists || fullAccess.exists { requested = true; break }
+                Thread.sleep(forTimeInterval: 0.5)
+            }
+            if requested { break }
+            print("COCOWASH_UI_ALLOW_RETRY \(attempt)")
+        }
+        // No debugDescription in failure paths: dumping the WebView hierarchy kept
+        // xcodebuild busy until its 900 s limit (runs 41162917606, 41231549707).
+        guard fullAccess.waitForExistence(timeout: 240) else {
+            attachScreenshot(app, "Photos prompt missing")
+            XCTFail("A FULL Photos authorization button was not offered (request started: \(requested)).")
+            return
+        }
+        fullAccess.tap()
+
+        // No landing page: once authorized the session prepares and opens by itself.
+        // Session header «Terminar» (#review-trigger); its label may append a hidden
+        // discard count, and the review sheet's «Terminar …» buttons are not mounted yet.
+        let finish = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Terminar")).firstMatch
+        guard finish.waitForExistence(timeout: 90) else {
+            attachScreenshot(app, "Session did not open")
+            XCTFail("Full Photos authorization and bounded media warmup did not open the real review session.")
+            return
+        }
+        XCTAssertTrue(finish.isHittable, "Session toolbar must be usable after media warmup finishes.")
+        // The shell independently requires the native prepareVideo bytes marker.
+        // Do not invoke native bridge methods or bypass the real session UI here.
+        print("COCOWASH_UI_AUTHORIZED_SESSION_OK")
+
+
+        let system=XCUIApplication(bundleIdentifier:"com.apple.springboard")
+        let deny=system.buttons.matching(NSPredicate(format:"label CONTAINS[c] 'Not to Track' OR label CONTAINS[c] 'no rastre'")).firstMatch
+        guard deny.waitForExistence(timeout:75) else {
+            attachScreenshot(app,"ATT research prompt unavailable")
+            XCTFail("No real ATT prompt after the existing UMP flow; cannot claim either state was tested")
+            return
+        }
+        if mode=="denied" { deny.tap() }
+        else {
+            let allow=system.buttons.matching(NSPredicate(format:"label IN %@",["Allow","Permitir"])).firstMatch
+            XCTAssertTrue(allow.exists && allow.isHittable);allow.tap()
+        }
+        print("COCOWASH_UI_ATT_CHOICE mode=\(mode)")
+        Thread.sleep(forTimeInterval:35)
+        attachScreenshot(app,"After real ATT choice, test ad request only")
+        print("COCOWASH_UI_AD_HOST_RESEARCH_OK")
     }
 
     @MainActor
@@ -303,6 +440,113 @@ final class PhotosSmokeTests: XCTestCase {
         }
     }
 
+    @MainActor
+    func testYGeneratedLivePhotoInlineAndAnchored() throws {
+        let url=try XCTUnwrap(Bundle(for:Self.self).url(forResource:"native-lab-contract",withExtension:"json"))
+        let contract=try XCTUnwrap(JSONSerialization.jsonObject(with:Data(contentsOf:url)) as? [String:Any])
+        guard contract["enabled"] as? Bool == true else { throw XCTSkip("Live fixture lab disabled") }
+        #if !targetEnvironment(simulator)
+        XCTFail("Live fixture lab refuses physical libraries");return
+        #endif
+        XCTAssertEqual(contract["simulator"] as? String,ProcessInfo.processInfo.environment["SIMULATOR_UDID"])
+        let app=XCUIApplication();app.launchArguments += ["-AppleLanguages","(es)","-AppleLocale","es_ES"]
+        app.terminate();app.launch()
+        let finish=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","Terminar")).firstMatch
+        XCTAssertTrue(finish.waitForExistence(timeout:120))
+        // Existing accessible data control opens the same pinned view as dragging.
+        app.buttons["Filtros"].firstMatch.tap()
+        let settings=app.descendants(matching:.any).matching(NSPredicate(format:"label == %@","Ajustes")).firstMatch
+        XCTAssertTrue(settings.waitForExistence(timeout:15));settings.tap()
+        let geek=app.switches.matching(NSPredicate(format:"label CONTAINS %@","Modo Geek")).firstMatch
+        XCTAssertTrue(geek.waitForExistence(timeout:15))
+        for _ in 0..<10 { if geek.isHittable { break };app.swipeUp() }
+        XCTAssertTrue(geek.isHittable)
+        if (geek.value as? String) != "1" { geek.tap() }
+        XCTAssertTrue(closeOverlay(app,until:finish))
+        try nativeMediaFilter(app,"Live Photos")
+        let play=app.buttons["Reproducir Live Photo"].firstMatch
+        XCTAssertTrue(play.waitForExistence(timeout:60),"PhotoKit Live subtype must reach a real card")
+        Thread.sleep(forTimeInterval:3)
+        let card=app.descendants(matching:.any).matching(NSPredicate(format:"label BEGINSWITH %@","Live Photo 1 de")).firstMatch
+        XCTAssertTrue(card.exists)
+        let keyBefore=try nativePhotoCrop(app,card.frame)
+        play.tap()
+        let pause=app.buttons["Pausar"].firstMatch
+        XCTAssertTrue(pause.waitForExistence(timeout:30))
+        Thread.sleep(forTimeInterval:2)
+        let motion1=try nativePhotoCrop(app,card.frame)
+        Thread.sleep(forTimeInterval:0.7)
+        let motion2=try nativePhotoCrop(app,card.frame)
+        XCTAssertNotEqual(motion1,motion2,"Paired video must actually render changing pixels inline")
+        pause.tap();XCTAssertTrue(play.waitForExistence(timeout:15));Thread.sleep(forTimeInterval:2)
+        let keyAfter=try nativePhotoCrop(app,card.frame)
+        XCTAssertEqual(keyAfter,keyBefore,"Pausing on the card must restore its key photo, not freeze an arbitrary video frame")
+        attachScreenshot(app,"Native Live Photo paused key photo")
+        print("COCOWASH_UI_LIVE_CARD_KEY_OK")
+        app.buttons["Ver datos del archivo"].firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["Anclada"].firstMatch.waitForExistence(timeout:30))
+        let timeline=app.sliders["Posición del vídeo"].firstMatch
+        XCTAssertTrue(timeline.waitForExistence(timeout:30))
+        let anchoredPlay=app.buttons["Reproducir"].firstMatch
+        XCTAssertTrue(anchoredPlay.exists);anchoredPlay.tap()
+        XCTAssertTrue(pause.waitForExistence(timeout:15));Thread.sleep(forTimeInterval:1)
+        pause.tap();timeline.adjust(toNormalizedSliderPosition:0.85)
+        let before=try XCTUnwrap(nativeLivePosition(timeline))
+        XCTAssertGreaterThan(before,0.6,"Timeline must seek the actual three-second paired clip")
+        anchoredPlay.tap()
+        let deadline=Date().addingTimeInterval(4)
+        var looped=false
+        while Date()<deadline { if let position=nativeLivePosition(timeline),position<0.4 { looped=true;break };Thread.sleep(forTimeInterval:0.2) }
+        XCTAssertTrue(looped,"Playback must wrap past the end of the paired video")
+        pause.tap();Thread.sleep(forTimeInterval:2)
+        attachScreenshot(app,"Native Live Photo anchored with timeline")
+        // A paused, settled image isolates the real two-finger zoom from motion.
+        let region=CGRect(x:app.frame.width*0.2,y:app.frame.height*0.2,width:app.frame.width*0.6,height:app.frame.height*0.45)
+        let beforePinch=try nativePhotoCrop(app,region)
+        let timelineFrame=timeline.frame
+        app.pinch(withScale:1.8,velocity:1)
+        Thread.sleep(forTimeInterval:2)
+        let afterPinch=try nativePhotoCrop(app,region)
+        XCTAssertEqual(timeline.frame,timelineFrame,"Pinch must zoom the photo without scaling its controls")
+        XCTAssertNotEqual(beforePinch,afterPinch,"Native two-finger gesture must change the pinned photo's rendered zoom")
+        attachScreenshot(app,"Native Live Photo after pinch zoom")
+        XCTAssertTrue(closeOverlay(app,until:finish))
+        try nativeMediaFilter(app,"Todo")
+        print("COCOWASH_UI_LIVE_ANCHOR_TIMELINE_ZOOM_OK")
+    }
+
+    @MainActor private func nativeMediaFilter(_ app:XCUIApplication,_ media:String) throws {
+        app.buttons["Filtros"].firstMatch.tap()
+        let choice=app.descendants(matching:.any).matching(NSPredicate(format:"label == %@",media)).allElementsBoundByIndex.filter { $0.isHittable }.last
+        try XCTUnwrap(choice).tap()
+        let apply=app.buttons["Aplicar filtros"].firstMatch
+        for _ in 0..<8 { if apply.isHittable { break };app.swipeUp() }
+        XCTAssertTrue(apply.isHittable);apply.tap()
+        let gone=XCTNSPredicateExpectation(predicate:NSPredicate(format:"exists == false"),object:apply)
+        XCTAssertEqual(XCTWaiter().wait(for:[gone],timeout:20),.completed)
+    }
+    @MainActor private func nativePhotoCrop(_ app:XCUIApplication,_ bounds:CGRect) throws -> Data {
+        let screenshot=XCUIScreen.main.screenshot()
+        let image=try XCTUnwrap(screenshot.image.cgImage)
+        let scale=CGFloat(image.width)/app.frame.width
+        let inner=bounds.insetBy(dx:bounds.width*0.22,dy:bounds.height*0.24)
+        let crop=CGRect(x:inner.minX*scale,y:inner.minY*scale,width:inner.width*scale,height:inner.height*scale)
+        let raster=try XCTUnwrap(image.cropping(to:crop))
+        return try XCTUnwrap(UIImage(cgImage:raster).pngData())
+    }
+    @MainActor private func nativeLivePosition(_ slider:XCUIElement) -> Double? {
+        let value=(slider.value as? String ?? "").replacingOccurrences(of:",",with:".")
+        print("COCOWASH_UI_LIVE_TIMELINE value=\(value)")
+        if value.hasSuffix("%"),let percent=Double(value.dropLast().trimmingCharacters(in:.whitespaces)) { return percent/100 }
+        let tokens=value.components(separatedBy:" ")
+        if let first=tokens.first {
+            let clock=first.components(separatedBy:":")
+            if clock.count==2,let minutes=Double(clock[0]),let seconds=Double(clock[1]) { return (minutes*60+seconds)/3 }
+            if let seconds=Double(first) { return seconds/3 }
+        }
+        return nil
+    }
+
     // Disabled by default. CI binds this contract to its newly-created simulator.
     @MainActor
     func testZTenNativeDeletionRounds() throws {
@@ -319,6 +563,7 @@ final class PhotosSmokeTests: XCTestCase {
         app.terminate();app.launch()
         let finish=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","Terminar")).firstMatch
         XCTAssertTrue(finish.waitForExistence(timeout:120),"The real authorization/session must already exist")
+        try nativeMediaFilter(app,"Todo") // Isolate cycles from a prior Live/filter test failure.
         Thread.sleep(forTimeInterval:20)
         try nativeCheckpoint(0)
         let options=XCTMeasureOptions();options.iterationCount=10

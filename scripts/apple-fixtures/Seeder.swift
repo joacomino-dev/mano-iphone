@@ -29,14 +29,18 @@ import Photos
     }
     private var reportURL: URL { FileManager.default.urls(for:.documentDirectory,in:.userDomainMask)[0].appendingPathComponent("fixture-report.json") }
     private var ownershipURL: URL { reportURL.deletingLastPathComponent().appendingPathComponent("owned-assets.json") }
+    private var runtimeDemoURL: URL { reportURL.deletingLastPathComponent().appendingPathComponent("runtime-demo-assets.json") }
     private func audit() {
         do {
             let ids = try JSONDecoder().decode([String].self,from:Data(contentsOf:ownershipURL))
-            let owned = Set(ids)
+            let demo = try JSONDecoder().decode([String].self,from:Data(contentsOf:runtimeDemoURL))
+            let owned = Set(ids+demo)
             let all = PHAsset.fetchAssets(with:nil)
             var unknown = 0
             all.enumerateObjects { asset,_,_ in if !owned.contains(asset.localIdentifier) { unknown += 1 } }
-            let result:[String:Any] = ["status":unknown == 0 ? "PASS":"FAIL","createdCount":ids.count,"remainingCount":all.count,"unknownCount":unknown,"removedCount":ids.count-all.count]
+            let generatedRemaining=PHAsset.fetchAssets(withLocalIdentifiers:ids,options:nil).count
+            let demoRemaining=PHAsset.fetchAssets(withLocalIdentifiers:demo,options:nil).count
+            let result:[String:Any] = ["status":unknown == 0 ? "PASS":"FAIL","createdCount":ids.count,"preloadedRuntimeDemoCount":demo.count,"remainingCount":all.count,"unknownCount":unknown,"removedCount":ids.count+demo.count-all.count,"removedGeneratedCount":ids.count-generatedRemaining,"removedRuntimeDemoCount":demo.count-demoRemaining]
             try JSONSerialization.data(withJSONObject:result,options:.sortedKeys).write(to:reportURL.deletingLastPathComponent().appendingPathComponent("audit-report.json"),options:.atomic)
         } catch { NSLog("FIXTURE_AUDIT_FAIL") }
     }
@@ -49,6 +53,16 @@ import Photos
         NSLog("FIXTURE_IMPORT_BEGIN")
         guard let photo = Bundle.main.url(forResource:"key-photo",withExtension:"jpg"),
               let motion = Bundle.main.url(forResource:"paired-motion",withExtension:"mov") else { finish(["status":"FAIL","stage":"resources"]);return }
+        // A NEW simulator on the observed iOS27 runtime contains six runtime demo
+        // assets before any import (CocoWash native enumeration 70=64+6). This
+        // helper can only be launched by the fresh, run-owned simulator wrapper.
+        // Keep that baseline separate; never silently adopt later/unknown assets.
+        let preloaded=PHAsset.fetchAssets(with:nil)
+        guard preloaded.count<=6 else { finish(["status":"FAIL","stage":"unexpectedFreshRuntimeLibrary","preloadedCount":preloaded.count]);return }
+        var demo:[String]=[]
+        preloaded.enumerateObjects { asset,_,_ in demo.append(asset.localIdentifier) }
+        do { try JSONEncoder().encode(demo).write(to:runtimeDemoURL,options:.atomic) }
+        catch { finish(["status":"FAIL","stage":"privateRuntimeBaselineWrite"]);return }
         PHPhotoLibrary.shared().performChanges({
             for index in 0..<3 {
                 let request = PHAssetCreationRequest.forAsset()
@@ -79,7 +93,7 @@ import Photos
                 if item.mediaType == .video { video += 1 }
                 paired += PHAssetResource.assetResources(for:item).filter{$0.type == .pairedVideo || $0.type == .fullSizePairedVideo}.count
             }
-            self.finish(["status":assets.count == 64 && live == 3 && paired >= 3 && video == 1 ? "PASS":"FAIL","createdCount":assets.count,"livePhotoCount":live,"pairedResourceCount":paired,"videoCount":video,"boundary":"PhotoKit import/read on generated-media-only ephemeral simulator; no CocoWash runtime assertions"])
+            self.finish(["status":assets.count == 64 && live == 3 && paired >= 3 && video == 1 ? "PASS":"FAIL","createdCount":assets.count,"preloadedRuntimeDemoCount":demo.count,"initialTotal":assets.count+demo.count,"livePhotoCount":live,"pairedResourceCount":paired,"videoCount":video,"boundary":"Fresh run-owned simulator only: generated fixtures plus explicitly counted preloaded runtime demo assets; no personal library or CocoWash playback assertions"])
         }
     }
 }

@@ -1,0 +1,49 @@
+name: Isolate native album text interaction
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  keyboard:
+    if: github.event.repository.private == false
+    runs-on: xcode-27
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        textInteraction: [current, enabled]
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
+      COCO_SIMULATOR_MODE: standard
+    defaults:
+      run:
+        working-directory: mano
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+      - name: Instrument input events and isolate one WebKit preference in CI copy
+        run: |
+          mkdir -p build
+          python3 ../scripts/apple-fixtures/instrument-album.py '${{ matrix.textInteraction }}'
+          git diff -- ios/App/App/PhotoLibrary.swift > build/input-diagnostic.patch
+          cat build/input-variant.json
+      - name: Run unchanged complete album assertions with real keyboard and PhotoKit
+        run: bash scripts/validate-apple-native.sh --simulator-smoke
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: album-text-${{ matrix.textInteraction }}-${{ github.sha }}
+          path: |
+            mano/build/input-variant.json
+            mano/build/input-diagnostic.patch
+            mano/build/simulator-smoke/ui-test.log
+            mano/build/simulator-smoke/photos-read.log
+            mano/build/simulator-smoke/*.png
+            mano/build/simulator-smoke/*.xcresult/**
+          retention-days: 7
+          if-no-files-found: warn
