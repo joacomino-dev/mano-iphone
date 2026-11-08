@@ -1,0 +1,9 @@
+{
+  "run": 42488121581,
+  "source": "64d8a863a57f9c5b6d34acee9c752783b188f749",
+  "exception": "EXC_BREAKPOINT SIGTRAP before didFinishLaunching",
+  "faultingFrame": "___UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption_block_invoke",
+  "rootCause": "Generated fixture helper lacked UIApplicationSceneManifest and UIWindowSceneDelegate. CocoWash already has its scene lifecycle.",
+  "fix": "Create the helper window in its UIWindowScene; add scene configuration, no app change.",
+  "statusAfterFix": "NOT TESTED until next probe"
+}

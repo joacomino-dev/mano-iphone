@@ -394,3 +394,5 @@ Estado:corrección candidata local; aceptación nativa pendiente.
 Evidencia:campo vacío/placeholder,teclado1,guardar disabled en18Pro27.0 yDuo27.1. Export dexcresult42488119404 permite inspección visual real antes de teardown. No se llegó aPhotoKit.
 Reproducción adicional:evento input con value-tracking ya sincronizado deja Reactstate vacío;1FAIL/2PASS antes. FallbackonInput al mismo estado además deonChange:3PASS después,una sola creación con texto latino/japonés yvacíos prohibidos.
 Validaciones:130Node/TypeScript/hash28 PASS;38 regresiones de permisos/borrado/compras/layout PASS antes del checkpoint. No cambian álbum/transacción/gestos ni arte. Repetir mismo XCTest estándar yDuo para establecer el efecto nativo; no convertir el mock en aceptación Apple.
+
+CW-CX-026 seeder causa demostrada:crash42488121581 SIGTRAP en___UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption_block_invoke, antes del delegado. Se añade SceneManifest/SceneDelegate al helper separado,como requiere UIKit del SDK actual. No se modifica CocoWash. Compilación eimportación posteriores pendientes de nuevo probe.

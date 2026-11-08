@@ -25,7 +25,7 @@ def run(*args, timeout=120):
 app = out/'FixtureSeeder.app'
 app.mkdir(exist_ok=False)
 bundle = 'work.joaquin.coco.fixtureseeder'
-(app/'Info.plist').write_bytes(plistlib.dumps({'CFBundleIdentifier':bundle,'CFBundleExecutable':'FixtureSeeder','CFBundleName':'FixtureSeeder','CFBundlePackageType':'APPL','CFBundleShortVersionString':'1.0','CFBundleVersion':'1','MinimumOSVersion':'17.0','UIDeviceFamily':[1],'LSRequiresIPhoneOS':True,'NSPhotoLibraryUsageDescription':'Create and verify synthetic CocoWash CI fixtures only.','NSPhotoLibraryAddUsageDescription':'Create synthetic fixture photos only.','UISupportedInterfaceOrientations':['UIInterfaceOrientationPortrait']}))
+(app/'Info.plist').write_bytes(plistlib.dumps({'CFBundleIdentifier':bundle,'CFBundleExecutable':'FixtureSeeder','CFBundleName':'FixtureSeeder','CFBundlePackageType':'APPL','CFBundleShortVersionString':'1.0','CFBundleVersion':'1','MinimumOSVersion':'17.0','UIDeviceFamily':[1],'LSRequiresIPhoneOS':True,'NSPhotoLibraryUsageDescription':'Create and verify synthetic CocoWash CI fixtures only.','NSPhotoLibraryAddUsageDescription':'Create synthetic fixture photos only.','UISupportedInterfaceOrientations':['UIInterfaceOrientationPortrait'],'UIApplicationSceneManifest':{'UIApplicationSupportsMultipleScenes':False,'UISceneConfigurations':{'UIWindowSceneSessionRoleApplication':[{'UISceneConfigurationName':'Fixture','UISceneDelegateClassName':'FixtureSceneDelegate'}]}}}))
 for name in ['key-photo.jpg','paired-motion.mov']:
     shutil.copy2(out/'generated'/name,app/name)
 sdk = run('xcrun','--sdk','iphonesimulator','--show-sdk-path')

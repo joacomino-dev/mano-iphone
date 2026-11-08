@@ -11,18 +11,20 @@ import Photos
     private var created: [String] = []
     func application(_ application: UIApplication, didFinishLaunchingWithOptions options: [UIApplication.LaunchOptionsKey:Any]?) -> Bool {
         NSLog("FIXTURE_SEED_DID_LAUNCH")
+        return true
+    }
+    func begin(on scene: UIWindowScene) {
         let controller = UIViewController();controller.view.backgroundColor = .white
         label.frame = CGRect(x:20,y:100,width:300,height:200);label.numberOfLines = 0
         label.text = "SEEDING_SYNTHETIC_FIXTURES";controller.view.addSubview(label)
-        window = UIWindow(frame: UIScreen.main.bounds);window?.rootViewController = controller;window?.makeKeyAndVisible()
-        if FileManager.default.fileExists(atPath: reportURL.path) { label.text = "FIXTURES_ALREADY_SEEDED";return true }
+        window = UIWindow(windowScene:scene);window?.rootViewController = controller;window?.makeKeyAndVisible()
+        if FileManager.default.fileExists(atPath: reportURL.path) { label.text = "FIXTURES_ALREADY_SEEDED";return }
         NSLog("FIXTURE_AUTH_REQUEST")
         PHPhotoLibrary.requestAuthorization(for:.readWrite) { status in
             NSLog("FIXTURE_AUTH_RESULT status=%ld",status.rawValue)
             guard status == .authorized else { self.finish(["status":"FAIL","stage":"authorization","authorization":status.rawValue]);return }
             self.seed()
         }
-        return true
     }
     private var reportURL: URL { FileManager.default.urls(for:.documentDirectory,in:.userDomainMask)[0].appendingPathComponent("fixture-report.json") }
     private func finish(_ result: [String:Any]) {
@@ -64,5 +66,14 @@ import Photos
             }
             self.finish(["status":assets.count == 64 && live == 3 && paired >= 3 && video == 1 ? "PASS":"FAIL","createdCount":assets.count,"livePhotoCount":live,"pairedResourceCount":paired,"videoCount":video,"boundary":"PhotoKit import/read on generated-media-only ephemeral simulator; no CocoWash runtime assertions"])
         }
+    }
+}
+
+@objc(FixtureSceneDelegate) final class FixtureSceneDelegate: UIResponder, UIWindowSceneDelegate {
+    var window: UIWindow?
+    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options: UIScene.ConnectionOptions) {
+        guard let scene = scene as? UIWindowScene,
+              let delegate = UIApplication.shared.delegate as? FixtureSeeder else { return }
+        delegate.begin(on:scene);window=delegate.window
     }
 }
