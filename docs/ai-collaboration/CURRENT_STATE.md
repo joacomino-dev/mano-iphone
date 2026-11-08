@@ -15,6 +15,10 @@ Gate nativo RC (manual, `rc-native-gate.yml`), run 42438304068: compilación Rel
 PASS (Xcode 27.1), oráculos Swift PASS, acceso completo real a Fotos y sesión en simulador PASS;
 smoke **FAIL** al crear álbum («Crear y añadir» no cierra la hoja en el simulador iPhone Duo), sin
 cambios de la RC en ese flujo → para Codex. Sigue FAIL el gate de privacidad `--submission` (P1 dominios).
+CI en `main` `376855d`: tienda iOS 42442110715, desarrollo iOS 42442110733 (arranque en simulador) y
+Android 42442110729 PASS. IPA `C:/Users/Joaco/Downloads/CocoWash-0.9.9.1-build43-376855d.ipa`, sha256
+`6e80ecaf…66d8` (sin firma, anuncios de prueba). Prompt de relevo:
+[PROMPT_CODEX_2026-11-07](../ai-handoff/PROMPT_CODEX_2026-11-07.md).
 
 ## Integración RC iOS + Android — `claude/rc-android-integration` `bc6db8c` (Claude, CW-CL-059)
 
