@@ -311,12 +311,14 @@ run_ui_test() {
   # xcodebuild off right after the pass. 1320 s = 840 s test + bootstrap.
   local selection='-only-testing:ManoUITests/PhotosSmokeTests/testFullPhotosAuthorizationStartsSession'
   if [ "${COCO_NATIVE_LAB:-0}" = 1 ]; then selection='-only-testing:ManoUITests/PhotosSmokeTests'; fi
-  local capture=()
+  local capture=(xcodebuild)
   if [ "${COCO_AD_TRAFFIC:-none}" != none ]; then
     selection='-only-testing:ManoUITests/PhotosSmokeTests/testAdHostCaptureThroughRealConsent'
-    capture=(python3 ../scripts/privacy-hosts/run_with_proxy.py "$smoke_dir/traffic" "$COCO_AD_TRAFFIC")
+    capture=(python3 ../scripts/privacy-hosts/run_with_proxy.py "$smoke_dir/traffic" "$COCO_AD_TRAFFIC" xcodebuild)
   fi
-  bounded 2200 "${capture[@]}" xcodebuild -project ios/App/App.xcodeproj -scheme ManoSmoke \
+  echo RUNNING > "$smoke_dir/ui-test-exit-code.txt"
+  local test_code=0
+  bounded 2200 "${capture[@]}" -project ios/App/App.xcodeproj -scheme ManoSmoke \
     -configuration Release -sdk iphonesimulator -destination "platform=iOS Simulator,id=$simulator_id" \
     -derivedDataPath build/simulator-smoke/DerivedData \
     -resultBundlePath build/simulator-smoke/PhotosSmoke.xcresult \
@@ -324,7 +326,9 @@ run_ui_test() {
     -parallel-testing-enabled NO -maximum-concurrent-test-simulator-destinations 1 \
     -test-timeouts-enabled YES -maximum-test-execution-time-allowance 840 \
     CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' test-without-building \
-    > "$smoke_dir/ui-test.log" 2>&1
+    > "$smoke_dir/ui-test.log" 2>&1 || test_code=$?
+  printf '%s\n' "$test_code" > "$smoke_dir/ui-test-exit-code.txt"
+  return "$test_code"
 }
 collector_pid=''
 if [ "${COCO_NATIVE_LAB:-0}" = 1 ]; then

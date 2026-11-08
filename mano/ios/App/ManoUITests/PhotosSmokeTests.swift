@@ -517,6 +517,10 @@ final class PhotosSmokeTests: XCTestCase {
 
     @MainActor private func nativeMediaFilter(_ app:XCUIApplication,_ media:String) throws {
         app.buttons["Filtros"].firstMatch.tap()
+        // The sheet remembers Ajustes after the Geek test. Select its filters
+        // tab explicitly; never change app behavior just for this test.
+        let tab=app.descendants(matching:.any).matching(NSPredicate(format:"label == %@","Filtros")).allElementsBoundByIndex.filter { $0.isHittable }.last
+        try XCTUnwrap(tab).tap()
         let choice=app.descendants(matching:.any).matching(NSPredicate(format:"label == %@",media)).allElementsBoundByIndex.filter { $0.isHittable }.last
         try XCTUnwrap(choice).tap()
         let apply=app.buttons["Aplicar filtros"].firstMatch

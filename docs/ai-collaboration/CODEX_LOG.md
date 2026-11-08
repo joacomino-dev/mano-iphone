@@ -431,3 +431,9 @@ R-01:42493905346 confirma tecla software tampoco inserta(placeholdertrue,length1
 Live:sintéticos3s;test nativo decambio real depíxeles,pausa→mismafotoclave,anclaje accesible,timeline/loop ypinch sin escalado decontroles. MarkersSwift solo trasbytespreparados;sin cambiar reproducción. Testnuevo yfixturesbaseline/audit pendienteCI.
 Privacidad:workflowATTallowed/denied usa realUMP/appID ysolo inventario TEST;proxyCONNECT sinTLS/interceptarcontenido,4parserPASS. Se mantieneNSPrivacyTrackingDomainsinmutable. La captura no prueba propósito deendpoint ni atribuciónexclusiva;necesita evidencia y aprobaciónowner.
 Todos lossmokeinteractivos pasanainventarioTEST(copiaCI); Releasearm64tienda sevalida antesdeañadirflag. No se distribuye esa copia.
+
+### CW-CX-036 — Falsoverde de infraestructura yP0 real de persistencia
+Fecha:2026-11-08. Agente:Codex. Estado:fallos comprobados,nopublicable.
+42511286263/e48e62c sale0peroantesdeXCTest `capture[@]: unbound variable` (arrayvacío enBash3.2). Artefacto103KB sinxcresult. NO esNativePASS,Node/Swiftbuild sí. Se inicializa arrayconxcodebuild,yse guardaRUNNING/exitcode real. Postcondición independiente exige casosPASSED,marcadores,xcresult,PhotoKitpostaudit,métricas.Hostprobe/albumtambiénrecibenpostcondición.14 tests unitdeinfraestructura PASSinclwrapperrealcon/sinproxy,yexit9nooculto. Cambios deappnofingidos.
+42511282029Android ejecutaE2E yfallanuevocasoforce-stop:pending1guardado→pending0trasrelaunch. R61P0abierto(datosdedecisión,noborradoPhotosenesecaso). InvestigarChromiumcommitdeferred5syarranquerealantesdefix. Se mantieneNSPrivacyTrackingDomainsyarteintactos.
+Tambiénse corrigetestMediaFilter:la hoja recuerdaAjustes,eltestdebeescogertabFiltros;no se cambiaappparahacerlopasar.

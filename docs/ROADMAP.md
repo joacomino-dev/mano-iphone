@@ -235,3 +235,12 @@ Autorizados push normal a main y workflows estándar públicos gratuitos, relanz
 - 2026-11-08 · Codex CW-CX-033 continuación:iOS42492831273 test10rondas PASS393s,XCTestCPU2,739s/ronda yappfootprint≈46–47MB;hostapp+WebContent sin crecimiento sostenido. GateFAILálbum no se oculta. Se corrige evidencia64→70total(6demos precargadas delruntime),auditoría finalenexit ycohortes separadas. Android42493904052 PASSinclKotlin/Java/10rondas.
 
 - 2026-11-08 · Codex CW-CX-035:tecla softwareR01tambiénFAIL42493905346;matriz depreferenciaWebKit enfoco/observaciónsololectura preparada. TestnativoLive real(píxeles/key/timeline/pinch) y2estadosATT/hosts preparados; pendientesCI,dominios intactos. NativeRelease/Git protegidos sin cambios visuales.
+
+## Incidencias nuevas de cierre — CW-CX-036
+
+| ID | Prioridad | Estado | Evidencia / siguiente paso |
+| --- | --- | --- | --- |
+| R-60 | P1 gate de CI | FAIL detectado; corrección preparada | Run42511286263/e48e62c figura success pero NO ejecutó XCTest:AppleBash3.2 `capture[@]: unbound variable`. No cuenta como PASS nativo. Wrapper ahora siempre contiene xcodebuild yse exige comprobación independiente de casos ejecutados/xcresult/PhotoKit/métricas.14 pruebas de infraestructura PASS local;repetir CI. |
+| R-61 | P0 persistencia | FAIL aplicación | Android42511282029/e48e62c:descartarfixture,persistedpending1,force-stop antes de confirmar,relaunch=>pending0. No borrado por ese gesto; pérdida de decisión guardada reproducida. Investigar durabilidad localStorage/arranque antes de cambiar almacenamiento. Fuente Chromium documenta commit diferido5s;hipótesis compatible, falta aislar. |
+
+- 2026-11-08 · Codex CW-CX-036:se rechaza falsoverde42511286263(noXCTest), corrige arrayvacíoBash3.2 y añade postcondición independiente. NuevotestAndroid revelaR61P0 pérdida de descarte tras cierre forzado; prioridadsobre materiales. No declarar RC lista.

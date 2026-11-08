@@ -39,9 +39,12 @@ jobs:
       - name: Validate simulator evidence collector
         run: |
           python3 -B -m unittest discover -s tests -p test_simulator_screens.py -v
-          python3 -B -m unittest discover -s ../scripts/tests -p test_native_cycle_budget.py -v
+          python3 -B -m unittest discover -s ../scripts/tests -p 'test_native*.py' -v
       - name: Unsigned build, Swift oracles and real PhotoKit read smoke
         run: bash scripts/validate-apple-native.sh --simulator-smoke
+      - name: Independently require executed native evidence (full)
+        if: success()
+        run: python3 ../scripts/verify-native-gate-evidence.py build/simulator-smoke full
       - name: Retain synthetic QA logs, never an IPA or personal media
         if: always()
         uses: actions/upload-artifact@v4
@@ -52,6 +55,7 @@ jobs:
             mano/build/apple-readiness/*.json
             mano/build/apple-readiness/*.log
             mano/build/apple-readiness/resolutions/*.resolved
+            mano/build/simulator-smoke/*.txt
             mano/build/simulator-smoke/*.json
             mano/build/simulator-smoke/fixtures/*.json
             mano/build/simulator-smoke/fixtures/*.log
