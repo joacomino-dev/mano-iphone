@@ -20,6 +20,9 @@ jobs:
         working-directory: mano
     env:
       COCO_VERSION: '0.9.9.1'
+      COCO_ADMOB_ANDROID_APP_ID: ${{ vars.COCO_ADMOB_ANDROID_APP_ID }}
+      COCO_ADMOB_ANDROID_NATIVE_UNIT: ${{ vars.COCO_ADMOB_ANDROID_NATIVE_UNIT }}
+      COCO_PLAY_LICENSE_PUBLIC_KEY: ${{ secrets.COCO_PLAY_LICENSE_PUBLIC_KEY }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -83,7 +86,7 @@ jobs:
         working-directory: mano/android
         run: |
           set -o pipefail
-          if ! ./gradlew --no-daemon --stacktrace bundleRelease 2>&1 | tee ../build-gradle.txt; then
+          if ! ./gradlew --no-daemon --stacktrace testDebugUnitTest bundleRelease 2>&1 | tee ../build-gradle.txt; then
             # Compiler errors as annotations (readable without signing in to GitHub).
             grep -E '^e: |error:|What went wrong' -A2 ../build-gradle.txt | head -20 | while IFS= read -r line; do echo "::error title=Gradle::$line"; done
             exit 1

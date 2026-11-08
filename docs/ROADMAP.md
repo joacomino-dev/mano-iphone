@@ -95,10 +95,10 @@ una puerta nativa, comercial o de distribución.
 | R-40 | Teléfono Android 11+ y cuenta de Play Console verificada | U | Pendiente | Bloquea todo Play |
 | R-41 | Si corresponde por tipo/fecha de cuenta personal: mínimo12 testers inscritos continuamente14 días en prueba cerrada y solicitar acceso a producción | U | Pendiente | [Regla oficial Google](https://support.google.com/googleplay/android-developer/answer/14151465): cuentas personales posteriores al13-11-2023. Confirmar requisito de la cuenta real; no es regla universal de15–20 |
 | R-42 | Keystore de desarrollo en los secretos de GitHub | U | Pendiente | Clave en `C:\Users\Joaco\Developer\cocowash-keys` (LEEME) |
-| R-43 | IDs reales de AdMob Android y canal de tienda Android en `main` (ya no hay rama `release`) | U (IDs) + C | Pendiente | `PROMPT_WEB_ANDROID.md`; no usar los IDs iOS |
+| R-43 | IDs reales de AdMob Android y canal de tienda Android en `main` (ya no hay rama `release`) | U (IDs) + CX | BLOCKED IDs; mecanismo en curso | CW-CX-032:variables Android separadas,debug sample ygate estricto preparados; falta CI yconfiguración del propietario, no usar iOS |
 | R-44 | Con `main` en canal de tienda, el APK de desarrollo oculta «Modo developer»: decidir si su CI cambia su copia a desarrollo como la IPA | CX | **PASS** | CW-CX-028: run42486725664 valida hashes de APK developer/AAB tienda,5 regresiones yE2E emulador PASS. IDs reales/firma/compras siguen en sus gates |
 | R-45 | P3 posterior: detector de texto/embedder adicional Android | CX si se autoriza | Pendiente, fuera de primera publicación | Texto no disponible se mantiene oculto; parecido dHash existente no equivale a embedder. No incorporar modelos nuevos ni anunciar funciones incompletas para cerrar la primera versión |
-| R-46 | Verificar firma de compras con la clave de licencias | C + U | Pendiente | — |
+| R-46 | Verificar firma de compras con la clave de licencias | CX + U | En curso; sandbox BLOCKED | CW-CX-032:verificador local y7 vectores RSA,errores/recibos no verificados nunca éxito; CI Java/Kotlin pendiente. [Configuración y límites](playstore/PURCHASE_VERIFICATION.md) |
 | R-47 | Carta de anuncio con Fredoka y espejo RTL; vídeo a pantalla completa | C | Pendiente | — |
 | R-48 | Prueba interna, cerrada (14 días) y solicitud de producción | U + C | Bloqueado | Tras R-40…R-43 |
 | R-49 | Firma de producción Android: Play App Signing, clave de subida/recuperación y AAB del canal real; contratos de pagos/productos Play y Data safety contrastado con SDK/tráfico | U configura + CX verifica | Pendiente | La clave de desarrollo R-42 y una CI verde no acreditan firma comercial ni productos Google Play funcionales |
@@ -227,3 +227,5 @@ Autorizados push normal a main y workflows estándar públicos gratuitos, relanz
 - 2026-11-08 · Codex CW-CX-030: captura xcresult real confirma R-01 también en18Pro/27.0, no solo Duo. Regresión input con tracker sincronizado1FAIL→3PASS tras fallbackonInput; candidato de app mínimo, repetir XCTest exacto sin debilitarlo. R-01 sigue abierto hasta CI.
 
 - 2026-11-08 · Codex CW-CX-031: onInput no corrige R-01 nativo; nuevo destinatario XCTest bajo prueba. Seeder PhotoKit42489613346 PASS64/3Live. Android42491859489 detecta vídeo fixture duración0; generación animada/probe independiente preparados. Laboratorio iOS añade contrato ligado al simulador y XCTest/medidas app+WebContent; presupuestos declarados antes de obtener ciclos completos.
+
+- 2026-11-08 · Codex CW-CX-032:Android42492831172 PASS10rondas UI reales tras corregir fixture0s. R-46 añade verificación de firma/configuración fail-closed;7 vectores RSA pendientes CI. R-01 app.typeText tambiénFAIL, se reúne evidencia de tecla software sin relajar asserts.

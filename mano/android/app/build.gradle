@@ -9,19 +9,24 @@ apply plugin: 'org.jetbrains.kotlin.android'
 def cocoVersionName = '0.9.9.1'
 def cocoVersionCode = 3
 
-// AdMob. `main` (development) carries Google's sample app ID and test unit; the
-// `release` branch replaces these two lines with CocoWash's real Android IDs (like
-// iOS). Debug builds always use the test unit; COCO_TEST_ADS=true (CI development
-// APK) keeps test ads in a release build too.
-def admobAppId = 'ca-app-pub-3940256099942544~3347511713'
-def admobNativeUnit = 'ca-app-pub-3940256099942544/2247696110'
+def env = { String name -> System.getenv(name) ?: '' }
+// main is the store source. Owner supplies Android IDs; until then these sample
+// defaults exercise only the mechanism and never qualify as a store-ready AAB.
+def sampleAppId = 'ca-app-pub-3940256099942544~3347511713'
+def sampleNativeUnit = 'ca-app-pub-3940256099942544/2247696110'
+def admobAppId = env('COCO_ADMOB_ANDROID_APP_ID') ?: sampleAppId
+def admobNativeUnit = env('COCO_ADMOB_ANDROID_NATIVE_UNIT') ?: sampleNativeUnit
+if (!(admobAppId ==~ /ca-app-pub-[0-9]{16}~[0-9]{10}/) || !(admobNativeUnit ==~ /ca-app-pub-[0-9]{16}\/[0-9]{10}/)) throw new GradleException('Invalid Android AdMob ID format')
 
 // Signing never lives in the repository. CI writes the keystores from GitHub
 // secrets into the runner's temp folder and passes their paths here:
 //   COCO_UPLOAD_KEYSTORE / _PASSWORD / COCO_UPLOAD_KEY_ALIAS / _PASSWORD → release (Play upload key)
 //   COCO_DEV_KEYSTORE / _PASSWORD / COCO_DEV_KEY_ALIAS / _PASSWORD       → development APK
 // Without them, release stays unsigned and debug uses the runner's throw-away key.
-def env = { String name -> System.getenv(name) ?: '' }
+// Public Play licensing key, never the private upload/signing key. Owner configures
+// GitHub Secret COCO_PLAY_LICENSE_PUBLIC_KEY; no sample key grants entitlements.
+def playLicenseKey = env('COCO_PLAY_LICENSE_PUBLIC_KEY').replaceAll('\\s', '')
+if (playLicenseKey && !(playLicenseKey ==~ /[A-Za-z0-9+\/=]+/)) throw new GradleException('Malformed Play public key encoding')
 
 android {
     namespace = "work.joaquin.mano"
@@ -41,6 +46,7 @@ android {
         // Only the seven languages the app speaks (keeps library strings out of the bundle).
         resourceConfigurations += ['es', 'en', 'fr', 'de', 'it', 'ar', 'ja']
         manifestPlaceholders = [admobAppId: admobAppId]
+        buildConfigField 'String', 'PLAY_LICENSE_PUBLIC_KEY', '"' + playLicenseKey + '"'
         buildConfigField 'String', 'ADMOB_NATIVE_UNIT', "\"${admobNativeUnit}\""
         buildConfigField 'boolean', 'COCO_TEST_ADS', (System.getenv('COCO_TEST_ADS') == 'true').toString()
     }
@@ -64,6 +70,9 @@ android {
     }
     buildTypes {
         debug {
+            // Development never requests live inventory, even when store IDs exist.
+            manifestPlaceholders = [admobAppId: sampleAppId]
+            buildConfigField 'String', 'ADMOB_NATIVE_UNIT', '"' + sampleNativeUnit + '"'
             if (env('COCO_DEV_KEYSTORE')) signingConfig signingConfigs.development
         }
         release {
@@ -115,3 +124,19 @@ dependencies {
 
 apply from: 'capacitor.build.gradle'
 
+
+// Invoked explicitly by distribution preparation; regular unsigned CI still
+// exercises sample IDs without claiming they are production configuration.
+def storeConfiguration = tasks.register('verifyStoreConfiguration') {
+    doLast {
+        if (admobAppId == sampleAppId || admobNativeUnit == sampleNativeUnit ||
+            admobAppId == 'ca-app-pub-5676353604168025~4587143429' ||
+            admobNativeUnit == 'ca-app-pub-5676353604168025/8219266678') throw new GradleException('BLOCKED: real Android AdMob IDs required (not iOS/sample IDs)')
+        try {
+            def key = java.security.KeyFactory.getInstance('RSA').generatePublic(new java.security.spec.X509EncodedKeySpec(java.util.Base64.decoder.decode(playLicenseKey)))
+            if (!(key instanceof java.security.interfaces.RSAPublicKey) || key.modulus.bitLength() < 2048) throw new IllegalArgumentException()
+        } catch (Exception ignored) { throw new GradleException('BLOCKED: valid Play licensing public key required') }
+        println 'ANDROID_STORE_CONFIGURATION_PASS (configuration only; real purchases/ads still need Play/AdMob QA)'
+    }
+}
+if (env('COCO_ANDROID_STORE_READY') == 'true') tasks.matching { it.name == 'preReleaseBuild' }.configureEach { dependsOn(storeConfiguration) }

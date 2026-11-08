@@ -61,6 +61,12 @@ class CocoMonetizationPlugin : Plugin() {
     private lateinit var billing: BillingClient
     private var buyCall: PluginCall? = null
     private var buyId: String? = null
+    private val verifier = PlayPurchaseVerifier(BuildConfig.PLAY_LICENSE_PUBLIC_KEY)
+
+    private fun verified(purchase: Purchase): Boolean =
+        purchase.packageName == context.packageName && purchase.products.size == 1 &&
+        purchase.products[0] in PRODUCTS && purchase.quantity == 1 && purchase.purchaseToken.isNotBlank() &&
+        purchase.purchaseTime > 0 && verifier.verify(purchase.originalJson, purchase.signature)
 
     private var initialized = false
     private var preparing = false
@@ -112,6 +118,7 @@ class CocoMonetizationPlugin : Plugin() {
      * refunds unacknowledged ones after three days), consumes coffees and years
      * that ended. */
     private fun entitlements(done: (JSObject?) -> Unit) {
+        if (!verifier.isConfigured) { done(null); return }
         connected({
             billing.queryPurchasesAsync(QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.INAPP).build()) { result, purchases ->
                 main.post {
@@ -119,7 +126,7 @@ class CocoMonetizationPlugin : Plugin() {
                     var lifetime = false
                     var expiry = 0L
                     for (purchase in purchases) {
-                        if (purchase.purchaseState != Purchase.PurchaseState.PURCHASED) continue
+                        if (purchase.purchaseState != Purchase.PurchaseState.PURCHASED || !verified(purchase)) continue
                         val id = purchase.products.firstOrNull() ?: continue
                         when (id) {
                             COFFEE -> consume(purchase)
@@ -147,11 +154,12 @@ class CocoMonetizationPlugin : Plugin() {
     }.timeInMillis
 
     private fun acknowledge(purchase: Purchase) {
-        if (purchase.isAcknowledged) return
+        if (!verified(purchase) || purchase.isAcknowledged || purchase.purchaseState != Purchase.PurchaseState.PURCHASED) return
         billing.acknowledgePurchase(AcknowledgePurchaseParams.newBuilder().setPurchaseToken(purchase.purchaseToken).build()) { }
     }
 
     private fun consume(purchase: Purchase, done: (() -> Unit)? = null) {
+        if (!verified(purchase) || purchase.purchaseState != Purchase.PurchaseState.PURCHASED) return
         billing.consumeAsync(ConsumeParams.newBuilder().setPurchaseToken(purchase.purchaseToken).build()) { _, _ -> done?.let { main.post(it) } }
     }
 
@@ -171,6 +179,7 @@ class CocoMonetizationPlugin : Plugin() {
 
     @PluginMethod
     fun catalog(call: PluginCall) {
+        if (!verifier.isConfigured) { call.reject("Purchase verification unavailable", "VERIFICATION_UNAVAILABLE"); return }
         connected({
             details(PRODUCTS) { list ->
                 if (list.isNullOrEmpty()) { call.reject("Play catalog unavailable"); return@details }
@@ -187,6 +196,7 @@ class CocoMonetizationPlugin : Plugin() {
 
     @PluginMethod
     fun buy(call: PluginCall) {
+        if (!verifier.isConfigured) { call.reject("Purchase verification unavailable", "VERIFICATION_UNAVAILABLE"); return }
         val id = call.getString("id")
         if (buyCall != null || id == null || id !in PRODUCTS) { call.reject("Purchase unavailable"); return }
         connected({
@@ -200,7 +210,7 @@ class CocoMonetizationPlugin : Plugin() {
                 val result = billing.launchBillingFlow(activity, flow)
                 if (result.responseCode != BillingClient.BillingResponseCode.OK) {
                     buyCall = null; buyId = null
-                    if (result.responseCode == BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED) restoreInto(call, "purchased")
+                    if (result.responseCode == BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED) restoreInto(call, if (id == COFFEE) "pending" else "purchased", id)
                     else call.reject("Purchase unavailable")
                 }
             }
@@ -218,7 +228,15 @@ class CocoMonetizationPlugin : Plugin() {
                 BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED -> "purchased"
                 else -> null
             }
-            val bought = ours.filter { it.purchaseState == Purchase.PurchaseState.PURCHASED }
+            if (ours.any { it.purchaseState == Purchase.PurchaseState.PURCHASED && !verified(it) }) {
+                call?.reject("Unverified purchase", "UNVERIFIED_PURCHASE")
+                return@post
+            }
+            val bought = ours.filter { it.purchaseState == Purchase.PurchaseState.PURCHASED && verified(it) }
+            if (result.responseCode == BillingClient.BillingResponseCode.OK && ours.isEmpty()) {
+                call?.reject("No verified purchase returned", "UNVERIFIED_PURCHASE")
+                return@post
+            }
             for (purchase in bought) {
                 when (purchase.products.firstOrNull()) {
                     COFFEE -> consume(purchase)
@@ -226,15 +244,24 @@ class CocoMonetizationPlugin : Plugin() {
                 }
             }
             if (call == null) { if (bought.isNotEmpty()) notifyListeners("purchaseChanged", JSObject()); return@post }
+            if (result.responseCode == BillingClient.BillingResponseCode.OK &&
+                bought.none { id in it.products } && ours.none { it.purchaseState == Purchase.PurchaseState.PENDING && id in it.products }) {
+                call.reject("No matching verified purchase returned", "UNVERIFIED_PURCHASE"); return@post
+            }
+            if (result.responseCode == BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED && id == COFFEE && bought.isEmpty()) outcome = "pending"
             if (outcome == null) { call.reject("Purchase unavailable"); return@post }
             if (outcome == "purchased" && id != COFFEE && bought.isEmpty() && result.responseCode == BillingClient.BillingResponseCode.OK) outcome = "pending"
-            restoreInto(call, outcome)
+            restoreInto(call, outcome, id)
         }
     }
 
-    private fun restoreInto(call: PluginCall, outcome: String?) {
+    private fun restoreInto(call: PluginCall, outcome: String?, expectedId: String? = null) {
         entitlements { state ->
-            val data = state ?: JSObject().apply { put("adFree", false); put("expires", JSONObject.NULL) }
+            if (state == null) { call.reject("Restore unavailable"); return@entitlements }
+            if (outcome == "purchased" && expectedId in listOf(LIFETIME, ANNUAL) && !state.optBoolean("adFree")) {
+                call.reject("No verified entitlement returned", "UNVERIFIED_PURCHASE"); return@entitlements
+            }
+            val data = state
             if (data.optBoolean("adFree")) invalidateAd()
             outcome?.let { data.put("outcome", it) }
             call.resolve(data)
@@ -243,6 +270,7 @@ class CocoMonetizationPlugin : Plugin() {
 
     @PluginMethod
     fun restore(call: PluginCall) {
+        if (!verifier.isConfigured) { call.reject("Purchase verification unavailable", "VERIFICATION_UNAVAILABLE"); return }
         connected({ restoreInto(call, null) }, { call.reject("Restore unavailable") })
     }
 

@@ -1,0 +1,36 @@
+name: Verify local Play receipt authenticity guards
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  crypto:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Run actual Java verifier with generated RSA keys (no Play account)
+        run: |
+          mkdir -p work/play-signatures/classes
+          mvn -q dependency:get -Dartifact=junit:junit:4.13.2
+          JUNIT="$HOME/.m2/repository/junit/junit/4.13.2/junit-4.13.2.jar"
+          HAMCREST="$HOME/.m2/repository/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar"
+          javac -cp "$JUNIT" -d work/play-signatures/classes \
+            mano/android/app/src/main/java/work/joaquin/mano/PlayPurchaseVerifier.java \
+            mano/android/app/src/test/java/work/joaquin/mano/PlayPurchaseVerifierTest.java
+          set -o pipefail
+          java -cp "work/play-signatures/classes:$JUNIT:$HAMCREST" org.junit.runner.JUnitCore work.joaquin.mano.PlayPurchaseVerifierTest | tee work/play-signatures/result.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: play-receipt-verifier-${{ github.sha }}
+          path: work/play-signatures/result.txt
+          retention-days: 7
+          if-no-files-found: warn
