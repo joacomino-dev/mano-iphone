@@ -146,6 +146,18 @@ final class PhotosSmokeTests: XCTestCase {
             let fieldValue = name.value as? String ?? ""
             print("COCOWASH_UI_ALBUM_INPUT_MISMATCH valueLength=\(fieldValue.count) placeholder=\(fieldValue == name.placeholderValue) enabled=\(save.isEnabled) hittable=\(save.isHittable) keyboard=\(app.keyboards.count)")
             attachScreenshot(app, "Album input did not receive fixture name")
+            // Diagnostic only: do not turn the failed full-name assertion into
+            // a pass. A real software-keyboard tap distinguishes failed keyboard
+            // event synthesis from an input that cannot accept user touches.
+            print("COCOWASH_UI_KEYBOARD_KEYS \(app.keyboards.keys.allElementsBoundByIndex.map(\.label))")
+            let diagnosticKey = app.keyboards.keys.matching(NSPredicate(format:"label ==[c] %@","c")).firstMatch
+            if diagnosticKey.exists && diagnosticKey.isHittable {
+                diagnosticKey.tap()
+                Thread.sleep(forTimeInterval:2)
+                let after = name.value as? String ?? ""
+                print("COCOWASH_UI_SOFTWARE_KEY_PROBE placeholder=\(after == name.placeholderValue) valueLength=\(after.count)")
+                attachScreenshot(app, "Album after real software-keyboard diagnostic")
+            }
             XCTFail("WKWebView album field must contain the exact typed fixture name.")
             return
         }
