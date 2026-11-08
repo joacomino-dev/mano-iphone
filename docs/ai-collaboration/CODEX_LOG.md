@@ -376,3 +376,5 @@ Corrección:construir AAB primero con fuente tienda; cambiar solo la copia CI a 
 Validaciones:5 regresiones Python (mezcla/reemplazo de bundle/canal incorrecto rechazados) PASS. CI Android debe validar artefactos y E2E antes de cerrar R-44. VALIDATION ya no afirma monetización inexistente; distingue SDK de prueba y gates comerciales pendientes.
 
 CW-CX-026 probe PhotoKit:315348e/run42485975362 compila y genera pareja,pero no produce receipt del seeder. No se marca importado. Se añaden hitos locales de arranque/auth/import y capturas/log unificado antes de borrar el simulador; segunda hipótesis se decidirá con evidencia.
+
+CW-CX-026/027 avance:probe seeder termina SIGTRAP antes de DID_LAUNCH; se captura consola/dyld ycrash sin cambiar comportamiento por hipótesis. Variante iPhone18Pro/iOS27.0 también falla con placeholder/keyboard1, descartando causa exclusiva Duo. Workflow de exportación xcresult separado permitirá ver attachments reales del fallo ya retenido. R-44 CI42486725664 PASS con ambos hashes yE2E.

@@ -32,6 +32,7 @@ sdk = run('xcrun','--sdk','iphonesimulator','--show-sdk-path')
 arch = run('uname','-m')
 run('xcrun','--sdk','iphonesimulator','swiftc','-swift-version','5','-sdk',sdk,'-target',arch+'-apple-ios17.0-simulator','-parse-as-library','scripts/apple-fixtures/Seeder.swift','-o',str(app/'FixtureSeeder'))
 run('codesign','--force','--sign','-',str(app))
+(out/'linked-libraries.txt').write_text(run('xcrun','otool','-L',str(app/'FixtureSeeder')))
 inventory = json.loads(run('xcrun','simctl','list','-j',timeout=180))
 choices = []
 for runtime in inventory['runtimes']:
@@ -43,17 +44,19 @@ for runtime in inventory['runtimes']:
 assert choices, 'no available single-display iPhone runtime; not inventing a model'
 runtime,device = max(choices,key=lambda x:tuple(int(p) for p in x[0]['version'].split('.')))
 identifier = run('xcrun','simctl','create','CocoLiveProbe-'+os.environ['GITHUB_RUN_ID'],device['deviceTypeIdentifier'],runtime['identifier'])
+console = None
 try:
     run('xcrun','simctl','boot',identifier)
     run('xcrun','simctl','bootstatus',identifier,'-b',timeout=480)
     run('xcrun','simctl','install',identifier,str(app),timeout=300)
+    container = Path(run('xcrun','simctl','get_app_container',identifier,bundle,'data'))
     # Seeder only; CocoWash's real Photos authorization stays in the UI smoke.
     run('xcrun','simctl','privacy',identifier,'grant','photos',bundle)
-    run('xcrun','simctl','launch',identifier,bundle)
-    container = Path(run('xcrun','simctl','get_app_container',identifier,bundle,'data'))
+    console = subprocess.Popen(['xcrun','simctl','launch','--console',identifier,bundle],stdout=(out/'seeder-console.log').open('w'),stderr=subprocess.STDOUT,start_new_session=True)
     report = container/'Documents/fixture-report.json'
     deadline = time.monotonic()+240
     while not report.exists() and time.monotonic() < deadline:
+        assert console.poll() is None, 'seeder process exited; inspect seeder-console.log'
         time.sleep(1)
     assert report.exists(), 'seeder report missing; authorization/import NOT passed'
     result = json.loads(report.read_text())
@@ -68,8 +71,13 @@ except Exception:
         run('python3','mano/scripts/capture-simulator-screens.py',identifier,str(out),timeout=140)
     except Exception as error:
         print('DIAGNOSTIC:',type(error).__name__)
+    reports = Path.home()/'Library/Logs/DiagnosticReports'
+    for crash in reports.glob('FixtureSeeder*.ips'):
+        shutil.copy2(crash,out/crash.name)
     raise
 finally:
     for action in ['shutdown','delete']:
         try: run('xcrun','simctl',action,identifier,timeout=30)
         except Exception as error: print('CLEANUP:',type(error).__name__)
+    if console and console.poll() is None:
+        console.terminate()

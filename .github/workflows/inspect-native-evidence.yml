@@ -1,0 +1,41 @@
+name: Export synthetic native test evidence
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'This repository fixture-only RC workflow run to inspect'
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect:
+    if: github.event.repository.private == false
+    runs-on: xcode-27
+    timeout-minutes: 15
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.run_id }}
+          pattern: rc-native-evidence-*
+          merge-multiple: true
+          path: work/native-evidence
+      - name: Export XCTest screenshots without executing any artifact
+        run: |
+          mkdir -p work/exported
+          xcrun xcresulttool export attachments --help > work/exported/tool-help.txt
+          result=$(find work/native-evidence -type d -name 'PhotosSmoke.xcresult' -print -quit)
+          test -n "$result" || { echo 'No retained PhotosSmoke.xcresult in this fixture run'; exit 1; }
+          xcrun xcresulttool export attachments --path "$result" --output-path work/exported/attachments
+          xcrun xcresulttool get test-results summary --path "$result" > work/exported/summary.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: synthetic-test-attachments-${{ inputs.run_id }}
+          path: work/exported/
+          retention-days: 7
+          if-no-files-found: warn
