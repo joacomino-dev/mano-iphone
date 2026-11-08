@@ -374,3 +374,5 @@ Estado:implementación/pruebas locales PASS; CI nativa pendiente.
 Causa demostrada:el workflow anterior generaba assembleDebug ybundleRelease a partir del mismo frontend DEVELOPER=false. El APK developer ocultaba controles; cambiar el frontend común a true contaminaría el AAB.
 Corrección:construir AAB primero con fuente tienda; cambiar solo la copia CI a developer y copiar web para assembleDebug. Capturar hashes de index/JS y verificarlos dentro de ambos ZIP reales, con expectativa de canal explícita. Sin cambio de main/channel, iOS, productos, precios o arte.
 Validaciones:5 regresiones Python (mezcla/reemplazo de bundle/canal incorrecto rechazados) PASS. CI Android debe validar artefactos y E2E antes de cerrar R-44. VALIDATION ya no afirma monetización inexistente; distingue SDK de prueba y gates comerciales pendientes.
+
+CW-CX-026 probe PhotoKit:315348e/run42485975362 compila y genera pareja,pero no produce receipt del seeder. No se marca importado. Se añaden hitos locales de arranque/auth/import y capturas/log unificado antes de borrar el simulador; segunda hipótesis se decidirá con evidencia.

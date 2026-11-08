@@ -30,5 +30,6 @@ jobs:
             work/fixtures/generated/
             work/fixtures/*.json
             work/fixtures/*.log
+            work/fixtures/*.png
           retention-days: 7
           if-no-files-found: warn

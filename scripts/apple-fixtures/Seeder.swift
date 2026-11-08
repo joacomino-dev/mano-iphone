@@ -10,12 +10,15 @@ import Photos
     private let label = UILabel()
     private var created: [String] = []
     func application(_ application: UIApplication, didFinishLaunchingWithOptions options: [UIApplication.LaunchOptionsKey:Any]?) -> Bool {
+        NSLog("FIXTURE_SEED_DID_LAUNCH")
         let controller = UIViewController();controller.view.backgroundColor = .white
         label.frame = CGRect(x:20,y:100,width:300,height:200);label.numberOfLines = 0
         label.text = "SEEDING_SYNTHETIC_FIXTURES";controller.view.addSubview(label)
         window = UIWindow(frame: UIScreen.main.bounds);window?.rootViewController = controller;window?.makeKeyAndVisible()
         if FileManager.default.fileExists(atPath: reportURL.path) { label.text = "FIXTURES_ALREADY_SEEDED";return true }
+        NSLog("FIXTURE_AUTH_REQUEST")
         PHPhotoLibrary.requestAuthorization(for:.readWrite) { status in
+            NSLog("FIXTURE_AUTH_RESULT status=%ld",status.rawValue)
             guard status == .authorized else { self.finish(["status":"FAIL","stage":"authorization","authorization":status.rawValue]);return }
             self.seed()
         }
@@ -28,6 +31,7 @@ import Photos
         DispatchQueue.main.async { self.label.text = result["status"] as? String == "PASS" ? "FIXTURES_READY" : "FIXTURES_FAILED" }
     }
     private func seed() {
+        NSLog("FIXTURE_IMPORT_BEGIN")
         guard let photo = Bundle.main.url(forResource:"key-photo",withExtension:"jpg"),
               let motion = Bundle.main.url(forResource:"paired-motion",withExtension:"mov") else { finish(["status":"FAIL","stage":"resources"]);return }
         PHPhotoLibrary.shared().performChanges({
@@ -49,6 +53,7 @@ import Photos
             request.addResource(with:.video,fileURL:motion,options:nil)
             if let id = request.placeholderForCreatedAsset?.localIdentifier { self.created.append(id) }
         }) { success,error in
+            NSLog("FIXTURE_IMPORT_COMPLETE success=%d code=%ld",success ? 1:0,(error as NSError?)?.code ?? 0)
             guard success else { self.finish(["status":"FAIL","stage":"performChanges","errorCode":(error as NSError?)?.code ?? -1]);return }
             let assets = PHAsset.fetchAssets(withLocalIdentifiers:self.created,options:nil)
             var live = 0,video = 0,paired = 0

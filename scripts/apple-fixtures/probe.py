@@ -61,6 +61,14 @@ try:
     (out/'photokit-report.json').write_text(json.dumps(result,indent=2)+'\n')
     print(json.dumps(result))
     assert result['status'] == 'PASS', 'PhotoKit recognition failed'
+except Exception:
+    try:
+        logs=run('xcrun','simctl','spawn',identifier,'log','show','--last','5m','--style','compact','--predicate','process == "FixtureSeeder" OR composedMessage CONTAINS "work.joaquin.coco.fixtureseeder"')
+        (out/'seeder-unified.log').write_text(logs)
+        run('python3','mano/scripts/capture-simulator-screens.py',identifier,str(out),timeout=140)
+    except Exception as error:
+        print('DIAGNOSTIC:',type(error).__name__)
+    raise
 finally:
     for action in ['shutdown','delete']:
         try: run('xcrun','simctl',action,identifier,timeout=30)
