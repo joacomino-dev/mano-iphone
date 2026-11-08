@@ -13,6 +13,10 @@ final class PhotosSmokeTests: XCTestCase {
         // photo + H.264 fixtures. No native deletion or personal device is used.
         let app = XCUIApplication()
         app.resetAuthorizationStatus(for: .photos)
+        // Since 9.8.1 the app follows the device language, and a fresh CI simulator
+        // is English. This test reads the Spanish source text («Continuar»,
+        // «Permitir acceso a Fotos»), so the app (not the system) runs in Spanish.
+        app.launchArguments += ["-AppleLanguages", "(es)", "-AppleLocale", "es_ES"]
         // Log any system alert XCTest has to handle mid-test (run 41166497344 lost a
         // «Cerrar» tap to one). Returning false keeps XCTest's default handling.
         addUIInterruptionMonitor(withDescription: "System alert") { alert in
