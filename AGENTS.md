@@ -1,6 +1,7 @@
 # CocoWash — instrucciones comunes de agentes
 
 - App en `mano/`. Antes de planear cambios móviles lee `mano/AGENTS.md` completo; arquitectura/comandos en `docs/ai-handoff/PROJECT_MAP.md`, contratos UI en `docs/ai-handoff/UI_ARCHITECTURE.md` (según alcance).
+- Ciclo (usuario, 2026-11-07): una sola rama `main`. Antes de cada tarea lee la última entrada del otro agente (CODEX_LOG/CLAUDE_LOG), `CURRENT_STATE` y `docs/ROADMAP.md`; compara avance y lo que falta, y corrige el roadmap si falta algo. Al cerrar, actualiza roadmap (evidencia + registro de avance) y bitácora.
 - Coordinación: si la tarea afecta trabajo existente, lee `docs/ai-collaboration/CURRENT_STATE.md`, entradas pertinentes de la bitácora del otro agente y comprueba Git antes de escribir. Sigue `docs/ai-collaboration/PROTOCOL.md`; registra intervenciones relevantes en tu bitácora y actualiza estado al entregar. Auditoría estrictamente de lectura no escribe registros.
 - «Lo que importa, se queda»: organizar fotos/vídeos con decisiones rápidas, sencillas y entretenidas; personalidad fresca, cercana, desenfadada y reconocible. Evitar plantillas genéricas, proporciones pobres, iconografía inconsistente y efectos sin función.
 - Teal/archivo, papel marfil y sello rojo son el punto de partida, no una restricción artística permanente. Se permiten alternativas razonadas; implementar requiere revisión del usuario. Decisiones/evidencia en `docs/ai-handoff/UI_BASELINE.md`.

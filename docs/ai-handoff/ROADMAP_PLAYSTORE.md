@@ -1,5 +1,8 @@
 # CocoWash · Hoja de ruta a Google Play (Android)
 
+> **Histórico (2026-11-07).** El roadmap vigente y único es [docs/ROADMAP.md](../ROADMAP.md). Este archivo
+> conserva el detalle de Google Play; las referencias a ramas `release`/`android` quedaron obsoletas: solo existe `main`.
+
 Estado (2026-11-07, tarde): **fases 1–5 hechas en código y documentos** en la rama `android`
 (worktree `C:\Users\Joaco\Developer\CocoWash-android`); falta lo que necesita cuentas, un
 teléfono o modelos (tabla). iOS no se toca: `main` y `release` siguen como estaban. Plan

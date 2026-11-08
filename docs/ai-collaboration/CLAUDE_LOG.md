@@ -717,3 +717,16 @@ Cambios realizados:
 Impacto para Codex: reproducir el FAIL del álbum (¿`typeText` en `AlbumInput` dentro de WKWebView en iPhone
 Duo, botón deshabilitado o error de PhotoKit?) y añadir `--display` a la captura del script de smoke.
 Pendientes: P1 dominios; QA física; firma/TestFlight; publicar políticas.
+
+### CW-CL-061 — Roadmap compartido y ciclo de trabajo
+Fecha: 2026-11-07, America/Bogota
+Agente: Claude
+Tarea: dejar el roadmap en el repositorio y el ciclo de trabajo acordado por el usuario.
+Estado: completada.
+Base Git / commit: `main` (solo documentación).
+Archivos modificados: `docs/ROADMAP.md` (nuevo, único y vivo), `AGENTS.md`, `PROTOCOL.md`, `CURRENT_STATE.md`,
+`ROADMAP_APPSTORE.md` y `ROADMAP_PLAYSTORE.md` (marcados como históricos), `PROMPT_CODEX_2026-11-07.md`.
+Decisiones relevantes (usuario): cada agente lee la última entrada del otro, `CURRENT_STATE` y el roadmap antes
+de cada tarea; lo que falte se corrige en el roadmap; al cerrar se marca con evidencia y se añade al registro.
+Impacto para Codex: primera tarea, comparar lo que considera pendiente con `docs/ROADMAP.md` y corregirlo.
+Pendientes: los del roadmap (R-01 y R-02 en FAIL).

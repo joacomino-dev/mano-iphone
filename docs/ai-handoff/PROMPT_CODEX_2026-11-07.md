@@ -7,6 +7,25 @@ Copia todo lo que sigue a Codex.
 Retoma CocoWash. Claude integró tu RC iOS con el trabajo Android y dejó GitHub en una sola rama.
 Antes de escribir, verifica todo con Git real; este texto es un resumen, no sustituye al repositorio.
 
+## Nueva forma de trabajar (decisión del usuario)
+
+Desde ahora Codex y Claude trabajan siempre así, en cada tarea:
+
+1. Actualizar desde `main` (única rama) y comprobar Git real.
+2. Leer **la última entrada del otro agente** (`docs/ai-collaboration/CLAUDE_LOG.md`, ahora CW-CL-060) y
+   `docs/ai-collaboration/CURRENT_STATE.md`.
+3. Leer **el roadmap compartido `docs/ROADMAP.md`** (único; los antiguos `ROADMAP_APPSTORE`/`ROADMAP_PLAYSTORE`
+   quedan como historial) y ver cómo hemos avanzado.
+4. Al cerrar: marcar en el roadmap lo cerrado con evidencia, añadir una línea a su «Registro de avance» y
+   escribir tu entrada en `CODEX_LOG.md`.
+
+La regla está también en `AGENTS.md` y en `docs/ai-collaboration/PROTOCOL.md` («Ciclo de trabajo vigente»).
+
+**Tu primera tarea:** compara lo que tú consideras que falta para publicar (App Store y Google Play) con
+`docs/ROADMAP.md`. Añade lo que no esté, corrige lo que esté mal clasificado o mal asignado, y deja tu
+línea en el registro de avance explicando qué cambiaste y por qué. Después sigue con los puntos de mayor
+prioridad que te corresponden (R-01, R-02, R-03, R-04).
+
 ## Fuente única
 
 - Repositorio `joacomino-dev/mano-iphone` (público). **Solo existe la rama `main`**. El código
@@ -56,7 +75,7 @@ ningún lado: comprobado archivo por archivo) + estos commits de Claude:
   firma PASS (Xcode 27.1), oráculos Swift PASS, onboarding + acceso completo real a Fotos + sesión PASS
   en simulador «iPhone Duo» iOS 27.1. **FAIL** en el paso de álbum (ver tarea 1).
 
-## Tareas abiertas para ti
+## Tareas abiertas para ti (resumen; la lista completa y viva está en `docs/ROADMAP.md`)
 
 1. **FAIL del smoke en «Crear y añadir»** (`PhotosSmokeTests.swift:142`): tras escribir el nombre, tres
    toques en «Crear y añadir 1 elemento» no cierran la hoja. Ni la RC ni la fusión tocaron ese flujo

@@ -1,5 +1,8 @@
 # CocoWash · Hoja de ruta a la App Store (1.0)
 
+> **Histórico (2026-11-07).** El roadmap vigente y único es [docs/ROADMAP.md](../ROADMAP.md). Este archivo
+> conserva el detalle de App Store; las referencias a ramas `release`/`android` quedaron obsoletas: solo existe `main`.
+
 Estado (2026-11-07): **0.9.9.1 (41)** en `main` (desarrollo) y en `release` (canal App Store
 con anuncios reales), ambas con CI en verde. Diseño y funciones aprobados por el usuario. App solo para iPhone
 (`TARGETED_DEVICE_FAMILY = 1`), iOS 17+, 7 idiomas (es, en, fr, de, it, ar, ja).

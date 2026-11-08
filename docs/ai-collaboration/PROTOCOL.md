@@ -17,6 +17,14 @@ del otro agente (buscar ID/componente o últimas 40–80 líneas); comprobar rut
 técnica necesaria. La primera incorporación usa CLAUDE_START_HERE; una corrección
 menor no requiere releer todos los documentos ni una auditoría completa.
 
+## Ciclo de trabajo vigente (usuario, 2026-11-07)
+
+Una sola rama, `main`. Al empezar cada tarea: actualizar desde `main`, leer la **última entrada
+del otro agente** y `CURRENT_STATE`, y comparar con [ROADMAP](../ROADMAP.md) qué avanzó y qué
+falta. Lo que se considere que falta o esté mal clasificado se corrige **en el roadmap**. Al
+cerrar: marcar puntos con evidencia, añadir línea al registro de avance del roadmap y entrada
+de bitácora. Esto sustituye las reglas antiguas de ramas/worktrees de la sección Git.
+
 ## Responsabilidad, conflictos y cierre
 
 Codex: arquitectura, dominio, almacenamiento, permisos, integración, mantenimiento

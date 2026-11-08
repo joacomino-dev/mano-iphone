@@ -4,6 +4,9 @@ Actualizado: 2026-11-07, America/Bogota. Codex trabaja solo por indicación del 
 
 ## Rama única `main` (Claude, CW-CL-060) — vigente
 
+**Qué falta y avance: [docs/ROADMAP.md](../ROADMAP.md)** (único, compartido). Ciclo: leer la última
+entrada del otro agente + este estado + el roadmap antes de cada tarea; actualizar el roadmap al cerrar.
+
 Por decisión del usuario, GitHub tiene **una sola rama: `main`**, con la integración RC iOS + Android
 (CW-CL-059) más los arreglos de CI. Las demás 20 ramas se borraron del remoto tras guardarlas en
 `work/backup/mano-iphone-all-branches-2026-11-07.bundle` (24 refs, sha256 `b547931d…5303`, local).
