@@ -767,7 +767,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
     /// remain untouched; iCloud is Apple's on-device download, never an upload.
     @objc func prepareVideo(_ call: CAPPluginCall) {
         guard allowed(call), let item = asset(call) else { return }
-        guard item.mediaType == .video else { call.reject("Este elemento no es un vídeo.", "NOT_VIDEO"); return }
+        guard item.mediaType == .video || item.mediaSubtypes.contains(.photoLive) else { call.reject("Este elemento no es un vídeo.", "NOT_VIDEO"); return }
         guard let token = call.getString("requestId"), !token.isEmpty, token.count <= 160 else {
             call.reject("Falta el identificador de preparación.", "INVALID_REQUEST"); return
         }
@@ -805,6 +805,10 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
             // Inactivity watchdog, not a fixed deadline: a large iCloud download that
             // keeps progressing is never killed; a stalled one fails clearly.
             self.armVideoWatchdog(job)
+            if item.mediaSubtypes.contains(.photoLive) {
+                self.prepareLiveMotion(item, network: network, job: job)
+                return
+            }
             let options = PHVideoRequestOptions()
             options.isNetworkAccessAllowed = network
             options.version = .current
@@ -843,6 +847,52 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                 }
             }
         }
+    }
+    /// A Live Photo remains a photo in the library. Only its paired motion is
+    /// streamed into our bounded video cache, on explicit play; Photos is never
+    /// exported back to or changed. Current edited motion takes precedence.
+    private func prepareLiveMotion(_ item: PHAsset, network: Bool, job: PreparedVideoJob) {
+        let resources = PHAssetResource.assetResources(for: item)
+        guard let resource = resources.first(where: { $0.type == .fullSizePairedVideo }) ?? resources.first(where: { $0.type == .pairedVideo }) else {
+            failVideo(job, error: VideoPreparationFailure.unavailable); return
+        }
+        let suffix = URL(fileURLWithPath: resource.originalFilename).pathExtension.lowercased()
+        let ext = ["mp4", "mov", "m4v"].contains(suffix) ? suffix : "mov"
+        let partial = videoFolder.appendingPathComponent("partial-" + UUID().uuidString + "." + ext)
+        job.partial = partial
+        do { try job.openResource(partial) } catch { failVideo(job, error: error); return }
+        let options = PHAssetResourceRequestOptions(); options.isNetworkAccessAllowed = network
+        options.progressHandler = { [weak self, weak job] progress in
+            guard let self, let job, !job.isCancelled else { return }
+            self.videoQueue.async { if self.videoJobs[job.token] === job { self.armVideoWatchdog(job) } }
+            self.notifyListeners("mediaPreparationProgress", data: ["requestId": job.token, "phase": "download", "progress": progress])
+        }
+        // Photos supplies both callbacks on a serial queue. Write each chunk
+        // synchronously, never accumulate a whole motion file in Data/JS memory.
+        var writeError: Error?
+        job.resourceRequest = PHAssetResourceManager.default().requestData(for: resource, options: options, dataReceivedHandler: { [weak self, weak job] data in
+            guard let self, let job, writeError == nil else { return }
+            do {
+                try job.appendResource(data, limit: self.videoFileLimit)
+                self.videoQueue.async { if self.videoJobs[job.token] === job { self.armVideoWatchdog(job) } }
+            } catch {
+                writeError = error
+                self.videoQueue.async { self.failVideo(job, error: error) }
+            }
+        }, completionHandler: { [weak self, weak job] error in
+            guard let self, let job else { return }
+            do { try job.closeResource() } catch { if writeError == nil { writeError = error } }
+            let failure = writeError ?? error
+            self.videoQueue.async {
+                guard self.videoJobs[job.token] === job, !job.isCancelled else { return }
+                if let failure {
+                    let value = failure as NSError
+                    if !network, value.domain == PHPhotosErrorDomain, value.code == PHPhotosError.Code.networkAccessRequired.rawValue {
+                        self.stopVideo(job, message: "Este vídeo está en iCloud.", code: "IN_CLOUD")
+                    } else { self.failVideo(job, error: failure) }
+                } else { self.commitVideo(job, ext: ext) }
+            }
+        })
     }
     @objc func cancelVideoPreparation(_ call: CAPPluginCall) {
         guard let token = call.getString("requestId") else { call.reject("Falta el identificador de preparación.", "INVALID_REQUEST"); return }
@@ -912,6 +962,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         videoJobs.removeValue(forKey: job.token)
         endMediaWork()
         if job.photoRequest != PHInvalidImageRequestID { imageManager.cancelImageRequest(job.photoRequest) }
+        if let request = job.resourceRequest { PHAssetResourceManager.default().cancelDataRequest(request) }
         job.exporter?.cancelExport()
         job.source = nil
         if let partial = job.partial { try? FileManager.default.removeItem(at: partial) }
@@ -1304,14 +1355,34 @@ private final class PreparedVideoJob {
     let assetID: String
     let call: CAPPluginCall
     var photoRequest: PHImageRequestID = PHInvalidImageRequestID
+    var resourceRequest: PHAssetResourceDataRequestID?
     var exporter: AVAssetExportSession?
     var source: AVAsset?
     var partial: URL?
     var timeout: DispatchWorkItem?
     private let lock = NSLock()
     private var cancellation = false
+    private var resourceFile: FileHandle?
+    private var resourceBytes: Int64 = 0
     var isCancelled: Bool { lock.lock(); defer { lock.unlock() }; return cancellation }
-    func cancel() { lock.lock(); cancellation = true; lock.unlock() }
+    func cancel() { lock.lock(); cancellation = true; try? resourceFile?.close(); resourceFile = nil; lock.unlock() }
+    func openResource(_ url: URL) throws {
+        lock.lock(); defer { lock.unlock() }
+        guard !cancellation, FileManager.default.createFile(atPath: url.path, contents: nil) else { throw VideoPreparationFailure.writeFailed }
+        resourceFile = try FileHandle(forWritingTo: url)
+    }
+    func appendResource(_ data: Data, limit: Int64) throws {
+        lock.lock(); defer { lock.unlock() }
+        guard !cancellation, let resourceFile else { throw VideoPreparationFailure.cancelled }
+        resourceBytes += Int64(data.count)
+        guard resourceBytes <= limit else { throw VideoPreparationFailure.tooLarge }
+        try resourceFile.write(contentsOf: data)
+    }
+    func closeResource() throws {
+        lock.lock(); defer { lock.unlock() }
+        guard let file = resourceFile else { return }
+        resourceFile = nil; defer { try? file.close() }; try file.synchronize()
+    }
     init(token: String, key: String, assetID: String, call: CAPPluginCall) {
         self.token = token; self.key = key; self.assetID = assetID; self.call = call
     }

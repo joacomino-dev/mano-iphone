@@ -47,20 +47,22 @@ const useDocumentVisible = () => {
  * its poster, weight and VHS letters stay, and «Descargar y ver» asks for it.
  * The card carries two quiet toggles: sound (kept for the session) and the VHS
  * letters (saved with Ajustes). */
-export function InlineVideo({ asset, state, active = true, mode = 'card', retry, download, fullscreen, openSettings, meta, place, sound = false, onSound, onOsd, control, tools, children }: {
+export function InlineVideo({ asset, state, active = true, mode = 'card', retry, download, fullscreen, openSettings, meta, place, sound = false, onSound, onOsd, control, tools, children, request, mediaStyle }: {
   asset: Asset; state: VideoState; active?: boolean; mode?: 'card' | 'peek' | 'full'; retry: () => void; download: () => void; fullscreen: () => void; openSettings: () => void;
   meta?: VideoMeta; place?: Place; sound?: boolean; onSound?: () => void; onOsd?: () => void; control?: MutableRefObject<VideoControl | null>;
   /** Extra card tool (Compartir) drawn in the same row as sound and VHS. */
-  tools?: ReactNode; children: ReactNode;
+  tools?: ReactNode; children: ReactNode; request?:()=>void; mediaStyle?:CSSProperties;
 }) {
   const player = useRef<HTMLVideoElement>(null);
   const reduced = useReducedMotion();
   const present = useIsPresent();
   const visible = useDocumentVisible();
   const full = mode === 'full', card = mode === 'card';
+  const live=asset.kind==='live';const liveIntent=useRef(false);const openedLive=useRef('');
   const key = headKey(asset);
   // The person's own pause, shared with the other views of this video.
-  const [userPaused, setUserPaused] = useState(() => playheads.get(key)?.paused ?? false);
+  const [userPaused, setUserPaused] = useState(() => live || (playheads.get(key)?.paused ?? false));
+  const [scrubbed,setScrubbed]=useState(false);
   const [glyph, setGlyph] = useState<{ kind: 'play' | 'pause'; n: number } | null>(null);
   const [playing, setPlaying] = useState(false);
   const [waiting, setWaiting] = useState(false);
@@ -78,7 +80,8 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
   // previous cleanup removed, and React would not set an unchanged prop again.
   useLayoutEffect(() => {
     setPlaying(false); setFrame(false); setTime(0); setPlayError(false); setBlocked(false);
-    setUserPaused(playheads.get(key)?.paused ?? false);
+    if(live&&full&&openedLive.current!==key){openedLive.current=key;remember(key,0,true);setScrubbed(false);}
+    setUserPaused(playheads.get(key)?.paused ?? live);
     if (url) setFetching(false);
     const video = player.current;
     if (video && url && video.getAttribute('src') !== url) { video.src = url; video.load(); }
@@ -104,11 +107,14 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
   const ownsPlayback = !!url && visible && active && present;
   const ownedPlayback = useRef(false);
   useLayoutEffect(() => {
+    if(live&&(!visible||!active||!present)&&liveIntent.current){liveIntent.current=false;remember(key,player.current?.currentTime??0,true);setUserPaused(true);}
     const video = player.current; if (!video || !url) return;
-    const takingOwnership = ownsPlayback && !ownedPlayback.current;
+    const wasOwner = ownedPlayback.current;
+    const takingOwnership = ownsPlayback && !wasOwner;
     ownedPlayback.current = ownsPlayback;
     if (takingOwnership) {
-      const sharedPause = playheads.get(key)?.paused ?? false;
+      if(live&&reduced&&!liveIntent.current){remember(key,player.current?.currentTime??0,true);setUserPaused(true);return;}
+      const sharedPause = playheads.get(key)?.paused ?? live;
       if (sharedPause !== userPaused) {
         setUserPaused(sharedPause);
         return;
@@ -120,7 +126,7 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
       const head = playheads.get(key);
       if (head && video.readyState >= 1 && Math.abs(video.currentTime - head.time) > .25 && head.time < (video.duration || Infinity) - .25) video.currentTime = head.time;
       start(sound);
-    } else { ++playAttempt.current; video.pause(); }
+    } else { ++playAttempt.current; video.pause();if(live&&!ownsPlayback&&wasOwner){liveIntent.current=false;remember(key,video.currentTime,true);setUserPaused(true);} }
     return () => { ++playAttempt.current; video.pause(); };
     // Sound follows the person's choice in every view: anchoring keeps it as it was.
   }, [ownsPlayback, userPaused, url, sound, full]);
@@ -128,15 +134,17 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
   const showGlyph = (kind: 'play' | 'pause') => setGlyph(g => ({ kind, n: (g?.n ?? 0) + 1 }));
   useEffect(() => { if (!glyph) return; const t = setTimeout(() => setGlyph(null), 650); return () => clearTimeout(t); }, [glyph]);
   const toggle = () => {
-    const video = player.current; if (!video || !url) return;
+    const video = player.current;
+    if(live&&(!video||!url)){if(userPaused)choose();else{liveIntent.current=false;remember(key,0,true);setUserPaused(true);}return;}
+    if (!video || !url) return;
     haptic('selection');
     if (!video.paused) { pause(); showGlyph('pause'); }
     else { choose(); showGlyph('play'); }
   };
   useEffect(() => { if (!control || !card) return; const own = { toggle }; control.current = own; return () => { if (control.current === own) control.current = null; }; });
 
-  const choose = () => { const video = player.current; if (!video) return; haptic('light'); remember(key, video.currentTime, false); setUserPaused(false); start(sound); };
-  const pause = () => { const video = player.current; if (!video) return; ++playAttempt.current; remember(key, video.currentTime, true); video.pause(); setUserPaused(true); haptic('soft'); };
+  const choose = () => { const video = player.current;if(live){liveIntent.current=true;remember(key,video?.currentTime??0,false);setUserPaused(false);if(!url){request?.();return;}}if (!video) return; haptic('light'); remember(key, video.currentTime, false); setUserPaused(false); start(sound); };
+  const pause = () => { const video = player.current; if (!video) {if(live){liveIntent.current=false;remember(key,0,true);setUserPaused(true);}return;} ++playAttempt.current; remember(key, video.currentTime, true); video.pause(); setUserPaused(true); haptic('soft'); };
   const toggleSound = () => {
     const next = !sound;
     if (url && !userPaused) start(next);
@@ -152,21 +160,21 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
     if (video && frame && video.requestFullscreen) { void video.requestFullscreen().catch(fullscreen); return; }
     fullscreen();
   };
-  const seek = (value: number) => { const video = player.current; if (video && Number.isFinite(value)) { video.currentTime = value; setTime(value); } };
+  const seek = (value: number) => { const video = player.current; if (video && Number.isFinite(value)) {if(live){++playAttempt.current;video.pause();setUserPaused(true);setScrubbed(true);remember(key,value,true);} video.currentTime = value; setTime(value); } };
 
   // The download label belongs to the request the person made; a failure ends it.
   useEffect(() => { if (state.status === 'error') setFetching(false); }, [state.status]);
   const failure = playError ? 'playback' : state.status === 'error' ? state.failure : undefined;
   const copy = failure ? videoFailureCopy(failure) : null;
-  const loading = !failure && (state.status === 'queued' || state.status === 'loading' || state.status === 'idle');
+  const loading = !failure && (!live||!userPaused) && (state.status === 'queued' || state.status === 'loading' || state.status === 'idle');
   const progress = state.status === 'loading' ? state.progress : 0;
   const percent = Math.round(progress * 100);
-  const shown = playing || (frame && time > 0);
+  const shown = live&&card?playing:playing || (frame && (time > 0||scrubbed));
   const chip = !failure && !loading && !playing && blocked;
 
-  return <div className={`inline-media ${shown ? 'is-started' : ''} ${playing ? 'is-playing' : ''} ${frame ? 'has-frame' : ''}`}>
+  return <div className={`inline-media ${live?'is-live':''} ${shown ? 'is-started' : ''} ${playing ? 'is-playing' : ''} ${frame ? 'has-frame' : ''}`}>
     {children}
-    {url && <video data-testid="inline-video" ref={player} src={url} playsInline muted={muted} loop={!full} preload={card ? 'metadata' : 'auto'} aria-label={t('Vídeo de tu biblioteca')}
+    {url && <video data-testid="inline-video" ref={player} src={url} style={mediaStyle} playsInline muted={muted} loop={live||!full} preload={card ? 'metadata' : 'auto'} aria-label={live?t('Reproducir Live Photo'):t('Vídeo de tu biblioteca')}
       onLoadedData={() => setFrame(true)}
       onLoadedMetadata={e => { const v = e.currentTarget, d = v.duration; if (Number.isFinite(d) && d > 0) setLength(d);
         // Same moment as the view it came from (card ↔ held ↔ anchored).
@@ -176,6 +184,7 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
       onCanPlay={e => { setWaiting(false); const v = e.currentTarget; if (ownsPlayback && !userPaused && !blocked && v.paused && !v.ended) start(sound); }}
       onTimeUpdate={e => { const t = e.currentTarget.currentTime; if (ownsPlayback) remember(key, t, playheads.get(key)?.paused ?? false); if (full || !time) setTime(t); }}
       onError={() => { setPlaying(false); setPlayError(true); }}/>}
+    {live&&card&&<button className="media-play" onPointerDown={stop} onClick={e=>{e.stopPropagation();toggle();}} aria-label={playing||!userPaused?t('Pausar'):t('Reproducir Live Photo')} aria-pressed={!userPaused}>{playing||!userPaused?<PauseIcon weight="fill" size={14}/>:<PlayIcon weight="fill" size={14}/>}LIVE</button>}
     {card && meta && (meta.date || meta.time || meta.location || meta.duration || meta.size) && <VhsOverlay asset={asset} place={place} settings={meta}/>}
     {card && (onSound || onOsd || tools) && <div className="video-toggles">
       {/* The icon follows what really plays: iOS may refuse sound and fall back
@@ -200,20 +209,20 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
 
     {waiting && playing && <span className="video-buffering" aria-hidden="true"><CocoLoader size={44}/></span>}
 
-    {full && !failure && url && <div className="video-controls" onPointerDown={stop} onClick={stop}>
-      <button onClick={playing ? pause : choose} aria-label={playing ? t('Pausar') : t('Reproducir')}>{playing ? <PauseIcon weight="fill" size={20}/> : <PlayIcon weight="fill" size={20}/>}</button>
-      <input type="range" min={0} max={length || 1} step={.05} value={Math.min(time, length || 1)} aria-label={t('Posición del vídeo')} aria-valuetext={t('{time} de {length}', { time: clock(time), length: clock(length) })}
+    {full && !failure && (url||live) && <div className="video-controls" onPointerDown={stop} onClick={stop}>
+      <button onClick={playing||(live&&!userPaused) ? pause : choose} aria-label={playing||(live&&!userPaused) ? t('Pausar') : t('Reproducir')}>{playing||(live&&!userPaused) ? <PauseIcon weight="fill" size={20}/> : <PlayIcon weight="fill" size={20}/>}</button>
+      <input type="range" disabled={!url||length<=0} min={0} max={length || 1} step={.05} value={Math.min(time, length || 1)} aria-label={t('Posición del vídeo')} aria-valuetext={t('{time} de {length}', { time: clock(time), length: clock(length) })}
         style={{ '--fill': `${length ? Math.min(100, time / length * 100) : 0}%` } as CSSProperties} onChange={e => seek(Number(e.currentTarget.value))}/>
       <span className="video-time"><span>{clock(time)}</span> / {clock(length)}</span>
       <button onClick={toggleSound} aria-label={muted ? t('Activar sonido') : t('Silenciar')}>{muted ? <SpeakerSlashIcon size={20} weight="bold"/> : <SpeakerHighIcon size={20} weight="bold"/>}</button>
-      <button onClick={enterFullscreen} aria-label={t('Pantalla completa')}><CornersOutIcon size={20} weight="bold"/></button>
+      {!live&&<button onClick={enterFullscreen} aria-label={t('Pantalla completa')}><CornersOutIcon size={20} weight="bold"/></button>}
     </div>}
 
     {copy && mode !== 'peek' && <div className={`video-error ${copy.action === 'download' ? 'is-cloud' : ''}`} role={copy.action === 'download' ? 'status' : 'alert'}>
       <span>{t(copy.message)}</span>
-      {copy.action === 'download' && <button onPointerDown={stop} onClick={e => { e.stopPropagation(); haptic('light'); setFetching(true); download(); }}><CloudArrowDownIcon size={18} weight="bold"/>{formatBytes(asset.bytes, locale) ? t('Descargar y ver ({size})', { size: formatBytes(asset.bytes, locale)! }) : t('Descargar y ver')}</button>}
+      {copy.action === 'download' && <button onPointerDown={stop} onClick={e => { e.stopPropagation(); haptic('light'); setFetching(true); download(); }}><CloudArrowDownIcon size={18} weight="bold"/>{!live&&formatBytes(asset.bytes, locale) ? t('Descargar y ver ({size})', { size: formatBytes(asset.bytes, locale)! }) : t('Descargar y ver')}</button>}
       {copy.action === 'retry' && <button onClick={() => { setPlayError(false); retry(); }}><ArrowClockwiseIcon size={18} weight="bold"/>{t('Reintentar')}</button>}
-      {copy.action === 'fullscreen' && <button onClick={fullscreen}><CornersOutIcon size={18} weight="bold"/>{t('Ver en pantalla completa')}</button>}
+      {copy.action === 'fullscreen' && <button onClick={live?()=>{setPlayError(false);retry();}:fullscreen}>{live?<ArrowClockwiseIcon size={18} weight="bold"/>:<CornersOutIcon size={18} weight="bold"/>}{live?t('Reintentar'):t('Ver en pantalla completa')}</button>}
       {copy.action === 'settings' && <button onClick={openSettings}><GearSixIcon size={18} weight="bold"/>{t('Abrir Ajustes')}</button>}
     </div>}
   </div>;

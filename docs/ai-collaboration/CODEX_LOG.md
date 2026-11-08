@@ -299,3 +299,15 @@ Validaciones:antes11 búsquedas/4.180 IDs; después1/400 en10 ciclos sintéticos
 Decisiones relevantes:no cambian borrado/undo/identidad/monetización/versiones; refresco de permisos conservado. No Instruments/Swift ejecutados aquí, sin push.
 Impacto para Claude:preservar cobertura y epochs; el mock vacío no prueba reindexación nativa global.
 Pendientes:R-00 físico y prioridades siguientes; R-02 sigue FAIL.
+
+### CW-CX-022 — Live Photo dentro de carta y visor
+Fecha:2026-11-07, America/Bogota.
+Agente:Codex.
+Tarea:R-07 según especificación confirmada, después del checkpoint R-00 cd717f9.
+Estado:implementación/pruebas web PASS; puente Swift y Live Photo reales BLOCKED.
+Archivos:ManoApp/InlineVideo/Inspector/CSS, PhotoLibrary.swift, live-photo-flow, docs/evidencia.
+Cambio:movimiento emparejado por caché acotada existente; play explícito/bucle/pausa sobre foto clave; visor sin fullscreen con timeline y pinch. Corregida carrera de intención entre tarjeta oculta y visor al llegar URL. Pausa durante carga y ocultación se conservan.
+Validaciones:128 Node; TypeScript/runtime28; web/native-web;14 Release/contratos/Sites;4 flujos Live y regresiones de permisos/borrado/compras/accesibilidad. Captura sintética de anclaje inspeccionada. [Detalle](../apple-readiness/LIVE_PHOTO.md).
+Decisiones:sin cambios de arte, versiones, dependencias, Android, decisiones/borrado ni monetización; sin push ni CI de estos cambios. No se atribuyen pruebas nativas.
+Impacto Claude:preservar botón LIVE, propiedad exclusiva de reproducción y foto clave en pausa. La API preview antigua no se llama para Live desde UI.
+Pendientes:R-07 compilación/QA real incluyendo iCloud/foto clave editada; R-01/R-02/R-03/R-04 siguientes; R-00 físico sigue abierto.

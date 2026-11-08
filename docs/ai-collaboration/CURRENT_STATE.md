@@ -2,9 +2,9 @@
 
 Actualizado: 2026-11-07, America/Bogota. Codex trabaja solo por indicación del usuario.
 
-## Codex CW-CX-021 — en curso sobre main f5c3546
+## Codex CW-CX-021/022 — en curso sobre main
 
-Base limpia y actualizada por fast-forward; 124 Node, TypeScript, runtime28,
+Base limpia f5c3546; checkpoint R-00 cd717f9. R-07 implementado localmente,4 flujos web PASS; Swift/PhotoKit pendiente. 128 Node, TypeScript, runtime28,
 6 Release y4 contratos estáticos repetidos. Reserva: R-00 (ManoApp/indexer/índices,
 pruebas de ciclos, cachés/cancelación nativas si la evidencia lo exige), después
 R-07/R-01/R-02/R-03/R-04 según alcance del usuario. Roadmap revisado primero.

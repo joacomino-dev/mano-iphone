@@ -21,7 +21,7 @@ const follow={type:'spring',stiffness:900,damping:60,mass:.6} as const;
  * dock to anchor; anchored = fit to screen with pinch/pan and controls. */
 /** `freeze`: the card's own <video>, whose current frame is painted under the
  * held view while its element catches up — no flash of the first frame. */
-export type InspectVideo={state:VideoState;retry:()=>void;download:()=>void;fullscreen:()=>void;openSettings:()=>void;sound?:boolean;onSound?:()=>void;freeze?:HTMLVideoElement|null};
+export type InspectVideo={request?:()=>void;state:VideoState;retry:()=>void;download:()=>void;fullscreen:()=>void;openSettings:()=>void;sound?:boolean;onSound?:()=>void;freeze?:HTMLVideoElement|null};
 export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed,geek,close,pin,video}: {asset:Asset;src?:string;cloud?:boolean;pinned:boolean;origin?:InspectOrigin;peek:{x:MotionValue<number>;y:MotionValue<number>};anchor:MotionValue<number>;armed:boolean;geek:boolean;close:()=>void;pin:()=>void;video?:InspectVideo}) {
  const policy=useSyncExternalStore(subscribePreviewPolicy,previewPolicyKey);
  // An iCloud-only photo (no local preview under «Ahorrar iCloud») is not an
@@ -57,7 +57,7 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
   Library.metadata({id:asset.id}).then(value=>{if(alive)setMeta(value);return Library.metadata({id:asset.id,includeExif:true});}).then(value=>{if(alive)setMeta(value);}).catch(()=>{if(alive)setMetaError(t('Algunos datos no están disponibles en este iPhone.'));});return()=>{alive=false;};
  },[asset.id,geek]);
  const rebase=()=>{const p=[...points.current.values()];base.current={distance:p.length>1?Math.hypot(p[1].x-p[0].x,p[1].y-p[0].y):0,zoom,x:p[0]?.x??0,y:p[0]?.y??0,panX:pan.x,panY:pan.y};};
- const down=(e:PointerEvent)=>{if(!pinned||video)return;e.stopPropagation();e.currentTarget.setPointerCapture(e.pointerId);points.current.set(e.pointerId,{x:e.clientX,y:e.clientY});rebase();};
+ const down=(e:PointerEvent)=>{if(!pinned||asset.kind==='video')return;e.stopPropagation();e.currentTarget.setPointerCapture(e.pointerId);points.current.set(e.pointerId,{x:e.clientX,y:e.clientY});rebase();};
  const move=(e:PointerEvent)=>{if(!points.current.has(e.pointerId))return;e.stopPropagation();points.current.set(e.pointerId,{x:e.clientX,y:e.clientY});const p=[...points.current.values()],b=base.current;
   if(p.length>1&&b.distance){setZoom(Math.min(5,Math.max(1,b.zoom*Math.hypot(p[1].x-p[0].x,p[1].y-p[0].y)/b.distance)));}
   else if(zoom>1){const rect=frame.current!.getBoundingClientRect();const maxX=rect.width*(zoom-1)/2,maxY=rect.height*(zoom-1)/2;setPan({x:Math.min(maxX,Math.max(-maxX,b.panX+e.clientX-b.x)),y:Math.min(maxY,Math.max(-maxY,b.panY+e.clientY-b.y))});}
@@ -66,9 +66,9 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
  // Anchored: the area around the photo is part of it. A pinch or a pan there
  // works on the photo; a single tap there closes, like «Cerrar».
  const tap=useRef<{x:number;y:number;multi:boolean}|null>(null);
- const shadeDown=(e:PointerEvent)=>{if(!pinned)return;tap.current=tap.current?{...tap.current,multi:true}:{x:e.clientX,y:e.clientY,multi:false};if(video){e.currentTarget.setPointerCapture(e.pointerId);return;}down(e);};
- const shadeUp=(e:PointerEvent)=>{const start=tap.current;if(!video){up(e);if(points.current.size)return;}tap.current=null;if(start&&!start.multi&&Math.hypot(e.clientX-start.x,e.clientY-start.y)<10)close();};
- const shadeCancel=(e:PointerEvent)=>{if(!video)up(e);tap.current=null;};
+ const shadeDown=(e:PointerEvent)=>{if(!pinned)return;tap.current=tap.current?{...tap.current,multi:true}:{x:e.clientX,y:e.clientY,multi:false};if(asset.kind==='video'){e.currentTarget.setPointerCapture(e.pointerId);return;}down(e);};
+ const shadeUp=(e:PointerEvent)=>{const start=tap.current;if(asset.kind!=='video'){up(e);if(points.current.size)return;}tap.current=null;if(start&&!start.multi&&Math.hypot(e.clientX-start.x,e.clientY-start.y)<10)close();};
+ const shadeCancel=(e:PointerEvent)=>{if(asset.kind!=='video')up(e);tap.current=null;};
  useEffect(()=>{if(zoom===1)setPan({x:0,y:0});},[zoom]);
  const expanded=meta?{...meta,...meta.exif,...meta.location}:null;
  const weight=formatBytes(asset.bytes,locale);
@@ -83,11 +83,11 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
  const atOrigin=space?toBox(space.origin):undefined;
  const pose=!space?undefined:pinned?{x:0,y:0,scale:1}:toBox(space.origin,reduced?1:1.03);
  return <div ref={outer} className={`inspection ${pinned?'is-pinned':''} ${geek?'is-geek':''}`} role={pinned?'dialog':undefined} aria-modal={pinned?true:undefined} aria-label={t('Inspeccionar recuerdo')}>
-  <motion.div className="inspection-shade" onPointerDown={shadeDown} onPointerMove={e=>{if(!video)move(e);}} onPointerUp={shadeUp} onPointerCancel={shadeCancel} initial={{opacity:0}} animate={{opacity:pinned?.94:.84}} exit={{opacity:0}} transition={{duration:reduced?0:.2,ease:[.2,.8,.2,1]}}/>
+  <motion.div className="inspection-shade" onPointerDown={shadeDown} onPointerMove={e=>{if(asset.kind!=='video')move(e);}} onPointerUp={shadeUp} onPointerCancel={shadeCancel} initial={{opacity:0}} animate={{opacity:pinned?.94:.84}} exit={{opacity:0}} transition={{duration:reduced?0:.2,ease:[.2,.8,.2,1]}}/>
   {space&&<motion.div className="inspection-follow" style={{x:reduced?fingerX:smoothX,y:reduced?fingerY:smoothY}}><motion.div ref={frame} className="inspection-photo" tabIndex={pinned?0:-1} style={{left:space.target.x,top:space.target.y,width:space.target.width,height:space.target.height,'--inspect-ratio':asset.width/asset.height} as CSSProperties}
    initial={reduced?false:atOrigin} animate={pose} exit={reduced?{opacity:0,transition:{duration:0}}:{...atOrigin,transition:settle}}
    transition={reduced?{duration:0}:settle} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onClick={e=>e.stopPropagation()}>
-   {video?<div className="inspection-media"><InlineVideo asset={asset} state={video.state} mode={pinned?'full':'peek'} sound={video.sound} onSound={video.onSound} retry={video.retry} download={video.download} fullscreen={video.fullscreen} openSettings={video.openSettings}>{freeze?<canvas ref={still} className="inspection-still"/>:poster?<img src={poster} alt="" draggable={false}/>:null}</InlineVideo></div>
+   {video?<div className="inspection-media"><InlineVideo asset={asset} state={video.state} request={video.request} mediaStyle={asset.kind==='live'?{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}:undefined} mode={pinned?'full':'peek'} sound={video.sound} onSound={video.onSound} retry={video.retry} download={video.download} fullscreen={video.fullscreen} openSettings={video.openSettings}>{freeze?<canvas ref={still} className="inspection-still"/>:(poster||sharp||download?.src)?<img src={pinned&&sharp?sharp:poster||download?.src} alt="" draggable={false} style={asset.kind==='live'?{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}:undefined}/>:null}</InlineVideo></div>
     :poster||(pinned&&sharp)||download?.src?<img src={pinned&&sharp?sharp:poster||download?.src} alt={t('Recuerdo ampliado')} draggable={false} style={{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}}/>:<span>{posterCloud?(pinned?'':t('En iCloud. Ancla para descargarla.')):posterError?t('No se pudo cargar la imagen.'):''}{posterError&&pinned&&<button onClick={()=>setPosterRetry(v=>v+1)}>{t('Reintentar')}</button>}</span>}
    {!sharp&&(cloud||download?.status==='downloading')&&<CloudBadge className="cloud-download" state={download?.status==='ready'?undefined:download} lite={cloud} onRetry={()=>void cloudPreviews.retry(asset,'zoom').then(setSharp).catch(()=>{})}/>}
   </motion.div></motion.div>}

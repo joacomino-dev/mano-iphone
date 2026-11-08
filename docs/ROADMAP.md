@@ -38,7 +38,7 @@ una puerta nativa, comercial o de distribución.
 | ID | Qué | Quién | Estado | Evidencia / siguiente paso |
 |---|---|---|---|---|
 | R-00 | **P0 · El iPhone se vuelve cada vez más lento** tras eliminar unas fotos y terminar la sesión 4–5 veces seguidas (reporte del usuario en su teléfono). Ver [detalle R-00](#detalle-r-00) | CX | **En curso (P0), QA física bloqueada** | CW-CX-021: recurrencia corregida localmente,11→1 búsquedas en10 ciclos y5 regresiones de estado. [Evidencia](apple-readiness/R00_CYCLES.md). No acredita RAM/CPU iPhone |
-| R-07 | **Live Photo**: reproducción en la carta y en la vista anclada. Ver [detalle R-07](#detalle-r-07) | CX (+CL visual) | **Pendiente (P1)** | Especificación confirmada por el usuario |
+| R-07 | **Live Photo**: reproducción en la carta y en la vista anclada. Ver [detalle R-07](#detalle-r-07) | CX (+CL visual) | **En curso (P1), nativo bloqueado** | CW-CX-022: reproducción inline, foto clave en pausa, anclaje/timeline/pinch implementados;4 escenarios web PASS. [Evidencia y QA nativa](apple-readiness/LIVE_PHOTO.md) |
 
 ## A · Código y pruebas iOS (antes de firmar)
 
@@ -166,3 +166,5 @@ Una línea por intervención: fecha · agente · entrada · puntos cerrados/abie
   R-07 (Live Photo), ambos reportados por el usuario.
 - 2026-11-07 · Claude · CW-CL-059/060 · Integrada la RC de Codex con Android; una sola rama `main`;
   CI en verde; IPA build 43. Abiertos R-01 (FAIL) y R-02 (FAIL). Roadmap creado.
+
+- 2026-11-07 · Codex CW-CX-022: R-07 implementado localmente con controles existentes;4 regresiones web PASS. Swift/Live Photo real pendientes; no se cierra R-07 ni se atribuye prueba física.

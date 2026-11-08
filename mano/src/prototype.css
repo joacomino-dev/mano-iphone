@@ -1165,3 +1165,7 @@ input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;u
 .freed-where{margin-top:6px;font-size:var(--cw-text-sm);color:var(--cw-ink-soft)}
 .session-done.is-freed .freed-note{white-space:nowrap}
 @container done (max-height:19em){.freed-counts{display:none}}
+
+/* Live Photo uses the approved LIVE chip and video controls, inside its photo frame. */
+.inline-media.is-live>video{background:transparent}
+.inline-media.is-live .media-play{bottom:var(--cw-ctl-inset);left:var(--cw-ctl-edge);z-index:3}

@@ -231,8 +231,8 @@ function HandCard({ id, index, follow, reduced, register, children, style, ...pr
 function useVideoStore(get: () => VideoStore, asset: Asset | undefined): VideoState {
   const [state, setState] = useState<VideoState>({ status: 'idle', progress: 0 });
   useEffect(() => {
-    if (!asset || asset.kind !== 'video') { setState({ status: 'idle', progress: 0 }); return; }
-    const store = get(); const unsubscribe = store.subscribe(asset, setState); store.ensure(asset);
+    if (!asset || (asset.kind !== 'video'&&(asset.kind!=='live'||onAndroid()))) { setState({ status: 'idle', progress: 0 }); return; }
+    const store = get(); const unsubscribe = store.subscribe(asset, setState); if(asset.kind==='video')store.ensure(asset);
     return unsubscribe;
   }, [asset?.id, asset?.modified, asset?.kind]);
   return state;
@@ -261,6 +261,8 @@ export function ManoApp() {
   const [loadError,setLoadError]=useState('');const [showDone,setShowDone]=useState(false);const [sheetTab,setSheetTab]=useState<'filters'|'settings'|'support'>('filters');
   const [stats,setStats]=useState<RoundStats>(readStats);const [decidedHere,setDecidedHere]=useState<Set<string>>(()=>new Set());
   const videos=useRef<VideoStore|null>(null);const getVideos=()=>videos.current??(videos.current=new VideoStore());
+  const [liveRequested,setLiveRequested]=useState<string|null>(null);
+  const motionAsset=(asset:Asset):Asset=>asset.kind==='live'?{...asset,kind:'video'}:asset;
   const [stageSize,setStageSize]=useState({width:340,height:440});const stageObserver=useRef<ResizeObserver|null>(null);
   // Callback ref: the stage remounts whenever another screen (onboarding, access,
   // end of round) replaced it, and must be measured again each time it returns.
@@ -310,7 +312,7 @@ export function ManoApp() {
   const warmWait=useRef<(()=>void)|null>(null);
   const getPreloader=()=>preloader.current??(preloader.current=new AssetPreloader(prepareReviewAsset));
   const prepareWindow=(items:Asset[],sessionKey:string,videoItems?:Asset[])=>{
-    getPreloader().update(items,sessionKey);getVideos().want(videoItems??items,items[0]);
+    getPreloader().update(items,sessionKey);getVideos().want(videoItems??items,items[0]?.id===liveRequested?motionAsset(items[0]):items[0]);
     preloadWindow.current=items;
     // iCloud downloads live only while their card is in this window (warm-up
     // included) or anchored; leaving the session ([]) cancels them all natively.
@@ -331,7 +333,7 @@ export function ManoApp() {
     const finish=()=>{if(done)return;done=true;unsubscribe();warmWait.current=null;resolve();};
     unsubscribe=pool.subscribe(snapshot=>{const wanted=snapshot.items.find(i=>i.id===front);if(!front||snapshot.completed===snapshot.total||wanted?.status==='ready'||wanted?.status==='error')queueMicrotask(finish);});warmWait.current=finish;
   });
-  const cancelWarmup=()=>{sessionNumber.current++;warmingNow.current=false;prepareWindow([],String(sessionNumber.current));warmWait.current?.();setWarming(false);setLoading(false);const groups=deferredGroups.current;if(groups){deferredGroups.current=null;setAssets(prev=>prev.map(a=>({...a,group:groups.get(a.id)})));}};
+  const cancelWarmup=()=>{setLiveRequested(null);sessionNumber.current++;warmingNow.current=false;prepareWindow([],String(sessionNumber.current));warmWait.current?.();setWarming(false);setLoading(false);const groups=deferredGroups.current;if(groups){deferredGroups.current=null;setAssets(prev=>prev.map(a=>({...a,group:groups.get(a.id)})));}};
   useEffect(()=>{document.title=`CocoWash: ${t('Lo que importa, se queda')}`;installErrorReporting();},[]);
   const appliedPolicy=useRef('');
   useEffect(()=>{saveDisplay(display);setHapticsEnabled(display.haptics);setPreviewSizing({quality:display.quality,cloud:display.cloud,scale:typeof window!=='undefined'?window.devicePixelRatio||2:2});
@@ -391,7 +393,7 @@ export function ManoApp() {
   // Read-ahead: the hand on the table plus the next cards as they will be dealt.
   const upcoming=useMemo(()=>upcomingFrom(queue,hand,state.later,Math.max(PRELOAD_AHEAD,hand.length+2)),[queue,windowHandKey,state.later]);
   const upcomingKey=upcoming.map(a=>`${a.id}:${a.modified??0}`).join('|');
-  const videoAhead=useMemo(()=>upcomingFrom(queue,hand,state.later,Math.max(VIDEO_AHEAD,hand.length+2)).filter(a=>a.kind==='video'),[queue,windowHandKey,state.later]);
+  const videoAhead=useMemo(()=>upcomingFrom(queue,hand,state.later,Math.max(VIDEO_AHEAD,hand.length+2)).filter(a=>a.kind==='video'||(a.kind==='live'&&!onAndroid()&&a.id===liveRequested)).map(motionAsset),[queue,windowHandKey,state.later,liveRequested]);
   const videoKey=videoAhead.map(a=>`${a.id}:${a.modified??0}`).join('|');
   useEffect(()=>{if(session&&!warming)prepareWindow(upcoming,String(sessionNumber.current),videoAhead);},[session,warming,upcomingKey,videoKey]);
   useEffect(()=>{inspected.current=inspect;cloudPreviews.retain(inspect?[...preloadWindow.current,inspect]:preloadWindow.current);},[inspect?.id]);
@@ -634,6 +636,9 @@ export function ManoApp() {
   // «Una última mirada» carries a fixed letter above «Recuperar todo» when one is ready.
   useEffect(()=>{if(sheet==='review'&&reviewAssets.length)money.reviewing();else money.release('review');},[sheet,reviewAssets.length>0,money.placement]);
   const frontVideo=useVideoStore(getVideos,active);
+  const inspectedLive=useVideoStore(getVideos,inspect?.kind==='live'&&!onAndroid()?inspect:undefined);
+  useEffect(()=>{if(liveRequested&&hand[0]?.id!==liveRequested&&inspect?.id!==liveRequested)setLiveRequested(null);},[windowHandKey,liveRequested,inspect?.id]);
+  const requestLive=(asset:Asset)=>{if(onAndroid())return;const motion=motionAsset(asset);setLiveRequested(asset.id);getVideos().want([motion,...videoAhead],motion);getVideos().ensure(motion);};
   const placeWanted=(a:Asset)=>a.kind==='video'?display.video.location:display.photo.location;
   const frontPlace=usePlace(active,!!active&&placeWanted(active));
   // Resolve the next places in the window ahead of time, one request at a time
@@ -672,14 +677,14 @@ export function ManoApp() {
             transition={reduced?{duration:0}:CARD_SPRING}
             onPointerDown={e=>start(e,asset)} onPointerMove={move} onPointerUp={end} onPointerCancel={cancel}
             tabIndex={index===0?0:-1} aria-hidden={index!==0} aria-label={`${t('{kind} {n} de {total}',{kind:kindLabel,n:index+1,total:hand.length})}${picked?t(', seleccionada'):''}${tape?t('. Toca o pulsa Intro para pausar o reproducir.'):hand.length>1?t('. Intro para ver la siguiente; espacio para seleccionar.'):''}`} onKeyDown={e=>{if(e.target!==e.currentTarget)return;if(e.key===' '){e.preventDefault();select(asset.id);}if(e.key==='Enter'){e.preventDefault();index===0?(tape?videoControl.current?.toggle():cycle()):select(asset.id);}}}>
-            <div className="photo-window">{tape&&index===0?<InlineVideo key={asset.id} tools={isNative&&!demo?<CardShare asset={asset} sharing={sharing} share={shareActive}/>:undefined} asset={asset} state={frontVideo} active={!inspect&&!sheet&&!sharing} retry={()=>getVideos().retry(asset)} download={()=>getVideos().download(asset)} fullscreen={()=>void play(asset)} openSettings={openSettings} meta={display.video} place={frontPlace} sound={videoSound} onSound={()=>setVideoSound(v=>!v)} onOsd={()=>setDisplay(d=>({...d,video:{...d.video,osd:!d.video.osd}}))} control={videoControl}><Photo asset={asset} quiet pool={preloader.current}/></InlineVideo>:<Photo asset={asset} quiet={tape} pool={preloader.current}/>}</div>
+            <div className="photo-window">{(tape||(asset.kind==='live'&&!onAndroid()))&&index===0?<InlineVideo key={asset.id} tools={tape&&isNative&&!demo?<CardShare asset={asset} sharing={sharing} share={shareActive}/>:undefined} asset={asset} state={frontVideo} request={()=>requestLive(asset)} active={!inspect&&!sheet&&!sharing} retry={()=>getVideos().retry(motionAsset(asset))} download={()=>{requestLive(asset);getVideos().download(motionAsset(asset));}} fullscreen={()=>{if(tape)void play(asset);}} openSettings={openSettings} meta={tape?display.video:undefined} place={frontPlace} sound={tape?videoSound:false} onSound={tape?()=>setVideoSound(v=>!v):undefined} onOsd={tape?()=>setDisplay(d=>({...d,video:{...d.video,osd:!d.video.osd}})):undefined} control={videoControl}><Photo asset={asset} quiet={tape} pool={preloader.current}/></InlineVideo>:<Photo asset={asset} quiet={tape} pool={preloader.current}/>}</div>
             {index===0&&!tape&&<PolaroidCaption asset={asset} settings={display.photo} place={frontPlace} pending={display.photo.location&&!!asset.hasLocation&&frontPlace===undefined}/>}
             {hand.length>1&&<button tabIndex={index===0?0:-1} className={`pick-toggle ${picked?'selected':''}`} aria-label={picked?t('Deseleccionar {kind} {n}',{kind:kindLabel,n:index+1}):t('Seleccionar {kind} {n}',{kind:kindLabel,n:index+1})} aria-pressed={picked} onPointerDown={e=>e.stopPropagation()} onClick={()=>{haptic('selection');select(asset.id);}}><CheckIcon size={16} weight="bold"/></button>}
             {index===0&&!tape&&isNative&&!demo&&<CardShare asset={asset} sharing={sharing} share={shareActive}/>}
             {index===0&&<button className="zoom-access" onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();openPinned(asset,e.currentTarget.closest('article')!);}}><PushPinIcon size={16} weight="bold"/>{t('Anclar')}</button>}
             {index===0&&filter.geek&&<button className="geek-access" aria-label={t('Ver datos del archivo')} onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();openPinned(asset,e.currentTarget.closest('article')!);}}><InfoIcon size={18} weight="bold"/></button>}
             {index===0&&asset.id===best&&<span className="best-chip"><SparkleIcon size={13} weight="fill"/>{t('Mejor toma')}</span>}
-            {display.photo.seal&&state.marks[asset.id]&&<Seal level={state.marks[asset.id].level} hide={hideSeals}/>}{asset.kind==='live'&&<button className="media-play" onPointerDown={e=>e.stopPropagation()} onClick={()=>play(asset)} aria-label={t('Reproducir Live Photo')}><PlayIcon weight="fill" size={14}/>LIVE</button>}
+            {display.photo.seal&&state.marks[asset.id]&&<Seal level={state.marks[asset.id].level} hide={hideSeals}/>}
           </HandCard>;
         })}</AnimatePresence>
         {currentColor&&!(favView&&currentColor==='favorite')&&<motion.span className={`drag-stamp ${currentColor}`} style={{opacity:stampOpacity}}><Stamp kind={currentColor} word/></motion.span>}
@@ -710,7 +715,7 @@ export function ManoApp() {
     <p className="sr-only" role="status" aria-live="polite">{spoken}</p>
     {splash&&<Splash done={()=>setSplash(false)}/>}
     <AnimatePresence>{inspect&&<InspectorBoundary key={inspect.id} close={closeInspect}><Inspector asset={inspect} src={sharpPreview(inspect)??(preloader.current?.get(inspect)?.poster||undefined)} cloud={!!preloader.current?.peek(inspect)?.value?.cloud} pinned={pinnedInspect} origin={inspectOrigin.current} peek={{x:peekX,y:peekY}} anchor={anchor} armed={overHook} geek={!!filter.geek} close={closeInspect} pin={()=>{setPinnedInspect(true);haptic('rigid');}}
-      video={inspect.kind==='video'&&inspect.id===active?.id?{state:frontVideo,retry:()=>getVideos().retry(inspect),download:()=>getVideos().download(inspect),fullscreen:()=>void play(inspect),openSettings,sound:videoSound,onSound:()=>setVideoSound(v=>!v),freeze:heldVideo.current}:undefined}/></InspectorBoundary>}</AnimatePresence>
+      video={(inspect.kind==='video'&&inspect.id===active?.id)||(inspect.kind==='live'&&!onAndroid())?{state:inspect.kind==='live'?inspectedLive:frontVideo,request:()=>requestLive(inspect),retry:()=>getVideos().retry(motionAsset(inspect)),download:()=>{requestLive(inspect);getVideos().download(motionAsset(inspect));},fullscreen:()=>{if(inspect.kind==='video')void play(inspect);},openSettings,sound:videoSound,onSound:()=>setVideoSound(v=>!v),freeze:inspect.kind==='video'?heldVideo.current:undefined}:undefined}/></InspectorBoundary>}</AnimatePresence>
     <Sheet open={sheet==='filters'} close={()=>setSheet(null)} title={sheetTab==='filters'?t('Filtros'):sheetTab==='support'?t('Apoyo'):t('Ajustes')} description={sheetTab==='filters'?t('Elige qué fotos entran en la pila.'):sheetTab==='support'?t('Quita los anuncios o invita un café a quien la hace.'):t('Elige cómo se ven tus recuerdos.')} error={error} returnTo="filter-trigger">
       <div className="sheet-tabs" role="group" aria-label={t('Sección')}><button aria-pressed={sheetTab==='filters'} onClick={()=>{haptic('selection');setSheetTab('filters');}}>{t('Filtros')}</button><button aria-pressed={sheetTab==='settings'} onClick={()=>{haptic('selection');setSheetTab('settings');}}>{t('Ajustes')}</button>{money.available&&<button aria-pressed={sheetTab==='support'} onClick={()=>{haptic('selection');setSheetTab('support');}}>{t('Apoyo')}</button>}</div>
       <div hidden={sheetTab!=='filters'}>
