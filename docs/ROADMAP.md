@@ -45,7 +45,7 @@ una puerta nativa, comercial o de distribución.
 
 | ID | Qué | Quién | Estado | Evidencia / siguiente paso |
 |---|---|---|---|---|
-| R-00 | **P0 · El iPhone se vuelve cada vez más lento** tras eliminar unas fotos y terminar la sesión 4–5 veces seguidas (reporte del usuario en su teléfono). Ver [detalle R-00](#detalle-r-00) | CX | **En curso (P0), QA física bloqueada** | CW-CX-021: recurrencia corregida localmente,11→1 búsquedas en10 ciclos y5 regresiones de estado. [Evidencia](apple-readiness/R00_CYCLES.md). No acredita RAM/CPU iPhone |
+| R-00 | **P0 · El iPhone se vuelve cada vez más lento** tras eliminar unas fotos y terminar la sesión 4–5 veces seguidas (reporte del usuario en su teléfono). Ver [detalle R-00](#detalle-r-00) | CX | **PASS regresión nativa pequeña; QA física BLOCKED** | CW-CX-021/033:11→1 búsquedas sintéticas y10rondas nativas reales iOS42492831273/Android42492831172,PASS presupuestos. [Métricas ylímites](apple-readiness/NATIVE_LAB.md). Recuento finalPhotoKit pendiente;no acredita teléfono físico/biblioteca grande |
 | R-07 | **Live Photo**: reproducción en la carta y en la vista anclada. Ver [detalle R-07](#detalle-r-07) | CX (+CL visual) | **En curso (P1), nativo bloqueado** | CW-CX-022/025: reproducción inline, foto clave en pausa, anclaje/timeline/pinch implementados;5 escenarios web PASS. [Evidencia y QA nativa](apple-readiness/LIVE_PHOTO.md) |
 
 ## A · Código y pruebas iOS (antes de firmar)
@@ -195,7 +195,7 @@ Autorizados push normal a main y workflows estándar públicos gratuitos, relanz
 | R-56 | Tráfico de anuncios de prueba en simulador, solo hosts; ATT/UMP por estado; Privacy Report y propuesta fundamentada de dominios | CX investiga, U aprueba | NOT TESTED; no inferir tracking de cualquier endpoint |
 | R-57 | Firma iOS/Android preparada y dry-run ejecutado sin secretos; export local sin upload | CX + U secretos | NOT TESTED; la firma real permanece BLOCKED hasta secretos/autorización |
 | R-58 | Fichas, revisión, edad, compras y capturas reales con fixtures en7 idiomas por tienda | CX + CL visual | CW-CX-029: ficha/notas7 idiomas y límites PASS; compras7 existentes. Capturas reales multilingües y clasificación final NOT TESTED/propietario |
-| R-59 | E2E Android ampliado: favoritas/undo, Atrás, destrucción con fixtures y10 ciclos con medidas nativas | CX | NOT TESTED ampliación; CI base en curso |
+| R-59 | E2E Android ampliado: favoritas/undo, Atrás, destrucción con fixtures y10 ciclos con medidas nativas | CX | PASS10ciclos/medición; favoritas/undo ampliadas NOT TESTED | Run42492831172/59912d8,16checks+10rondas reales; [serie ylímites](apple-readiness/NATIVE_LAB.md). Atribución nueva por muestra yR04nativo pendientes |
 
 ### Evidencia del inicio
 
@@ -229,3 +229,7 @@ Autorizados push normal a main y workflows estándar públicos gratuitos, relanz
 - 2026-11-08 · Codex CW-CX-031: onInput no corrige R-01 nativo; nuevo destinatario XCTest bajo prueba. Seeder PhotoKit42489613346 PASS64/3Live. Android42491859489 detecta vídeo fixture duración0; generación animada/probe independiente preparados. Laboratorio iOS añade contrato ligado al simulador y XCTest/medidas app+WebContent; presupuestos declarados antes de obtener ciclos completos.
 
 - 2026-11-08 · Codex CW-CX-032:Android42492831172 PASS10rondas UI reales tras corregir fixture0s. R-46 añade verificación de firma/configuración fail-closed;7 vectores RSA pendientes CI. R-01 app.typeText tambiénFAIL, se reúne evidencia de tecla software sin relajar asserts.
+
+- 2026-11-08 · Codex CW-CX-033:10rondas Android reales ypresupuestos nativos PASS,atribuida serie porActivityManager;memoria mediana+3MiB,CPUfinal2,22%,picos transitorios registrados. FirmaJava42493903317 PASS7. Nuevas pruebas favoritas/Back ycaptura hostsATT preparadas;ningún dominio modificado.
+
+- 2026-11-08 · Codex CW-CX-033 continuación:iOS42492831273 test10rondas PASS393s,XCTestCPU2,739s/ronda yappfootprint≈46–47MB;hostapp+WebContent sin crecimiento sostenido. GateFAILálbum no se oculta. Se corrige evidencia64→70total(6demos precargadas delruntime),auditoría finalenexit ycohortes separadas. Android42493904052 PASSinclKotlin/Java/10rondas.

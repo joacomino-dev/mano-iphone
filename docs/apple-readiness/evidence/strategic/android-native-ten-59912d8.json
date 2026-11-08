@@ -1,0 +1,423 @@
+{
+  "boundary": "Hosted emulator, generated library only. PSS/counters are measured on Android, not Node. Renderer attribution must be reviewed before memory acceptance.",
+  "status": "PASS",
+  "rows": [
+    {
+      "cycle": 0,
+      "processes": [
+        {
+          "pid": "4604",
+          "role": "app",
+          "name": "work.joaquin.mano",
+          "pssKiB": 129124,
+          "cpuTicks": 4144,
+          "sampleMonotonicMs": 59966.021884
+        },
+        {
+          "pid": "4640",
+          "role": "renderer",
+          "name": "com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0",
+          "pssKiB": 106185,
+          "cpuTicks": 264,
+          "sampleMonotonicMs": 60031.498686
+        }
+      ],
+      "combinedPssKiB": 235309,
+      "idleCpuWindowSeconds": 2.2481976700000015,
+      "cpu": [
+        {
+          "pid": "4604",
+          "windowSeconds": 2.2537449360000026,
+          "percent": 1.7748237327597907
+        },
+        {
+          "pid": "4640",
+          "windowSeconds": 2.248124714999998,
+          "percent": 0.8896303602089093
+        }
+      ]
+    },
+    {
+      "cycle": 1,
+      "processes": [
+        {
+          "pid": "4604",
+          "role": "app",
+          "name": "work.joaquin.mano",
+          "pssKiB": 129826,
+          "cpuTicks": 4926,
+          "sampleMonotonicMs": 76880.808488
+        },
+        {
+          "pid": "4640",
+          "role": "renderer",
+          "name": "com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0",
+          "pssKiB": 110863,
+          "cpuTicks": 332,
+          "sampleMonotonicMs": 76946.904523
+        }
+      ],
+      "combinedPssKiB": 240689,
+      "idleCpuWindowSeconds": 2.2486594059999914,
+      "cpu": [
+        {
+          "pid": "4604",
+          "windowSeconds": 2.2859093999999898,
+          "percent": 37.62178851007848
+        },
+        {
+          "pid": "4640",
+          "windowSeconds": 2.248834459000005,
+          "percent": 0.44467479409074534
+        }
+      ]
+    },
+    {
+      "cycle": 2,
+      "processes": [
+        {
+          "pid": "4604",
+          "role": "app",
+          "name": "work.joaquin.mano",
+          "pssKiB": 129632,
+          "cpuTicks": 5651,
+          "sampleMonotonicMs": 92082.948183
+        },
+        {
+          "pid": "4640",
+          "role": "renderer",
+          "name": "com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0",
+          "pssKiB": 113411,
+          "cpuTicks": 385,
+          "sampleMonotonicMs": 92151.126597
+        }
+      ],
+      "combinedPssKiB": 243043,
+      "idleCpuWindowSeconds": 2.251107757000005,
+      "cpu": [
+        {
+          "pid": "4604",
+          "windowSeconds": 2.2944021199999987,
+          "percent": 46.63524282308459
+        },
+        {
+          "pid": "4640",
+          "windowSeconds": 2.2511215870000014,
+          "percent": 0.8884460135559966
+        }
+      ]
+    },
+    {
+      "cycle": 3,
+      "processes": [
+        {
+          "pid": "4604",
+          "role": "app",
+          "name": "work.joaquin.mano",
+          "pssKiB": 128139,
+          "cpuTicks": 6110,
+          "sampleMonotonicMs": 105383.824729
+        },
+        {
+          "pid": "4640",
+          "role": "renderer",
+          "name": "com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0",
+          "pssKiB": 115437,
+          "cpuTicks": 436,
+          "sampleMonotonicMs": 105449.780976
+        }
+      ],
+      "combinedPssKiB": 243576,
+      "idleCpuWindowSeconds": 2.2528201180000034,
+      "cpu": [
+        {
+          "pid": "4604",
+          "windowSeconds": 2.2529694420000013,
+          "percent": 1.77543464435502
+        },
+        {
+          "pid": "4640",
+          "windowSeconds": 2.252817913999999,
+          "percent": 0.8877770314108043
+        }
+      ]
+    },
+    {
+      "cycle": 4,
+      "processes": [
+        {
+          "pid": "4604",
+          "role": "app",
+          "name": "work.joaquin.mano",
+          "pssKiB": 128362,
+          "cpuTicks": 6461,
+          "sampleMonotonicMs": 119949.589077
+        },
+        {
+          "pid": "4640",
+          "role": "renderer",
+          "name": "com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0",
+          "pssKiB": 115878,
+          "cpuTicks": 480,
+          "sampleMonotonicMs": 120018.022952
+        }
+      ],
+      "combinedPssKiB": 244240,
+      "idleCpuWindowSeconds": 2.2520763330000046,
+      "cpu": [
+        {
+          "pid": "4604",
+          "windowSeconds": 2.251234475999998,
+          "percent": 1.7768029241926035
+        },
+        {
+          "pid": "4640",
+          "windowSeconds": 2.2520758239999994,
+          "percent": 0.8880695661692786
+        }
+      ]
+    },
+    {
+      "cycle": 5,
+      "processes": [
+        {
+          "pid": "4604",
+          "role": "app",
+          "name": "work.joaquin.mano",
+          "pssKiB": 130966,
+          "cpuTicks": 7251,
+          "sampleMonotonicMs": 134776.474181
+        },
+        {
+          "pid": "4640",
+          "role": "renderer",
+          "name": "com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0",
+          "pssKiB": 113527,
+          "cpuTicks": 526,
+          "sampleMonotonicMs": 134936.992563
+        }
+      ],
+      "combinedPssKiB": 244493,
+      "idleCpuWindowSeconds": 2.4885161209999933,
+      "cpu": [
+        {
+          "pid": "4604",
+          "windowSeconds": 2.4251685880000005,
+          "percent": 91.54002781434671
+        },
+        {
+          "pid": "4640",
+          "windowSeconds": 2.488517519999994,
+          "percent": 2.411074043794562
+        }
+      ]
+    },
+    {
+      "cycle": 6,
+      "processes": [
+        {
+          "pid": "4604",
+          "role": "app",
+          "name": "work.joaquin.mano",
+          "pssKiB": 128442,
+          "cpuTicks": 7815,
+          "sampleMonotonicMs": 149937.436069
+        },
+        {
+          "pid": "4640",
+          "role": "renderer",
+          "name": "com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0",
+          "pssKiB": 113288,
+          "cpuTicks": 568,
+          "sampleMonotonicMs": 150006.699682
+        }
+      ],
+      "combinedPssKiB": 241730,
+      "idleCpuWindowSeconds": 2.247099022999988,
+      "cpu": [
+        {
+          "pid": "4604",
+          "windowSeconds": 2.245995366999996,
+          "percent": 1.7809475739671048
+        },
+        {
+          "pid": "4640",
+          "windowSeconds": 2.2470986750000157,
+          "percent": 0.44501828563447177
+        }
+      ]
+    },
+    {
+      "cycle": 7,
+      "processes": [
+        {
+          "pid": "4604",
+          "role": "app",
+          "name": "work.joaquin.mano",
+          "pssKiB": 132321,
+          "cpuTicks": 8300,
+          "sampleMonotonicMs": 163487.574367
+        },
+        {
+          "pid": "4640",
+          "role": "renderer",
+          "name": "com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0",
+          "pssKiB": 120206,
+          "cpuTicks": 615,
+          "sampleMonotonicMs": 163555.13141
+        }
+      ],
+      "combinedPssKiB": 252527,
+      "idleCpuWindowSeconds": 2.265218041999993,
+      "cpu": [
+        {
+          "pid": "4604",
+          "windowSeconds": 2.2662527809999884,
+          "percent": 13.678968321583787
+        },
+        {
+          "pid": "4640",
+          "windowSeconds": 2.265217849000008,
+          "percent": 0.8829172880140028
+        }
+      ]
+    },
+    {
+      "cycle": 8,
+      "processes": [
+        {
+          "pid": "4604",
+          "role": "app",
+          "name": "work.joaquin.mano",
+          "pssKiB": 128682,
+          "cpuTicks": 8880,
+          "sampleMonotonicMs": 177954.881021
+        },
+        {
+          "pid": "4640",
+          "role": "renderer",
+          "name": "com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0",
+          "pssKiB": 117737,
+          "cpuTicks": 655,
+          "sampleMonotonicMs": 178030.260012
+        }
+      ],
+      "combinedPssKiB": 246419,
+      "idleCpuWindowSeconds": 2.25760463300001,
+      "cpu": [
+        {
+          "pid": "4604",
+          "windowSeconds": 2.250350206000003,
+          "percent": 1.77750111486425
+        },
+        {
+          "pid": "4640",
+          "windowSeconds": 2.257606005000009,
+          "percent": 0.44294708544593725
+        }
+      ]
+    },
+    {
+      "cycle": 9,
+      "processes": [
+        {
+          "pid": "4604",
+          "role": "app",
+          "name": "work.joaquin.mano",
+          "pssKiB": 128672,
+          "cpuTicks": 9353,
+          "sampleMonotonicMs": 191510.088082
+        },
+        {
+          "pid": "4640",
+          "role": "renderer",
+          "name": "com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0",
+          "pssKiB": 103639,
+          "cpuTicks": 694,
+          "sampleMonotonicMs": 191577.143018
+        }
+      ],
+      "combinedPssKiB": 232311,
+      "idleCpuWindowSeconds": 2.24959004000001,
+      "cpu": [
+        {
+          "pid": "4604",
+          "windowSeconds": 2.2541668650000064,
+          "percent": 1.774491525941221
+        },
+        {
+          "pid": "4640",
+          "windowSeconds": 2.249604892000003,
+          "percent": 0.44452250417670175
+        }
+      ]
+    },
+    {
+      "cycle": 10,
+      "processes": [
+        {
+          "pid": "4604",
+          "role": "app",
+          "name": "work.joaquin.mano",
+          "pssKiB": 129188,
+          "cpuTicks": 10034,
+          "sampleMonotonicMs": 205841.287596
+        },
+        {
+          "pid": "4640",
+          "role": "renderer",
+          "name": "com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0",
+          "pssKiB": 114527,
+          "cpuTicks": 745,
+          "sampleMonotonicMs": 205910.096914
+        }
+      ],
+      "combinedPssKiB": 243715,
+      "idleCpuWindowSeconds": 2.2527132639999907,
+      "cpu": [
+        {
+          "pid": "4604",
+          "windowSeconds": 2.2913662360000018,
+          "percent": 34.477247137022026
+        },
+        {
+          "pid": "4640",
+          "windowSeconds": 2.2527126149999965,
+          "percent": 0.8878185289515961
+        }
+      ]
+    }
+  ],
+  "adbdRoot": "restarting adbd as root",
+  "initialAssetCount": 65,
+  "fixtureOwnershipVerified": true,
+  "developerControlsVisible": true,
+  "functionalCycles": 10,
+  "performanceAcceptance": {
+    "status": "PASS",
+    "budgets": {
+      "maxLateMemoryGrowthKiB": 24576,
+      "maxSlopeKiBPerCycle": 1024,
+      "maxLateIdleCpuPercent": 15,
+      "maxIdleCpuGrowthPercentagePoints": 5
+    },
+    "boundary": "64 synthetic media items, ten rounds, simulator only. Not physical iPhone/Android or large-library acceptance.",
+    "checks": {
+      "lateMemoryGrowth": true,
+      "memorySlope": true,
+      "lateIdleCpu": true,
+      "idleCpuGrowth": true
+    },
+    "baselineMemoryKiB": 240689,
+    "lateMemoryKiB": 243715,
+    "slopeKiBPerCycle": -311.9166666666667,
+    "baselineIdleCpuPercent": 38.066463304169226,
+    "lateIdleCpuPercent": 2.2204482003101873
+  },
+  "attribution": "Derived from retained baseline ActivityManager packageList/service bindings: app4604 + renderer4640. Excludes search renderer3843. Continuous same PID/counters; future harness verifies each sample.",
+  "sourceSha": "59912d890db63413a0b27cad59175f2ee0fe8f7d",
+  "run": "https://github.com/joacomino-dev/mano-iphone/actions/runs/42492831172",
+  "artifactId": 13622825718,
+  "androidApi": 35,
+  "architecture": "x86_64"
+}

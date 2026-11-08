@@ -1,6 +1,6 @@
 # Laboratorio nativo estratégico — 2026-11-08
 
-Estado: **NOT TESTED** los diez ciclos completos. El probe PhotoKit independiente
+Estado iOS: **PASS** diez rondas UI/XCTest y presupuestos en42492831273/59912d8,18Pro/iOS27.0. Gate completo **FAIL** por álbum; auditoría final PhotoKit **PENDIENTE** porque la salida temprana la omitió. [Serie y métricas XCTest](evidence/strategic/ios-native-ten-59912d8.json). CPU2,739s/ronda de media, footprint absoluto de app45,6→47,2MB(decimales),pico58,7MB. RSS host agregado app+todos los WebContent del simulador1,88→1,50GiB aprox.,incluye páginas compartidas;no es RAM de iPhone. CPU cycles/instructions devuelven0 en este simulador: **NO DISPONIBLE**,no eficiencia perfecta. Android: **PASS** diez rondas en run42492831172/59912d8,API35/x86_64,65 fixtures. [Serie nativa](evidence/strategic/android-native-ten-59912d8.json): PSS mediana inicial240689KiB/final243715KiB; pendiente−311,9KiB/ronda; CPU final mediana2,22%. Se excluye GoogleSearch por packageList/service en ActivityManager. Hay picos transitorios de CPU hasta≈92%; no es un perfil de Instruments ni QA de biblioteca grande. El probe PhotoKit independiente
 [42489613346](https://github.com/joacomino-dev/mano-iphone/actions/runs/42489613346)
 sí **PASS**:64 importaciones,3 Live Photos y3 recursos emparejados en18Pro/iOS27.2.
 Esto no prueba aún reproducción, zoom o foto clave dentro de CocoWash.
@@ -13,10 +13,10 @@ deshabilitado. El helper exige macOS, runner GitHub alojado y nombre del simulad
 de ese mismo run. No concede permisos a CocoWash: el onboarding y el diálogo real
 siguen siendo obligatorios. Solo el seeder separado recibe permiso automatizado.
 
-Se importan60 fotografías,3 Live y1 vídeo, generados desde el PNG público. El
+Se importan60 fotografías,3 Live y1 vídeo, generados desde el PNG público. CocoWash enumeró70:se observaron6 assets adicionales en el simulador nuevo;se infiere que son demos delruntime, pero la nueva medición antes de importar debe confirmarlo. El primer helper solo contaba sus64, por lo que el informe inicial no acreditaba una biblioteca exclusivamente generada. Ahora se captura esa cohorte inicial por separado, se rechaza más de6 preexistentes yse auditan pérdidas/elementos desconocidos de ambas cohortes. No se adopta cualquier biblioteca existente: el wrapper exige el simulador nuevo de este run; jamás un dispositivo personal. El
 helper conserva sus identificadores únicamente dentro de su contenedor efímero,
 fuera de artefactos. Al finalizar reconsulta PhotoKit: cero elementos desconocidos
-y exactamente diez ausentes. No se ejecuta en un iPhone personal.
+y exactamente diez ausentes, desglosados entre generados ydemostración del runtime. No se ejecuta en un iPhone personal.
 
 ## Medición y aceptación
 
@@ -61,3 +61,5 @@ Referencias oficiales:
 [XCTest](https://developer.apple.com/documentation/xctest/performance-tests),
 [iteraciones](https://developer.apple.com/documentation/xctest/xctmeasureoptions/iterationcount),
 [recursos Live](https://developer.apple.com/documentation/photos/phassetcreationrequest).
+
+Android posterior42493904052/4a63ddc PASS: Kotlin/Java compilados, testDebugUnitTest,16checks nativos y10rondas. El verificador de firma se probó además en42493903317(7JVM). Configuración real y sandbox Play siguen BLOCKED por propietario.
