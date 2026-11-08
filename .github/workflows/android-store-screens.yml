@@ -1,0 +1,55 @@
+name: Capture real Android store screens in seven languages
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  capture:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      COCO_ANDROID_PROBE: screenshots
+    defaults:
+      run:
+        working-directory: mano
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: npm ci --no-audit --no-fund
+      - name: Build actual store frontend with native test-ad debug configuration
+        run: |
+          npm run check:runtime
+          npm run sync:android
+          (cd .. && python3 scripts/check-android-channel.py --snapshot store --out mano/build/android/store-channel.json)
+          (cd android && ./gradlew --no-daemon assembleDebug)
+          (cd .. && python3 scripts/check-android-channel.py --verify mano/android/app/build/outputs/apk/debug/app-debug.apk --proof mano/build/android/store-channel.json --expected store)
+      - name: Prepare disposable free emulator and image encoder
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Execute app with synthetic gallery and capture RGB screenshots
+        run: bash scripts/android-emulator.sh android/app/build/outputs/apk/debug/app-debug.apk
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-native-store-screens-${{ github.sha }}
+          path: |
+            mano/build/store-screens/*.png
+            mano/build/store-screens/report.json
+            mano/build/android/store-channel.json
+            mano/build/android-startup/emulator-errors.txt
+          retention-days: 7
+          if-no-files-found: warn

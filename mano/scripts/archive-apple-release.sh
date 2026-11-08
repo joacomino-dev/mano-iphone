@@ -8,6 +8,10 @@ xcode_version=$(xcodebuild -version)
 [[ "$xcode_version" =~ Xcode\ ([0-9]+) ]] && [ "${BASH_REMATCH[1]}" -ge 26 ] || { echo 'BLOCKED: Xcode26+ required.' >&2; exit 78; }
 sdk_version=$(xcrun --sdk iphoneos --show-sdk-version)
 [ "${sdk_version%%.*}" -ge 26 ] || { echo 'BLOCKED: iOS SDK26+ required.' >&2; exit 78; }
+if [ "${1:-}" = --dry-run ]; then
+  python3 ../scripts/apple-signing-dry-run.py
+  exit 78
+fi
 test "${COCOWASH_SIGNING_AUTHORIZED:-}" = YES || { echo 'REFUSED: owner must explicitly authorize local signing with COCOWASH_SIGNING_AUTHORIZED=YES.' >&2; exit 78; }
 : "${COCOWASH_TEAM_ID:?Set the existing Apple team ID; never a private key}"
 : "${COCOWASH_VERSION:?Choose the marketing version after checking App Store Connect}"

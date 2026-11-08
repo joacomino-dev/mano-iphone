@@ -1,0 +1,35 @@
+name: Non-signing Apple distribution preflight
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  dry-run:
+    if: github.event.repository.private == false
+    runs-on: xcode-27
+    timeout-minutes: 15
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
+    defaults:
+      run:
+        working-directory: mano
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+      - name: Exercise real archive entry point without signing or credentials
+        # Expected exit78 keeps unavailable distribution visibly blocked.
+        run: bash scripts/archive-apple-release.sh --dry-run
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apple-distribution-dry-run-${{ github.sha }}
+          path: |
+            mano/build/distribution-dry-run/report.json
+            mano/build/distribution-dry-run/*.log
+          retention-days: 7
+          if-no-files-found: error

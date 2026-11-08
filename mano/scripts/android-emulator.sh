@@ -42,6 +42,10 @@ boot() {
   timeout 30 adb shell settings put global window_animation_scale 0 >/dev/null 2>&1 || true
   timeout 30 adb shell settings put global transition_animation_scale 0 >/dev/null 2>&1 || true
   timeout 30 adb shell settings put global animator_duration_scale 0 >/dev/null 2>&1 || true
+  if [ "${COCO_ANDROID_PROBE:-}" = screenshots ]; then
+    timeout 30 adb shell wm size 1080x1920 || return 1
+    timeout 30 adb shell mkdir -p /sdcard/DCIM/Camera || return 1
+  fi
 }
 # Never an unbounded wait: an emulator that ignores the polite stop is killed after 15 s.
 stop() {
@@ -58,6 +62,10 @@ for attempt in 1 2; do
     if timeout 300 bash scripts/test-android-startup.sh "$APK"; then
       # End to end on a synthetic library made here (never personal photos).
       code=0
+      if [ "${COCO_ANDROID_PROBE:-}" = screenshots ]; then
+        timeout 900 node ../scripts/android-store-screens.mjs || code=$?
+        stop; exit "$code"
+      fi
       timeout 420 bash scripts/android-e2e-library.sh || code=$?
       if [ "$code" = 0 ]; then timeout 600 node scripts/android-e2e.mjs || code=$?; fi
       if [ "$code" = 0 ]; then
