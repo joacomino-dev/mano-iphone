@@ -45,7 +45,8 @@ cleanup() {
   set +e
   if [ "$result" -ne 0 ] && [ "$simulator_booted" -eq 1 ]; then
     echo 'Collecting diagnostics from the generated-photo-only ephemeral simulator.' >&2
-    bounded 40 xcrun simctl io "$simulator_id" screenshot --type=png "$smoke_dir/failure.png"
+    bounded 140 python3 scripts/capture-simulator-screens.py "$simulator_id" "$smoke_dir"
+    cat "$smoke_dir/screen-capture.log" >&2
     bounded 60 xcrun simctl spawn "$simulator_id" log show --last 5m --style compact \
       --predicate "$failure_predicate" > "$smoke_dir/failure-unified.log" 2>&1
     tail -n 100 "$smoke_dir/failure-unified.log" >&2

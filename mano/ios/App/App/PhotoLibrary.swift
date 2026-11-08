@@ -599,6 +599,8 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         guard selected.count == ids.count else {
             call.reject("Alguna foto ya no está disponible. Actualiza tu selección antes de crear el álbum.", "ASSET_UNAVAILABLE"); return
         }
+        // Local diagnostics contain no album title, media IDs, paths or content.
+        NSLog("COCOWASH_ALBUM_CREATE_BEGIN count=%ld", ids.count)
         DispatchQueue.main.async {
             var albumID: String?
             // Creation and membership are a single PhotoKit transaction: a
@@ -609,9 +611,11 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
                 albumID = request.placeholderForCreatedAssetCollection.localIdentifier
             }) { success, error in
                 guard success, let albumID else {
+                    NSLog("COCOWASH_ALBUM_CREATE_FAILED code=%ld", (error as NSError?)?.code ?? -1)
                     call.reject(error?.localizedDescription ?? "Fotos no confirmó la creación del álbum.", "ALBUM_CREATE_FAILED"); return
                 }
                 call.resolve(["album": ["id": albumID, "title": title], "added": ids.count])
+                NSLog("COCOWASH_ALBUM_CREATE_OK count=%ld", ids.count)
             }
         }
     }

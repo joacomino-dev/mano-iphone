@@ -28,6 +28,8 @@ jobs:
           node-version: '22'
       - run: npm ci --no-audit --no-fund
         timeout-minutes: 10
+      - name: Validate simulator evidence collector
+        run: python3 -B -m unittest discover -s tests -p test_simulator_screens.py -v
       - name: Unsigned build, Swift oracles and real PhotoKit read smoke
         run: bash scripts/validate-apple-native.sh --simulator-smoke
       - name: Retain synthetic QA logs, never an IPA or personal media
@@ -40,5 +42,7 @@ jobs:
             mano/build/apple-readiness/*.json
             mano/build/apple-readiness/*.log
             mano/build/apple-readiness/resolutions/*.resolved
+            mano/build/simulator-smoke/*.log
+            mano/build/simulator-smoke/*.png
           retention-days: 7
           if-no-files-found: warn

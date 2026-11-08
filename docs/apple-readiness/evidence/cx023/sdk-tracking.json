@@ -1,0 +1,24 @@
+{
+  "checkedAt": "2026-11-08T04:58:10.551303+00:00",
+  "boundary": "Official pinned ZIP checksum and manifest inspection. NOT Apple signature verification, runtime traffic or archive aggregation.",
+  "packages": [
+    {
+      "name": "ads",
+      "version": "13.12.0",
+      "source": "https://raw.githubusercontent.com/googleads/swift-package-manager-google-mobile-ads/13.12.0/Package.swift",
+      "sha256": "6b8bfa69d6b4b8484328803fc5f71d5735caf7ce01acff8abb76e8b73c83e005",
+      "manifestPath": "GoogleMobileAds.xcframework/ios-arm64/GoogleMobileAds.framework/PrivacyInfo.xcprivacy",
+      "NSPrivacyTracking": "ABSENT",
+      "NSPrivacyTrackingDomains": "ABSENT"
+    },
+    {
+      "name": "ump",
+      "version": "3.1.0",
+      "source": "https://raw.githubusercontent.com/googleads/swift-package-manager-google-user-messaging-platform/3.1.0/Package.swift",
+      "sha256": "90fe6bf3b0f4ce0d0199628c0871de58b6f673375148b98d52348aecc86db231",
+      "manifestPath": "UserMessagingPlatform.xcframework/ios-arm64/UserMessagingPlatform.framework/PrivacyInfo.xcprivacy",
+      "NSPrivacyTracking": "ABSENT",
+      "NSPrivacyTrackingDomains": "ABSENT"
+    }
+  ]
+}

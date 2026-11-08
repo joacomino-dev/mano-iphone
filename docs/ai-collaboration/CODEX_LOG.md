@@ -311,3 +311,14 @@ Validaciones:128 Node; TypeScript/runtime28; web/native-web;14 Release/contratos
 Decisiones:sin cambios de arte, versiones, dependencias, Android, decisiones/borrado ni monetización; sin push ni CI de estos cambios. No se atribuyen pruebas nativas.
 Impacto Claude:preservar botón LIVE, propiedad exclusiva de reproducción y foto clave en pausa. La API preview antigua no se llama para Live desde UI.
 Pendientes:R-07 compilación/QA real incluyendo iCloud/foto clave editada; R-01/R-02/R-03/R-04 siguientes; R-00 físico sigue abierto.
+
+### CW-CX-023 — Evidencia nativa y dominios de tracking
+Fecha:2026-11-07, America/Bogota.
+Agente:Codex.
+Tarea:R-01/R-02/R-03 en el orden acordado; sin nueva CI/push.
+Estado:R-01/R-02 FAIL; R-03 implementado y comprobado con diagnóstico grabado, ejecución Apple BLOCKED.
+Archivos:XCTest, logs PhotoLibrary, captura simctl/4 pruebas Python/workflow, docs/roadmap/evidencia.
+Cambio:separa input/React/tap/transacción en próximo run; captura cada display por IDs descubiertos y conserva fallo original; retiene pruebas sintéticas en artifacts. No altera lógica de álbum sin causa.
+Validaciones:log GitHub42438304068 revisado directamente;4 Python/4 contratos/Bash syntax PASS; checksum oficial Ads13.12.0/UMP3.1.0 repetido. Manifest sin dominios; gate submission sigue exit1. [Detalle](../apple-readiness/NATIVE_FOLLOWUP.md).
+Impacto Claude:no llamar resuelto al álbum, simctl o tracking. Nueva compilación del puente R-07 también pendiente. No hay publicación ni datos personales.
+Pendientes:autorizar push/run para diagnóstico y QA nativa; proveedor/tráfico para R-02; R-04 siguiente.

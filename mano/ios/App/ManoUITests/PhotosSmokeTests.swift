@@ -134,10 +134,28 @@ final class PhotosSmokeTests: XCTestCase {
         name.typeText(fixtureAlbum)
         let save = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Crear y añadir ")).firstMatch
         XCTAssertTrue(save.waitForExistence(timeout: 10))
+        // Diagnose the actual WKWebView field and React-derived enabled state;
+        // never inject JS, force-enable the button or replace the native result.
+        let typed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", fixtureAlbum), object: name)
+        guard XCTWaiter().wait(for: [typed], timeout: 10) == .completed else {
+            print("COCOWASH_UI_ALBUM_INPUT_MISMATCH enabled=\(save.isEnabled) hittable=\(save.isHittable)")
+            attachScreenshot(app, "Album input did not receive fixture name")
+            XCTFail("WKWebView album field must contain the exact typed fixture name.")
+            return
+        }
+        let savable = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: save)
+        guard XCTWaiter().wait(for: [savable], timeout: 10) == .completed else {
+            print("COCOWASH_UI_ALBUM_SAVE_DISABLED inputMatches=true hittable=\(save.isHittable)")
+            attachScreenshot(app, "Album save remained disabled")
+            XCTFail("A nonempty native album name must enable Create and add.")
+            return
+        }
+        print("COCOWASH_UI_ALBUM_READY inputMatches=true enabled=\(save.isEnabled) hittable=\(save.isHittable) keyboard=\(app.keyboards.count)")
         // The form button dismisses its own keyboard; do not inject JS or native calls.
         // A lost tap leaves the sheet open over «Álbum» (run 41235518150): repeat it.
         // While PhotoKit works the button is disabled, so a repeat cannot save twice.
         guard tap(save, until: { !save.exists }, "save") else {
+            print("COCOWASH_UI_ALBUM_SAVE_STUCK fieldExists=\(name.exists) enabled=\(save.isEnabled) hittable=\(save.isHittable)")
             attachScreenshot(app, "Album sheet did not save")
             XCTFail("«Crear y añadir» must save the album and close the sheet.")
             return
