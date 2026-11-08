@@ -36,6 +36,7 @@ PY
 bounded() { python3 "$helper" "$@"; }
 simulator_id=''
 log_pid=''
+collector_pid=''
 simulator_booted=0
 log_predicate='process == "App" OR process CONTAINS "WebKit"'
 failure_predicate="$log_predicate OR process == \"installd\" OR process == \"installcoordinationd\" OR process == \"lsd\" OR process == \"SpringBoard\" OR process == \"assetsd\" OR process == \"photolibraryd\""
@@ -51,6 +52,7 @@ cleanup() {
       --predicate "$failure_predicate" > "$smoke_dir/failure-unified.log" 2>&1
     tail -n 100 "$smoke_dir/failure-unified.log" >&2
   fi
+  if [ -n "$collector_pid" ]; then kill -TERM "$collector_pid" 2>/dev/null; fi
   if [ -n "$log_pid" ]; then
     kill -TERM "$log_pid" 2>/dev/null
     wait "$log_pid" 2>/dev/null
@@ -121,6 +123,16 @@ device_type="$(sed -n '2p' "$smoke_dir/selection.txt")"
 echo "Smoke simulator: $(sed -n '3p' "$smoke_dir/selection.txt") (fresh ephemeral device)"
 simulator_id="$(bounded 60 xcrun simctl create "MemSwipe-smoke-${GITHUB_RUN_ID:-local}-$$" "$device_type" "$runtime_id")"
 [[ "$simulator_id" =~ ^[0-9A-Fa-f-]{36}$ ]] || { echo 'ERROR: simulator creation returned no valid UUID.' >&2; exit 1; }
+
+# Test-bundle-only ownership contract; never copied into CocoWash.app.
+if [ "${COCO_NATIVE_LAB:-0}" = 1 ]; then
+  test "${GITHUB_ACTIONS:-}" = true && test "${RUNNER_ENVIRONMENT:-}" = github-hosted || { echo 'Native lab refuses non-hosted environments'; exit 1; }
+  python3 - "$simulator_id" <<'PYCONTRACT'
+import json,os,sys
+from pathlib import Path
+Path('ios/App/ManoUITests/native-lab-contract.json').write_text(json.dumps({'enabled':True,'run':os.environ['GITHUB_RUN_ID'],'simulator':sys.argv[1]}))
+PYCONTRACT
+fi
 
 # SwiftPM: run 41140716793 failed because the runner's global SwiftPM state pointed at
 # a capacitor-swift-pm clone that no longer existed. A custom -packageCachePath (run
@@ -239,17 +251,21 @@ bounded 300 xcrun simctl install "$simulator_id" "$app"
 # after boot (run 40966694363); right after boot it exceeded 60s (run 41132758705).
 # Run 41258081163 (attempt 2): the first import failed while the fresh library was
 # still being created. Retry once after a pause; a second failure stops the test.
+if [ "${COCO_NATIVE_LAB:-0}" = 1 ]; then
+  ( cd ..; COCO_FIXTURE_OUTPUT="$smoke_dir/fixtures" python3 scripts/apple-fixtures/probe.py --seed-existing "$simulator_id" )
+else
 if ! bounded 180 xcrun simctl addmedia "$simulator_id" "$PWD/scripts/fixtures/postcard-fixture.png" "$smoke_dir/postcard-fixture.mp4"; then
   echo 'Generated media import failed once; retrying after 30s.' >&2
   sleep 30
   bounded 180 xcrun simctl addmedia "$simulator_id" "$PWD/scripts/fixtures/postcard-fixture.png" "$smoke_dir/postcard-fixture.mp4"
+fi
 fi
 # Do not pregrant Photos: on this iOS runtime that can leave .readWrite
 # notDetermined. XCTest requests permission through the real app and OS dialog.
 
 log_file="$smoke_dir/photos-read.log"
 start_log_stream() {
-  python3 "$helper" 900 xcrun simctl spawn "$simulator_id" log stream \
+  python3 "$helper" 2300 xcrun simctl spawn "$simulator_id" log stream \
     --style compact --level debug \
     --predicate "$log_predicate" \
     >> "$log_file" 2>&1 &
@@ -280,16 +296,25 @@ run_ui_test() {
   # Run 41497571357 (attempt 2): the test passed in 590 s, but launching the
   # XCTest runner on the loaded simulator took ~5 min, so the 900 s bound cut
   # xcodebuild off right after the pass. 1320 s = 840 s test + bootstrap.
-  bounded 1320 xcodebuild -project ios/App/App.xcodeproj -scheme ManoSmoke \
+  local selection='-only-testing:ManoUITests/PhotosSmokeTests/testFullPhotosAuthorizationStartsSession'
+  if [ "${COCO_NATIVE_LAB:-0}" = 1 ]; then selection='-only-testing:ManoUITests/PhotosSmokeTests'; fi
+  bounded 2200 xcodebuild -project ios/App/App.xcodeproj -scheme ManoSmoke \
     -configuration Release -sdk iphonesimulator -destination "platform=iOS Simulator,id=$simulator_id" \
     -derivedDataPath build/simulator-smoke/DerivedData \
     -resultBundlePath build/simulator-smoke/PhotosSmoke.xcresult \
-    -only-testing:ManoUITests/PhotosSmokeTests/testFullPhotosAuthorizationStartsSession \
+    "$selection" \
     -parallel-testing-enabled NO -maximum-concurrent-test-simulator-destinations 1 \
     -test-timeouts-enabled YES -maximum-test-execution-time-allowance 840 \
     CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' test-without-building \
     > "$smoke_dir/ui-test.log" 2>&1
 }
+collector_pid=''
+if [ "${COCO_NATIVE_LAB:-0}" = 1 ]; then
+  runner_app="$smoke_dir/DerivedData/Build/Products/Release-iphonesimulator/ManoUITests-Runner.app"
+  runner_bundle="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$runner_app/Info.plist")"
+  python3 ../scripts/apple-fixtures/collect-cycles.py "$simulator_id" "$smoke_dir" "$runner_bundle" > "$smoke_dir/cycle-collector.log" 2>&1 &
+  collector_pid=$!
+fi
 if ! run_ui_test; then
   # Run 41172800749: the XCTest runner itself never started ("failed to
   # initialize for UI testing ... Timed out waiting for AX loaded notification")
@@ -309,6 +334,18 @@ if ! run_ui_test; then
   else
     report_ui_failure; exit 1
   fi
+fi
+if [ "${COCO_NATIVE_LAB:-0}" = 1 ]; then
+  grep -q COCOWASH_UI_NATIVE_TEN_CYCLES_OK "$smoke_dir/ui-test.log" || { echo 'Native ten cycles did not complete'; exit 1; }
+  wait "$collector_pid"
+  ( cd ..; COCO_FIXTURE_OUTPUT="$smoke_dir/fixtures" python3 scripts/apple-fixtures/probe.py --seed-existing "$simulator_id" --audit )
+  python3 - "$smoke_dir/fixtures/photokit-audit.json" <<'PYAUDIT'
+import json,sys
+r=json.load(open(sys.argv[1]))
+assert r['status']=='PASS' and r['unknownCount']==0 and r['removedCount']==10, 'PhotoKit must confirm exactly ten missing owned fixtures'
+print('NATIVE_FIXTURE_DELETION_AUDIT_PASS')
+PYAUDIT
+  python3 ../scripts/evaluate-native-cycles.py "$smoke_dir/native-cycles.json"
 fi
 tail -n 25 "$smoke_dir/ui-test.log"
 grep -q 'COCOWASH_UI_AUTHORIZED_SESSION_OK' "$smoke_dir/ui-test.log" || {

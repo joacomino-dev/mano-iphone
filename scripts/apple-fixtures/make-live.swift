@@ -12,6 +12,11 @@ let folder = URL(fileURLWithPath: CommandLine.arguments[2], isDirectory: true)
 try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
 guard let inputImage = CGImageSourceCreateWithURL(source as CFURL, nil),
       let image = CGImageSourceCreateImageAtIndex(inputImage, 0, nil) else { fail("public PNG not readable") }
+// Same portrait geometry in the key photo and the movie, without stretching.
+let width = 320, height = 480
+let imageContext = CGContext(data:nil,width:width,height:height,bitsPerComponent:8,bytesPerRow:width*4,space:CGColorSpaceCreateDeviceRGB(),bitmapInfo:CGImageAlphaInfo.noneSkipLast.rawValue)!
+imageContext.draw(image,in:CGRect(x:0,y:0,width:CGFloat(width),height:CGFloat(height)))
+guard let keyImage=imageContext.makeImage() else { fail("key photo raster") }
 let identifier = UUID().uuidString
 let photo = folder.appendingPathComponent("key-photo.jpg")
 let movie = folder.appendingPathComponent("paired-motion.mov")
@@ -21,7 +26,7 @@ guard !FileManager.default.fileExists(atPath: photo.path), !FileManager.default.
 guard let destination = CGImageDestinationCreateWithURL(photo as CFURL, "public.jpeg" as CFString, 1, nil) else { fail("JPEG destination") }
 // MakerApple17 is the Live Photo resource-pair file tag, not a private selector.
 // It is confined to this synthetic fixture generator, never the shipping app.
-CGImageDestinationAddImage(destination, image, [kCGImagePropertyMakerAppleDictionary as String: ["17": identifier]] as CFDictionary)
+CGImageDestinationAddImage(destination, keyImage, [kCGImagePropertyMakerAppleDictionary as String: ["17": identifier]] as CFDictionary)
 guard CGImageDestinationFinalize(destination) else { fail("JPEG write") }
 
 let writer = try AVAssetWriter(outputURL: movie, fileType: .mov)
@@ -30,7 +35,6 @@ identity.identifier = .quickTimeMetadataContentIdentifier
 identity.value = identifier as NSString
 identity.dataType = "com.apple.metadata.datatype.UTF-8"
 writer.metadata = [identity]
-let width = 320, height = 240
 let video = AVAssetWriterInput(mediaType: .video, outputSettings: [AVVideoCodecKey: AVVideoCodecType.h264, AVVideoWidthKey: width, AVVideoHeightKey: height])
 let pixels = AVAssetWriterInputPixelBufferAdaptor(assetWriterInput: video, sourcePixelBufferAttributes: [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32ARGB, kCVPixelBufferWidthKey as String: width, kCVPixelBufferHeightKey as String: height])
 let specification: [String: Any] = [kCMMetadataFormatDescriptionMetadataSpecificationKey_Identifier as String: "mdta/com.apple.quicktime.still-image-time", kCMMetadataFormatDescriptionMetadataSpecificationKey_DataType as String: "com.apple.metadata.datatype.int8"]

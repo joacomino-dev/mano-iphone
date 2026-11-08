@@ -23,11 +23,13 @@ una puerta nativa, comercial o de distribución.
 **Estados:** Hecho · En curso · Pendiente · Bloqueado (falta herramienta, acceso o decisión) · FAIL
 (comprobado y fallando). **Quién:** U = usuario · CX = Codex · CL = Claude · C = cualquiera de los dos.
 
-## Dónde estamos (2026-11-08, CW-CX-025)
+## Dónde estamos (2026-11-08, misión estratégica CW-CX-026/031)
 
-- Fuente local actual main, código ece507b;4 checkpoints sobre f5c3546, sin push ni nuevo binario.130 Node,69 navegador,14 configuración,4 Python,TS/hash28/builds/sync Windows PASS. [Entrega](apple-readiness/FOLLOWUP_2026-11-08.md).
-- R-00/R-07 mejorados localmente, físicos pendientes; R-01/R-02 continúan FAIL; R-03 colector pendiente de ejecución; R-04 corregido con4 FAIL→7 PASS sintéticos. No apta para envío.
-- Los resultados nativos/IPA que siguen son históricos, anteriores a estos cambios.
+- Fuente canónica main en Developer/CocoWash-android; checkpoints enviados por push normal. Release arm64 Xcode27.1 PASS en df983ad y c03b042; Android y desarrollo c03b042 PASS. No subida a tiendas/web.
+- R-01 continúa FAIL en nativo:42489561340 no recibe el texto; onInput no lo resolvió. Nuevo experimento solo XCTest(app.typeText) run42491854605. R-02 sigue FAIL estricto.
+- PhotoKit probe42489613346 PASS:64 importaciones,3 Live reconocidas/3 recursos emparejados en18Pro/iOS27.2. Aún no demuestra playback CocoWash. Laboratorio de diez ciclos nativos en preparación.
+- Android42491859489 FAIL antes de ciclos: duración0 del screenrecord de emulador estático; se sustituye el fallback por vídeo animado ffmpeg con ffprobe independiente, sin relajar el assert del plugin. R-44 ya PASS en42486725664.
+- No apta para envío. R-00/R-07/R-01/R-02 y gates de propietario siguen abiertos. El historial siguiente no sustituye resultados actuales.
 
 ### Base integrada anterior (CW-CL-060)
 
@@ -52,7 +54,7 @@ una puerta nativa, comercial o de distribución.
 |---|---|---|---|---|
 | R-01 | Smoke nativo: «Crear y añadir» no guarda el álbum ni cierra la hoja (`PhotosSmokeTests.swift:142`, simulador iPhone Duo iOS 27.1) | CX | **FAIL** | Run 42438304068. CW-CX-027: run42484697595 intento2 reproduce INPUT_MISMATCH, enabled=false antes de PhotoKit; aislar variante estándar frente a Duo y conservar xcresult. No cambiar onChange por hipótesis. [Evidencia](apple-readiness/NATIVE_FOLLOWUP.md) |
 | R-02 | Privacidad: `NSPrivacyTracking=true` sin dominios de rastreo; `check-apple-privacy.py --submission` exit 1 | CX (+U con AdMob) | **FAIL** | CW-CX-023: ZIPs oficiales revalidados, manifiestos sin dominios; gate exit1 conservado. [Fuentes/procedimiento](apple-readiness/NATIVE_FOLLOWUP.md#r-02--fail-estricto-conservado) |
-| R-03 | Captura del fallo del smoke en dispositivos de 2 pantallas (`simctl io screenshot` exige `--display`) | CX | **En curso, macOS bloqueado** | CW-CX-027: simctl real captura displays3/1 exit0; PNG son posteriores a teardown. Se conserva xcresult para ver el campo en el momento del fallo; no dar captura de Home como evidencia de UI |
+| R-03 | Captura del fallo del smoke en dispositivos de 2 pantallas (`simctl io screenshot` exige `--display`) | CX | **PASS (colector)** | CW-CX-027/030:simctl real displays3/1 exit0 yxcresult42488119404 exporta la captura exacta durante el fallo. No acredita adaptación visual Duo |
 | R-04 | Revisar invalidación de snapshots alrededor de la cola de favoritas Android y el `flushFavorites()` de fin de ronda | CX | **Corregido localmente; QA nativa bloqueada** | CW-CX-024:4 fallos reproducidos,7 casos web+2 puros PASS; cola/acuse/undo y snapshots protegidos. [Evidencia](apple-readiness/ANDROID_FAVORITES.md) |
 | R-05 | QA destructiva en simulador con fixtures: borrar/cancelar/error, favorita externa, permiso revocado, cierre antes/después de confirmar | CX | Bloqueado | Procedimiento en `docs/apple-readiness/NATIVE_GATE.md` y `TEST_PLAN.md`; necesita Mac o CI ampliada |
 | R-06 | Tamaño del bundle web (> 500 kB, aviso de Vite) | C | Pendiente | Solo con medición en Instruments; no tocar sin evidencia |
@@ -223,3 +225,5 @@ Autorizados push normal a main y workflows estándar públicos gratuitos, relanz
 - 2026-11-08 · Codex CW-CX-029: ficha Apple ynotas7 idiomas,guardas de UTF-8 eidioma ausente probadas FAIL→PASS;8 Release y7 Play listings PASS. Data safety corregido: dos decimales del geocodificador se consideran ubicación precisa por definición Play; cifrado/retención/proveedor no se dan por verificados. R-44 cerrado con run42486725664.
 
 - 2026-11-08 · Codex CW-CX-030: captura xcresult real confirma R-01 también en18Pro/27.0, no solo Duo. Regresión input con tracker sincronizado1FAIL→3PASS tras fallbackonInput; candidato de app mínimo, repetir XCTest exacto sin debilitarlo. R-01 sigue abierto hasta CI.
+
+- 2026-11-08 · Codex CW-CX-031: onInput no corrige R-01 nativo; nuevo destinatario XCTest bajo prueba. Seeder PhotoKit42489613346 PASS64/3Live. Android42491859489 detecta vídeo fixture duración0; generación animada/probe independiente preparados. Laboratorio iOS añade contrato ligado al simulador y XCTest/medidas app+WebContent; presupuestos declarados antes de obtener ciclos completos.

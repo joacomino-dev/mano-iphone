@@ -291,6 +291,82 @@ final class PhotosSmokeTests: XCTestCase {
         }
     }
 
+    // Disabled by default. CI binds this contract to its newly-created simulator.
+    @MainActor
+    func testZTenNativeDeletionRounds() throws {
+        let url = try XCTUnwrap(Bundle(for:Self.self).url(forResource:"native-lab-contract",withExtension:"json"))
+        let contract = try XCTUnwrap(JSONSerialization.jsonObject(with:Data(contentsOf:url)) as? [String:Any])
+        guard contract["enabled"] as? Bool == true else { throw XCTSkip("Native destructive lab disabled; no generated CI ownership contract") }
+        #if !targetEnvironment(simulator)
+        XCTFail("Native destructive lab refuses physical devices");return
+        #endif
+        XCTAssertEqual(contract["simulator"] as? String,ProcessInfo.processInfo.environment["SIMULATOR_UDID"],"Must be the exact run-owned simulator")
+        XCTAssertTrue((contract["run"] as? String)?.isEmpty == false)
+        let app=XCUIApplication()
+        app.launchArguments += ["-AppleLanguages","(es)","-AppleLocale","es_ES"]
+        app.terminate();app.launch()
+        let finish=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","Terminar")).firstMatch
+        XCTAssertTrue(finish.waitForExistence(timeout:120),"The real authorization/session must already exist")
+        Thread.sleep(forTimeInterval:20)
+        try nativeCheckpoint(0)
+        let options=XCTMeasureOptions();options.iterationCount=10
+        var invocation=0,completed=0
+        // Apple documents iterationCount+1 invocations, discarding the first.
+        // The warmup is idle; exactly ten measured destructive rounds follow.
+        measure(metrics:[XCTMemoryMetric(application:app),XCTCPUMetric(application:app)],options:options) {
+            invocation += 1
+            if invocation == 1 { Thread.sleep(forTimeInterval:3);return }
+            do {
+                try self.nativeDeletionRound(app)
+                completed += 1
+                try self.nativeCheckpoint(completed)
+                if completed == 5 || completed == 10 { self.attachScreenshot(app,"Native generated-media round \(completed)") }
+            } catch { XCTFail("Native lab round failed: \(error)") }
+        }
+        XCTAssertEqual(invocation,11,"XCTest warmup semantics changed")
+        XCTAssertEqual(completed,10)
+        print("COCOWASH_UI_NATIVE_TEN_CYCLES_OK")
+        app.terminate();app.launch()
+        XCTAssertTrue(finish.waitForExistence(timeout:90),"Completed rounds must survive process termination")
+        print("COCOWASH_UI_NATIVE_RELAUNCH_OK")
+    }
+
+    @MainActor private func nativeDeletionRound(_ app:XCUIApplication) throws {
+        let discard=app.buttons["Eliminar"].firstMatch
+        XCTAssertTrue(discard.waitForExistence(timeout:45),"Single-item discard control required")
+        XCTAssertTrue(discard.isEnabled)
+        discard.tap()
+        let finish=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","Terminar")).firstMatch
+        finish.tap()
+        let confirm=app.buttons.matching(NSPredicate(format:"label == %@ OR label BEGINSWITH %@","Eliminar 1","Eliminar 1 (")).firstMatch
+        XCTAssertTrue(confirm.waitForExistence(timeout:15),"Review must contain exactly one generated item")
+        confirm.tap()
+        let system=XCUIApplication(bundleIdentifier:"com.apple.springboard")
+        let remove=system.buttons.matching(NSPredicate(format:"label IN %@",["Delete","Delete Photo","Delete 1 Photo","Eliminar","Eliminar foto","Eliminar 1 foto"])).firstMatch
+        guard remove.waitForExistence(timeout:30) else {
+            self.attachScreenshot(app,"Expected system fixture deletion confirmation missing")
+            XCTFail("No recognized real Photos deletion confirmation; never dismiss an unknown alert")
+            return
+        }
+        remove.tap()
+        let again=app.buttons["Seguir revisando"].firstMatch
+        XCTAssertTrue(again.waitForExistence(timeout:45),"Successful native delete must reach the completed round")
+        XCUIDevice.shared.press(.home);Thread.sleep(forTimeInterval:1);app.activate()
+        XCTAssertTrue(again.waitForExistence(timeout:15));again.tap()
+        XCTAssertTrue(discard.waitForExistence(timeout:45),"Next round must have a usable single-item control")
+    }
+
+    private func nativeCheckpoint(_ cycle:Int) throws {
+        let dir=FileManager.default.urls(for:.documentDirectory,in:.userDomainMask)[0]
+        let request=dir.appendingPathComponent("native-cycle-\(cycle).request")
+        let response=dir.appendingPathComponent("native-cycle-\(cycle).response")
+        try Data("generated CI cycle \(cycle)".utf8).write(to:request,options:.atomic)
+        let deadline=Date().addingTimeInterval(90)
+        while !FileManager.default.fileExists(atPath:response.path) && Date()<deadline { Thread.sleep(forTimeInterval:0.2) }
+        XCTAssertTrue(FileManager.default.fileExists(atPath:response.path),"Host must collect real app+WebContent metrics before continuing")
+        print("COCOWASH_NATIVE_CHECKPOINT cycle=\(cycle)")
+    }
+
     /// Taps «Cerrar» (sheet header or anchored view) by coordinate and confirms the
     /// session is usable again. A system interruption handled mid-tap invalidates
     /// a targeted element and fails the test outright (run 41166497344); a

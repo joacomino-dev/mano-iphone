@@ -1,6 +1,7 @@
 """Disposable hosted-Mac only. Imports synthetic resources in a separate seeder.
 Never grants CocoWash access and never operates on an existing device/library.
 """
+import argparse
 import json
 import os
 from pathlib import Path
@@ -11,7 +12,11 @@ import time
 
 assert os.uname().sysname == 'Darwin', 'macOS required'
 assert os.environ.get('GITHUB_ACTIONS') == 'true' and os.environ.get('RUNNER_ENVIRONMENT') == 'github-hosted', 'ephemeral hosted runner required'
-out = Path('work/fixtures').resolve()
+parser=argparse.ArgumentParser()
+parser.add_argument('--seed-existing')
+parser.add_argument('--audit',action='store_true')
+args=parser.parse_args()
+out = Path(os.environ.get('COCO_FIXTURE_OUTPUT','work/fixtures')).resolve()
 out.mkdir(parents=True, exist_ok=True)
 
 def run(*args, timeout=120):
@@ -23,7 +28,10 @@ def run(*args, timeout=120):
     return result.stdout.strip()
 
 app = out/'FixtureSeeder.app'
-app.mkdir(exist_ok=False)
+app.mkdir(exist_ok=args.audit)
+if not (out/'generated/key-photo.jpg').exists():
+    run('xcrun','swiftc','-swift-version','5','scripts/apple-fixtures/make-live.swift','-o',str(out/'make-live'))
+    run(str(out/'make-live'),'mano/scripts/fixtures/postcard-fixture.png',str(out/'generated'))
 bundle = 'work.joaquin.coco.fixtureseeder'
 (app/'Info.plist').write_bytes(plistlib.dumps({'CFBundleIdentifier':bundle,'CFBundleExecutable':'FixtureSeeder','CFBundleName':'FixtureSeeder','CFBundlePackageType':'APPL','CFBundleShortVersionString':'1.0','CFBundleVersion':'1','MinimumOSVersion':'17.0','UIDeviceFamily':[1],'LSRequiresIPhoneOS':True,'NSPhotoLibraryUsageDescription':'Create and verify synthetic CocoWash CI fixtures only.','NSPhotoLibraryAddUsageDescription':'Create synthetic fixture photos only.','UISupportedInterfaceOrientations':['UIInterfaceOrientationPortrait'],'UIApplicationSceneManifest':{'UIApplicationSupportsMultipleScenes':False,'UISceneConfigurations':{'UIWindowSceneSessionRoleApplication':[{'UISceneConfigurationName':'Fixture','UISceneDelegateClassName':'FixtureSceneDelegate'}]}}}))
 for name in ['key-photo.jpg','paired-motion.mov']:
@@ -34,26 +42,30 @@ run('xcrun','--sdk','iphonesimulator','swiftc','-swift-version','5','-sdk',sdk,'
 run('codesign','--force','--sign','-',str(app))
 (out/'linked-libraries.txt').write_text(run('xcrun','otool','-L',str(app/'FixtureSeeder')))
 inventory = json.loads(run('xcrun','simctl','list','-j',timeout=180))
-choices = []
-for runtime in inventory['runtimes']:
-    if not runtime.get('isAvailable') or 'iOS' not in runtime['name']:
-        continue
-    for device in inventory['devices'].get(runtime['identifier'],[]):
-        if device.get('isAvailable') and device['name'].startswith('iPhone') and 'Duo' not in device['name']:
-            choices.append((runtime,device))
-assert choices, 'no available single-display iPhone runtime; not inventing a model'
-runtime,device = max(choices,key=lambda x:tuple(int(p) for p in x[0]['version'].split('.')))
-identifier = run('xcrun','simctl','create','CocoLiveProbe-'+os.environ['GITHUB_RUN_ID'],device['deviceTypeIdentifier'],runtime['identifier'])
+owned = not bool(args.seed_existing)
+if args.seed_existing:
+    matches=[(r,d) for r in inventory['runtimes'] for d in inventory['devices'].get(r['identifier'],[]) if d['udid']==args.seed_existing]
+    assert len(matches)==1, 'unknown simulator'
+    runtime,device=matches[0]
+    assert device['name'].startswith('MemSwipe-smoke-'+os.environ['GITHUB_RUN_ID']+'-'), 'refused: not this run native-gate-owned simulator'
+    assert device['state']=='Booted', 'owned simulator must already be booted'
+    identifier=args.seed_existing
+else:
+    choices = [(r,d) for r in inventory['runtimes'] if r.get('isAvailable') and 'iOS' in r['name'] for d in inventory['devices'].get(r['identifier'],[]) if d.get('isAvailable') and d['name'].startswith('iPhone') and 'Duo' not in d['name']]
+    assert choices, 'no available single-display iPhone runtime'
+    runtime,device=max(choices,key=lambda x:tuple(int(p) for p in x[0]['version'].split('.')))
+    identifier=run('xcrun','simctl','create','CocoLiveProbe-'+os.environ['GITHUB_RUN_ID'],device['deviceTypeIdentifier'],runtime['identifier'])
 console = None
 try:
-    run('xcrun','simctl','boot',identifier)
-    run('xcrun','simctl','bootstatus',identifier,'-b',timeout=480)
-    run('xcrun','simctl','install',identifier,str(app),timeout=300)
+    if owned:
+        run('xcrun','simctl','boot',identifier)
+        run('xcrun','simctl','bootstatus',identifier,'-b',timeout=480)
+    if not args.audit: run('xcrun','simctl','install',identifier,str(app),timeout=300)
     container = Path(run('xcrun','simctl','get_app_container',identifier,bundle,'data'))
     # Seeder only; CocoWash's real Photos authorization stays in the UI smoke.
     run('xcrun','simctl','privacy',identifier,'grant','photos',bundle)
-    console = subprocess.Popen(['xcrun','simctl','launch','--console',identifier,bundle],stdout=(out/'seeder-console.log').open('w'),stderr=subprocess.STDOUT,start_new_session=True)
-    report = container/'Documents/fixture-report.json'
+    console = subprocess.Popen(['xcrun','simctl','launch','--terminate-running-process','--console',identifier,bundle]+(['--audit'] if args.audit else []),stdout=(out/'seeder-console.log').open('w'),stderr=subprocess.STDOUT,start_new_session=True)
+    report = container/('Documents/audit-report.json' if args.audit else 'Documents/fixture-report.json')
     deadline = time.monotonic()+240
     while not report.exists() and time.monotonic() < deadline:
         assert console.poll() is None, 'seeder process exited; inspect seeder-console.log'
@@ -61,7 +73,7 @@ try:
     assert report.exists(), 'seeder report missing; authorization/import NOT passed'
     result = json.loads(report.read_text())
     result.update({'runtime':runtime['version'],'simulatorModel':device['name']})
-    (out/'photokit-report.json').write_text(json.dumps(result,indent=2)+'\n')
+    (out/('photokit-audit.json' if args.audit else 'photokit-report.json')).write_text(json.dumps(result,indent=2)+'\n')
     print(json.dumps(result))
     assert result['status'] == 'PASS', 'PhotoKit recognition failed'
 except Exception:
@@ -76,7 +88,7 @@ except Exception:
         shutil.copy2(crash,out/crash.name)
     raise
 finally:
-    for action in ['shutdown','delete']:
+    for action in (['shutdown','delete'] if owned else []):
         try: run('xcrun','simctl',action,identifier,timeout=30)
         except Exception as error: print('CLEANUP:',type(error).__name__)
     if console and console.poll() is None:

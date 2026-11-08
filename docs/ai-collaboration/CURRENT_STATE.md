@@ -5,7 +5,7 @@ Actualizado: 2026-11-08, America/Bogota. Codex trabaja solo por indicación del 
 ## Codex CW-CX-026 — misión estratégica en curso
 
 2026-11-08. Usuario autoriza push normal main y CI estándar pública gratuita; no tiendas/web/cuentas/certificados/AdMob ni secretos por chat. Base df983ad limpia ya enviada a main. Reserva de pruebas/gates nativos iOS/Android, privacidad con evidencia (cambio manifest requiere aprobación de dominios), firma dry-run y materiales7 idiomas. Sin modelos nuevos/arte/monetización/min17/hash28.
-Gate RC42484697595 sobre df983ad falló, diagnóstico en curso. Release42484614546 PASS; iOSdev42484614885 yAndroid42484614502 en curso. Nueva definición de aceptación y paquete del usuario en ROADMAP.
+Estado031:Release/Android/iOSdev c03b042 PASS; gate R-01 42489561340 FAIL, fallback onInput no resolvió entrada nativa. Experimento XCTest app.typeText42491854605 en curso. Seeder independiente42489613346 PASS(64/3Live) tras corregir lifecycle del helper. Android42491859489 FAIL vídeo fixture0s; se prepara vídeo animado/probe y10 ciclos. R-03 colector/captura exacta xcresult PASS;R-00/R-07/R-02 continúan abiertos. Reserva vigente: nadie más escribe estas rutas sin coordinación.
 
 ## Codex CW-CX-021–025 — entrega local cerrada, puertas nativas abiertas
 

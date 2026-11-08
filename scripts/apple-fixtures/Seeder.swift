@@ -18,6 +18,7 @@ import Photos
         label.frame = CGRect(x:20,y:100,width:300,height:200);label.numberOfLines = 0
         label.text = "SEEDING_SYNTHETIC_FIXTURES";controller.view.addSubview(label)
         window = UIWindow(windowScene:scene);window?.rootViewController = controller;window?.makeKeyAndVisible()
+        if CommandLine.arguments.contains("--audit") { audit();return }
         if FileManager.default.fileExists(atPath: reportURL.path) { label.text = "FIXTURES_ALREADY_SEEDED";return }
         NSLog("FIXTURE_AUTH_REQUEST")
         PHPhotoLibrary.requestAuthorization(for:.readWrite) { status in
@@ -27,6 +28,18 @@ import Photos
         }
     }
     private var reportURL: URL { FileManager.default.urls(for:.documentDirectory,in:.userDomainMask)[0].appendingPathComponent("fixture-report.json") }
+    private var ownershipURL: URL { reportURL.deletingLastPathComponent().appendingPathComponent("owned-assets.json") }
+    private func audit() {
+        do {
+            let ids = try JSONDecoder().decode([String].self,from:Data(contentsOf:ownershipURL))
+            let owned = Set(ids)
+            let all = PHAsset.fetchAssets(with:nil)
+            var unknown = 0
+            all.enumerateObjects { asset,_,_ in if !owned.contains(asset.localIdentifier) { unknown += 1 } }
+            let result:[String:Any] = ["status":unknown == 0 ? "PASS":"FAIL","createdCount":ids.count,"remainingCount":all.count,"unknownCount":unknown,"removedCount":ids.count-all.count]
+            try JSONSerialization.data(withJSONObject:result,options:.sortedKeys).write(to:reportURL.deletingLastPathComponent().appendingPathComponent("audit-report.json"),options:.atomic)
+        } catch { NSLog("FIXTURE_AUDIT_FAIL") }
+    }
     private func finish(_ result: [String:Any]) {
         do { try JSONSerialization.data(withJSONObject:result,options:[.prettyPrinted,.sortedKeys]).write(to:reportURL,options:.atomic) }
         catch { NSLog("SEED_REPORT_WRITE_FAIL") }
@@ -51,12 +64,14 @@ import Photos
                 if let id = request.placeholderForCreatedAsset?.localIdentifier { self.created.append(id) }
             }
             let request = PHAssetCreationRequest.forAsset()
-            request.creationDate = Date(timeIntervalSince1970:978307200.5)
+            request.creationDate = Date(timeIntervalSince1970:978307199)
             request.addResource(with:.video,fileURL:motion,options:nil)
             if let id = request.placeholderForCreatedAsset?.localIdentifier { self.created.append(id) }
         }) { success,error in
             NSLog("FIXTURE_IMPORT_COMPLETE success=%d code=%ld",success ? 1:0,(error as NSError?)?.code ?? 0)
             guard success else { self.finish(["status":"FAIL","stage":"performChanges","errorCode":(error as NSError?)?.code ?? -1]);return }
+            do { try JSONEncoder().encode(self.created).write(to:self.ownershipURL,options:.atomic) }
+            catch { self.finish(["status":"FAIL","stage":"privateOwnershipWrite"]);return }
             let assets = PHAsset.fetchAssets(withLocalIdentifiers:self.created,options:nil)
             var live = 0,video = 0,paired = 0
             assets.enumerateObjects { item,_,_ in

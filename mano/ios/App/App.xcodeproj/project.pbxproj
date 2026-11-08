@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D40000000000000000000001 /* native-lab-contract.json in Resources */ = {isa = PBXBuildFile; fileRef = D40000000000000000000002 /* native-lab-contract.json */; };
 		C0C000000000000000000002 /* CocoMonetization.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0C000000000000000000001 /* CocoMonetization.swift */; };
 		C0C000000000000000000005 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = C0C000000000000000000004 /* GoogleMobileAds */; };
 		A10000000000000000000017 /* DevelopmentSafety.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000018 /* DevelopmentSafety.swift */; };
@@ -37,6 +38,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		D40000000000000000000002 /* native-lab-contract.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "native-lab-contract.json"; sourceTree = "<group>"; };
 		C0C000000000000000000001 /* CocoMonetization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CocoMonetization.swift; sourceTree = "<group>"; };
 		A10000000000000000000018 /* DevelopmentSafety.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevelopmentSafety.swift; sourceTree = "<group>"; };
 		A10000000000000000000006 /* SignatureIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignatureIndex.swift; sourceTree = "<group>"; };
@@ -85,7 +87,7 @@
 /* Begin PBXGroup section */
 		B20000000000000000000004 /* ManoUITests */ = {
 			isa = PBXGroup;
-			children = (B20000000000000000000002 /* PhotosSmokeTests.swift */,);
+			children = (B20000000000000000000002 /* PhotosSmokeTests.swift */, D40000000000000000000002 /* native-lab-contract.json */,);
 			path = ManoUITests;
 			sourceTree = "<group>";
 		};
@@ -222,7 +224,7 @@
 		B20000000000000000000008 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
-			files = ();
+			files = (D40000000000000000000001 /* native-lab-contract.json in Resources */,);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		504EC3021FED79650016851F /* Resources */ = {
