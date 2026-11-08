@@ -358,3 +358,11 @@ Validaciones previas:130 Node,TypeScript,28 protegidos repetidos PASS. Nuevo Swi
 Pendientes:gate completo/álbum, importar Live con PhotoKit,QA destructiva/mediciones nativas,dominios y aprobación del usuario,canales/firma/material7 idiomas. No se espera al usuario para trabajo independiente.
 
 CW-CX-026 avance: pareja JPEG/MOV sintética PASS en Mac, run42485605288/c783b19; se amplía el probe con seeder PhotoKit separado y guardas de simulador efímero. La app y su permiso real no se cambian. CI baseline Android/desarrollo iOS también PASS sobre df983ad.
+
+### CW-CX-027 — Aislamiento del fallo nativo de entrada de álbum
+Fecha:2026-11-08, America/Bogota.
+Agente:Codex.
+Estado:en curso; R-01 sigue FAIL, no corrección de app sin evidencia.
+Evidencia:42484697595 intento2 supera compilación y llega a INPUT_MISMATCH enabled=false/hittable=true, antes de PhotoKit. Las dos capturas simctl tienen exit0 pero se toman después de teardown (Home/negro), por tanto no diagnostican el campo.
+Cambio mínimo:variante de simulador estándar explícita, mantiene auto/Duo; diagnóstico de valor/placeholder/teclado y captura previa a typeText; retención de xcresult real para inspeccionar attachments. Sin inyección JS ni cambio de permisos/resultados.
+Validaciones:Bash syntax y4 contratos PASS. Nueva ejecución nativa pendiente. [Baseline](../apple-readiness/evidence/strategic/baseline.json).

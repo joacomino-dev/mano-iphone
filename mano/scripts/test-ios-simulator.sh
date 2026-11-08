@@ -90,7 +90,7 @@ fi
 bounded 120 xcrun simctl list -j > "$smoke_dir/inventory.json"
 sdk_version="$(bounded 30 xcrun --sdk iphonesimulator --show-sdk-version)"
 python3 - "$smoke_dir/inventory.json" "$sdk_version" > "$smoke_dir/selection.txt" <<'PY'
-import json, sys
+import json, sys, os
 inventory = json.load(open(sys.argv[1]))
 def version(value):
     return tuple((list(map(int, value.split('.'))) + [0, 0])[:3])
@@ -103,6 +103,8 @@ for runtime in sorted(inventory.get('runtimes', []), key=lambda r: version(r['ve
         continue
     for device in inventory.get('devices', {}).get(runtime['identifier'], []):
         if not device.get('isAvailable') or not device.get('name', '').startswith('iPhone'):
+            continue
+        if os.environ.get('COCO_SIMULATOR_MODE') == 'standard' and 'Duo' in device['name']:
             continue
         kind = device.get('deviceTypeIdentifier')
         if not kind:

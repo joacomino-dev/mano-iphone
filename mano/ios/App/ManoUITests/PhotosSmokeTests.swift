@@ -131,6 +131,8 @@ final class PhotosSmokeTests: XCTestCase {
         XCTAssertTrue(tap(create, until: { name.exists }, "create"), "«Crear álbum nuevo» must show the name field.")
         name.tap()
         let fixtureAlbum = "CocoWash CI Generated"
+        print("COCOWASH_UI_ALBUM_FOCUS hittable=\(name.isHittable) keyboard=\(app.keyboards.count)")
+        attachScreenshot(app, "Album before typing fixture name")
         name.typeText(fixtureAlbum)
         let save = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Crear y añadir ")).firstMatch
         XCTAssertTrue(save.waitForExistence(timeout: 10))
@@ -138,7 +140,8 @@ final class PhotosSmokeTests: XCTestCase {
         // never inject JS, force-enable the button or replace the native result.
         let typed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", fixtureAlbum), object: name)
         guard XCTWaiter().wait(for: [typed], timeout: 10) == .completed else {
-            print("COCOWASH_UI_ALBUM_INPUT_MISMATCH enabled=\(save.isEnabled) hittable=\(save.isHittable)")
+            let fieldValue = name.value as? String ?? ""
+            print("COCOWASH_UI_ALBUM_INPUT_MISMATCH valueLength=\(fieldValue.count) placeholder=\(fieldValue == name.placeholderValue) enabled=\(save.isEnabled) hittable=\(save.isHittable) keyboard=\(app.keyboards.count)")
             attachScreenshot(app, "Album input did not receive fixture name")
             XCTFail("WKWebView album field must contain the exact typed fixture name.")
             return

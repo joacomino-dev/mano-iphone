@@ -1,0 +1,27 @@
+{
+  "source": "df983ad6d55cad84dd5cb7a30b4085613fcfe000",
+  "release": {
+    "run": 42484614546,
+    "status": "PASS",
+    "evidence": "Xcode27.1 SDK27.1 SwiftCompile PhotoLibrary.swift arm64, BUILD SUCCEEDED, RELEASE_OK"
+  },
+  "iosDevelopment": {
+    "run": 42484614885,
+    "status": "PASS"
+  },
+  "android": {
+    "run": 42484614502,
+    "status": "PASS"
+  },
+  "rcNative": {
+    "run": 42484697595,
+    "attempt1": "FAIL: dependency binary download connection error before compile",
+    "attempt2": "FAIL: ALBUM_INPUT_MISMATCH enabled=false hittable=true before PhotoKit transaction"
+  },
+  "screens": {
+    "display3": "exit0",
+    "display1": "exit0",
+    "limitation": "simctl captures after XCTest teardown show Home/black, not the failure field; retain xcresult attachments next run"
+  },
+  "boundary": "No signed store build, physical QA, Live Photo runtime or performance acceptance"
+}

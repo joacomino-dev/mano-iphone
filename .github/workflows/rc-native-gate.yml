@@ -3,6 +3,12 @@ name: CocoWash RC unsigned gate
 # an app, signs, creates certificates, purchases, or modifies Apple accounts.
 on:
   workflow_dispatch:
+    inputs:
+      simulator:
+        description: 'auto preserves the Duo probe; standard isolates a single-display device'
+        type: choice
+        default: auto
+        options: [auto, standard]
 permissions:
   contents: read
 concurrency:
@@ -16,6 +22,7 @@ jobs:
     timeout-minutes: 60
     env:
       DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
+      COCO_SIMULATOR_MODE: ${{ inputs.simulator || 'auto' }}
     defaults:
       run:
         working-directory: mano
@@ -44,5 +51,6 @@ jobs:
             mano/build/apple-readiness/resolutions/*.resolved
             mano/build/simulator-smoke/*.log
             mano/build/simulator-smoke/*.png
+            mano/build/simulator-smoke/*.xcresult/**
           retention-days: 7
           if-no-files-found: warn

@@ -50,9 +50,9 @@ una puerta nativa, comercial o de distribución.
 
 | ID | Qué | Quién | Estado | Evidencia / siguiente paso |
 |---|---|---|---|---|
-| R-01 | Smoke nativo: «Crear y añadir» no guarda el álbum ni cierra la hoja (`PhotosSmokeTests.swift:142`, simulador iPhone Duo iOS 27.1) | CX | **FAIL** | Run 42438304068. CW-CX-023: diagnóstico de valor/enabled/hittable y transacción preparado; causa sin demostrar, nueva ejecución bloqueada. [Evidencia](apple-readiness/NATIVE_FOLLOWUP.md) |
+| R-01 | Smoke nativo: «Crear y añadir» no guarda el álbum ni cierra la hoja (`PhotosSmokeTests.swift:142`, simulador iPhone Duo iOS 27.1) | CX | **FAIL** | Run 42438304068. CW-CX-027: run42484697595 intento2 reproduce INPUT_MISMATCH, enabled=false antes de PhotoKit; aislar variante estándar frente a Duo y conservar xcresult. No cambiar onChange por hipótesis. [Evidencia](apple-readiness/NATIVE_FOLLOWUP.md) |
 | R-02 | Privacidad: `NSPrivacyTracking=true` sin dominios de rastreo; `check-apple-privacy.py --submission` exit 1 | CX (+U con AdMob) | **FAIL** | CW-CX-023: ZIPs oficiales revalidados, manifiestos sin dominios; gate exit1 conservado. [Fuentes/procedimiento](apple-readiness/NATIVE_FOLLOWUP.md#r-02--fail-estricto-conservado) |
-| R-03 | Captura del fallo del smoke en dispositivos de 2 pantallas (`simctl io screenshot` exige `--display`) | CX | **En curso, macOS bloqueado** | CW-CX-023: colector descubre pantallas del error real;4 regresiones Python PASS; log/PNG retenidos en CI. Falta ejecutar simctl |
+| R-03 | Captura del fallo del smoke en dispositivos de 2 pantallas (`simctl io screenshot` exige `--display`) | CX | **En curso, macOS bloqueado** | CW-CX-027: simctl real captura displays3/1 exit0; PNG son posteriores a teardown. Se conserva xcresult para ver el campo en el momento del fallo; no dar captura de Home como evidencia de UI |
 | R-04 | Revisar invalidación de snapshots alrededor de la cola de favoritas Android y el `flushFavorites()` de fin de ronda | CX | **Corregido localmente; QA nativa bloqueada** | CW-CX-024:4 fallos reproducidos,7 casos web+2 puros PASS; cola/acuse/undo y snapshots protegidos. [Evidencia](apple-readiness/ANDROID_FAVORITES.md) |
 | R-05 | QA destructiva en simulador con fixtures: borrar/cancelar/error, favorita externa, permiso revocado, cierre antes/después de confirmar | CX | Bloqueado | Procedimiento en `docs/apple-readiness/NATIVE_GATE.md` y `TEST_PLAN.md`; necesita Mac o CI ampliada |
 | R-06 | Tamaño del bundle web (> 500 kB, aviso de Vite) | C | Pendiente | Solo con medición en Instruments; no tocar sin evidencia |
@@ -215,3 +215,5 @@ Autorizados push normal a main y workflows estándar públicos gratuitos, relanz
 10. Tras cero P0/P1 y gates del SHA exacto, autorizar por separado upload a TestFlight/Play interno. Probar el binario distribuido; después autorizar App Review/producción.
 
 - 2026-11-08 · Codex CW-CX-026: misión estratégica registrada, autorización push/CI aplicada, criterios R-55…R-59 y paquete del usuario añadidos; R-44 pasa a implementación autorizada. Sin publicaciones ni cuentas modificadas.
+
+- 2026-11-08 · Codex CW-CX-027: gate nativo intento2 demuestra campo no recibido/guardar deshabilitado antes de PhotoKit. Se aísla variante estándar, sin omitir Duo; se añade valor/teclado y xcresult para diagnóstico. Tres CIs baseline PASS y generador de Live PASS.
