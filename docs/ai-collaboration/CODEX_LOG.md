@@ -396,3 +396,9 @@ Reproducción adicional:evento input con value-tracking ya sincronizado deja Rea
 Validaciones:130Node/TypeScript/hash28 PASS;38 regresiones de permisos/borrado/compras/layout PASS antes del checkpoint. No cambian álbum/transacción/gestos ni arte. Repetir mismo XCTest estándar yDuo para establecer el efecto nativo; no convertir el mock en aceptación Apple.
 
 CW-CX-026 seeder causa demostrada:crash42488121581 SIGTRAP en___UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption_block_invoke, antes del delegado. Se añade SceneManifest/SceneDelegate al helper separado,como requiere UIKit del SDK actual. No se modifica CocoWash. Compilación eimportación posteriores pendientes de nuevo probe.
+
+### CW-CX-031 — Laboratorio nativo por ciclos y nueva hipótesis de entrada
+Fecha:2026-11-08. Agente:Codex. Estado:ejecución CI pendiente.
+R-01:run42489561340 vuelve a FAIL con placeholder/keyboard1; onInput no resolvió el fallo nativo. Se cambia solo el destinatario XCTest a app.typeText después de enfocar el campo, manteniendo título exacto y todas las aserciones. No se afirma causa resuelta.
+PhotoKit:probe42489613346 PASS real en iPhone18Pro/iOS27.2,64 elementos importados,3 Live y3 recursos emparejados. Todavía no prueba reproducción en CocoWash.
+Android:10 ciclos UI/MediaStore con comprobación del ID exacto ausente, confirmaciones reales y PSS/CPU del emulador. Rechaza hosts/dispositivos/bibliotecas ajenos a fixtures; datos de renderer pendientes de atribuir antes de aceptar rendimiento. Guardas negativas locales/sintaxis/TS/hash28 PASS. No es todavía resultado de ejecución Android.

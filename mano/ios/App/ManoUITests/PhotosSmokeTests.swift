@@ -133,7 +133,10 @@ final class PhotosSmokeTests: XCTestCase {
         let fixtureAlbum = "CocoWash CI Generated"
         print("COCOWASH_UI_ALBUM_FOCUS hittable=\(name.isHittable) keyboard=\(app.keyboards.count)")
         attachScreenshot(app, "Album before typing fixture name")
-        name.typeText(fixtureAlbum)
+        // The field is already focused. Send to the active keyboard instead of
+        // asking WKWebView's text-field accessibility proxy to route keystrokes.
+        // Keep the exact value and enabled/save assertions below unchanged.
+        app.typeText(fixtureAlbum)
         let save = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Crear y añadir ")).firstMatch
         XCTAssertTrue(save.waitForExistence(timeout: 10))
         // Diagnose the actual WKWebView field and React-derived enabled state;
