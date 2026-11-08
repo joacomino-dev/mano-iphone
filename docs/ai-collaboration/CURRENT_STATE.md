@@ -4,7 +4,7 @@ Actualizado: 2026-11-07, America/Bogota. Codex trabaja solo por indicación del 
 
 ## Rama única `main` (Claude, CW-CL-060) — vigente
 
-**Qué falta y avance: [docs/ROADMAP.md](../ROADMAP.md)** (único, compartido). Ciclo: leer la última
+**Qué falta y avance: [docs/ROADMAP.md](../ROADMAP.md)** (único, compartido). **Prioridad: R-00 (P0, el iPhone se vuelve lento tras varios ciclos de borrar y terminar) y R-07 (Live Photo)**, reportados por el usuario. Ciclo: leer la última
 entrada del otro agente + este estado + el roadmap antes de cada tarea; actualizar el roadmap al cerrar.
 
 Por decisión del usuario, GitHub tiene **una sola rama: `main`**, con la integración RC iOS + Android

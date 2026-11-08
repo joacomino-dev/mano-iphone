@@ -31,7 +31,14 @@ una puerta nativa, comercial o de distribución.
 - `main` = canal de tienda (sin modo developer, IDs AdMob iOS reales). La IPA de desarrollo se deriva
   en CI. CI en verde en `main`: tienda iOS, desarrollo iOS (arranque en simulador), Android.
 - Compila nativo en Xcode 27.1 y abre sesión con acceso real a Fotos en simulador.
-- **No está lista para enviar**: quedan abiertos R-01, R-02 y todo lo de cuentas, QA física y firma.
+- **No está lista para enviar**: quedan abiertos R-00 (P0), R-07, R-01, R-02 y todo lo de cuentas, QA física y firma.
+
+## 0 · Prioridad máxima (defectos reportados por el usuario, 2026-11-07)
+
+| ID | Qué | Quién | Estado | Evidencia / siguiente paso |
+|---|---|---|---|---|
+| R-00 | **P0 · El iPhone se vuelve cada vez más lento** tras eliminar unas fotos y terminar la sesión 4–5 veces seguidas (reporte del usuario en su teléfono). Ver [detalle R-00](#detalle-r-00) | CX | **Pendiente (P0)** | Medir en iPhone con Instruments y Web Inspector; corregir la causa; aceptación: 10 ciclos sin crecimiento sostenido de memoria ni de CPU |
+| R-07 | **Live Photo**: reproducción en la carta y en la vista anclada. Ver [detalle R-07](#detalle-r-07) | CX (+CL visual) | **Pendiente (P1)** | Especificación confirmada por el usuario |
 
 ## A · Código y pruebas iOS (antes de firmar)
 
@@ -95,6 +102,44 @@ una puerta nativa, comercial o de distribución.
 | R-51 | Copias locales antiguas (`CocoWash-b24`, `CocoWash-stage1` con cambios sin confirmar, worktree de Codex, OneDrive) | U decide | Pendiente | No usarlas como base; archivar tras revisar los cambios de `CocoWash-stage1` |
 | R-52 | Workflows heredados (`build-ios.yml`, `build-ios-package.yml`) y avisos de Node 20 en acciones | C | Pendiente | Solo manuales; decidir si se retiran |
 
+## Detalle R-00
+
+**Reproducción (usuario):** en el iPhone, eliminar algunas fotos desde «Una última mirada», terminar la
+sesión y empezar otra; repetir 4–5 veces. El teléfono va cada vez más lento.
+
+**Medido por Claude (navegador, puente sintético, `mano/tests/leak-cycles.mjs`; no es evidencia de iPhone):**
+- Capa web sin fuga clara: heap JS 36,9 → 39,4 MB en 6 ciclos, cada vez menos; listeners (331), nodos DOM
+  y `<video>` constantes. Cachés JS acotadas (precarga 24, nítidas 80; EXIF nativo 256).
+- **Al volver a la app después de borrar** (la pantalla final invita a ir a Fotos a vaciar «Eliminado
+  recientemente»), cada ciclo relanza trabajo sobre **toda** la biblioteca: `assets` (enumeración completa),
+  `analyze` (búsqueda de parecidas con Vision sobre todas las fotos) y reindexado (`sizes`, `classify`).
+  Sin salir de la app no ocurre. Causa: `visibilitychange` → `invalidateLibrary` + `loadLibrary` → nuevo
+  `fingerprint`/`generation` → efectos de `analyze` (ManoApp) y de `useLibraryIndex` (indexer.ts).
+
+**Sospechosos a medir en el iPhone (en este orden):** 1) el trabajo de biblioteca completa en cada ciclo
+(CPU/temperatura; `analyze` lee y desarchiva un `VNFeaturePrintObservation` por foto desde `Caches/ManoPrints`
+y compara); 2) memoria nativa que no vuelve tras cada ciclo (Vision, `PHImageManager`, vídeos preparados,
+caché de vistas previas, SDK de anuncios en la carta final); 3) memoria del proceso WebContent de WKWebView;
+4) `placeCache` nativo sin límite (menor). Herramientas: Instruments (Allocations, Leaks, VM Tracker, Time
+Profiler, Energy) y Safari Web Inspector (Timelines › Memory) sobre la app instalada, con biblioteca de
+fixtures, nunca la personal.
+
+**Aceptación:** 10 ciclos borrar → terminar → volver → nueva ronda sin crecimiento sostenido de memoria
+(app + WebContent) ni CPU en reposo; una actualización de biblioteca tras borrar solo procesa lo que cambió
+(o se difiere y se cancela al empezar otra ronda); prueba automatizada que lo vigile.
+
+## Detalle R-07
+
+Especificación del usuario (2026-11-07):
+- **Carta:** el botón de abajo a la izquierda es **play/pausa** de la Live Photo **dentro de la carta**
+  (hoy abre un reproductor nativo aparte a pantalla completa, `LivePhotoController`). En play se reproduce
+  **en bucle hasta pausar**. En pausa se muestra la **foto clave que eligió Apple** (key photo).
+- **Anclar / zoom con pellizco:** se ve la **foto clave anclada** (ampliable) **con play/pausa y una línea
+  de tiempo** para pausar en cualquier momento, como un vídeo anclado. **No** debe abrirse un reproductor
+  independiente.
+- Conservar el diseño aprobado de controles de carta, Reduce Motion (sin reproducción automática) y la
+  accesibilidad (nombre del botón según estado). Solo iOS: Android no ofrece Live Photos.
+
 ## Después del lanzamiento
 
 Fallos en el Organizador y en Play Vitals, valoraciones, AdMob (relleno, consentimiento), revisión de
@@ -104,5 +149,7 @@ textos con hablantes nativos, 1.0.1 para lo que salga.
 
 Una línea por intervención: fecha · agente · entrada · puntos cerrados/abiertos.
 
+- 2026-11-07 · Claude · CW-CL-062 · Añadidos R-00 (P0 lentitud tras varios ciclos, con medición web) y
+  R-07 (Live Photo), ambos reportados por el usuario.
 - 2026-11-07 · Claude · CW-CL-059/060 · Integrada la RC de Codex con Android; una sola rama `main`;
   CI en verde; IPA build 43. Abiertos R-01 (FAIL) y R-02 (FAIL). Roadmap creado.

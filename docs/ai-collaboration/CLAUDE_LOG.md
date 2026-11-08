@@ -730,3 +730,19 @@ Decisiones relevantes (usuario): cada agente lee la última entrada del otro, `C
 de cada tarea; lo que falte se corrige en el roadmap; al cerrar se marca con evidencia y se añade al registro.
 Impacto para Codex: primera tarea, comparar lo que considera pendiente con `docs/ROADMAP.md` y corregirlo.
 Pendientes: los del roadmap (R-01 y R-02 en FAIL).
+
+### CW-CL-062 — Defectos del usuario para Codex: lentitud tras varios ciclos (P0) y Live Photo
+Fecha: 2026-11-07, America/Bogota
+Agente: Claude
+Tarea: revisar los procesos que se repiten entre sesiones y dejar a Codex el arreglo; especificar la Live Photo.
+Estado: completada (diagnóstico y especificación; sin cambios en la app).
+Base Git / commit: `main`.
+Archivos modificados: `mano/tests/leak-cycles.mjs` (medición, fuera de `npm test`), `docs/ROADMAP.md` (R-00, R-07),
+`PROMPT_CODEX_2026-11-07.md`, `CURRENT_STATE.md`.
+Validaciones: `leak-cycles.mjs` en Edge con puente sintético, 6 ciclos borrar → terminar → volver → ronda nueva:
+heap 36,9 → 39,4 MB y estabilizándose, listeners/DOM constantes. Cada vuelta al primer plano tras borrar relanza
+`assets` + `analyze` + `sizes`/`classify` sobre toda la biblioteca; sin salir de la app, no. Evidencia en
+`work/apple-readiness/leak-cycles*/leak-cycles.json` (local). No es medición de iPhone.
+Decisiones relevantes (usuario): Live Photo en bucle hasta pausar con foto clave en pausa; anclada = foto clave con
+play/pausa y línea de tiempo, sin reproductor aparte.
+Impacto para Codex: R-00 primero (medir en iPhone con Instruments/Web Inspector), luego R-07.

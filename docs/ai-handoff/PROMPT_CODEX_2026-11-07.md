@@ -12,7 +12,7 @@ Antes de escribir, verifica todo con Git real; este texto es un resumen, no sust
 Desde ahora Codex y Claude trabajan siempre así, en cada tarea:
 
 1. Actualizar desde `main` (única rama) y comprobar Git real.
-2. Leer **la última entrada del otro agente** (`docs/ai-collaboration/CLAUDE_LOG.md`, ahora CW-CL-060) y
+2. Leer **la última entrada del otro agente** (`docs/ai-collaboration/CLAUDE_LOG.md`, ahora CW-CL-062) y
    `docs/ai-collaboration/CURRENT_STATE.md`.
 3. Leer **el roadmap compartido `docs/ROADMAP.md`** (único; los antiguos `ROADMAP_APPSTORE`/`ROADMAP_PLAYSTORE`
    quedan como historial) y ver cómo hemos avanzado.
@@ -24,7 +24,36 @@ La regla está también en `AGENTS.md` y en `docs/ai-collaboration/PROTOCOL.md` 
 **Tu primera tarea:** compara lo que tú consideras que falta para publicar (App Store y Google Play) con
 `docs/ROADMAP.md`. Añade lo que no esté, corrige lo que esté mal clasificado o mal asignado, y deja tu
 línea en el registro de avance explicando qué cambiaste y por qué. Después sigue con los puntos de mayor
-prioridad que te corresponden (R-01, R-02, R-03, R-04).
+prioridad que te corresponden, en este orden: **R-00 (P0)**, **R-07**, R-01, R-02, R-03, R-04.
+
+## Defectos nuevos reportados por el usuario (prioridad máxima)
+
+**R-00 · P0 · El iPhone se vuelve cada vez más lento.** El usuario eliminó unas fotos y terminó la sesión
+4–5 veces seguidas en su teléfono y el iPhone se fue poniendo cada vez más lento: algo se retiene o se
+repite entre sesiones. Claude midió en navegador con el puente sintético (`mano/tests/leak-cycles.mjs`,
+no es evidencia de iPhone): la capa JS no muestra fuga clara (heap 36,9 → 39,4 MB en 6 ciclos y
+estabilizándose; listeners, DOM y `<video>` constantes; cachés JS acotadas). Lo que sí aparece: **cada vez
+que la app vuelve al primer plano tras un borrado** (la pantalla final invita a ir a Fotos a vaciar
+«Eliminado recientemente»), se relanza trabajo sobre **toda** la biblioteca: `Library.assets()` completo,
+`analyze` (parecidas con Vision sobre todas las fotos, desarchivando cada print de `Caches/ManoPrints`) y el
+reindexado `sizes`/`classify`; sin salir de la app no ocurre. Cadena: `visibilitychange` →
+`invalidateLibrary` + `loadLibrary` → nuevo `fingerprint`/`generation` → efectos de `analyze` en
+`ManoApp.tsx` y de `useLibraryIndex` en `indexer.ts`. Mide en el iPhone (Instruments: Allocations, Leaks,
+VM Tracker, Time Profiler, Energy; Safari Web Inspector › Memory) con biblioteca de fixtures, nunca la
+personal; revisa también memoria nativa que no vuelve (Vision, `PHImageManager`, vídeos preparados, caché
+de vistas previas, SDK de anuncios de la carta final, proceso WebContent) y `placeCache` sin límite.
+Aceptación: 10 ciclos borrar → terminar → volver → nueva ronda sin crecimiento sostenido de memoria ni CPU;
+tras un borrado solo se procesa lo que cambió (o se difiere y se cancela al empezar otra ronda); una prueba
+automatizada lo vigila. Detalle en `docs/ROADMAP.md` › «Detalle R-00».
+
+**R-07 · Live Photo (especificación confirmada por el usuario).** Hoy el botón de abajo a la izquierda de la
+carta abre un reproductor nativo aparte (`LivePhotoController` en `PhotoLibrary.swift`) y, al anclar o
+pellizcar, la Live Photo se comporta como un reproductor independiente. Debe ser:
+- **Carta:** ese botón es **play/pausa dentro de la carta**. En play, **bucle hasta pausar**. En pausa se ve
+  la **foto clave que eligió Apple**.
+- **Anclar / zoom:** **foto clave anclada** y ampliable, **con play/pausa y línea de tiempo** para pausar en
+  cualquier punto, como el vídeo anclado. Sin reproductor independiente.
+- Mantener el diseño aprobado de los controles, Reduce Motion (nada automático) y la accesibilidad. Solo iOS.
 
 ## Fuente única
 
