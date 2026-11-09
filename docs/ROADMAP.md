@@ -23,23 +23,23 @@ una puerta nativa, comercial o de distribución.
 **Estados:** Hecho · En curso · Pendiente · Bloqueado (falta herramienta, acceso o decisión) · FAIL
 (comprobado y fallando). **Quién:** U = usuario · CX = Codex · CL = Claude · C = cualquiera de los dos.
 
-## Dónde estamos (2026-11-09, CW-CX-055/056 — relevo de Claude)
+## Dónde estamos (2026-11-09, CW-CX-057 — IPA para prueba física)
 
-- Código candidato `6386f55`, enviado y revisado; base funcional `37facf1` conservada.
-- R-47b: `571b1e5` compila y pasa 17 checks, pero no recibe Back en la actividad durante fullscreen.
-  El candidato intercepta la tecla antes de WebView y registra prioridad de overlay para el gesto API33+.
-  [Android 42623186603](https://github.com/joacomino-dev/mano-iphone/actions/runs/42623186603) en curso;
-  no se declara corregido antes de su resultado. Conserva reproductor, fuente, posición y sonido.
-- R-07b: solo XCTest. Los dedos empezaban sobre la barra de vídeo; ahora pellizca el medio anclado.
-  [Gate iOS 42623622241](https://github.com/joacomino-dev/mano-iphone/actions/runs/42623622241) en cola
-  detrás del gate anterior `571b1e5`. No omitir ni duplicar la ejecución completa.
-- [Tienda iOS 42623207314](https://github.com/joacomino-dev/mano-iphone/actions/runs/42623207314) PASS.
-  [Desarrollo 42623186747](https://github.com/joacomino-dev/mano-iphone/actions/runs/42623186747) en curso:
-  ahora dispone de veinte minutos; la compilación fría consumió 9m47s del límite anterior de diez.
-- `InlineVideo` e `Inspector` conservan sus hashes; sonido y reproducción siguen separados, R-64 silencioso.
-  138 Node, TypeScript, protected28, builds y regresiones de silencio/anclada/Live/reanudación PASS local.
-- [Relevo de Claude](ai-handoff/PROMPT_CLAUDE_2026-11-09.md) preparado con SHA y runs pendientes.
-  Se mantiene el [paquete del usuario](#paquete-del-usuario--pasos-en-orden). No apta para enviar.
+- Código `6386f55`, sobre la última versión funcional de Claude; sin cambios de app en esta entrega.
+- IPA `CocoWash-0.9.9.1-build43-6386f55.ipa` descargada en Descargas para iLoader. Fuente, digest,
+  CRC, bundle, arm64, mínimo iOS17 y ausencia de reset verificados. No se ha instalado en el teléfono.
+- [Tienda iOS 42623207314](https://github.com/joacomino-dev/mano-iphone/actions/runs/42623207314) y
+  [desarrollo 42623186747](https://github.com/joacomino-dev/mano-iphone/actions/runs/42623186747) **PASS**,
+  incluido arranque/relanzamiento. Esto no equivale a superar todos los casos de Fotos o TestFlight.
+- [Gate completo iOS 42623622241](https://github.com/joacomino-dev/mano-iphone/actions/runs/42623622241)
+  **en curso**. El anterior 42620548423 falla prerrequisitos de sesión/autorización; no valida el nuevo
+  gesto de pellizco. R-07b y persistencia adversa del candidato siguen pendientes.
+- [Android 42623186603](https://github.com/joacomino-dev/mano-iphone/actions/runs/42623186603) **FAIL**:
+  17 checks PASS, pero Atrás sigue sin devolver del fullscreen al visor. Cero ciclos completados.
+  R-47b continúa abierto; no se declara corregido por la compilación o la revisión estática.
+- Siguen pendientes QA física (permisos, iCloud, bibliotecas grandes, memoria, accesibilidad, compras),
+  aceptación visual de Claude y los pasos del [paquete del usuario](#paquete-del-usuario--pasos-en-orden).
+  No se relanzó CI ni se publicó nada. **No apta para enviar.**
 
 ### Estado recibido de Claude (2026-11-08, CW-CL-063/064)
 
@@ -99,8 +99,8 @@ una puerta nativa, comercial o de distribución.
 | R-64 | **Sin avisos de almacenamiento** («No se pudo guardar…», «operación interrumpida»): recuperación silenciosa (usuario, 2026-11-08) | CL | Corregido local; nativo pendiente | CW-CL-064; `durableSession.ts`, `native.tsx`, `ManoApp.tsx`; persistencia 8+7 PASS en navegador |
 | R-65 | Vista anclada: solo «Cerrar» y deslizar para cerrar (usuario, 2026-11-08) | CL | Corregido local | `Inspector.tsx`; `tests/anchored-flow.mjs` 3/3 |
 | R-66 | Raya/rectángulo claro abajo al anclar un vídeo (usuario, 2026-11-08) | CL | **PASS (usuario en iPhone)** | 1) barra del vídeo sin `backdrop-filter`; 2) causa real según la captura del usuario: `frame.focus()` sin `preventScroll` desplazaba el WebView y asomaba el fondo crema de la página bajo la vista anclada → `focus({preventScroll:true})` y desplazamiento del documento fijo en 0 mientras está anclada (`Inspector.tsx`) |
-| R-07b | Pellizco sobre Live Photo anclada no cambia el zoom en el gate nativo (línea de tiempo y bucle PASS) | CX | **PASS en iPhone (usuario)**; gate nativo aún falla ese paso → revisar el gesto simulado de XCTest | xcresult 42554023066 sobre 8f2549e: 5 PASS, 1 FAIL y 2 SKIP de workflows separados; álbum, cancelación, relanzamiento ×5, pulsación larga y 10 rondas PASS. Gesto dirigido al medio desde 571b1e5; gate 6386f55 / 42623622241 en cola |
-| R-47b | Android: Atrás no sale de la pantalla completa de vídeo (emulador) | CX | **FAIL anterior; candidato en validación** | 42549137917 confirma el fallo tras cerrar el aviso. 571b1e5 aún FAIL sin llegar al callback; 6386f55 intercepta tecla y prioriza gesto. Android 42623186603 en curso |
+| R-07b | Pellizco sobre Live Photo anclada no cambia el zoom en el gate nativo (línea de tiempo y bucle PASS) | CX | **PASS en iPhone (usuario)**; gate nativo aún falla ese paso → revisar el gesto simulado de XCTest | xcresult 42554023066 sobre 8f2549e: 5 PASS, 1 FAIL y 2 SKIP de workflows separados; álbum, cancelación, relanzamiento ×5, pulsación larga y 10 rondas PASS. Gesto dirigido al medio desde 571b1e5; gate 6386f55 / 42623622241 en curso |
+| R-47b | Android: Atrás no sale de la pantalla completa de vídeo (emulador) | CX | **FAIL en 6386f55** | 42623186603: compila y pasa 17 checks, pero Atrás no devuelve del fullscreen al visor; cero ciclos. La corrección candidata no cierra el fallo |
 
 ## A · Código y pruebas iOS (antes de firmar)
 
@@ -220,6 +220,8 @@ textos con hablantes nativos, 1.0.1 para lo que salga.
 ## Registro de avance
 
 Una línea por intervención: fecha · agente · entrada · puntos cerrados/abiertos.
+
+- 2026-11-09 · Codex · CW-CX-057 · IPA 6386f55 descargada y verificada para iLoader; tienda y desarrollo iOS PASS. Android mantiene FAIL fullscreen, gate completo iOS en curso. Roadmap actualizado sin cambios de app ni nueva CI.
 
 - 2026-11-09 · Codex · CW-CX-055/056 · 571b1e5 y 6386f55 enviados tras revisión integrada. R-07b cambia solo el destino del pellizco; R-47b cubre la entrada de Back antes de WebView. Tienda iOS PASS; Android y desarrollo en curso, gate completo en cola. Se conserva sonido, Inspector y R-64.
 

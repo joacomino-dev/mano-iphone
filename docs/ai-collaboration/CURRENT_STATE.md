@@ -2,6 +2,20 @@
 
 Actualizado: 2026-11-09, America/Bogota.
 
+## Codex CW-CX-057 — IPA de iOS entregada; resultados actualizados
+
+Sin cambios de aplicación. Fuente `6386f55`; IPA en Descargas, build 43,
+SHA-256 `56fc1ff547fa044337a1589e47457867c85f515a9b7d0751566a836b5522126f`.
+Artefacto 13676369785 del run 42623186747: digest del ZIP, CRC, fuente, bundle,
+arm64, iOS17, siete localizaciones y ausencia de reset de desarrollo verificados.
+Es de desarrollo sin firma, para iLoader; no se ha instalado en el teléfono.
+Tienda iOS 42623207314 y desarrollo 42623186747 PASS, incluido arranque/relanzamiento.
+Android 42623186603 sigue FAIL en fullscreen Back, después de 17 checks y antes
+de los ciclos. Gate completo iOS 42623622241 en curso. El anterior 42620548423
+falló aserciones de sesión/autorización; no acredita la nueva prueba de pellizco.
+Roadmap y ReleaseReadiness reflejan estos resultados; no se relanzó CI ni se
+modificaron sonido, reproducción, datos, identidad o cuentas.
+
 ## Codex CW-CX-055/056 — Atrás nativo y gesto del gate iOS (en curso)
 
 Base `37facf1`, limpia y sincronizada con origin/main. Relevo CW-CL-068 leído;

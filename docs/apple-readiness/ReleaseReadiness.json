@@ -42,13 +42,13 @@
     "node138": "PASS",
     "journalLocalRegression8": "PASS",
     "nativeFavoriteFlush": "PASS",
-    "nativeFullscreenAndroid": "NOT TESTED",
+    "nativeFullscreenAndroid": "FAIL",
     "nativeLetterVisual": "BLOCKED",
     "nativeStoreBuild": "PASS",
-    "nativeDevelopmentStartup": "NOT TESTED"
+    "nativeDevelopmentStartup": "PASS"
   },
   "blockers": [
-    "6386f55 current native runtime gates are running/queued. R47b failed on 571b1e5; candidate key/gesture correction and extended iOS development timeout need executed acceptance.",
+    "R47b confirmed FAIL on 6386f55: fullscreen Back timeout after 17 bridge checks and before cycles. iOS full gate 42623622241 is still running; store and development builds/startup passed.",
     "Physical TestFlight ATT enforcement and aggregate final archive privacy report/domain scope",
     "Claude visual acceptance of actual native ad/font/RTL captures",
     "Owner accounts/contracts/products/real Android IDs and license verification key",
@@ -79,5 +79,17 @@
     "iosDevelopmentBuildRun": 42623186747,
     "iosPreviousDevelopmentRun": 42620548145
   },
-  "scopeNote": "Current code: 6386f55. Store build PASS; development and Android running; full iOS queued. NOT TESTED is not acceptance. Earlier scoped PASS retains its original source/run. Previous 571b1e5 Android failed fullscreen Back before cycles; development compiled but exceeded the 10-minute step after a 9m47s simulator build. Previous 8f2549e XCTest summary: 5 passed, 1 failed (pinch), 2 skipped (separate workflows); iOS relaunch x5 passed. R64 silent fallback is retained, without a durability guarantee on total storage failure. No store publication authorized."
+  "scopeNote": "6386f55: store build and development startup/relaunch PASS. Android fullscreen Back FAIL after 17 bridge checks, zero cycles. Current full iOS gate 42623622241 running, not accepted; previous 571b1e5 full run 42620548423 failed session/authorization assertions. Scoped earlier PASS keeps its original source/run. Delivered unsigned development IPA digest/CRC/bundle/version/arm64/min17/localizations/reset flag verified. R64 silent fallback is retained, without a durability guarantee on total storage failure. No store publication or physical installation performed.",
+  "deliveredDevelopmentIPA": {
+    "source": "6386f555d8d7bf48ed1d5347bad0fce6e3d348eb",
+    "filename": "CocoWash-0.9.9.1-build43-6386f55.ipa",
+    "run": 42623186747,
+    "artifact": 13676369785,
+    "bytes": 6828197,
+    "sha256": "56fc1ff547fa044337a1589e47457867c85f515a9b7d0751566a836b5522126f",
+    "crcVerified": true,
+    "developmentReset": false,
+    "signedDistribution": false,
+    "installedOnPhysicalDevice": false
+  }
 }
