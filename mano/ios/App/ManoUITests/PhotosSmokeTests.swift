@@ -649,7 +649,7 @@ final class PhotosSmokeTests: XCTestCase {
         // photo with ±1–2 levels (runs 42519482281, 42547955639). The contract is
         // «the key photo, not a frozen motion frame»: visually identical to the key
         // and far closer to it than to the motion frames.
-        func distance(_ a:[UInt8],_ b:[UInt8])->(max:Int,sum:Int){var m=0,s=0;for (x,y) in zip(a,b){let d=abs(Int(x)-Int(y));m=max(m,d);s+=d};return (m,s)}
+        func distance(_ a:Data,_ b:Data)->(max:Int,sum:Int){var m=0,s=0;for (x,y) in zip(a,b){let d=abs(Int(x)-Int(y));m=max(m,d);s+=d};return (m,s)}
         let toKey=distance(keyAfter,keyBefore),motionToKey=distance(motion1,keyBefore)
         print("COCOWASH_UI_LIVE_KEY_PIXELS bytes=\(keyBefore.count) changedChannels=\(differences) maxDelta=\(toKey.max) sum=\(toKey.sum) motionSum=\(motionToKey.sum)")
         XCTAssertEqual(keyAfter.count,keyBefore.count,"Key photo crop size must not change")
