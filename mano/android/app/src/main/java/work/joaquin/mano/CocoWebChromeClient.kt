@@ -1,9 +1,12 @@
 package work.joaquin.mano
 
 import android.graphics.Color
+import android.os.Build
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebChromeClient
+import android.window.OnBackInvokedCallback
+import android.window.OnBackInvokedDispatcher
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -20,6 +23,7 @@ class CocoWebChromeClient(private val cocoBridge: Bridge, private val host: AppC
     private var statusVisible = true
     private var navigationVisible = true
     private var barsBehavior = 0
+    private var gestureBack: OnBackInvokedCallback? = null
     private val bars get() = WindowInsetsControllerCompat(host.window, host.window.decorView)
     val isFullscreen get() = videoView != null
 
@@ -37,6 +41,13 @@ class CocoWebChromeClient(private val cocoBridge: Bridge, private val host: AppC
         bars.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         bars.hide(WindowInsetsCompat.Type.systemBars())
         fullscreenChanged()
+        // Chromium registers its own DEFAULT callback when attaching this view.
+        // Fullscreen is our transient overlay, so its exit must precede that.
+        if (Build.VERSION.SDK_INT >= 33) {
+            val back = OnBackInvokedCallback { handleBack() }
+            host.onBackInvokedDispatcher.registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_OVERLAY, back)
+            gestureBack = back
+        }
         devLog("COCOWASH_FULLSCREEN shown=true")
     }
 
@@ -58,6 +69,10 @@ class CocoWebChromeClient(private val cocoBridge: Bridge, private val host: AppC
         val view = videoView ?: return
         val callback = hidden
         videoView = null; hidden = null
+        if (Build.VERSION.SDK_INT >= 33) {
+            gestureBack?.let { host.onBackInvokedDispatcher.unregisterOnBackInvokedCallback(it) }
+            gestureBack = null
+        }
         (view.parent as? ViewGroup)?.removeView(view)
         cocoBridge.webView.visibility = webVisibility
         bars.systemBarsBehavior = barsBehavior

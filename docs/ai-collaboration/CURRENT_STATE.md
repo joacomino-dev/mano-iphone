@@ -2,14 +2,20 @@
 
 Actualizado: 2026-11-09, America/Bogota.
 
-## Codex CW-CX-055 — Atrás en fullscreen y gesto del gate iOS (en curso)
+## Codex CW-CX-055/056 — Atrás nativo y gesto del gate iOS (en curso)
 
 Base `37facf1`, limpia y sincronizada con origin/main. Relevo CW-CL-068 leído;
 138 Node, TypeScript y protected28 PASS antes de editar. Codex reserva únicamente
 la navegación Atrás de `MainActivity`/`CocoWebChromeClient`, su regresión nativa y
 el gesto de XCTest R-07b. `InlineVideo`, sonido/reproducción, `Inspector`, diseño,
-PhotoKit y recuperación silenciosa R-64 se conservan. Revisión integrada antes
-del push y una suite combinada por checkpoint; sin publicar ni tocar cuentas.
+PhotoKit y recuperación silenciosa R-64 se conservan. Checkpoint `571b1e5` enviado tras revisión integrada sin hallazgos. Tienda iOS PASS;
+Android 42620502765 compila y pasa 17 checks, pero fullscreen Back sigue FAIL: el
+evento no llega al callback de la actividad. Se corrige la ruta de tecla antes
+de WebView y el callback de gesto API33+ durante fullscreen; segunda revisión integrada sin hallazgos.
+Codex reserva también el timeout de arranque de `build-people-dev.yml`: compila
+el simulador en 9m47s y el paso de diez minutos vence antes del relanzamiento.
+Se amplía a veinte conservando aserciones. Suite iOS 42620548423 en curso; sin
+publicar ni tocar cuentas.
 
 ## Claude CW-CL-063/064 — relevo de Codex y defectos del iPhone (vigente)
 

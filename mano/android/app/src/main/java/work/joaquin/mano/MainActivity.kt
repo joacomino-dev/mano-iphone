@@ -1,6 +1,7 @@
 package work.joaquin.mano
 
 import android.os.Bundle
+import android.view.KeyEvent
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatDelegate
 import com.getcapacitor.BridgeActivity
@@ -34,6 +35,16 @@ class MainActivity : BridgeActivity() {
         onBack = if (active) handler else null
         webBackActive = active
         syncBackHandling()
+    }
+
+    // WebView's native fullscreen view can consume the legacy Back key before
+    // OnBackPressedDispatcher sees it. Own the key pair only for this overlay.
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.keyCode == KeyEvent.KEYCODE_BACK && fullscreenClient?.isFullscreen == true) {
+            if (event.action == KeyEvent.ACTION_UP && !event.isCanceled) fullscreenClient?.handleBack()
+            return true
+        }
+        return super.dispatchKeyEvent(event)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
