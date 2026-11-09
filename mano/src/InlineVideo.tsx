@@ -70,6 +70,10 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
   const [time, setTime] = useState(0);
   const [length, setLength] = useState(asset.duration || 0);
   const [muted, setMuted] = useState(!sound);
+  // Sound is not a playback input: changing it must never pause/restart the video
+  // (user, 2026-11-09: muting paused and replayed it). Playback reads the latest value.
+  const soundNow = useRef(sound); soundNow.current = sound;
+  useEffect(() => { const video = player.current; if (video) video.muted = !sound; setMuted(!sound); }, [sound]);
   const [blocked, setBlocked] = useState(false);
   const [playError, setPlayError] = useState(false);
   const [fetching, setFetching] = useState(false);
@@ -133,11 +137,11 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
       // keep a pause the person made there.
       const head = playheads.get(key);
       if (head && video.readyState >= 1 && Math.abs(video.currentTime - head.time) > .25 && head.time < (video.duration || Infinity) - .25) video.currentTime = head.time;
-      start(sound);
+      start(soundNow.current);
     } else { ++playAttempt.current; video.pause();if(live&&!ownsPlayback&&wasOwner){liveIntent.current=false;remember(key,video.currentTime,true);setUserPaused(true);} }
     return () => { ++playAttempt.current; video.pause(); };
     // Sound follows the person's choice in every view: anchoring keeps it as it was.
-  }, [ownsPlayback, userPaused, url, sound, full]);
+  }, [ownsPlayback, userPaused, url, full]);
   // Quick tap on the card: pause or play, with a short glyph and a tick.
   const showGlyph = (kind: 'play' | 'pause') => setGlyph(g => ({ kind, n: (g?.n ?? 0) + 1 }));
   useEffect(() => { if (!glyph) return; const t = setTimeout(() => setGlyph(null), 650); return () => clearTimeout(t); }, [glyph]);
@@ -154,9 +158,11 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
   const choose = () => { const video = player.current;if(live){liveIntent.current=true;remember(key,video?.currentTime??playheads.get(key)?.time??0,false);setUserPaused(false);if(!url){request?.();return;}}if (!video) return; haptic('light'); remember(key, video.currentTime, false); setUserPaused(false); start(sound); };
   const pause = () => { const video = player.current; if (!video) {if(live){liveIntent.current=false;remember(key,0,true);setUserPaused(true);}return;} ++playAttempt.current; remember(key, video.currentTime, true); video.pause(); setUserPaused(true); haptic('soft'); };
   const toggleSound = () => {
-    const next = !sound;
-    if (url && !userPaused) start(next);
-    else setMuted(!next);
+    // Like the VHS toggle: only the state changes, inside the tap (iOS allows
+    // unmuting a playing video from a gesture). Playback is untouched.
+    const next = !sound; const video = player.current;
+    if (video) video.muted = !next;
+    setMuted(!next);
     onSound?.();
     haptic('selection');
   };

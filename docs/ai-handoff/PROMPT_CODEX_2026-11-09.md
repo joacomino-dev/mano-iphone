@@ -33,8 +33,10 @@ nativa combinada por checkpoint; usa `token-efficiency` y `/review` antes de pus
 - **Zoom y anclar en todo (usuario, 2026-11-09):** fotos, Live y vídeos comparten gestos en la vista anclada:
   pellizco, **doble toque para hacer zoom en el punto tocado y otro doble toque para deshacerlo**, arrastre con
   zoom y arrastrar para cerrar sin zoom (`Inspector.tsx`, `tests/anchored-flow.mjs` 5/5).
-- **Silenciar un vídeo ya no hace play/pausa:** iOS redirige al botón un toque que cae junto a él, pero la carta
-  recibía el `pointerdown` y lo tomaba como toque rápido; la carta ignora toques a <14 px de sus botones.
+- **Silenciar un vídeo ya no hace play/pausa:** la causa real era que `sound` era dependencia del efecto de
+  reproducción de `InlineVideo` (su limpieza pausaba y volvía a reproducir). Ahora el botón solo cambia
+  `video.muted` dentro del toque, como el del «ojito»; `tests/mute-flow.mjs`. La carta además ignora toques a
+  <14 px de sus botones. **No vuelvas a meter el sonido en ese efecto.**
 - CI: los tres builds automáticos solo arrancan con archivos que usan (antes 107 ejecuciones/día).
 - Gate nativo `8f2549e` 7/8 PASS: álbum, cancelar borrado, R-61 relanzar ×5, pulsación larga sin menú,
   10 rondas, anclar, pellizco de carta, foto clave Live (criterio visual), línea de tiempo y bucle Live.

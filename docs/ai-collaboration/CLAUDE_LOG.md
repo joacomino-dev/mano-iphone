@@ -830,3 +830,14 @@ Estado: completada local; confirmar en iPhone.
 - Usuario: en la vista anclada, doble toque hace zoom ×2,5 en el punto tocado y otro doble toque lo deshace
   (`Inspector.tsx`; fotos, Live y vídeos).
 Validaciones: 138 Node, tsc, Apple 19, seguridad 9, accesibilidad 6, anclada 5, Live 5.
+
+
+### CW-CL-068 — Silenciar sin pausa (causa real)
+Fecha: 2026-11-09, America/Bogota
+Agente: Claude
+Estado: completada local; confirmar en iPhone.
+El usuario seguía viendo pausa + play al silenciar. Causa: `sound` era dependencia del efecto de reproducción de
+`InlineVideo.tsx`; al cambiar, su limpieza hacía `pause()` y el efecto volvía a `play()`. Ahora el botón solo cambia
+`video.muted` dentro del toque (como el toggle VHS) y un efecto aparte sincroniza `muted`; la reproducción lee el
+valor actual por referencia. `tests/mute-flow.mjs`: 0 pausas y 0 `play()` en tres cambios. Live 5, anclada 5,
+Apple 19, 138 Node PASS.
