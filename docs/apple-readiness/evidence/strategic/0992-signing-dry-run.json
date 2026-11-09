@@ -1,0 +1,70 @@
+{
+  "sourceSha": "837875e474fc9870c5c01fcd8f6ebf2ebbb0f33e",
+  "dryRunProcedure": "PASS",
+  "distributionReadiness": "BLOCKED",
+  "checks": [
+    {
+      "name": "protected-runtime",
+      "status": "PASS",
+      "exitCode": 0
+    },
+    {
+      "name": "release-source",
+      "status": "PASS",
+      "exitCode": 0
+    },
+    {
+      "name": "strict-privacy",
+      "status": "PASS",
+      "exitCode": 0
+    },
+    {
+      "name": "bundle-and-minimum-source",
+      "status": "PASS"
+    }
+  ],
+  "humanPrerequisites": [
+    {
+      "status": "BLOCKED",
+      "requirement": "Executed native safety, Live Photo and crash recovery gates for the exact source"
+    },
+    {
+      "status": "BLOCKED",
+      "requirement": "Approved tracking domains and successful strict privacy report"
+    },
+    {
+      "status": "BLOCKED",
+      "requirement": "Owner chooses unused marketing version/build after consulting App Store Connect"
+    },
+    {
+      "status": "BLOCKED",
+      "requirement": "Existing Apple Distribution identity and App Store provisioning profile in a private Keychain"
+    },
+    {
+      "status": "BLOCKED",
+      "requirement": "Owner-provided team ID and locally reviewed export options"
+    },
+    {
+      "status": "BLOCKED",
+      "requirement": "Explicit owner authorization before importing or using signing material"
+    }
+  ],
+  "performed": [
+    "read source config",
+    "run non-signing source checks",
+    "write non-secret report"
+  ],
+  "notPerformed": [
+    "inspect or import certificates",
+    "read private keys",
+    "alter Keychain",
+    "contact Apple accounts",
+    "sign",
+    "archive",
+    "export IPA",
+    "upload",
+    "publish"
+  ],
+  "bundleIdentifierTemplate": "$(PRODUCT_BUNDLE_IDENTIFIER)",
+  "credentialRule": "Use GitHub Secrets or local Keychain only; never paste credentials into chat or commit them."
+}

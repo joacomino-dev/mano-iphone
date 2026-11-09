@@ -89,7 +89,9 @@ async function systemAllow(allow=true,completed){
 async function processSnapshot(){
  const scope=await adb('shell','dumpsys','activity','processes');await fs.writeFile(`${OUT}/cycle-${rows.length}-scope.txt`,scope);const owned=ownedProcesses(scope,PKG,lab.pid);
  const listing=await adb('shell','ps','-A','-o','PID,PPID,NAME,ARGS');const candidates=listing.split('\n').slice(1).map(l=>l.trim().split(/\s+/)).filter(p=>owned.has(p[0]));
- const processes=[];for(const p of candidates){const pid=p[0],info=await adb('shell','dumpsys','meminfo',pid),m=/TOTAL PSS:\s*(\d+)/.exec(info)||/^\s*TOTAL\s+(\d+)/m.exec(info);assert.ok(m,'Missing measured PSS for '+pid);await fs.writeFile(`${OUT}/cycle-${rows.length}-mem-${pid}.txt`,info);let ticks=null;try{const stat=await adb('shell','cat',`/proc/${pid}/stat`);const cols=stat.slice(stat.lastIndexOf(')')+2).trim().split(/\s+/);ticks=Number(cols[11])+Number(cols[12]);}catch{}processes.push({pid,...owned.get(pid),name:p.slice(2,3).join(''),pssKiB:Number(m[1]),cpuTicks:ticks,sampleMonotonicMs:performance.now()});}
+ // --local reads PSS without asking ActivityThread to dump its heap. The
+ // ordinary dump explicitly calls runtime.gc(), polluting this CPU interval.
+ const processes=[];for(const p of candidates){const pid=p[0],info=await adb('shell','dumpsys','meminfo','--local',pid),m=/TOTAL PSS:\s*(\d+)/.exec(info)||/^\s*TOTAL\s+(\d+)/m.exec(info);assert.ok(m,'Missing measured PSS for '+pid);await fs.writeFile(`${OUT}/cycle-${rows.length}-mem-${pid}.txt`,info);let ticks=null;try{const stat=await adb('shell','cat',`/proc/${pid}/stat`);const cols=stat.slice(stat.lastIndexOf(')')+2).trim().split(/\s+/);ticks=Number(cols[11])+Number(cols[12]);}catch{}processes.push({pid,...owned.get(pid),name:p.slice(2,3).join(''),pssKiB:Number(m[1]),cpuTicks:ticks,sampleMonotonicMs:performance.now()});}
  assert.ok(processes.some(p=>p.role==='app'));return processes;
 }
 async function sample(cycle){

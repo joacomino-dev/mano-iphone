@@ -1,6 +1,8 @@
 # Checklist operativo de envío — CocoWash
 
-2026-11-09. **Envío bloqueado.** Checkpoint técnico `6386f55` en validación.
+2026-11-09. **Envío bloqueado.** Candidato **0.9.9.2**, código `837875e`, en validación.
+Configurado: iOS **0.9.9 / build44**, Android **0.9.9.2 / code4**. Confirmar que
+estén libres en las consolas antes de firmar/subir; no volver a utilizar build43.
 PASS exige evidencia del SHA/binario exacto;
 FAIL=fallo comprobado; BLOCKED=decisión/herramienta/acceso ausente;
 NOT TESTED=prueba aún no ejecutada. Documentación o CI verde sin XCTest no es PASS.
@@ -24,7 +26,9 @@ El [checklist previo](APP_STORE_SUBMISSION_CHECKLIST_2026-11-07.md) es históric
    `node --experimental-strip-types --test tests/native-contract.test.mjs` y,
    desde raíz, `python -B -m unittest discover -s scripts/tests -p 'test_native*.py' -v`.
    Guardar comandos/logs. Build web no acredita Swift.
-4. **Gate iOS real — NOT TESTED completo en SHA final.** Despachar
+4. **Gate iOS real — NOT TESTED completo en SHA final.** El run
+   [42628871026](https://github.com/joacomino-dev/mano-iphone/actions/runs/42628871026)
+   de `837875e` ya está en cola: consultar su resultado, sin duplicarlo. Para un checkpoint futuro, despachar
    `.github/workflows/rc-native-gate.yml` en main: standard y auto(Duo), runner público
    estándar xcode-27/Xcode27.1. No usar runners de pago. Exigir build arm64 Release,
    Swift, Photos real, álbum exacto, metadata, Livekey/timeline/loop/zoom, diez ciclos,
@@ -37,6 +41,8 @@ El [checklist previo](APP_STORE_SUBMISSION_CHECKLIST_2026-11-07.md) es históric
    reproductor, posición o sonido; el siguiente Atrás cierra el visor. Exigir el resultado
    del checkpoint, no el PASS de una compilación anterior. Verificar varianteAPI30 yactual;
    no concluir rendimiento de teléfonos a partir del emulador API35.
+   Run actual: [42628837411](https://github.com/joacomino-dev/mano-iphone/actions/runs/42628837411).
+   La prueba debe acreditar aviso cerrado y ventana enfocada antes de enviar Back.
 6. **QA de dispositivos — BLOCKED propietario.** Completar [plantilla](device-results.template.csv)
    y[procedimiento](TESTFLIGHT.md) con SE2/3, mini/estándar, ProMax/Island e iOS17/18/26/27.
    Duo: exterior/interior/transición, modal/teclado/vídeo/selección sin perder contexto.
@@ -96,5 +102,6 @@ El [checklist previo](APP_STORE_SUBMISSION_CHECKLIST_2026-11-07.md) es históric
     o faseado solo según decisión del propietario. No publicar por preparar checklist.
 
 Referencias vigentes: [Apple envío](https://developer.apple.com/app-store/submitting/),
+[SDK mínimo vigente](https://developer.apple.com/news/upcoming-requirements/?id=04282026a),
 [capturas](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/),
 [Google capturas](https://support.google.com/googleplay/android-developer/answer/9866151?hl=en).

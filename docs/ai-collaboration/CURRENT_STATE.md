@@ -4,6 +4,15 @@ Actualizado: 2026-11-09, America/Bogota.
 
 ## Codex CW-CX-058 — cierre técnico 0.9.9.2 (en curso)
 
+Avance CW-CX-059: `837875e` compila tienda/desarrollo iOS; Android confirma
+fullscreen Back, cancelación, favoritas, diez rondas y relanzamiento ×5. El
+workflow Android falla solo presupuesto CPU; AOSP15 demuestra que meminfo
+normal fuerza GC en el proceso medido. Se corrige a --local, sin cambiar límites.
+El xcresult 6386f55 muestra un formulario UMP «Mis preferencias de datos» tapando
+Filtros; XCTest incorpora opt-out real y Guardar/cerrar, sin suprimir el SDK.
+Revisión integrada sin hallazgos; nuevas verificaciones nativas pendientes.
+Sonido, Inspector, PhotoKit, decisiones, arte y dependencias siguen intactos.
+
 Usuario autoriza finalizar ambas plataformas con etiqueta 0.9.9.2. Base
 `2e10bc6`, limpia y sincronizada; 138 Node, TypeScript y protected28 PASS.
 Codex reserva diagnóstico/pruebas de fullscreen Android y del gate iOS,

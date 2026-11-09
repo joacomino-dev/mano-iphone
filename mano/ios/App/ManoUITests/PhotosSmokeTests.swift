@@ -616,6 +616,12 @@ final class PhotosSmokeTests: XCTestCase {
         // Existing accessible data control opens the same pinned view as dragging.
         app.buttons["Filtros"].firstMatch.tap()
         let settings=app.descendants(matching:.any).matching(NSPredicate(format:"label == %@","Ajustes")).firstMatch
+        // The retained 6386f55 hierarchy shows Google's real US privacy form
+        // covering the app after relaunch. Handle that known fixture consent;
+        // do not hide the SDK, bypass consent or tap through an unknown modal.
+        if !settings.waitForExistence(timeout:15), try closeFixturePrivacyForm(app) {
+            if !settings.exists { app.buttons["Filtros"].firstMatch.tap() }
+        }
         XCTAssertTrue(settings.waitForExistence(timeout:15));settings.tap()
         let geek=app.switches.matching(NSPredicate(format:"label CONTAINS %@","Modo Geek")).firstMatch
         XCTAssertTrue(geek.waitForExistence(timeout:15))
@@ -697,6 +703,26 @@ final class PhotosSmokeTests: XCTestCase {
         XCTAssertTrue(closeOverlay(app,until:finish))
         try nativeMediaFilter(app,"Todo")
         print("COCOWASH_UI_LIVE_ANCHOR_TIMELINE_ZOOM_OK")
+    }
+
+    @MainActor private func closeFixturePrivacyForm(_ app:XCUIApplication) throws -> Bool {
+        let form=app.otherElements.matching(NSPredicate(format:"label BEGINSWITH %@","Mis preferencias de datos")).allElementsBoundByIndex.first(where:{$0.isHittable && $0.frame.height>300})
+        guard let form else { return false }
+        let choices=form.descendants(matching:.any).matching(NSPredicate(format:"label BEGINSWITH %@","No vender ni compartir mis datos")).allElementsBoundByIndex
+        func selected(_ element:XCUIElement)->String { element.value.map{String(describing:$0)} ?? "" }
+        let choice=try XCTUnwrap(choices.first(where:{$0.isHittable && ["0","1"].contains(selected($0))}),"Observed SDK opt-out control must be available")
+        if selected(choice)=="0" { choice.tap() }
+        let deadline=Date().addingTimeInterval(10)
+        while selected(choice) != "1" && Date()<deadline { Thread.sleep(forTimeInterval:0.2) }
+        guard selected(choice)=="1" else {
+            throw NSError(domain:"CocoWashFixtureQA",code:2,userInfo:[NSLocalizedDescriptionKey:"SDK did not select no sale/sharing; refusing to save consent"])
+        }
+        let save=form.buttons["Guardar y cerrar"].firstMatch
+        XCTAssertTrue(save.exists && save.isHittable && save.isEnabled);save.tap()
+        let closed=XCTNSPredicateExpectation(predicate:NSPredicate(format:"exists == false"),object:form)
+        XCTAssertEqual(XCTWaiter().wait(for:[closed],timeout:15),.completed,"Real SDK form must close before app input")
+        print("COCOWASH_UI_FIXTURE_PRIVACY_OPTOUT_OK")
+        return true
     }
 
     @MainActor private func nativeLiveControl(_ app:XCUIApplication,_ label:String,timeout:TimeInterval) throws -> XCUIElement {

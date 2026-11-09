@@ -1,0 +1,91 @@
+{
+  "source": "837875e474fc9870c5c01fcd8f6ebf2ebbb0f33e",
+  "run": 42628837411,
+  "functionalStatus": "PASS",
+  "functionalCycles": 10,
+  "inlineFullscreen": {
+    "playingBeforeFullscreen": true,
+    "samePlayer": true,
+    "backReturnsToInspector": true,
+    "soundPreserved": true,
+    "galleryUnchanged": true
+  },
+  "focusPrecondition": {
+    "focusedActivity": true,
+    "educationClosed": true
+  },
+  "cancelledDeleteRetained": true,
+  "favoriteNativeFlush": true,
+  "pendingSurvivesTermination": true,
+  "terminationTrials": 5,
+  "performanceAcceptance": {
+    "status": "FAIL",
+    "budgets": {
+      "maxLateMemoryGrowthKiB": 24576,
+      "maxSlopeKiBPerCycle": 1024,
+      "maxLateIdleCpuPercent": 15,
+      "maxIdleCpuGrowthPercentagePoints": 5
+    },
+    "boundary": "Small owned fixture library, ten rounds, simulator only. Not physical iPhone/Android or large-library acceptance.",
+    "baselineMemoryKiB": 230181,
+    "lateMemoryKiB": 245353,
+    "slopeKiBPerCycle": -166.58333333333334,
+    "checks": {
+      "lateMemoryGrowth": true,
+      "memorySlope": true,
+      "rolesWithinMemoryBudget": true,
+      "stableProcessesWithinMemoryBudget": true,
+      "lateIdleCpu": false,
+      "idleCpuGrowth": false
+    },
+    "roleTrends": {
+      "renderer": {
+        "baselineMemoryKiB": 105388,
+        "lateMemoryKiB": 119346,
+        "slopeKiBPerCycle": 614.3,
+        "checks": {
+          "lateMemoryGrowth": true,
+          "memorySlope": true
+        }
+      },
+      "app": {
+        "baselineMemoryKiB": 124793,
+        "lateMemoryKiB": 125375,
+        "slopeKiBPerCycle": -780.8833333333333,
+        "checks": {
+          "lateMemoryGrowth": true,
+          "memorySlope": true
+        }
+      }
+    },
+    "stableProcessTrends": {
+      "4618": {
+        "baselineMemoryKiB": 124793,
+        "lateMemoryKiB": 125375,
+        "slopeKiBPerCycle": -780.8833333333333,
+        "checks": {
+          "lateMemoryGrowth": true,
+          "memorySlope": true
+        },
+        "role": "app"
+      },
+      "4646": {
+        "baselineMemoryKiB": 105388,
+        "lateMemoryKiB": 119346,
+        "slopeKiBPerCycle": 614.3,
+        "checks": {
+          "lateMemoryGrowth": true,
+          "memorySlope": true
+        },
+        "role": "renderer"
+      }
+    },
+    "baselineIdleCpuPercent": 3.5603983922333664,
+    "lateIdleCpuPercent": 15.915325005002916
+  },
+  "diagnosis": "Default dumpsys meminfo calls into ActivityThread and explicitly invokes runtime.gc(); the collector includes this call in CPU windows. Candidate correction uses --local without changing budgets. No corrected native metric has yet been collected.",
+  "primarySources": [
+    "https://android.googlesource.com/platform/frameworks/base/+/android-15.0.0_r1/core/java/android/app/ActivityThread.java",
+    "https://android.googlesource.com/platform/frameworks/base/+/android-15.0.0_r1/services/core/java/com/android/server/am/ActivityManagerService.java"
+  ]
+}

@@ -1,6 +1,6 @@
 # Matriz técnica inicial de compatibilidad
 
-**Seguimiento 2026-11-09:** candidato `6386f55`, mínimo iOS 17 sin cambios.
+**Seguimiento 2026-11-09:** candidato 0.9.9.2, código `837875e`, mínimo iOS 17 sin cambios.
 Suite iOS estándar y emulador Android en curso; los resultados se enlazan en
 [Release Candidate](RELEASE_CANDIDATE.md). El usuario confirma Live anclada y la
 ausencia de raya en su iPhone, sin modelo/OS registrados. Esa observación no

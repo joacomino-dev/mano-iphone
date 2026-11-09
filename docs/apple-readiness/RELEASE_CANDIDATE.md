@@ -1,5 +1,50 @@
 # CocoWash — Release Candidate en estabilización
 
+## Candidato 0.9.9.2 — CW-CX-058, 9 de noviembre de 2026
+
+Código `837875e474fc9870c5c01fcd8f6ebf2ebbb0f33e`. Etiqueta visible **0.9.9.2**,
+iOS **0.9.9 (44)**, mínimo **17.0**; Android **0.9.9.2 (4)**, mínimo API30 y target36.
+El cuarto componente es la etiqueta de CocoWash; Apple exige tres componentes
+para CFBundleShortVersionString. Los números de envío deben estar libres en las
+consolas. No se ha firmado, subido ni publicado esta entrega.
+
+**PASS local:** 138 Node, TypeScript, protected28, builds web/native-web,
+9 release (incluida regresión de versión inválida), 4 contratos, 25 Python y
+56 escenarios Edge con medios sintéticos. Cuatro fixtures Bash verifican que el
+reintento iOS se limita al bootstrap anterior a cualquier marcador UI. Revisión
+integrada sin hallazgos. [Evidencia](evidence/strategic/0992-local.json).
+`InlineVideo`, `Inspector`, dominio, PhotoKit, recuperación silenciosa R-64,
+arte y dependencias se conservan.
+
+**Gates del mismo código:**
+
+- [Tienda iOS](https://github.com/joacomino-dev/mano-iphone/actions/runs/42628838115): PASS, compilación sin firma y canal de tienda.
+- [Desarrollo iOS](https://github.com/joacomino-dev/mano-iphone/actions/runs/42628837557): en curso.
+- [Android](https://github.com/joacomino-dev/mano-iphone/actions/runs/42628837411): en curso; debe demostrar Back, diez ciclos y persistencia.
+- [Fotos iOS completo](https://github.com/joacomino-dev/mano-iphone/actions/runs/42628871026): en cola tras el gate anterior; no duplicar.
+
+Android exige que el aviso inicial desaparezca y que CocoWash tenga foco antes
+de enviar Back; todas las postcondiciones se mantienen. El gate iOS conserva
+las aserciones y permite un solo reintento del fallo de background assertion
+demostrado en el primer lanzamiento, antes de toda aceptación UI. No se altera
+la app para obtener un PASS. Estas correcciones necesitan su resultado nativo.
+
+**Preflight de firma ejecutado:** cuatro comprobaciones de fuente PASS;
+distribución BLOCKED, exit78 esperado. No inspecciona certificados ni claves,
+no firma y no contacta cuentas Apple. La plantilla
+[ExportOptions](ExportOptions.example.plist) y los procedimientos de archivo,
+[TestFlight](TESTFLIGHT.md) y [envío](APP_STORE_SUBMISSION_CHECKLIST.md) están preparados.
+Credenciales existentes, cuenta, Privacy Report del archivo, disponibilidad de
+versiones, comercio, política pública, aceptación visual y QA física siguen
+pendientes. **NO APTA para enviar hasta cerrar esos gates.**
+
+Requisitos reconsultados: [versión Apple](https://developer.apple.com/documentation/bundleresources/information-property-list/cfbundleshortversionstring),
+[Xcode26/SDK26 desde abril de 2026](https://developer.apple.com/news/upcoming-requirements/?id=04282026a),
+[target API36 de Play](https://support.google.com/googleplay/android-developer/answer/11926878?hl=en-mt).
+Xcode27.1/SDK27.1 configurados en CI; no se reduce iOS17 ni se actualizan dependencias.
+
+## Historial 0.9.9.1 — no es la aceptación del candidato actual
+
 Actualizado 2026-11-09, CW-CX-055/056. **NO APTA para enviar.** Correcciones candidatas
 en `6386f55`; las pruebas nativas de este checkpoint siguen en curso o en cola. La firma,
 privacidad del archivo, configuración comercial y QA física siguen bloqueadas.

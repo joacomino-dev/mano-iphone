@@ -1,18 +1,18 @@
 {
   "updated": "2026-11-09",
-  "sourceCheckpoint": "6386f555d8d7bf48ed1d5347bad0fce6e3d348eb",
+  "sourceCheckpoint": "837875e474fc9870c5c01fcd8f6ebf2ebbb0f33e",
   "releaseState": "FAIL",
   "publishAuthorized": false,
   "bundle": "work.joaquin.mano",
   "ios": {
     "marketingVersion": "0.9.9",
-    "build": 43,
+    "build": 44,
     "minimum": "17.0",
     "distribution": "BLOCKED"
   },
   "android": {
-    "versionName": "0.9.9.1",
-    "versionCode": 3,
+    "versionName": "0.9.9.2",
+    "versionCode": 4,
     "distribution": "BLOCKED"
   },
   "gates": {
@@ -21,13 +21,12 @@
     "webBuild": "PASS",
     "nativeWebBuild": "PASS",
     "nativeContracts4": "PASS",
-    "releaseMetadata8": "PASS",
     "playMetadata7": "PASS",
     "nativeInfrastructure25": "PASS",
     "trackingDeclaration5": "PASS",
     "strictPrivacyDeclaration": "PASS",
     "vendorSourceSignatures": "PASS",
-    "nativeAlbumStandard": "PASS",
+    "nativeAlbumStandard": "NOT TESTED",
     "nativeFullSuite": "NOT TESTED",
     "nativeLiveBehavior": "NOT TESTED",
     "nativePersistence": "NOT TESTED",
@@ -42,13 +41,16 @@
     "node138": "PASS",
     "journalLocalRegression8": "PASS",
     "nativeFavoriteFlush": "PASS",
-    "nativeFullscreenAndroid": "FAIL",
+    "nativeFullscreenAndroid": "NOT TESTED",
     "nativeLetterVisual": "BLOCKED",
     "nativeStoreBuild": "PASS",
-    "nativeDevelopmentStartup": "PASS"
+    "nativeDevelopmentStartup": "NOT TESTED",
+    "releaseMetadata9": "PASS",
+    "edge56": "PASS",
+    "signingSourceDryRun": "PASS"
   },
   "blockers": [
-    "R47b confirmed FAIL on 6386f55: fullscreen Back timeout after 17 bridge checks and before cycles. iOS full gate 42623622241 is still running; store and development builds/startup passed.",
+    "Current 0.9.9.2 gates pending: Android Back with native focus precondition, ten cycles and termination recovery; complete iOS fixture suite and development startup. Prior R47b FAIL remains unresolved until new native execution passes.",
     "Physical TestFlight ATT enforcement and aggregate final archive privacy report/domain scope",
     "Claude visual acceptance of actual native ad/font/RTL captures",
     "Owner accounts/contracts/products/real Android IDs and license verification key",
@@ -70,16 +72,17 @@
     "livePixelsRun": 42519482281,
     "androidFavoriteDiagnosticsRun": 42519758181,
     "androidTenCyclesAndFavoriteRun": 42539523601,
-    "iosFullStandardRun": 42623622241,
+    "iosFullStandardRun": 42628871026,
     "iosFullDuoRun": 42539527666,
-    "androidR47Run": 42623186603,
+    "androidR47Run": 42628837411,
     "iosPreviousFullRun": 42620548423,
     "androidPreviousBackRun": 42620502765,
-    "iosStoreBuildRun": 42623207314,
-    "iosDevelopmentBuildRun": 42623186747,
-    "iosPreviousDevelopmentRun": 42620548145
+    "iosStoreBuildRun": 42628838115,
+    "iosDevelopmentBuildRun": 42628837557,
+    "iosPreviousDevelopmentRun": 42620548145,
+    "local0992": "evidence/strategic/0992-local.json"
   },
-  "scopeNote": "6386f55: store build and development startup/relaunch PASS. Android fullscreen Back FAIL after 17 bridge checks, zero cycles. Current full iOS gate 42623622241 running, not accepted; previous 571b1e5 full run 42620548423 failed session/authorization assertions. Scoped earlier PASS keeps its original source/run. Delivered unsigned development IPA digest/CRC/bundle/version/arm64/min17/localizations/reset flag verified. R64 silent fallback is retained, without a durability guarantee on total storage failure. No store publication or physical installation performed.",
+  "scopeNote": "0.9.9.2 / 837875e: store compilation PASS; development and Android running; full iOS queued. Local PASS: 138 Node, TypeScript, protected28, web/native-web, 9 release, 4 contracts, 25 Python, 56 Edge cases and four bounded-bootstrap Bash fixtures. Integrated review clean. No new hardware, iCloud, VoiceOver, Instruments, signed archive, purchase sandbox or distribution acceptance. Older evidence and delivered 0.9.9.1 IPA retain their own source; not candidate acceptance. iOS minimum17, art, domain, PhotoKit, R64 and video sound/playback preserved.",
   "deliveredDevelopmentIPA": {
     "source": "6386f555d8d7bf48ed1d5347bad0fce6e3d348eb",
     "filename": "CocoWash-0.9.9.1-build43-6386f55.ipa",
@@ -91,5 +94,7 @@
     "developmentReset": false,
     "signedDistribution": false,
     "installedOnPhysicalDevice": false
-  }
+  },
+  "previousSourceCheckpoint": "6386f555d8d7bf48ed1d5347bad0fce6e3d348eb",
+  "releaseLabel": "0.9.9.2"
 }
