@@ -140,7 +140,7 @@ jobs:
           {
             echo 'DEVELOPMENT ONLY. Not a published or accepted release.'
             echo "APK: debug build for side-loading on the developer's phone."
-            if [ -n "${COCO_DEV_KEYSTORE:-}" ]; then echo 'APK signed with the CocoWash development key.'; else echo 'APK signed with a throw-away debug key: uninstall the previous development APK first.'; fi
+            if [ -n "${COCO_DEV_KEYSTORE:-}" ]; then echo 'APK signed with the CocoWash development key.'; else echo 'APK signed with a throw-away debug key: it cannot update an app signed with another key. Do not uninstall an existing app containing decisions. Use the same stable development signing key, or a clean test device/emulator.'; fi
             if [ -n "${COCO_UPLOAD_KEYSTORE:-}" ]; then echo 'AAB signed with the Play upload key.'; else echo 'AAB unsigned: not uploadable to Play.'; fi
             echo 'APK developer controls: enabled in this CI copy only. Store AAB: developer controls disabled.'
             echo 'Ads: test Android IDs currently configured. Real Android IDs and Play purchase validation remain owner/release gates.'

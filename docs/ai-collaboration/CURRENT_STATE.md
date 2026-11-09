@@ -4,6 +4,13 @@ Actualizado: 2026-11-09, America/Bogota.
 
 ## Codex CW-CX-058 — cierre técnico 0.9.9.2 (en curso)
 
+Reserva CW-CX-060: solo XCTest, instrucciones del artefacto Android y evidencia.
+`fa318ba` tiene Android completo PASS (17 checks, diez rondas, relanzamiento ×5,
+presupuestos originales), tienda/desarrollo iOS PASS. Fotos iOS falla espera
+inicial de cancelación y bucle Live; el checkpoint anterior también detectó que
+XCTest exige hit-testing directo al vídeo aunque los gestos pertenecen al padre.
+Se inspeccionan los xcresult antes de corregir pruebas. Sin cambios de aplicación.
+
 Avance CW-CX-059: `837875e` compila tienda/desarrollo iOS; Android confirma
 fullscreen Back, cancelación, favoritas, diez rondas y relanzamiento ×5. El
 workflow Android falla solo presupuesto CPU; AOSP15 demuestra que meminfo

@@ -23,22 +23,31 @@ una puerta nativa, comercial o de distribución.
 **Estados:** Hecho · En curso · Pendiente · Bloqueado (falta herramienta, acceso o decisión) · FAIL
 (comprobado y fallando). **Quién:** U = usuario · CX = Codex · CL = Claude · C = cualquiera de los dos.
 
-## Dónde estamos (2026-11-09, CW-CX-058 — candidato 0.9.9.2)
+## Dónde estamos (2026-11-09, CW-CX-060 — candidato 0.9.9.2)
 
 - Usuario autoriza cerrar ambas plataformas con etiqueta **0.9.9.2**. iOS mantiene versión nativa
   **0.9.9**, build candidato **44**; Android **0.9.9.2**, código **4**. Consultar disponibilidad en las
   consolas antes del envío; no se publicará ni se tocarán cuentas o certificados.
 - PASS local: 138 Node, TypeScript, protected28, ambos builds web, 9 release, 4 contratos, 25 Python
   y 56 escenarios Edge. Revisión integrada sin hallazgos. Es evidencia local, no aceptación nativa.
-- R-47b: la prueba enviaba Back inmediatamente después de tocar el aviso inicial. Ahora exige que el
-  aviso desaparezca y que la ventana de CocoWash tenga foco; conserva visor, reproductor, posición,
-  sonido y galería. La corrección no se cierra hasta ejecutar el nuevo gate Android.
-- El primer `app.launch()` del gate iOS anterior falla al obtener una background assertion de XCTest,
-  antes de cualquier marcador UI. Se permite un único reintento de ese bootstrap; cualquier error de
-  app o prueba posterior sigue fallando. No se modifica CocoWash para aparentar un resultado correcto.
+- [Android fa318ba](https://github.com/joacomino-dev/mano-iphone/actions/runs/42634538249) **PASS completo**:
+  17 checks, Back conservando reproductor/posición/sonido, cancelación, favoritas, diez rondas y
+  decisiones reconocidas conservadas tras force-stop ×5. Presupuestos originales PASS: PSS total
+  243919→246092 KiB, pendiente 765,83 KiB/ciclo, CPU inactiva tardía 0,47 %. Solo emulador y biblioteca pequeña.
+- [Tienda iOS](https://github.com/joacomino-dev/mano-iphone/actions/runs/42634699549) y
+  [desarrollo iOS](https://github.com/joacomino-dev/mano-iphone/actions/runs/42634699515) **PASS** en fa318ba.
+  [Fotos iOS](https://github.com/joacomino-dev/mano-iphone/actions/runs/42634699746) **FAIL**: 4 PASS,
+  2 FAIL, 2 SKIP. Pasan relanzamiento ×5 y diez rondas; fallan arranque de cancelación y bucle Live.
+- R-67 **P1 abierto**: WKWebView vacío después de relanzar, antes de cualquier operación de borrado;
+  causa sin determinar. No se oculta con reintentos. R-07b corrige solo XCTest: marco visible del medio
+  (gestos en el padre) y ventana de cuatro bucles para lecturas AX que tardan 2,87 s. Conserva todas
+  las aserciones finales. Nuevo gate completo pendiente; [evidencia](apple-readiness/evidence/strategic/0992-native-fa318ba.json).
 - Sonido/reproducción, Inspector, PhotoKit, recuperación silenciosa R-64 y arte intactos.
-  Gates del nuevo checkpoint pendientes; siguen QA física/visual, privacidad del archivo, comercio y firma.
+  Siguen QA física/visual, privacidad del archivo, comercio y firma.
   **No apta para enviar.**
+
+CW-CX-060: revisión integrada sin defectos nuevos; release9 y protected28 PASS.
+El próximo gate prueba únicamente las correcciones de XCTest; R-67 sigue abierto.
 
 ### Estado anterior 0.9.9.1 (CW-CX-057)
 
@@ -116,8 +125,9 @@ una puerta nativa, comercial o de distribución.
 | R-64 | **Sin avisos de almacenamiento** («No se pudo guardar…», «operación interrumpida»): recuperación silenciosa (usuario, 2026-11-08) | CL | Corregido local; nativo pendiente | CW-CL-064; `durableSession.ts`, `native.tsx`, `ManoApp.tsx`; persistencia 8+7 PASS en navegador |
 | R-65 | Vista anclada: solo «Cerrar» y deslizar para cerrar (usuario, 2026-11-08) | CL | Corregido local | `Inspector.tsx`; `tests/anchored-flow.mjs` 3/3 |
 | R-66 | Raya/rectángulo claro abajo al anclar un vídeo (usuario, 2026-11-08) | CL | **PASS (usuario en iPhone)** | 1) barra del vídeo sin `backdrop-filter`; 2) causa real según la captura del usuario: `frame.focus()` sin `preventScroll` desplazaba el WebView y asomaba el fondo crema de la página bajo la vista anclada → `focus({preventScroll:true})` y desplazamiento del documento fijo en 0 mientras está anclada (`Inspector.tsx`) |
-| R-07b | Pellizco sobre Live Photo anclada no cambia el zoom en el gate nativo (línea de tiempo y bucle PASS) | CX | **PASS en iPhone (usuario)**; gate nativo aún falla ese paso → revisar el gesto simulado de XCTest | xcresult 42554023066 sobre 8f2549e: 5 PASS, 1 FAIL y 2 SKIP de workflows separados; álbum, cancelación, relanzamiento ×5, pulsación larga y 10 rondas PASS. Gesto dirigido al medio desde 571b1e5; gate 6386f55 / 42623622241 en curso |
-| R-47b | Android: Atrás no sale de la pantalla completa de vídeo (emulador) | CX | **FAIL en 6386f55** | 42623186603: compila y pasa 17 checks, pero Atrás no devuelve del fullscreen al visor; cero ciclos. La corrección candidata no cierra el fallo |
+| R-07b | Live anclada: bucle y pellizco del gate nativo | CX | **PASS en iPhone (usuario); FAIL de gate, corrección de test pendiente** | 837875e solo falla isHittable del vídeo; fa318ba falla antes en ventana del bucle. CW-CX-060 conserva píxeles cambiados y controles sin escalar; no cambia reproducción |
+| R-47b | Android: Atrás sale de fullscreen y luego cierra visor | CX | **PASS emulador API35; físico pendiente** | fa318ba / 42634538249: mismo reproductor/fuente/posición/sonido/galería, E2E17 + diez rondas + force-stop ×5 y presupuestos PASS |
+| R-67 | **P1 · Arranque iOS intermitente sin contenido accesible tras relanzar** | CX | **FAIL, causa pendiente** | fa318ba / 42634699746 testV línea504: 120s sin Eliminar, WKWebView vacío; bridge listo y documento principal comprometido. La prueba no llegó al borrado. No añadir retry que oculte el fallo |
 
 ## A · Código y pruebas iOS (antes de firmar)
 
@@ -322,7 +332,7 @@ Autorizados push normal a main y workflows estándar públicos gratuitos, relanz
 | ID | Prioridad | Estado | Evidencia / siguiente paso |
 | --- | --- | --- | --- |
 | R-60 | P1 gate de CI | **PASS corrección de infraestructura** | Se excluye42511286263: noXCTest. Bash3.2 invoca xcodebuild real ypostcondición independiente verifica casos/xcresult/PhotoKit;25testsinfra actualesPASS. Nuevas suites fallidas no se ocultan. |
-| R-61 | P0 persistencia | **Implementado; force-stop nativo pendiente** | 42513754519:pending1→0 ya antes deReact alforce-stop inmediato; background6s retiene. No PhotoKitdelete en ese caso. ExperimentoIDBstrict separado retiene, no es fix de producto. |
+| R-61 | P0 persistencia | **PASS relanzamiento ×5 en ambos simuladores; físico pendiente** | fa318ba / Android42634538249 e iOS42634699746: decisiones reconocidas sobreviven cinco terminaciones reales sin demora artificial. No valida almacenamiento averiado; R-64 conserva fallback silencioso y sus límites. |
 
 - 2026-11-08 · Codex CW-CX-036:se rechaza falsoverde42511286263(noXCTest), corrige arrayvacíoBash3.2 y añade postcondición independiente. NuevotestAndroid revelaR61P0 pérdida de descarte tras cierre forzado; prioridadsobre materiales. No declarar RC lista.
 

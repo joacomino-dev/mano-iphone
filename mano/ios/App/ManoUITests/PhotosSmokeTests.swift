@@ -679,7 +679,11 @@ final class PhotosSmokeTests: XCTestCase {
         let before=try XCTUnwrap(nativeLivePosition(timeline))
         XCTAssertGreaterThan(before,0.6,"Timeline must seek the actual three-second paired clip")
         anchoredPlay.tap()
-        let deadline=Date().addingTimeInterval(4)
+        XCTAssertTrue(pause.waitForExistence(timeout:15),"Playback must acknowledge the actual play tap")
+        // Retained XCTest timestamps show a single AX value query taking 2.87s.
+        // Four seconds can miss the entire <1.2s wrap window of this 3s clip.
+        // Observe up to four loops; still require a real low timeline position.
+        let deadline=Date().addingTimeInterval(12)
         var looped=false
         while Date()<deadline { if let position=nativeLivePosition(timeline),position<0.4 { looped=true;break };Thread.sleep(forTimeInterval:0.2) }
         XCTAssertTrue(looped,"Playback must wrap past the end of the paired video")
@@ -687,7 +691,11 @@ final class PhotosSmokeTests: XCTestCase {
         attachScreenshot(app,"Native Live Photo anchored with timeline")
         // Pinch the media, not the application: with Geek open the app's centre
         // falls beside the picture's controls. Both fingers must start on it.
-        let picture=try XCTUnwrap(app.descendants(matching:.any).matching(NSPredicate(format:"label == %@","Reproducir Live Photo")).allElementsBoundByIndex.first(where:{$0.isHittable && $0.frame.width>180 && $0.frame.height>180}),"Pinned Live media must expose a visible gesture target")
+        // CSS deliberately keeps the video pointer-events:none; Inspector's
+        // parent receives the touches. XCTest pinch uses this visible frame,
+        // not the video's direct hit-test eligibility. Controls must be usable.
+        XCTAssertTrue(timeline.isHittable,"Pinned controls must remain reachable")
+        let picture=try XCTUnwrap(app.descendants(matching:.any).matching(NSPredicate(format:"label == %@","Reproducir Live Photo")).allElementsBoundByIndex.first(where:{$0.frame.width>180 && $0.frame.height>180 && app.frame.contains($0.frame)}),"Pinned Live media must expose an on-screen gesture frame")
         let bounds=picture.frame
         print("COCOWASH_UI_LIVE_PINCH_TARGET frame=\(bounds)")
         // A paused, settled interior crop excludes controls and isolates zoom.

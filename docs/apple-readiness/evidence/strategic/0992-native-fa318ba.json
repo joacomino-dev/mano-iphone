@@ -1,0 +1,129 @@
+{
+  "date": "2026-11-09",
+  "source": "fa318baa2b9937c812c1ff606751aa6bfa708530",
+  "releaseLabel": "0.9.9.2",
+  "android": {
+    "run": 42634538249,
+    "status": "PASS",
+    "nativeChecks": 17,
+    "functionalCycles": 10,
+    "pendingTerminationTrials": 5,
+    "fullscreenBack": "PASS: same player/source/position/sound and gallery; subsequent Back closes inspector",
+    "cancelledDeletion": "PASS",
+    "favoriteFlush": "PASS",
+    "performance": {
+      "status": "PASS",
+      "budgets": {
+        "maxLateMemoryGrowthKiB": 24576,
+        "maxSlopeKiBPerCycle": 1024,
+        "maxLateIdleCpuPercent": 15,
+        "maxIdleCpuGrowthPercentagePoints": 5
+      },
+      "boundary": "Small owned fixture library, ten rounds, simulator only. Not physical iPhone/Android or large-library acceptance.",
+      "baselineMemoryKiB": 243919,
+      "lateMemoryKiB": 246092,
+      "slopeKiBPerCycle": 765.8333333333334,
+      "checks": {
+        "lateMemoryGrowth": true,
+        "memorySlope": true,
+        "rolesWithinMemoryBudget": true,
+        "stableProcessesWithinMemoryBudget": true,
+        "lateIdleCpu": true,
+        "idleCpuGrowth": true
+      },
+      "roleTrends": {
+        "renderer": {
+          "baselineMemoryKiB": 116891,
+          "lateMemoryKiB": 120052,
+          "slopeKiBPerCycle": 623.6833333333333,
+          "checks": {
+            "lateMemoryGrowth": true,
+            "memorySlope": true
+          }
+        },
+        "app": {
+          "baselineMemoryKiB": 127935,
+          "lateMemoryKiB": 126530,
+          "slopeKiBPerCycle": 142.15,
+          "checks": {
+            "lateMemoryGrowth": true,
+            "memorySlope": true
+          }
+        }
+      },
+      "stableProcessTrends": {
+        "4589": {
+          "baselineMemoryKiB": 127935,
+          "lateMemoryKiB": 126530,
+          "slopeKiBPerCycle": 142.15,
+          "checks": {
+            "lateMemoryGrowth": true,
+            "memorySlope": true
+          },
+          "role": "app"
+        },
+        "4620": {
+          "baselineMemoryKiB": 116891,
+          "lateMemoryKiB": 120052,
+          "slopeKiBPerCycle": 623.6833333333333,
+          "checks": {
+            "lateMemoryGrowth": true,
+            "memorySlope": true
+          },
+          "role": "renderer"
+        }
+      },
+      "baselineIdleCpuPercent": 0.45656688429522335,
+      "lateIdleCpuPercent": 0.46745960252796986
+    },
+    "boundary": "API35 emulator, generated library. No physical device, API30, large library or battery acceptance."
+  },
+  "ios": {
+    "storeRun": 42634699549,
+    "storeStatus": "PASS",
+    "developmentRun": 42634699515,
+    "developmentStatus": "PASS",
+    "fullRun": 42634699746,
+    "fullStatus": "FAIL",
+    "simulator": "iPhone 18 Pro, iOS27.0, arm64",
+    "executed": 8,
+    "passed": 4,
+    "failed": 2,
+    "skipped": 2,
+    "pendingTerminationTrials": 5,
+    "tenDeletionRounds": "PASS",
+    "failures": [
+      {
+        "test": "testVGeneratedDeletionCancellation",
+        "location": "PhotosSmokeTests.swift:504",
+        "observed": "After relaunch, no Eliminar within 120s; retained hierarchy has empty WKWebView, native bridge initialized and main document committed. No deletion operation executed in this test.",
+        "cause": "NOT DETERMINED. Do not hide behind a relaunch retry.",
+        "severity": "P1",
+        "roadmap": "R-67"
+      },
+      {
+        "test": "testYGeneratedLivePhotoInlineAndAnchored",
+        "location": "PhotosSmokeTests.swift:685",
+        "observed": "Three-second Live clip loop not observed in four-second window. AX query took 2.87s; only three readings, all 0:02. Key photo raster restored exactly (0 changed channels).",
+        "cause": "Four-second observation window can miss the <1.2s low-position window; playback defect not ruled out. Candidate test still requires real low position and unchanged controls.",
+        "roadmap": "R-07b"
+      }
+    ],
+    "priorRun": 42628871026,
+    "priorFailure": "Only isHittable video target unwrap; CSS delegates gestures to Inspector parent.",
+    "evidenceExportRun": 42668642839,
+    "evidenceArtifact": 13698460048,
+    "exportSha256": "1726e0dc34d4155fd4c0313c8e036eb0a8d381f165b49fdb7b5ae372c111d0e6",
+    "rawArtifact": 13684459984,
+    "rawSha256": "f7493381a564bb968a85bb3cb65b3c99f0f35515df3408b3c0d5a573977ba43d"
+  },
+  "candidateTestChanges": {
+    "source": "CW-CX-060 checkpoint; git log -1 -- mano/ios/App/ManoUITests/PhotosSmokeTests.swift",
+    "status": "NOT TESTED natively",
+    "pinch": "Require visible on-screen frame and hittable timeline; preserve changed-pixel and fixed-controls oracles.",
+    "loop": "Require play acknowledgement, observe at most four loops (12s), retain actual low-position requirement.",
+    "startup": "No retry, app or persistence change. R-67 remains open."
+  },
+  "releaseState": "FAIL",
+  "distribution": "BLOCKED"
+}
