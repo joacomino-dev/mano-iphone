@@ -80,7 +80,8 @@ una puerta nativa, comercial o de distribución.
 | R-07 | **Live Photo**: reproducción en la carta y en la vista anclada. Ver [detalle R-07](#detalle-r-07) | CX (+CL visual) | **En curso (P1), nativo bloqueado** | CW-CX-022/025: reproducción inline, foto clave en pausa, anclaje/timeline/pinch implementados;5 escenarios web PASS. [Evidencia y QA nativa](apple-readiness/LIVE_PHOTO.md) |
 | R-64 | **Sin avisos de almacenamiento** («No se pudo guardar…», «operación interrumpida»): recuperación silenciosa (usuario, 2026-11-08) | CL | Corregido local; nativo pendiente | CW-CL-064; `durableSession.ts`, `native.tsx`, `ManoApp.tsx`; persistencia 8+7 PASS en navegador |
 | R-65 | Vista anclada: solo «Cerrar» y deslizar para cerrar (usuario, 2026-11-08) | CL | Corregido local | `Inspector.tsx`; `tests/anchored-flow.mjs` 3/3 |
-| R-66 | Rectángulo blanco abajo al anclar un vídeo (usuario, 2026-11-08) | CL | Corregido; confirmar en iPhone | `backdrop-filter` en la barra del vídeo anclado → fondo sólido (`prototype.css`) |
+| R-66 | Raya/rectángulo claro abajo al anclar un vídeo (usuario, 2026-11-08) | CL | Corregido 2.ª vez; confirmar en iPhone | 1) barra del vídeo sin `backdrop-filter`; 2) causa real según la captura del usuario: `frame.focus()` sin `preventScroll` desplazaba el WebView y asomaba el fondo crema de la página bajo la vista anclada → `focus({preventScroll:true})` y desplazamiento del documento fijo en 0 mientras está anclada (`Inspector.tsx`) |
+| R-07b | Pellizco sobre Live Photo anclada no cambia el zoom en el gate nativo (línea de tiempo y bucle PASS) | CX | Pendiente: probar en iPhone | Gate 42554023066 sobre 8f2549e: 7/8 PASS (álbum, cancelar borrado, R-61 ×5, pulsación larga, 10 rondas, anclar, pellizco de carta); primer paso nativo de este caso, en navegador PASS |
 | R-47b | Android: Atrás no sale de la pantalla completa de vídeo (emulador) | CX | **FAIL** | Run 42549137917; `CocoWebChromeClient`/orden de callbacks de Atrás |
 
 ## A · Código y pruebas iOS (antes de firmar)
@@ -202,6 +203,7 @@ textos con hablantes nativos, 1.0.1 para lo que salga.
 
 Una línea por intervención: fecha · agente · entrada · puntos cerrados/abiertos.
 
+- 2026-11-08 · Claude · CW-CL-065 · Usuario: «la app se siente excelente y súper fluida». R-66: raya crema bajo la vista anclada = desplazamiento por `focus()` (corregido). Gate 8f2549e 7/8; R-07b pellizco en Live anclada a confirmar en iPhone.
 - 2026-11-08 · Claude · CW-CL-064 · Defectos del usuario en iPhone: R-00 vuelta a la app sin releer la fototeca (observador de cambios de Fotos), R-64 sin avisos de almacenamiento (reconexión/espejo), R-65 vista anclada solo «Cerrar» + deslizar para cerrar, R-66 rectángulo blanco (backdrop-filter). 138 Node, 80 casos navegador + 8 runtime PASS. Pendiente: gate nativo y confirmación del usuario en iPhone.
 - 2026-11-08 · Claude · CW-CL-063 · Relevo: WIP de Codex terminado (Live pausa = foto clave), cascada del gate por aviso de operación interrumpida, aviso «Viewing full screen» de Android en el test, filtros de CI. Gate iOS 37d1ad2 7/8 PASS; Live clave PASS con criterio visual. IPA `CocoWash-0.9.9.1-build43-37d1ad2.ipa`.
 

@@ -792,3 +792,18 @@ Validaciones: 138 Node, tsc, runtime 28, Release/Sites 12, contratos 4; navegado
 Swift nuevo pendiente de compilar en CI.
 Impacto para Codex: el contrato R-61 cambió por decisión del usuario (sin avisos ni bloqueo por
 almacenamiento); no reintroducir avisos. Medir R-00 en iPhone si el usuario aún nota lentitud.
+
+
+### CW-CL-065 — Raya clara al anclar vídeos y gate nativo de 8f2549e
+Fecha: 2026-11-08, America/Bogota
+Agente: Claude
+Estado: completada local; confirmación del usuario en iPhone pendiente.
+Usuario sobre la IPA `8f2549e`: «la aplicación se siente excelente y súper fluida» (R-00/R-64/R-65 bien en uso real).
+Sigue apareciendo un instante una raya clara al anclar vídeos; su captura la muestra en el borde inferior de la
+pantalla, bajo «Cerrar», del color crema de la página. Causa: `Inspector.tsx` hacía `frame.focus()` sin
+`preventScroll` mientras el marco aún se animaba; iOS desplazaba el WebView y asomaba el fondo de `body`.
+Cambio: `focus({preventScroll:true})` y desplazamiento del documento fijado en 0 mientras la vista está anclada.
+Gate 42554023066 (8f2549e): 7/8 PASS; el Swift nuevo (`PHPhotoLibraryChangeObserver`) compila y la app pasa
+álbum, cancelar borrado, R-61 ×5, pulsación larga, 10 rondas, anclar y pellizco de carta. Falla el pellizco
+sobre la Live anclada (R-07b), primera ejecución nativa de ese paso; línea de tiempo y bucle PASS.
+Impacto para Codex: R-07b y R-47b abiertos; no reintroducir `focus()` sin `preventScroll` en capas animadas.
