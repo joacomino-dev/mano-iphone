@@ -1,0 +1,126 @@
+{
+  "source": "571b1e592323fffd3e6db7fae5a85b7b490c4b2f",
+  "base": "37facf17d5c885bcd18dd6e88d5febe95ea5425e",
+  "date": "2026-11-09",
+  "environment": "Windows; browser fixtures use Edge. Native tests run on existing free public GitHub hosted runners, not local hardware.",
+  "commands": [
+    {
+      "command": "$testArgs=(((Get-Content package.json -Raw | ConvertFrom-Json).scripts.test)-split ' ') | Select-Object -Skip 1; node @testArgs",
+      "result": "PASS",
+      "tests": 138
+    },
+    {
+      "command": "node node_modules/typescript/bin/tsc --noEmit",
+      "result": "PASS"
+    },
+    {
+      "command": "node scripts/check-mobile-runtime.mjs",
+      "result": "PASS",
+      "protectedFiles": 28
+    },
+    {
+      "command": "node node_modules/vite/bin/vite.js build; node scripts/prepare-sites-build.mjs",
+      "result": "PASS"
+    },
+    {
+      "command": "node node_modules/vite/bin/vite.js build --config vite.native.config.ts; node scripts/prepare-native.mjs",
+      "result": "PASS"
+    },
+    {
+      "command": "node tests/mute-flow.mjs",
+      "result": "PASS",
+      "pauses": 0,
+      "playCalls": 0,
+      "toggles": 3
+    },
+    {
+      "command": "node tests/anchored-flow.mjs",
+      "result": "PASS",
+      "tests": 5
+    },
+    {
+      "command": "node tests/live-photo-flow.mjs",
+      "result": "PASS",
+      "tests": 5
+    },
+    {
+      "command": "node tests/resume-flow.mjs",
+      "result": "PASS",
+      "tests": 3
+    },
+    {
+      "command": "node --check mano/scripts/android-native-cycles.mjs (from root)",
+      "result": "PASS"
+    },
+    {
+      "command": "codex review (read-only, scoped uncommitted native diff)",
+      "result": "No actionable findings; native execution not performed by reviewer"
+    }
+  ],
+  "unchangedSourceSHA256": {
+    "mano/src/InlineVideo.tsx": "A30986B1C3C5516F960F9D4E4F6BFD1ABA5440F5A2172D37B9A8F85D02CAFDBC",
+    "mano/src/Inspector.tsx": "84A641FA5FCF7544ABCCAF346F823514DA659B28945EDFFECDC7C28567A20A19"
+  },
+  "previousIOS": {
+    "run": 42554023066,
+    "source": "8f2549e",
+    "passed": 5,
+    "failed": 1,
+    "skipped": 2,
+    "failure": "Application-centred XCTest pinch did not change pinned Live pixels. Timeline/loop/key-photo checks passed. Separate ad/screenshot workflows skipped by design.",
+    "pinchEvent": {
+      "attachment": "88316FA7-D0CC-47B8-AF43-BF1666E00D1A",
+      "initialFingers": [
+        [
+          204.59877398114938,
+          438.2534595098817
+        ],
+        [
+          197.40122601885062,
+          435.7465404901183
+        ]
+      ],
+      "appFrame": [
+        0,
+        0,
+        402,
+        874
+      ],
+      "finding": "Both touches start on the pinned video control bar in the retained screenshot. Inspector intentionally excludes .video-controls from media gestures; media-centred pinch is required."
+    }
+  },
+  "native": {
+    "iosStore": {
+      "run": 42620548077,
+      "status": "PASS",
+      "scope": "Unsigned Release compilation; actual store channel and static privacy declarations. Not signed distribution."
+    },
+    "iosDevelopment": {
+      "run": 42620548145,
+      "status": "FAIL",
+      "compiled": true,
+      "failure": "10-minute step timeout. Simulator build log finished at 13:03:40 UTC; step started 12:53:53 and timed out 13:04:08. No startup PASS recorded.",
+      "artifact": 13676537839
+    },
+    "iosFull": {
+      "run": 42620548423,
+      "status": "NOT TESTED"
+    },
+    "android": {
+      "run": 42620502765,
+      "status": "FAIL",
+      "artifact": 13675434059,
+      "bridgeChecksPassed": 17,
+      "completedCycles": 0,
+      "failure": "Back never reaches Activity callback while fullscreen. shown=true exists; route=fullscreen and shown=false are absent. Same DOM timeout after dismissing immersive education.",
+      "webView": "124.0.6367.219",
+      "chromiumSource": "https://chromium.googlesource.com/chromium/src/+/refs/branch-heads/6367/android_webview/java/src/org/chromium/android_webview/FullScreenView.java"
+    }
+  },
+  "limitations": [
+    "iOS runtime jobs still in progress. Android failed fullscreen Back before any cycles; store build passed.",
+    "R64 silent fallback is retained; total storage failure has no durability guarantee.",
+    "No physical device, personal photo deletion, store upload or account changes performed.",
+    "Claude owns final visual acceptance."
+  ]
+}

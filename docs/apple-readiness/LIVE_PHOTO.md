@@ -1,6 +1,6 @@
 # R-07 · Live Photo inline (CW-CX-022)
 
-2026-11-07. Base: main cd717f9. iOS 17 mínimo; versiones y monetización intactas.
+Actualizado 2026-11-09. Base actual `6386f55`; iOS 17, versiones y monetización intactos.
 
 ## Implementación local
 
@@ -16,7 +16,20 @@ Cierre2026-11-08: [5 escenarios PASS](evidence/cx025/live-photo.json), añadiend
 
 **PASS web**: [4 escenarios](evidence/cx022/live-photo.json), Edge 390×844 con postal/vídeo sintéticos: explícito/bucle/pausa con y sin Reduce Motion; pausa durante carga y retorno de visibilidad; visor, timeline, pinch y liberación. Inspección de captura local anchor.png: controles dentro del marco y composición conservada. Esto no representa una Live Photo nativa ni VoiceOver.
 
-**BLOCKED nativo**: Windows no compila Swift/PhotoKit. Hay que ejecutar rc-native-gate.yml sobre este commit tras autorizar su publicación en GitHub. No se declara compilada esta ampliación del puente, ni validada la foto clave elegida por Apple.
+**VERIFICADO nativo anterior:** [42554023066](https://github.com/joacomino-dev/mano-iphone/actions/runs/42554023066),
+fuente `8f2549e`, compila Swift y reproduce una Live sintética real de PhotoKit.
+La foto clave pasa el criterio visual aprobado (máximo 12 niveles, menos del 1 %
+de canales distintos y 20 veces más cerca de la clave que del movimiento).
+Timeline y bucle pasan. XCTest falla únicamente el pellizco en la vista anclada;
+el usuario confirma que funciona en su iPhone (modelo no registrado).
+
+**PENDIENTE candidato:** [42623622241](https://github.com/joacomino-dev/mano-iphone/actions/runs/42623622241)
+ejecutará la suite completa de `6386f55`. Solo se cambia el test: pellizcar el medio
+visible en lugar de toda la app. El evento retenido inicia los dedos en
+(204,6; 438,3) y (197,4; 435,7), sobre la barra de controles en la captura de
+402 × 874 puntos. `Inspector` excluye esa barra de los gestos, correctamente. Los píxeles interiores deben cambiar y la barra permanecer
+en el mismo lugar. `InlineVideo` e `Inspector` no se modifican. Los cinco escenarios
+web vuelven a pasar, sin atribuirles validación PhotoKit ni física.
 
 QA adicional con fixtures de Live Photo reales, locales e iCloud: original/editada con foto clave cambiada; JPEG/HEIC + MOV válidos; descarga permitida/denegada/offline; cancelar al cambiar carta/cerrar/suspender; fallo de escritura/espacio; 10 ciclos; sonido y color/orientación/HDR; pausar en 0/mitad/final; zoom en movimiento y pausa. Medir caché/decoder con Instruments. Verificar iOS17 y runtime reciente, teléfono compacto/Dynamic Island/Duo; no extrapolar Edge.
 

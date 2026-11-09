@@ -1,27 +1,41 @@
 # CocoWash — Release Candidate en estabilización
 
-Actualizado 2026-11-08, CW-CX-026…046. **NO APTA para enviar.** P0 R-61 reproducido:
-un cierre forzado Android puede perder una decisión que localStorage ya devuelve.
-Las fotografías no se borraron en esa prueba. No se cambia FAIL por documentación.
+Actualizado 2026-11-09, CW-CX-055/056. **NO APTA para enviar.** Correcciones candidatas
+en `6386f55`; las pruebas nativas de este checkpoint siguen en curso o en cola. La firma,
+privacidad del archivo, configuración comercial y QA física siguen bloqueadas.
 
-## Estado actual — CW-CX-051 a CW-CX-053
+## Estado actual — relevo de Claude y CW-CX-055
 
-Diario R-61 implementado en `248ec6a`, revisado y enviado. PASS local: 138 Node,
-ocho escenarios IndexedDB reales, TypeScript, protected28 y builds. Las decisiones
-se confirman después del commit; una operación nativa interrumpida conserva su
-intención y no se repite automáticamente. **Force-stop nativo todavía pendiente.**
+Se conserva `37facf1` y todo el trabajo de Claude. El sonido se sincroniza aparte
+del efecto de reproducción; `InlineVideo` e `Inspector` mantienen sus hashes.
+PASS local de esta sesión: 138 Node, TypeScript, protected28, web/native-web,
+silencio sin pausa, anclada 5, Live 5 y reanudación 3.
 
-`3c19d3d` completa 17 checks Android, diez rondas, cancelación y favorita nativa
-R-63. La suite falla antes del cierre forzado por una comparación de texto español
-en una interfaz inglesa; se ha corregido usando el badge visible y el estado del
-control, sin añadir demora. Los runs completos iOS estándar y Duo siguen pendientes
-de resultado. No se sustituye su ejecución por los resultados locales.
+Contrato vigente R-64, decidido por el usuario: el diario reabre y reintenta; si
+falla, continúa con memoria y espejo localStorage, sin avisos de almacenamiento.
+Ese fallback no promete durabilidad ante terminación. Nunca repite una operación
+de Fotos. R-61 tiene relanzamiento ×5 PASS en iOS `8f2549e`; queda la comprobación
+Android del checkpoint, sin sustituirla por un retraso artificial.
 
-R-07 conserva el FAIL anterior de RGBA; el vídeo pausado ya sale del renderizado,
-con cinco escenarios web PASS. Falta la comprobación exacta nativa. R-47 preparado
-en `12c153d`: fuente Fredoka local, dirección del idioma y mismo reproductor en
-fullscreen Android; compilación y comportamiento nativos pendientes. Claude debe
-aceptar Live, carta, ausencia de selección/lupa y las capturas finales.
+El xcresult anterior `42554023066` contiene **5 PASS, 1 FAIL y 2 SKIP**; los dos
+SKIP pertenecen a capturas y publicidad con workflows separados. El único FAIL
+es el gesto de XCTest sobre Live anclada; foto clave visual, timeline y bucle pasan.
+El usuario confirma el pellizco y la ausencia de raya en su iPhone. R-07b cambia
+solo el destino del pellizco de XCTest. R-47b unifica Atrás nativo y sale del estado
+fullscreen DOM; exige conservar reproductor, posición y sonido. Revisión integrada
+sin hallazgos. No se modifica la app para aparentar un PASS del test.
+
+Pruebas del mismo SHA `6386f55`: [suite iOS completa](https://github.com/joacomino-dev/mano-iphone/actions/runs/42623622241),
+[Android](https://github.com/joacomino-dev/mano-iphone/actions/runs/42623186603),
+[tienda iOS](https://github.com/joacomino-dev/mano-iphone/actions/runs/42623207314) y
+[desarrollo iOS](https://github.com/joacomino-dev/mano-iphone/actions/runs/42623186747).
+Tienda iOS PASS; Android y desarrollo en curso; suite completa en cola tras el
+[gate de 571b1e5](https://github.com/joacomino-dev/mano-iphone/actions/runs/42620548423).
+Android anterior falló Atrás sin llegar al dispatcher; la corrección adicional
+intercepta la tecla antes de WebView y da prioridad al gesto del overlay.
+Desarrollo anterior compiló, pero el build del simulador consumió 9m47s y el paso
+agotó sus diez minutos; ahora dispone de veinte, conservando las aserciones.
+Arrancar CI no acredita su resultado.
 
 Hay 28 capturas nativas por plataforma, siete idiomas. ATT tras manifiesto permite
 seguir organizando en ambos estados, pero el bloqueo de hosts queda para TestFlight
@@ -33,7 +47,7 @@ publicación. La infraestructura de medición permanece congelada.
 
 Única fuente: `C:/Users/Joaco/Developer/CocoWash-android`, rama `main`, remoto
 `joacomino-dev/mano-iphone`. Checkpoint inicial estratégico df983ad; último checkpoint
-de producto 12c153d. El SHA del informe se obtiene mediante
+de producto `6386f55`. El SHA del informe se obtiene mediante
 `git log -1 --format=%H -- docs/apple-readiness/RELEASE_CANDIDATE.md`.
 Push normal y CI pública estándar gratuita autorizados; sin subidas a tiendas/web,
 certificados, cuentas ni instalación en teléfono. No reset/stash/clean/force-push.
@@ -50,15 +64,15 @@ sus rutas b24, rama antigua y ausencia de push no describen esta fuente integrad
 
 | Requisito | Estado | Evidencia / límite |
 | --- | --- | --- |
-| Cero P0 conocidos | FAIL | R61, run42513754519: pending1→0 ya antes de React; background6s conserva. Diario implementado y revisado; force-stop nativo pendiente |
+| Cero P0 conocidos | BLOCKED por validación pendiente | R-61 corregido; relanzamiento iOS ×5 PASS anterior, Android del checkpoint en curso. Fallback R-64 no garantiza guardado si todos los almacenamientos fallan |
 | Cero P1 de distribución | FAIL | R02 declaración estática corregida con aprobación; validar archivo, tráfico y seguridad nativa completos |
-| Pruebas JS / TypeScript / runtime28 | PASS | 130 Node, tsc y hashes repetidos;8 Release y4 contratos estáticos separados |
-| Web/native-web | PASS anterior | Compilados en fases anteriores; repetir al cerrar cambios de app |
-| Release arm64 sin firma / Swift | PASS por SHA | CI anterior y gate662e67d en curso; no equivale a distribución |
+| Pruebas JS / TypeScript / runtime28 | PASS | 138 Node, tsc y 28 hashes en esta sesión; regresiones de silencio, anclada, Live y reanudación |
+| Web/native-web | PASS | Ambos compilados en esta sesión con sus scripts de preparación |
+| Release arm64 sin firma / Swift | PASS por SHA | 6386f55 / 42623207314: tienda iOS compila y verifica canal; no equivale a firma ni distribución |
 | Álbum iOS | Corrección comprobada en experimento | 42513277098: preferenciafalse FAIL, true XCTest completo PASS201,847s +postcondición; confirmado sin observer42514969280; pinch/anclajePASS |
 | 10 ciclos nativos y métricas | PASS acotado | 59912d8: iOS42492831273 yAndroid42492831172; presupuestos agregados/porPID PASS. Solo biblioteca pequeña de fixtures |
-| Live Photo real | NOT TESTED en candidato | Movimiento real probado; RGBA anterior FAIL. Superficie de vídeo pausado corregida; repetir nativo |
-| Cierre forzado y decisiones | FAIL | R61 Android. No prometer recuperación segura todavía |
+| Live Photo real | NOT TESTED en candidato | Anterior: clave visual, timeline y bucle PASS; gesto simulado de pinch FAIL. Usuario confirma Live anclada; XCTest dirigido al medio pendiente |
+| Cierre forzado y decisiones | NOT TESTED completo en candidato | Relanzamiento ×5 iOS anterior PASS; Android del mismo SHA en curso. No prometer durabilidad con almacenamiento fallido |
 | ATT y tráfico real de SDK | PASS acotado | 42514971530: permitido/denegado, request+callback reales, calibración yrestauraciónPASS. Anuncios de prueba |
 | Privacidad de envío | FAIL | Declaración strict PASS con dos hosts aprobados; tráfico actualizado, exhaustividad y archivo final BLOCKED |
 | Firmas SDK proveedor | PASS | 42516183457 verifica ZIPs oficiales fijados, codesign/macOS,identidad ymanifiestos. No firma del archivo CocoWash |
@@ -115,8 +129,8 @@ Seguir [checklist operativo](APP_STORE_SUBMISSION_CHECKLIST.md),
 [gate nativo](NATIVE_GATE.md), [TestFlight](TESTFLIGHT.md) y
 [Play](../playstore/PURCHASE_VERIFICATION.md). El [roadmap](../ROADMAP.md) es el registro vivo.
 
-Primero cerrar el gate nativo de R61 con pruebas de transacción abortada/errores/cierre forzado;
-terminar gate iOS estándar yDuo, LivePhoto yfixtures destructivas. Después cerrar
+Primero terminar los gates de `6386f55`: Live, Atrás y fixtures destructivas, con
+relanzamiento y persistencia. No reintroducir los avisos retirados por R-64. Después cerrar
 privacidad con dominios aprobados y evidencia restante, SDKs/archivo ytráfico denegado/revocado.
 Repetir todos los gates del SHA final. Solo entonces preparar firma/exportación ysolicitar
 por separado autorización para subir a TestFlight/Playinterno.
@@ -130,7 +144,7 @@ por separado autorización para subir a TestFlight/Playinterno.
   versión/build libres en las consolas, política pública y dispositivos/testers.
 - [Metadatos y materiales](storefront/metadata.json) y [revisión/IAP](storefront/review-localizations.json).
   Hay siete idiomas preparados; el responsable y contacto legal ya están confirmados.
-- [Relevo visual de Claude](../ai-handoff/PROMPT_CLAUDE_2026-11-08.md): aceptar el aspecto
+- [Relevo visual de Claude](../ai-handoff/PROMPT_CLAUDE_2026-11-09.md): aceptar el aspecto
   con evidencia nativa y generar después IPA/APK del código validado.
 
 Ya están aprobados mantener la monetización, los dos hosts de tracking y el diario

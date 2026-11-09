@@ -14,8 +14,11 @@ evento no llega al callback de la actividad. Se corrige la ruta de tecla antes
 de WebView y el callback de gesto API33+ durante fullscreen; segunda revisión integrada sin hallazgos.
 Codex reserva también el timeout de arranque de `build-people-dev.yml`: compila
 el simulador en 9m47s y el paso de diez minutos vence antes del relanzamiento.
-Se amplía a veinte conservando aserciones. Suite iOS 42620548423 en curso; sin
-publicar ni tocar cuentas.
+Se amplía a veinte conservando aserciones. Código `6386f55` enviado. Tienda iOS
+42623207314 PASS; Android 42623186603 y desarrollo 42623186747 en curso. Gate
+completo 42623622241 en cola tras 42620548423. No relanzar por estar esperando.
+[Relevo de Claude](../ai-handoff/PROMPT_CLAUDE_2026-11-09.md) preparado. Sigue la
+validación; sin publicar ni tocar cuentas.
 
 ## Claude CW-CL-063/064 — relevo de Codex y defectos del iPhone (vigente)
 

@@ -1,6 +1,7 @@
 # Checklist operativo de envío — CocoWash
 
-2026-11-08. **Envío bloqueado.** PASS exige evidencia del SHA/binario exacto;
+2026-11-09. **Envío bloqueado.** Checkpoint técnico `6386f55` en validación.
+PASS exige evidencia del SHA/binario exacto;
 FAIL=fallo comprobado; BLOCKED=decisión/herramienta/acceso ausente;
 NOT TESTED=prueba aún no ejecutada. Documentación o CI verde sin XCTest no es PASS.
 El [checklist previo](APP_STORE_SUBMISSION_CHECKLIST_2026-11-07.md) es histórico.
@@ -8,11 +9,13 @@ El [checklist previo](APP_STORE_SUBMISSION_CHECKLIST_2026-11-07.md) es históric
 1. **Fijar fuente.** Usar main de `C:/Users/Joaco/Developer/CocoWash-android`.
    Ejecutar `git status --short`, `git rev-parse HEAD`, revisar diff/log yregistrar SHA.
    No usar b24, OneDrive, stage1 ni rama release antigua. No sobrescribir trabajo.
-2. **Cerrar P0 R61 — FAIL.** El diario aprobado ya está implementado y revisado. Cerrar las pruebas nativas de errores,
+2. **R-61 — validación nativa del candidato pendiente.** El diario está implementado y revisado. Cerrar las pruebas nativas de errores,
    transacciones abortadas, respuestas fuera de orden, Deshacer yforce-stop inmediatamente
    después de la confirmación visible. Repetir Android y iOS con biblioteca sintética.
    No confirmar borrados en biblioteca personal ni convertir una demora de seis segundos
-   en corrección. El fallo se reprodujo en la versión anterior; la corrección todavía necesita force-stop nativo.
+   en corrección. iOS `8f2549e` ya pasa relanzamiento ×5; falta Android y repetir el SHA final.
+   Contrato R-64: recuperación silenciosa con reintento/memoria/espejo local. No mostrar otra vez
+   avisos retirados ni afirmar que el fallback garantiza durabilidad cuando falla el almacenamiento.
 3. **Pruebas locales — PASS por ejecución, repetir al cerrar código.** Desde mano:
    `npm ci --no-audit --no-fund` si faltan dependencias; `npm test`;
    `npx tsc --noEmit`; `npm run check:runtime`; `npm run build`;
@@ -28,9 +31,11 @@ El [checklist previo](APP_STORE_SUBMISSION_CHECKLIST_2026-11-07.md) es históric
    métricas app/WebContent ypostauditPhotoKit. Leer xcresult/logs; ejecutar
    `python scripts/verify-native-gate-evidence.py mano/build/simulator-smoke full`.
    Un fallo conserva FAIL; no omitir autorizaciones ni fabricar resultados.
-5. **Gate Android real.** `build-android.yml`: Kotlin/Java +RSAJVM, APKdeveloper yAABtienda
+5. **Gate Android real — R-47b en validación.** `build-android.yml`: Kotlin/Java +RSAJVM, APKdeveloper yAABtienda
    separados por hash,16KB yE2E17checks +ten ciclos, favoritoencolado/Deshacer/Back,
-   cancelación yforce-stop. R61 impide PASS global. Verificar varianteAPI30 yactual;
+   cancelación yforce-stop. Atrás debe salir de fullscreen sin cerrar el visor ni cambiar
+   reproductor, posición o sonido; el siguiente Atrás cierra el visor. Exigir el resultado
+   del checkpoint, no el PASS de una compilación anterior. Verificar varianteAPI30 yactual;
    no concluir rendimiento de teléfonos a partir del emulador API35.
 6. **QA de dispositivos — BLOCKED propietario.** Completar [plantilla](device-results.template.csv)
    y[procedimiento](TESTFLIGHT.md) con SE2/3, mini/estándar, ProMax/Island e iOS17/18/26/27.

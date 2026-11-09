@@ -23,17 +23,23 @@ una puerta nativa, comercial o de distribución.
 **Estados:** Hecho · En curso · Pendiente · Bloqueado (falta herramienta, acceso o decisión) · FAIL
 (comprobado y fallando). **Quién:** U = usuario · CX = Codex · CL = Claude · C = cualquiera de los dos.
 
-## Dónde estamos (2026-11-09, CW-CX-055 — relevo de Claude)
+## Dónde estamos (2026-11-09, CW-CX-055/056 — relevo de Claude)
 
-- Base `37facf1`, limpia y al día con GitHub; iOS tienda y desarrollo PASS en ese SHA.
-- R-47b reproducido en el artefacto Android: el aviso inicial ya está cerrado, pero Atrás deja el vídeo
-  en fullscreen. Corrección candidata: un solo callback nativo, prioridad fullscreen y salida del estado
-  DOM; la regresión exige conservar reproductor, fuente, posición y sonido. Pendiente de emulador.
-- R-07b: solo cambia el test. El pellizco de XCTest se dirige al vídeo anclado, no al centro de toda la
-  aplicación. La captura anterior muestra los controles cerca de ese centro. La app y sus gestos no cambian.
-- `InlineVideo` y `Inspector` conservan sus hashes de `37facf1`; no se mezcla sonido con reproducción.
-  R-64 conserva recuperación silenciosa. TypeScript, runtime28 y ambos builds web PASS; gate nativo pendiente.
-- Se mantiene el [paquete del usuario](#paquete-del-usuario--pasos-en-orden). No apta para enviar.
+- Código candidato `6386f55`, enviado y revisado; base funcional `37facf1` conservada.
+- R-47b: `571b1e5` compila y pasa 17 checks, pero no recibe Back en la actividad durante fullscreen.
+  El candidato intercepta la tecla antes de WebView y registra prioridad de overlay para el gesto API33+.
+  [Android 42623186603](https://github.com/joacomino-dev/mano-iphone/actions/runs/42623186603) en curso;
+  no se declara corregido antes de su resultado. Conserva reproductor, fuente, posición y sonido.
+- R-07b: solo XCTest. Los dedos empezaban sobre la barra de vídeo; ahora pellizca el medio anclado.
+  [Gate iOS 42623622241](https://github.com/joacomino-dev/mano-iphone/actions/runs/42623622241) en cola
+  detrás del gate anterior `571b1e5`. No omitir ni duplicar la ejecución completa.
+- [Tienda iOS 42623207314](https://github.com/joacomino-dev/mano-iphone/actions/runs/42623207314) PASS.
+  [Desarrollo 42623186747](https://github.com/joacomino-dev/mano-iphone/actions/runs/42623186747) en curso:
+  ahora dispone de veinte minutos; la compilación fría consumió 9m47s del límite anterior de diez.
+- `InlineVideo` e `Inspector` conservan sus hashes; sonido y reproducción siguen separados, R-64 silencioso.
+  138 Node, TypeScript, protected28, builds y regresiones de silencio/anclada/Live/reanudación PASS local.
+- [Relevo de Claude](ai-handoff/PROMPT_CLAUDE_2026-11-09.md) preparado con SHA y runs pendientes.
+  Se mantiene el [paquete del usuario](#paquete-del-usuario--pasos-en-orden). No apta para enviar.
 
 ### Estado recibido de Claude (2026-11-08, CW-CL-063/064)
 
@@ -93,8 +99,8 @@ una puerta nativa, comercial o de distribución.
 | R-64 | **Sin avisos de almacenamiento** («No se pudo guardar…», «operación interrumpida»): recuperación silenciosa (usuario, 2026-11-08) | CL | Corregido local; nativo pendiente | CW-CL-064; `durableSession.ts`, `native.tsx`, `ManoApp.tsx`; persistencia 8+7 PASS en navegador |
 | R-65 | Vista anclada: solo «Cerrar» y deslizar para cerrar (usuario, 2026-11-08) | CL | Corregido local | `Inspector.tsx`; `tests/anchored-flow.mjs` 3/3 |
 | R-66 | Raya/rectángulo claro abajo al anclar un vídeo (usuario, 2026-11-08) | CL | **PASS (usuario en iPhone)** | 1) barra del vídeo sin `backdrop-filter`; 2) causa real según la captura del usuario: `frame.focus()` sin `preventScroll` desplazaba el WebView y asomaba el fondo crema de la página bajo la vista anclada → `focus({preventScroll:true})` y desplazamiento del documento fijo en 0 mientras está anclada (`Inspector.tsx`) |
-| R-07b | Pellizco sobre Live Photo anclada no cambia el zoom en el gate nativo (línea de tiempo y bucle PASS) | CX | **PASS en iPhone (usuario)**; gate nativo aún falla ese paso → revisar el gesto simulado de XCTest | Gate 42554023066 sobre 8f2549e: 7/8 PASS (álbum, cancelar borrado, R-61 ×5, pulsación larga, 10 rondas, anclar, pellizco de carta); primer paso nativo de este caso, en navegador PASS |
-| R-47b | Android: Atrás no sale de la pantalla completa de vídeo (emulador) | CX | **FAIL** | Run 42549137917; `CocoWebChromeClient`/orden de callbacks de Atrás |
+| R-07b | Pellizco sobre Live Photo anclada no cambia el zoom en el gate nativo (línea de tiempo y bucle PASS) | CX | **PASS en iPhone (usuario)**; gate nativo aún falla ese paso → revisar el gesto simulado de XCTest | xcresult 42554023066 sobre 8f2549e: 5 PASS, 1 FAIL y 2 SKIP de workflows separados; álbum, cancelación, relanzamiento ×5, pulsación larga y 10 rondas PASS. Gesto dirigido al medio desde 571b1e5; gate 6386f55 / 42623622241 en cola |
+| R-47b | Android: Atrás no sale de la pantalla completa de vídeo (emulador) | CX | **FAIL anterior; candidato en validación** | 42549137917 confirma el fallo tras cerrar el aviso. 571b1e5 aún FAIL sin llegar al callback; 6386f55 intercepta tecla y prioriza gesto. Android 42623186603 en curso |
 
 ## A · Código y pruebas iOS (antes de firmar)
 
@@ -215,6 +221,8 @@ textos con hablantes nativos, 1.0.1 para lo que salga.
 
 Una línea por intervención: fecha · agente · entrada · puntos cerrados/abiertos.
 
+- 2026-11-09 · Codex · CW-CX-055/056 · 571b1e5 y 6386f55 enviados tras revisión integrada. R-07b cambia solo el destino del pellizco; R-47b cubre la entrada de Back antes de WebView. Tienda iOS PASS; Android y desarrollo en curso, gate completo en cola. Se conserva sonido, Inspector y R-64.
+
 - 2026-11-09 · Claude · CW-CL-067 · Silenciar un vídeo ya no hace play/pausa (toque redirigido por iOS); doble toque para zoom/deshacer en la vista anclada. Claude para por cupo; relevo en `PROMPT_CODEX_2026-11-09.md`.
 - 2026-11-09 · Claude · CW-CL-066 · Usuario confirma en iPhone: raya al anclar resuelta y pellizco en Live anclada OK. Regla: zoom y anclar en todo (fotos, Live, vídeos) → vídeos anclados ahora hacen pellizco/arrastre como fotos (`Inspector.tsx`, `anchored-flow` 4/4). Sin «popping» ni bordes visibles en ninguna animación.
 - 2026-11-08 · Claude · CW-CL-065 · Usuario: «la app se siente excelente y súper fluida». R-66: raya crema bajo la vista anclada = desplazamiento por `focus()` (corregido). Gate 8f2549e 7/8; R-07b pellizco en Live anclada a confirmar en iPhone.
@@ -263,7 +271,7 @@ Autorizados push normal a main y workflows estándar públicos gratuitos, relanz
 2. Completar acuerdos de apps de pago, banco/impuestos y condición de comerciante DSA con datos veraces. Desbloquea distribución europea y compras.
 3. Configurar los productos existentes y precios en ASC/Play, sin inventar IDs. Confirmar versión/build libres en ambas consolas antes de numerar. Desbloquea sandbox y archivo final.
 4. Completar perfil de pagos AdMob y proporcionar IDs públicos de app/unidad Android (no credenciales); mantener estrategia aprobada. Desbloquea canal comercial real.
-5. Resolver con el proveedor la evidencia de dominios de tracking; aprobar lista e impacto cuando Codex entregue la propuesta. Desbloquea gate estricto Apple.
+5. Revisar el Privacy Report del archivo final y validar ATT en TestFlight físico. Los dos hosts ya están aprobados e incorporados; no requieren otra autorización. Cualquier ampliación demostrada de la lista sí se revisará antes de editarla.
 6. Disponer de cuenta Play Console verificada y teléfono Android11+; confirmar tipo/fecha de cuenta y requisito real de testers. Organizar12 testers/14 días continuos cuando aplique; solicitar acceso a producción.
 7. Añadir secretos de firma a GitHub Secrets siguiendo el procedimiento revisado; jamás por chat ni repo. Apple: certificado/perfil y contraseña con permisos mínimos; Play: clave de subida y contraseñas, clave pública de licencias. Solo tras autorización de firma; todavía no upload.
 8. Autorizar publicación de políticas web corregidas y comprobar URLs públicas tras desplegar. No equivale a autorizar publicación de la app.
