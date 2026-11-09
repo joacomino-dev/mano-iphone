@@ -1,0 +1,71 @@
+{
+  "source": "3c19d3d",
+  "run": 42539523601,
+  "boundary": "Hosted emulator, generated library only. PSS/counters are measured on Android, not Node. Renderer attribution must be reviewed before memory acceptance.",
+  "performanceAcceptance": {
+    "status": "FAIL",
+    "budgets": {
+      "maxLateMemoryGrowthKiB": 24576,
+      "maxSlopeKiBPerCycle": 1024,
+      "maxLateIdleCpuPercent": 15,
+      "maxIdleCpuGrowthPercentagePoints": 5
+    },
+    "boundary": "Small owned fixture library, ten rounds, simulator only. Not physical iPhone/Android or large-library acceptance.",
+    "baselineMemoryKiB": 214357,
+    "lateMemoryKiB": 217942,
+    "slopeKiBPerCycle": 697.3166666666667,
+    "checks": {
+      "lateMemoryGrowth": true,
+      "memorySlope": true,
+      "rolesWithinMemoryBudget": true,
+      "stableProcessesWithinMemoryBudget": true,
+      "lateIdleCpu": false,
+      "idleCpuGrowth": false
+    },
+    "roleTrends": {
+      "renderer": {
+        "baselineMemoryKiB": 105687,
+        "lateMemoryKiB": 109231,
+        "slopeKiBPerCycle": 476.25,
+        "checks": {
+          "lateMemoryGrowth": true,
+          "memorySlope": true
+        }
+      },
+      "app": {
+        "baselineMemoryKiB": 108627,
+        "lateMemoryKiB": 108871,
+        "slopeKiBPerCycle": 221.06666666666666,
+        "checks": {
+          "lateMemoryGrowth": true,
+          "memorySlope": true
+        }
+      }
+    },
+    "stableProcessTrends": {
+      "4463": {
+        "baselineMemoryKiB": 108627,
+        "lateMemoryKiB": 108871,
+        "slopeKiBPerCycle": 221.06666666666666,
+        "checks": {
+          "lateMemoryGrowth": true,
+          "memorySlope": true
+        },
+        "role": "app"
+      },
+      "4510": {
+        "baselineMemoryKiB": 105687,
+        "lateMemoryKiB": 109231,
+        "slopeKiBPerCycle": 476.25,
+        "checks": {
+          "lateMemoryGrowth": true,
+          "memorySlope": true
+        },
+        "role": "renderer"
+      }
+    },
+    "baselineIdleCpuPercent": 13.114848407649843,
+    "lateIdleCpuPercent": 20.537826605905703
+  },
+  "overallGate": "FAIL before force-stop: locale-dependent test predicate; budgets do not override the safety gate."
+}

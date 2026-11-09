@@ -502,6 +502,20 @@ final class PhotosSmokeTests: XCTestCase {
         XCTAssertEqual(contract["simulator"] as? String,ProcessInfo.processInfo.environment["SIMULATOR_UDID"])
         let app=XCUIApplication();app.launchArguments=["-AppleLanguages","(es)","-AppleLocale","es_ES"];app.terminate();app.launch()
         XCTAssertTrue(app.buttons["Eliminar"].firstMatch.waitForExistence(timeout:120))
+        // An earlier test that ended during a Photos operation leaves the R-61
+        // «interrupted» notice, which blocks every operation until acknowledged.
+        // Acknowledge it through the person's own control and log it visibly.
+        let stale=app.otherElements.matching(NSPredicate(format:"label CONTAINS %@","quedó interrumpida")).firstMatch
+        if stale.waitForExistence(timeout:3) {
+            let close=app.buttons["Cerrar aviso"].firstMatch
+            XCTAssertTrue(close.waitForExistence(timeout:5),"The interrupted-operation notice must offer its close control")
+            close.tap();print("COCOWASH_UI_STALE_INTENT_ACKNOWLEDGED")
+            XCTAssertEqual(XCTWaiter().wait(for:[XCTNSPredicateExpectation(predicate:NSPredicate(format:"exists == false"),object:stale)],timeout:10),.completed)
+        }
+        guard app.buttons["Terminar"].firstMatch.waitForExistence(timeout:20) else {
+            attachScreenshot(app,"Safety fixture has an unexpected existing pending decision")
+            throw NSError(domain:"CocoWashFixtureQA",code:3,userInfo:[NSLocalizedDescriptionKey:"Refused to reuse a pending decision from an earlier failed test"])
+        }
         return app
     }
 
@@ -516,7 +530,7 @@ final class PhotosSmokeTests: XCTestCase {
         let confirm=app.buttons.matching(NSPredicate(format:"label == %@ OR label BEGINSWITH %@","Eliminar 1","Eliminar 1 (")).firstMatch
         XCTAssertTrue(confirm.waitForExistence(timeout:20));confirm.tap()
         let system=XCUIApplication(bundleIdentifier:"com.apple.springboard")
-        let cancel=system.buttons.matching(NSPredicate(format:"label IN %@",["Cancel","Cancelar","Don't Allow","No permitir"])).firstMatch
+        let cancel=system.buttons.matching(NSPredicate(format:"label IN %@",["Cancel","Cancelar","Don't Allow","Don’t Allow","No permitir"])).firstMatch
         XCTAssertTrue(cancel.waitForExistence(timeout:30),"A real Photos cancellation button must be offered")
         cancel.tap()
         let retained=XCTNSPredicateExpectation(predicate:NSPredicate(format:"exists == true AND enabled == true"),object:confirm)
@@ -533,6 +547,7 @@ final class PhotosSmokeTests: XCTestCase {
     @MainActor
     func testWGeneratedPendingSurvivesTermination() throws {
         let app=try ownedFullFixtureApp()
+        for trial in 1...5 {
         app.buttons["Eliminar"].firstMatch.tap()
         let pendingFinish=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@ AND label CONTAINS %@","Terminar","1 para eliminar")).firstMatch
         XCTAssertTrue(pendingFinish.waitForExistence(timeout:15),"Queue must first be acknowledged in the actual interface")
@@ -545,7 +560,8 @@ final class PhotosSmokeTests: XCTestCase {
         XCTAssertEqual(XCTWaiter().wait(for:[XCTNSPredicateExpectation(predicate:NSPredicate(format:"exists == false"),object:recover)],timeout:20),.completed)
         let finish=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","Terminar")).firstMatch
         XCTAssertTrue(closeOverlay(app,until:finish))
-        print("COCOWASH_UI_NATIVE_PENDING_RELAUNCH_OK")
+        print("COCOWASH_UI_NATIVE_PENDING_RELAUNCH_OK trial=\(trial)")
+        }
     }
 
     @MainActor

@@ -87,6 +87,14 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
     if (video && url && video.getAttribute('src') !== url) { video.src = url; video.load(); }
     return () => { if (video) { if (video.currentTime > 0) remember(key, video.currentTime, playheads.get(key)?.paused ?? false); video.pause(); video.removeAttribute('src'); video.load(); } };
   }, [asset.id, url]);
+  // A paused Live card is an image. Detach its native video surface and release
+  // the decoder; keeping an opacity-zero AVPlayer can change the image raster.
+  useLayoutEffect(()=>{
+    if(!live||!card)return;
+    if(userPaused){setPlaying(false);setFrame(false);return;}
+    const video=player.current;
+    return()=>{if(video){video.pause();video.removeAttribute('src');video.load();}};
+  },[live,card,url,userPaused]);
 
   const playAttempt = useRef(0);
   const start = (withSound: boolean) => {
@@ -143,7 +151,7 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
   };
   useEffect(() => { if (!control || !card) return; const own = { toggle }; control.current = own; return () => { if (control.current === own) control.current = null; }; });
 
-  const choose = () => { const video = player.current;if(live){liveIntent.current=true;remember(key,video?.currentTime??0,false);setUserPaused(false);if(!url){request?.();return;}}if (!video) return; haptic('light'); remember(key, video.currentTime, false); setUserPaused(false); start(sound); };
+  const choose = () => { const video = player.current;if(live){liveIntent.current=true;remember(key,video?.currentTime??playheads.get(key)?.time??0,false);setUserPaused(false);if(!url){request?.();return;}}if (!video) return; haptic('light'); remember(key, video.currentTime, false); setUserPaused(false); start(sound); };
   const pause = () => { const video = player.current; if (!video) {if(live){liveIntent.current=false;remember(key,0,true);setUserPaused(true);}return;} ++playAttempt.current; remember(key, video.currentTime, true); video.pause(); setUserPaused(true); haptic('soft'); };
   const toggleSound = () => {
     const next = !sound;
@@ -174,9 +182,7 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
 
   return <div className={`inline-media ${live?'is-live':''} ${shown ? 'is-started' : ''} ${playing ? 'is-playing' : ''} ${frame ? 'has-frame' : ''}`}>
     {children}
-    {/* An opacity-zero video can retain WebKit's hardware-composited surface.
-        Remove that surface while the Live card shows its original key image. */}
-    {url && <video data-testid="inline-video" ref={player} src={url} style={live&&card&&!shown?{...mediaStyle,display:'none'}:mediaStyle} playsInline muted={muted} loop={live||!full} preload={card ? 'metadata' : 'auto'} aria-label={live?t('Reproducir Live Photo'):t('Vídeo de tu biblioteca')}
+    {url && (!live||!card||!userPaused) && <video data-testid="inline-video" ref={player} src={url} style={mediaStyle} playsInline muted={muted} loop={live||!full} preload={card ? 'metadata' : 'auto'} aria-label={live?t('Reproducir Live Photo'):t('Vídeo de tu biblioteca')}
       onLoadedData={() => setFrame(true)}
       onLoadedMetadata={e => { const v = e.currentTarget, d = v.duration; if (Number.isFinite(d) && d > 0) setLength(d);
         // Same moment as the view it came from (card ↔ held ↔ anchored).
@@ -184,7 +190,7 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
       onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)}
       onWaiting={() => setWaiting(true)} onPlaying={() => setWaiting(false)}
       onCanPlay={e => { setWaiting(false); const v = e.currentTarget; if (ownsPlayback && !userPaused && !blocked && v.paused && !v.ended) start(sound); }}
-      onTimeUpdate={e => { const t = e.currentTarget.currentTime; if (ownsPlayback) remember(key, t, playheads.get(key)?.paused ?? false); if (full || !time) setTime(t); }}
+      onTimeUpdate={e => { const v=e.currentTarget,t=v.currentTime; if (ownsPlayback&&v.isConnected&&v.getAttribute('src')) remember(key, t, playheads.get(key)?.paused ?? false); if (full || !time) setTime(t); }}
       onError={() => { setPlaying(false); setPlayError(true); }}/>}
     {live&&card&&<button className="media-play" onPointerDown={stop} onClick={e=>{e.stopPropagation();toggle();}} aria-label={playing||!userPaused?t('Pausar'):t('Reproducir Live Photo')} aria-pressed={!userPaused}>{playing||!userPaused?<PauseIcon weight="fill" size={14}/>:<PlayIcon weight="fill" size={14}/>}LIVE</button>}
     {card && meta && (meta.date || meta.time || meta.location || meta.duration || meta.size) && <VhsOverlay asset={asset} place={place} settings={meta}/>}

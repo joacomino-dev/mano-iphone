@@ -1,16 +1,17 @@
 # Gate macOS, archivo y distribución
 
-Preparado 2026-11-07. **BLOCKED en Windows**: no Xcode, Swift/Apple SDK, simulador,
-Keychain de firma ni dispositivo Apple conectado. Syntax de scripts comprobada;
-ejecutarlos aquí devuelve78, no PASS nativo. Una sincronización Capacitor en
-Windows sí pasó; copia/generación de fuentes no compila Swift.
+Actualizado 2026-11-08. Windows no compila Swift ni firma; la CI pública gratuita
+sí ejecuta Xcode 27.1, simuladores y pruebas PhotoKit. Sus resultados se identifican
+por SHA y run en RELEASE_CANDIDATE/ReleaseReadiness. Sin sesión Organizer accesible,
+archivo final firmado, Keychain del propietario ni QA física, la distribución sigue
+BLOCKED. La sincronización local solo genera/copía fuentes.
 
 ## 1. Llevar el SHA candidato a un entorno Apple
 
 Utilizar un Mac propio/prestado con macOS compatible con Xcode27.1 estable, o
-preparar el workflow manual público gratuito. No se presupone que exista un Mac.
+usar el workflow público gratuito ya autorizado. No se presupone que exista un Mac.
 Conservar el SHA íntegro y el diff; no mezclar código de la rama release antigua
-por encima de esta RC. Antes de cualquier integración/push, revisión y permiso.
+por encima de esta RC. El push normal y la CI estándar ya están autorizados; firma, cuentas y subidas conservan sus gates.
 
 Desde raíz en macOS, usando herramientas instaladas por el propietario:
 
@@ -131,20 +132,39 @@ Los valores de arriba son marcadores para sustituir, no datos configurados.
 Script exige autorización local explícita, valida método/destino/equipo, build,
 bundle/min17/IDs, flags de desarrollo, firma, entitlements y perfil App Store.
 No usa `-allowProvisioningUpdates`, no obtiene certificados ni sube archivos.
-La comprobación de privacidad con `--submission` bloquea actualmente el archivo
-por dominios de rastreo ausentes; resolver P1 y repetir antes de pedir firma.
+La declaración estática `--submission` pasa con los dos dominios aprobados.
+Eso no acredita exhaustividad ni el Privacy Report del archivo; repetir al cerrar.
 **NOT TESTED**: la sintaxis Bash no acredita que Xcode firme o exporte el proyecto.
 Revisar caducidad de perfil/certificado y firma de cada SDK en Organizer/Xcode.
 Generar Privacy Report y comprobar todas las localizaciones, icono y launch screen
 del archivo. No subir perfiles, datos de firma o diagnósticos personales al repo público.
 
-## 5. CI sin Mac: alternativa preparada, no activada
+## 4.1 Privacy Report del archivo final — BLOCKED
+
+En una sesión macOS con Xcode y el SHA candidato, preparar el archivo Release con
+la firma/configuración autorizadas. En Xcode seleccionar Product > Archive. En
+Organizer abrir el menú contextual del archivo correcto y elegir Generate Privacy
+Report; guardar el PDF junto a la evidencia privada del archivo. Registrar SHA,
+versión/build, fecha, UUID del archivo y hash del PDF.
+
+Contrastar cada categoría/uso/tracking del informe con los manifiestos empaquetados,
+GMA/UMP, Required Reason APIs y las declaraciones propuestas de App Store Connect.
+Una omisión o discrepancia mantiene FAIL. El PDF agrega declaraciones: no demuestra
+por sí solo tráfico real, consentimiento ni bloqueo ATT. Este último se valida con
+TestFlight físico, sin nuevas sondas de bloqueo en simulador.
+
+No se ha ejecutado este paso: falta el archivo final y una sesión Organizer
+accesible. `check-apple-privacy.py` y `packaged-privacy.json` no sustituyen al PDF.
+[Procedimiento oficial de Apple](https://developer.apple.com/documentation/BundleResources/describing-data-use-in-privacy-manifests).
+
+## 5. CI sin Mac: activa con autorización
 
 `.github/workflows/rc-native-gate.yml`: dispatch manual, solo repositorio público,
 runner estándar `xcode-27`, Xcode27.1, permisos `contents:read`, checkout sin credencial
 persistente; sin secretos Apple. Guarda logs de fixtures siete días, no un IPA.
-No se hizo push ni se inició CI. La disponibilidad del runner debe verificarse
-en la ejecución; si falta Xcode/runtime, conservar BLOCKED y no cambiar a runner pago.
+Se ha hecho push normal y se han ejecutado los workflows. Los runs del SHA candidato
+y sus resultados están en ReleaseReadiness; una ejecución fallida no es PASS.
+Si falta Xcode/runtime, conservar BLOCKED y no cambiar a un runner de pago.
 
 [GitHub runner-images](https://github.com/actions/runner-images) y
 [facturación](https://docs.github.com/en/billing/concepts/product-billing/github-actions)

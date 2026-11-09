@@ -13,18 +13,23 @@ try{
   await page.waitForTimeout(250);assert.equal(await page.locator('video').count(),0,'No preparation/player before explicit play');
   await page.getByRole('button',{name:'Reproducir Live Photo',exact:true}).click();const video=page.locator('.photo-card video');await video.waitFor();
   await page.waitForFunction(()=>{const v=document.querySelector('.photo-card video');return v&&!v.paused&&v.currentTime>0;});
-  assert.equal(await video.evaluate(v=>v.loop),true);await page.getByRole('button',{name:'Pausar',exact:true}).click();
-  await page.waitForFunction(()=>document.querySelector('.photo-card video')?.paused===true);
+  assert.equal(await video.evaluate(v=>v.loop),true);await page.waitForFunction(()=>document.querySelector('.photo-card video')?.currentTime>.4);
+  const pausedAt=await video.evaluate(v=>v.currentTime);await page.getByRole('button',{name:'Pausar',exact:true}).click();
+  await page.waitForFunction(()=>!document.querySelector('.photo-card video'));
   assert.equal(await page.locator('.photo-card .inline-media.is-started').count(),0,'Card pause must show the still/key photo, not a frozen motion frame');
-  assert.equal(await video.isVisible(),false,'A paused Live video must leave the render tree so the key image owns the surface');
+  assert.equal(await video.count(),0,'A paused Live card must detach the video surface so only its original key image remains');
+  await page.getByRole('button',{name:'Reproducir Live Photo',exact:true}).click();
+  await page.waitForFunction(()=>{const v=document.querySelector('.photo-card video');return v&&!v.paused&&v.currentTime>0;});
+  assert.ok(await video.evaluate((v,time)=>v.currentTime>=time-.08,pausedAt),'Reattaching a Live player must preserve its paused playhead');
+  await page.getByRole('button',{name:'Pausar',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('.photo-card video'));
   await page.screenshot({path:path.join(out,`card-${reduce}.png`)});
  });
  await run('pause during preparation stays paused after ready and foreground', 'reduce',async page=>{
   await page.getByRole('button',{name:'Reproducir Live Photo',exact:true}).click();
-  await page.getByRole('button',{name:'Pausar',exact:true}).click();await page.locator('.photo-card video').waitFor({state:'attached'});
-  await page.waitForTimeout(300);assert.equal(await page.locator('.photo-card video').evaluate(v=>v.paused),true);
+  await page.getByRole('button',{name:'Pausar',exact:true}).click();
+  await page.waitForTimeout(300);assert.equal(await page.locator('.photo-card video').count(),0);
   await page.evaluate(()=>{Object.defineProperty(document,'visibilityState',{configurable:true,value:'hidden'});document.dispatchEvent(new Event('visibilitychange'));Object.defineProperty(document,'visibilityState',{configurable:true,value:'visible'});document.dispatchEvent(new Event('visibilitychange'));});
-  await page.waitForTimeout(300);assert.equal(await page.locator('.photo-card video').evaluate(v=>v.paused),true);
+  await page.waitForTimeout(300);assert.equal(await page.locator('.photo-card video').count(),0);
   assert.equal(await page.locator('.photo-card .inline-media.is-started').count(),0);
  });
  await run('hold a playing Live Photo and drag to anchor returns to key photo', 'reduce',async page=>{

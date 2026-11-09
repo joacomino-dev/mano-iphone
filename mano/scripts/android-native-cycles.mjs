@@ -45,7 +45,16 @@ async function inlineFullscreen(){
  // Trusted WebView input, not a JavaScript override of requestFullscreen.
  await lab.cdp('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[point]});await lab.cdp('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
  await wait(`!!document.fullscreenElement`,15000);await shot('video-fullscreen-native');
- await adb('shell','input','keyevent','4');await wait(`!document.fullscreenElement&&!!document.querySelector('.inspection video')`,15000);
+ await adb('shell','input','keyevent','4');await sleep(1000);
+ if(await lab.page(`return !!document.fullscreenElement;`)){
+  // Android's first-use immersive education can consume Back. Dismiss only its
+  // observed system-owned acknowledgement, never an unknown permission dialog.
+  await adb('shell','uiautomator','dump','/sdcard/coco-fullscreen.xml');const xml=await adb('shell','cat','/sdcard/coco-fullscreen.xml');
+  const node=[...xml.matchAll(/<node [^>]*>/g)].map(m=>m[0]).find(n=>/package="com.android.systemui"/.test(n)&&/text="(?:Got it|Entendido)"/.test(n)&&/clickable="true"/.test(n));
+  const bounds=node&&/bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/.exec(node);
+  if(bounds){await adb('shell','input','tap',String((+bounds[1]+ +bounds[3])>>1),String((+bounds[2]+ +bounds[4])>>1));report.fullscreenEducationDismissed=true;await adb('shell','input','keyevent','4');}
+ }
+ await wait(`!document.fullscreenElement&&!!document.querySelector('.inspection video')`,15000);
  const returned=await lab.page(`const v=document.querySelector('.inspection video');return {same:v===window.cocoFullscreenProbe,src:v.currentSrc,time:v.currentTime};`);
  assert.equal(returned.same,true,'Back must retain the original inline player');assert.equal(returned.src,original.src);assert.ok(returned.time>=original.time-.25,'Fullscreen must not restart the inline clip');
  await adb('shell','input','keyevent','4');await wait(`!document.querySelector('.inspection')`,15000);
@@ -122,7 +131,7 @@ try{
  report.functionalCycles=10;
  // Independent safety cases execute before the already-known crash-persistence
  // failure. That assertion stays mandatory and still fails the complete gate.
- await pendingSurvivesTermination();
+ for(let trial=1;trial<=5;trial++){await pendingSurvivesTermination();report.pendingPersistenceTrials=trial;}
  report.status='PASS';report.performanceAcceptance='PENDING: inspect renderer ownership and evaluate baseline/trend; collecting numbers alone is not P0 closure';
 }catch(error){report.status='FAIL';report.error=error.stack;if(report.fixtureOwnershipVerified){
  await shot('native-cycle-failure').catch(()=>{});
@@ -132,5 +141,14 @@ try{
  await fs.writeFile(`${OUT}/system-request-log.txt`,await adb('logcat','-d','-s','CocoWash:I')).catch(()=>{});
  await adb('shell','uiautomator','dump','/sdcard/coco-failure.xml').then(()=>adb('shell','cat','/sdcard/coco-failure.xml')).then(r=>fs.writeFile(`${OUT}/failure-ui.xml`,r)).catch(()=>{});
  }process.exitCode=1;}
-finally{await fs.writeFile(`${OUT}/native-cycles.json`,JSON.stringify(report,null,2));lab?.close();}
+finally{
+ if(report.fixtureOwnershipVerified){
+  // Retain only existing debug method names/timestamps to investigate the
+  // observed CPU failure. No payloads, IDs, new collector or changed budget.
+  const raw=await adb('logcat','-d','-s','Capacitor/Plugin:V').catch(()=>'');
+  const names=raw.split('\n').flatMap(line=>{const m=line.match(/^(\d\d-\d\d \S+).*pluginId: (\w+), methodName: (\w+)/);return m?[`${m[1]} ${m[2]}.${m[3]}`]:[];});
+  await fs.writeFile(`${OUT}/native-method-names.txt`,names.join('\n'));
+ }
+ await fs.writeFile(`${OUT}/native-cycles.json`,JSON.stringify(report,null,2));lab?.close();
+}
 console.log('ANDROID_NATIVE_CYCLES_'+report.status,JSON.stringify({functionalCycles:report.functionalCycles??Math.max(0,rows.length-1),samples:rows.length,error:report.error}));
