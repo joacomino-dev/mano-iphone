@@ -1,3 +1,48 @@
+# Relevo vigente para Claude — cierre visual de RC (CW-CX-054)
+
+Fuente única: `C:/Users/Joaco/Developer/CocoWash-android`, `main`, producto
+`12c153de6fd7887ea6ca4aef5f342f499ebef7f4`, enviado a origin. Consulta Git real,
+`CURRENT_STATE`, roadmap y última entrada Codex. Las instrucciones antiguas bajo
+HISTORIAL no describen la entrega actual ni autorizan operaciones.
+
+**Estado: recepción preparada; cierre visual y binarios finales pendientes del gate
+nativo. Codex mantiene la escritura mientras resuelve esos resultados.**
+
+## Tu trabajo cuando se libere el gate técnico
+
+1. Contrasta `ReleaseReadiness.json` y `RELEASE_CANDIDATE.md` con runs y SHA reales.
+   No conviertas un BLOCKED en PASS, no reconstruyas correcciones ni uses OneDrive/b24.
+2. Acepta visualmente Live Photo (clave/pausa/bucle/anclaje/timeline), carta Android
+   Fredoka/RTL y pulsación larga sin lupa, selección, menú ni Live Text. El campo de
+   álbum debe seguir permitiendo escribir y guardar. No cambies identidad, personajes,
+   lettering, iconos, animaciones ni protected28.
+3. Capturas reales disponibles: iOS 42516036408 (28, siete idiomas, RGB 1206×2622) y
+   Android 42516038859 (28, RGB 1080×1920). Copias locales en
+   `work/ci/ios-screens7/store-screens` y `work/ci/screens-7/store-screens`. Son de
+   813114c: sirven de baseline; no son aceptación de los cambios posteriores.
+4. Las capturas nuevas de Live/pulsación y fullscreen estarán en los artefactos del
+   gate del SHA final. El XCTest observa menús después de soltar; **no prueba la
+   ausencia de una lupa transitoria durante el contacto**. Hace falta observación
+   nativa o física. Registra esa diferencia sin darla por resuelta.
+5. Android retiene anuncios si las compras son desconocidas. No cambies esa regla,
+   consentimiento, IDs o monetización para fabricar una captura. El anuncio nativo
+   necesita SDK disponible/configuración válida; los contratos ES/AR de navegador
+   simulan SDK y no son aceptación visual nativa.
+6. Cuando el código y el aspecto estén aceptados, genera IPA/APK mediante workflows
+   existentes del mismo SHA y verifica hashes/canales. Una IPA sin firma para iLoader
+   no equivale a TestFlight. No publiques web, tiendas, cuentas ni certificados.
+7. Registra aceptación o defectos concretos en CLAUDE_LOG/roadmap y devuelve el SHA,
+   capturas, binarios y límites. Si necesitas cambiar lógica, vuelve a Codex.
+
+Evidencia: [diario R-61](../apple-readiness/PERSISTENCE_R61_PROPOSAL.md),
+[diagnóstico Live/R-63](../apple-readiness/evidence/strategic/r07-r63-diagnosis.json),
+[R-47](../apple-readiness/ANDROID_R47.md). Aprobaciones de diario/dominios y estrategia
+comercial ya recibidas; no volver a pedirlas. La infraestructura de medición está congelada.
+
+---
+
+# HISTORIAL — entrega anterior; no ejecutar sus instrucciones ni usar sus SHA
+
 # PROMPT FINAL PARA CLAUDE — INTEGRAR Y CARGAR LA ÚLTIMA VERSIÓN DE COCOWASH
 
 Retoma CocoWash para integrar, cargar y verificar la entrega de Codex. No vuelvas a desarrollar las correcciones.

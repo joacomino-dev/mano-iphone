@@ -4,27 +4,36 @@ Actualizado 2026-11-08, CW-CX-026…046. **NO APTA para enviar.** P0 R-61 reprod
 un cierre forzado Android puede perder una decisión que localStorage ya devuelve.
 Las fotografías no se borraron en esa prueba. No se cambia FAIL por documentación.
 
-## Actualización de cierre — CW-CX-050
+## Estado actual — CW-CX-051 a CW-CX-053
 
-R-61 está **aprobado**, todavía sin corrección aplicada. No hace falta otra autorización.
-R-07 reproduce movimiento, pero la foto clave tras pausa difiere incluso al comparar
-RGBA (run 42519482281); se conserva FAIL hasta explicar y corregir la diferencia.
-Android d362af4 compila, pero vuelve a fallar al esperar la última confirmación de
-favoritas (42519758181). El gate iOS completo 42518372819 también falla: álbum,
-cancelación, recuperación y Live requieren diagnóstico; el PASS anterior no se borra.
+Diario R-61 implementado en `248ec6a`, revisado y enviado. PASS local: 138 Node,
+ocho escenarios IndexedDB reales, TypeScript, protected28 y builds. Las decisiones
+se confirman después del commit; una operación nativa interrumpida conserva su
+intención y no se repite automáticamente. **Force-stop nativo todavía pendiente.**
 
-Capturas reales: 28 iOS y 28 Android, siete idiomas, hashes y RGB verificados.
-La aceptación visual queda para Claude. ATT tras manifiesto funciona en ambos estados,
-pero el simulador no demuestra bloqueo de hosts; esa prueba pasa a TestFlight físico.
-Dry-run 42518375329 termina con el código 78 esperado: no firma ni distribución.
-La infraestructura de métricas queda congelada. Ninguno de estos resultados cierra
-el P0, el gate nativo del SHA final o los requisitos de cuentas y dispositivos físicos.
+`3c19d3d` completa 17 checks Android, diez rondas, cancelación y favorita nativa
+R-63. La suite falla antes del cierre forzado por una comparación de texto español
+en una interfaz inglesa; se ha corregido usando el badge visible y el estado del
+control, sin añadir demora. Los runs completos iOS estándar y Duo siguen pendientes
+de resultado. No se sustituye su ejecución por los resultados locales.
+
+R-07 conserva el FAIL anterior de RGBA; el vídeo pausado ya sale del renderizado,
+con cinco escenarios web PASS. Falta la comprobación exacta nativa. R-47 preparado
+en `12c153d`: fuente Fredoka local, dirección del idioma y mismo reproductor en
+fullscreen Android; compilación y comportamiento nativos pendientes. Claude debe
+aceptar Live, carta, ausencia de selección/lupa y las capturas finales.
+
+Hay 28 capturas nativas por plataforma, siete idiomas. ATT tras manifiesto permite
+seguir organizando en ambos estados, pero el bloqueo de hosts queda para TestFlight
+físico. Firmas del proveedor PASS; Privacy Report del archivo final, firma, cuentas,
+compras reales, política pública y hardware siguen bloqueados. No hay envío ni
+publicación. La infraestructura de medición permanece congelada.
 
 ## Fuente y protección
 
 Única fuente: `C:/Users/Joaco/Developer/CocoWash-android`, rama `main`, remoto
 `joacomino-dev/mano-iphone`. Checkpoint inicial estratégico df983ad; último checkpoint
-consolidado al redactar d362af4. El SHA del informe se obtiene mediante
+de producto 12c153d. El SHA del informe se obtiene mediante
 `git log -1 --format=%H -- docs/apple-readiness/RELEASE_CANDIDATE.md`.
 Push normal y CI pública estándar gratuita autorizados; sin subidas a tiendas/web,
 certificados, cuentas ni instalación en teléfono. No reset/stash/clean/force-push.
@@ -41,19 +50,19 @@ sus rutas b24, rama antigua y ausencia de push no describen esta fuente integrad
 
 | Requisito | Estado | Evidencia / límite |
 | --- | --- | --- |
-| Cero P0 conocidos | FAIL | R61, run42513754519: pending1→0 ya antes de React; background6s conserva. Diario local propuesto, aprobación recibida; implementación pendiente |
+| Cero P0 conocidos | FAIL | R61, run42513754519: pending1→0 ya antes de React; background6s conserva. Diario implementado y revisado; force-stop nativo pendiente |
 | Cero P1 de distribución | FAIL | R02 declaración estática corregida con aprobación; validar archivo, tráfico y seguridad nativa completos |
 | Pruebas JS / TypeScript / runtime28 | PASS | 130 Node, tsc y hashes repetidos;8 Release y4 contratos estáticos separados |
 | Web/native-web | PASS anterior | Compilados en fases anteriores; repetir al cerrar cambios de app |
 | Release arm64 sin firma / Swift | PASS por SHA | CI anterior y gate662e67d en curso; no equivale a distribución |
 | Álbum iOS | Corrección comprobada en experimento | 42513277098: preferenciafalse FAIL, true XCTest completo PASS201,847s +postcondición; confirmado sin observer42514969280; pinch/anclajePASS |
 | 10 ciclos nativos y métricas | PASS acotado | 59912d8: iOS42492831273 yAndroid42492831172; presupuestos agregados/porPID PASS. Solo biblioteca pequeña de fixtures |
-| Live Photo real | NOT TESTED completo | Fixture3Live/3pairedPASS;AXdemuestraSwitchvisible66×29, selectorcorregido yprobeplay/key/timeline/loop/pinch enejecución |
+| Live Photo real | NOT TESTED en candidato | Movimiento real probado; RGBA anterior FAIL. Superficie de vídeo pausado corregida; repetir nativo |
 | Cierre forzado y decisiones | FAIL | R61 Android. No prometer recuperación segura todavía |
 | ATT y tráfico real de SDK | PASS acotado | 42514971530: permitido/denegado, request+callback reales, calibración yrestauraciónPASS. Anuncios de prueba |
 | Privacidad de envío | FAIL | Declaración strict PASS con dos hosts aprobados; tráfico actualizado, exhaustividad y archivo final BLOCKED |
 | Firmas SDK proveedor | PASS | 42516183457 verifica ZIPs oficiales fijados, codesign/macOS,identidad ymanifiestos. No firma del archivo CocoWash |
-| Compras Android | Corrección por validar | RSA7vectores JVM PASS; R62 evita unknown=>false/catálogo/anuncios, CI pendiente. Sandbox/cuentas BLOCKED |
+| Compras Android | PASS código / BLOCKED comercio | Firma RSA, siete vectores JVM y 17 checks de puente nativo PASS. R62 falla de forma explícita con clave ausente; sandbox y configuración comercial pendientes |
 | Política ES/EN | PASS borrador / BLOCKED pública | Responsable/contacto confirmados; documentos ajustados a SDK ygeocodificación. Publicación web requiere autorización y comprobación posterior |
 | Localización7idiomas | PASS fuente / NOT TESTED nativa completa | ES/EN/FR/DE/IT/AR/JA; límites Apple/Play PASS. Android42516038859 completa28capturas nativas; revisar artefactos yRTL. Primer intento12/28falló al recargar; causa no demostrada |
 | Accesibilidad | PASS parcial / NOT TESTED Apple | Alternativas de botones ypruebasweb existentes; VoiceOver/DynamicType/gestos físicos pendientes. No declarar etiquetas Accessibility completadas |
@@ -106,16 +115,29 @@ Seguir [checklist operativo](APP_STORE_SUBMISSION_CHECKLIST.md),
 [gate nativo](NATIVE_GATE.md), [TestFlight](TESTFLIGHT.md) y
 [Play](../playstore/PURCHASE_VERIFICATION.md). El [roadmap](../ROADMAP.md) es el registro vivo.
 
-Primero implementar y validar R61 con pruebas de transacción abortada/errores/cierre forzado;
+Primero cerrar el gate nativo de R61 con pruebas de transacción abortada/errores/cierre forzado;
 terminar gate iOS estándar yDuo, LivePhoto yfixtures destructivas. Después cerrar
 privacidad con dominios aprobados y evidencia restante, SDKs/archivo ytráfico denegado/revocado.
 Repetir todos los gates del SHA final. Solo entonces preparar firma/exportación ysolicitar
 por separado autorización para subir a TestFlight/Playinterno.
 
-Intervención humana: aprobación del diario (dominios aprobados); datos legales comerciales/DSA;
-cuentas/contratos/productos/precios; IDsAndroid/clave pública Play; versión/buildunused;
-credenciales enSecretsoKeychain (nunca chat); publicación de políticas;QAfixturefísica,
-iCloud/biblioteca grande/compras/accesibilidad; autorización expresa de cada envío.
+## Paquete del usuario y decisiones pendientes
+
+- [Checklist operativo de envío](APP_STORE_SUBMISSION_CHECKLIST.md): orden de pruebas,
+  firma, exportación y subida; preparar archivos no autoriza publicar.
+- [Decisiones pendientes, lista única](../ROADMAP.md#decisiones-pendientes-del-usuario):
+  cuentas, acuerdos/DSA, productos/precios, IDs Android y clave pública Play,
+  versión/build libres en las consolas, política pública y dispositivos/testers.
+- [Metadatos y materiales](storefront/metadata.json) y [revisión/IAP](storefront/review-localizations.json).
+  Hay siete idiomas preparados; el responsable y contacto legal ya están confirmados.
+- [Relevo visual de Claude](../ai-handoff/PROMPT_CLAUDE_2026-11-08.md): aceptar el aspecto
+  con evidencia nativa y generar después IPA/APK del código validado.
+
+Ya están aprobados mantener la monetización, los dos hosts de tracking y el diario
+R-61. No necesitan otra decisión. Credenciales únicamente en Keychain/Secrets o en
+la interfaz segura de cada servicio; nunca por chat. Cada publicación web y cada
+subida a tienda requieren autorización aparte. QA destructiva solo con fixtures.
+
 
 Serie662e67d: diez ciclos funcionales PASS314s ypostauditPhotoKit10ausentes/unknown0.
 El presupuesto de esa serie esBLOCKED por contadorCPU dePIDreciénnacido en ronda7;

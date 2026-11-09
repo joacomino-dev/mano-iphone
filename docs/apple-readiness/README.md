@@ -1,14 +1,14 @@
 # CocoWash — preparación Apple y distribución
 
-Estado vigente2026-11-08: fuente única main en `C:/Users/Joaco/Developer/CocoWash-android`.
-**NO APTA para envío: P0 R61 pérdida de decisiones ante force-stop Android yprivacidad final pendiente.**
+Estado vigente, 2026-11-08: fuente única main en `C:/Users/Joaco/Developer/CocoWash-android`.
+**NO APTA para envío: R-61 requiere validar el diario corregido ante force-stop nativo; privacidad y distribución finales pendientes.**
 Ya se utilizan runners macOS públicos estándar autorizados. Windows no compila Swift;
 la evidencia de CI se identifica por SHA/run, sin fingir dispositivos físicos.
 
 - [Release Candidate actual](RELEASE_CANDIDATE.md).
 - [Checklist operativo actual](APP_STORE_SUBMISSION_CHECKLIST.md).
-- [Roadmap único ypaquete del propietario](../ROADMAP.md).
-- [Laboratorio nativo ymedidas reales](NATIVE_LAB.md).
+- [Roadmap único y paquete del propietario](../ROADMAP.md).
+- [Laboratorio nativo y medidas reales](NATIVE_LAB.md).
 - [Dos dominios aprobados; validación final pendiente](TRACKING_DOMAIN_PROPOSAL.md).
 - [Matriz de compatibilidad](COMPATIBILITY.md).
 

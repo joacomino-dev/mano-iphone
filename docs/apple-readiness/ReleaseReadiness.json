@@ -1,6 +1,6 @@
 {
   "updated": "2026-11-08",
-  "sourceCheckpoint": "d362af4",
+  "sourceCheckpoint": "12c153de6fd7887ea6ca4aef5f342f499ebef7f4",
   "releaseState": "FAIL",
   "publishAuthorized": false,
   "bundle": "work.joaquin.mano",
@@ -17,7 +17,6 @@
   },
   "gates": {
     "protected28": "PASS",
-    "node130": "PASS",
     "typescript": "PASS",
     "webBuild": "PASS",
     "nativeWebBuild": "PASS",
@@ -31,7 +30,7 @@
     "nativeAlbumStandard": "PASS",
     "nativeFullSuite": "FAIL",
     "nativeLiveBehavior": "FAIL",
-    "nativePersistence": "FAIL",
+    "nativePersistence": "NOT TESTED",
     "nativeAdHostsBeforeDeclaration": "PASS",
     "nativeAdHostsAfterDeclaration": "PASS",
     "androidScreenshots28": "PASS",
@@ -39,13 +38,18 @@
     "physicalDevices": "BLOCKED",
     "signedArchive": "BLOCKED",
     "testFlight": "BLOCKED",
-    "playInternal": "BLOCKED"
+    "playInternal": "BLOCKED",
+    "node138": "PASS",
+    "journalLocalRegression8": "PASS",
+    "nativeFavoriteFlush": "PASS",
+    "nativeFullscreenAndroid": "NOT TESTED",
+    "nativeLetterVisual": "BLOCKED"
   },
   "blockers": [
-    "R61 durable local journal approved; implementation and native recovery gates pending",
+    "R61 journal implemented and reviewed; native acknowledged force-stop recovery still mandatory",
     "Live actual playback and complete adversarial native Photos tests",
     "Physical TestFlight ATT enforcement and aggregate final archive privacy report/domain scope",
-    "Native font/RTL ad card and fullscreen validation",
+    "Native Live exact RGBA, Android fullscreen and Claude font/RTL acceptance",
     "Claude visual acceptance of actual native captures",
     "Owner accounts/contracts/products/real Android IDs and license verification key",
     "Version/build and private signing material",
@@ -64,7 +68,11 @@
     "adHostAfterDeclarationRun": 42516799297,
     "iphoneScreensRun": 42516036408,
     "livePixelsRun": 42519482281,
-    "androidFavoriteDiagnosticsRun": 42519758181
+    "androidFavoriteDiagnosticsRun": 42519758181,
+    "androidTenCyclesAndFavoriteRun": 42539523601,
+    "iosFullStandardRun": 42539523932,
+    "iosFullDuoRun": 42539527666,
+    "androidR47Run": 42541000236
   },
-  "scopeNote": "Preparation and scoped PASS do not establish store readiness. Current known P0 remains FAIL."
+  "scopeNote": "Scoped PASS is evidence from the linked source/run. No complete native-suite or force-stop PASS has been established for the final candidate. No store upload/publication authorized."
 }

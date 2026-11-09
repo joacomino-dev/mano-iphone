@@ -1,7 +1,9 @@
-Actualización2026-11-08: declaración tracking estáticaPASS con los dos hosts
-aprobados; firmas oficiales GMA/UMP macOSPASS. No se acredita todavía PrivacyReport
-final ni AppReview. R61P0 yLive/R05 pendientes impiden AppCompleteness.
-Seguir el [checklist actual](APP_STORE_SUBMISSION_CHECKLIST.md); lo siguiente es histórico.
+Actualización 2026-11-08: declaración de tracking estática PASS con dos hosts
+aprobados y firmas GMA/UMP verificadas en macOS. R-61 tiene corrección y pruebas
+locales, pero necesita force-stop nativo. R-63 pasa en Android; Live, suite completa,
+Privacy Report del archivo y QA física/comercial siguen pendientes. No hay aprobación
+de App Review. Seguir el [checklist actual](APP_STORE_SUBMISSION_CHECKLIST.md).
+El contenido siguiente conserva la auditoría inicial.
 
 # Checklist de preparación para App Review
 

@@ -2,13 +2,15 @@
 
 | Problema | Prioridad | Estado comprobado |
 | --- | --- | --- |
-| R61: decisión perdida tras force-stop Android | P0 | FAIL reproducido antes de React; diario duradero aprobado; implementación pendiente |
+| R61: decisión perdida tras force-stop Android | P0 | FAIL reproducido antes de React; diario implementado y regresiones locales PASS; force-stop nativo pendiente |
 | R01: edición de álbum bloqueada por WKPreferences | P1 | PASS iPhone18Pro/27.0 sin observer42514969280; Duo/mínimo17 pendientes |
 | R02: privacidad de distribución | P1 | Dos hosts aprobados incorporados, declaraciónstrictPASS; tráfico nuevo/archivo/exhaustividad/web pendientes |
-| R07: Live Photo completa | P1 | Movimiento nativo PASS; pausa difiere en RGBA, run 42519482281 FAIL |
+| R07: Live Photo completa | P1 | Movimiento nativo PASS; RGBA anterior FAIL. Superficie pausada corregida, cinco casos web PASS; nativo pendiente |
 | R60: CI devolvía cero sin XCTest | P1 | Corregido; ejecución ypostcondiciones independientes verificadas en matriz07d09a9 |
 | R62: compras Android desconocidas=>adFreefalse | P1 | Compilación y 17 checks E2E PASS en 42517332458; sandbox BLOCKED por cuentas |
 | Rendimiento662e67d | Gate |11muestras peroCPUBLOCKED porPIDnuevo en ronda7; no aceptar comoPASS. Nuevo muestreo acotado25testsPASS |
+
+R-63: PASS nativo acotado en 42539523601, diez rondas y favorita confirmada. El gate completo sigue FAIL antes de force-stop por idioma del test; corregido, no ejecutado todavía.
 
 [Roadmap vivo](../ROADMAP.md), [RC actual](RELEASE_CANDIDATE.md) y
 [evidencias](evidence/strategic/) contienen los SHA ylos resultados completos.

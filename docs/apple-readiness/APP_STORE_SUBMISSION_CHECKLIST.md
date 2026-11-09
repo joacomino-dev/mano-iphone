@@ -8,11 +8,11 @@ El [checklist previo](APP_STORE_SUBMISSION_CHECKLIST_2026-11-07.md) es históric
 1. **Fijar fuente.** Usar main de `C:/Users/Joaco/Developer/CocoWash-android`.
    Ejecutar `git status --short`, `git rev-parse HEAD`, revisar diff/log yregistrar SHA.
    No usar b24, OneDrive, stage1 ni rama release antigua. No sobrescribir trabajo.
-2. **Cerrar P0 R61 — FAIL.** Implementar el diario duradero aprobado y probar errores,
+2. **Cerrar P0 R61 — FAIL.** El diario aprobado ya está implementado y revisado. Cerrar las pruebas nativas de errores,
    transacciones abortadas, respuestas fuera de orden, Deshacer yforce-stop inmediatamente
    después de la confirmación visible. Repetir Android y iOS con biblioteca sintética.
    No confirmar borrados en biblioteca personal ni convertir una demora de seis segundos
-   en corrección. El estado actual pierde decisiones ante cierre forzado Android.
+   en corrección. El fallo se reprodujo en la versión anterior; la corrección todavía necesita force-stop nativo.
 3. **Pruebas locales — PASS por ejecución, repetir al cerrar código.** Desde mano:
    `npm ci --no-audit --no-fund` si faltan dependencias; `npm test`;
    `npx tsc --noEmit`; `npm run check:runtime`; `npm run build`;
