@@ -16,11 +16,12 @@ try{
   assert.equal(await video.evaluate(v=>v.loop),true);await page.getByRole('button',{name:'Pausar',exact:true}).click();
   await page.waitForFunction(()=>document.querySelector('.photo-card video')?.paused===true);
   assert.equal(await page.locator('.photo-card .inline-media.is-started').count(),0,'Card pause must show the still/key photo, not a frozen motion frame');
+  assert.equal(await video.isVisible(),false,'A paused Live video must leave the render tree so the key image owns the surface');
   await page.screenshot({path:path.join(out,`card-${reduce}.png`)});
  });
  await run('pause during preparation stays paused after ready and foreground', 'reduce',async page=>{
   await page.getByRole('button',{name:'Reproducir Live Photo',exact:true}).click();
-  await page.getByRole('button',{name:'Pausar',exact:true}).click();await page.locator('.photo-card video').waitFor();
+  await page.getByRole('button',{name:'Pausar',exact:true}).click();await page.locator('.photo-card video').waitFor({state:'attached'});
   await page.waitForTimeout(300);assert.equal(await page.locator('.photo-card video').evaluate(v=>v.paused),true);
   await page.evaluate(()=>{Object.defineProperty(document,'visibilityState',{configurable:true,value:'hidden'});document.dispatchEvent(new Event('visibilitychange'));Object.defineProperty(document,'visibilityState',{configurable:true,value:'visible'});document.dispatchEvent(new Event('visibilitychange'));});
   await page.waitForTimeout(300);assert.equal(await page.locator('.photo-card video').evaluate(v=>v.paused),true);

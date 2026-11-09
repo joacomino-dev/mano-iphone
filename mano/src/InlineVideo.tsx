@@ -174,7 +174,9 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
 
   return <div className={`inline-media ${live?'is-live':''} ${shown ? 'is-started' : ''} ${playing ? 'is-playing' : ''} ${frame ? 'has-frame' : ''}`}>
     {children}
-    {url && <video data-testid="inline-video" ref={player} src={url} style={mediaStyle} playsInline muted={muted} loop={live||!full} preload={card ? 'metadata' : 'auto'} aria-label={live?t('Reproducir Live Photo'):t('Vídeo de tu biblioteca')}
+    {/* An opacity-zero video can retain WebKit's hardware-composited surface.
+        Remove that surface while the Live card shows its original key image. */}
+    {url && <video data-testid="inline-video" ref={player} src={url} style={live&&card&&!shown?{...mediaStyle,display:'none'}:mediaStyle} playsInline muted={muted} loop={live||!full} preload={card ? 'metadata' : 'auto'} aria-label={live?t('Reproducir Live Photo'):t('Vídeo de tu biblioteca')}
       onLoadedData={() => setFrame(true)}
       onLoadedMetadata={e => { const v = e.currentTarget, d = v.duration; if (Number.isFinite(d) && d > 0) setLength(d);
         // Same moment as the view it came from (card ↔ held ↔ anchored).

@@ -510,6 +510,8 @@ final class PhotosSmokeTests: XCTestCase {
         let app=try ownedFullFixtureApp()
         app.buttons["Eliminar"].firstMatch.tap()
         let finish=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","Terminar")).firstMatch
+        let acknowledged=XCTNSPredicateExpectation(predicate:NSPredicate(format:"label CONTAINS %@ AND enabled == true","1 para eliminar"),object:finish)
+        XCTAssertEqual(XCTWaiter().wait(for:[acknowledged],timeout:20),.completed,"Wait for the actual durable decision acknowledgement")
         finish.tap()
         let confirm=app.buttons.matching(NSPredicate(format:"label == %@ OR label BEGINSWITH %@","Eliminar 1","Eliminar 1 (")).firstMatch
         XCTAssertTrue(confirm.waitForExistence(timeout:20));confirm.tap()
@@ -521,7 +523,9 @@ final class PhotosSmokeTests: XCTestCase {
         XCTAssertEqual(XCTWaiter().wait(for:[retained],timeout:20),.completed,"Cancellation must preserve the queued item, never report deletion")
         XCTAssertFalse(app.buttons["Seguir revisando"].firstMatch.exists)
         let recover=app.buttons["Recuperar"].firstMatch
-        XCTAssertTrue(recover.isHittable);recover.tap();XCTAssertTrue(closeOverlay(app,until:finish))
+        XCTAssertTrue(recover.isHittable);recover.tap()
+        XCTAssertEqual(XCTWaiter().wait(for:[XCTNSPredicateExpectation(predicate:NSPredicate(format:"exists == false"),object:recover)],timeout:20),.completed,"Recovery must be acknowledged before terminating this test")
+        XCTAssertTrue(closeOverlay(app,until:finish))
         attachScreenshot(app,"Synthetic deletion canceled and recovered")
         print("COCOWASH_UI_NATIVE_DELETE_CANCEL_OK")
     }
@@ -538,9 +542,46 @@ final class PhotosSmokeTests: XCTestCase {
         pendingFinish.tap()
         let recover=app.buttons["Recuperar"].firstMatch
         XCTAssertTrue(recover.waitForExistence(timeout:20));recover.tap()
+        XCTAssertEqual(XCTWaiter().wait(for:[XCTNSPredicateExpectation(predicate:NSPredicate(format:"exists == false"),object:recover)],timeout:20),.completed)
         let finish=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","Terminar")).firstMatch
         XCTAssertTrue(closeOverlay(app,until:finish))
         print("COCOWASH_UI_NATIVE_PENDING_RELAUNCH_OK")
+    }
+
+    @MainActor
+    func testXGeneratedLongPressHasNoPersistentSystemMenu() throws {
+        let app=try ownedFullFixtureApp()
+        func noMenu(_ name:String) {
+            XCTAssertFalse(app.menuItems.firstMatch.exists,"App-owned content must not open a selection/context menu")
+            let system=XCUIApplication(bundleIdentifier:"com.apple.springboard")
+            let labels=["Copy","Copiar","Select All","Seleccionar todo","Live Text","Texto en vivo"]
+            XCTAssertFalse(system.menuItems.matching(NSPredicate(format:"label IN %@",labels)).firstMatch.exists)
+            attachScreenshot(app,name)
+        }
+        let photo=app.images["Foto del carrete"].firstMatch
+        XCTAssertTrue(photo.waitForExistence(timeout:30));photo.press(forDuration:1.2)
+        noMenu("Card long press released - selection and Live Text check")
+        let progress=app.descendants(matching:.any).matching(NSPredicate(format:"label BEGINSWITH %@","Revisados ")).firstMatch
+        XCTAssertTrue(progress.exists);progress.press(forDuration:1.2)
+        noMenu("Text long press released - selection menu check")
+        app.buttons["Eliminar"].firstMatch.tap()
+        let finish=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@ AND label CONTAINS %@","Terminar","1 para eliminar")).firstMatch
+        XCTAssertTrue(finish.waitForExistence(timeout:20));finish.tap()
+        XCTAssertTrue(app.buttons["Recuperar"].firstMatch.waitForExistence(timeout:20))
+        let reviewImages=app.images.matching(identifier:"Foto del carrete")
+        XCTAssertTrue(reviewImages.firstMatch.waitForExistence(timeout:30),"The review thumbnail must finish loading before testing its long press")
+        let reviewPhoto=reviewImages.firstMatch
+        let thumbnailReady=XCTNSPredicateExpectation(predicate:NSPredicate(format:"hittable == true"),object:reviewPhoto)
+        XCTAssertEqual(XCTWaiter().wait(for:[thumbnailReady],timeout:30),.completed,"Wait for the loaded review image to become interactable")
+        reviewPhoto.press(forDuration:1.2)
+        noMenu("Review long press released - selection menu check")
+        let recover=app.buttons["Recuperar"].firstMatch;recover.tap()
+        XCTAssertEqual(XCTWaiter().wait(for:[XCTNSPredicateExpectation(predicate:NSPredicate(format:"exists == false"),object:recover)],timeout:20),.completed)
+        let toolbar=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","Terminar")).firstMatch
+        XCTAssertTrue(closeOverlay(app,until:toolbar))
+        // XCTest cannot prove absence of a transient loupe during the held touch.
+        // Claude must accept the native recording/physical gesture separately.
+        print("COCOWASH_UI_NATIVE_PRESS_MENU_RELEASE_OK")
     }
 
     @MainActor
@@ -731,7 +772,8 @@ final class PhotosSmokeTests: XCTestCase {
         XCTAssertTrue(discard.waitForExistence(timeout:45),"Single-item discard control required")
         XCTAssertTrue(discard.isEnabled)
         discard.tap()
-        let finish=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","Terminar")).firstMatch
+        let finish=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@ AND label CONTAINS %@","Terminar","1 para eliminar")).firstMatch
+        XCTAssertTrue(finish.waitForExistence(timeout:20),"The queued item must be acknowledged before review")
         finish.tap()
         let confirm=app.buttons.matching(NSPredicate(format:"label == %@ OR label BEGINSWITH %@","Eliminar 1","Eliminar 1 (")).firstMatch
         XCTAssertTrue(confirm.waitForExistence(timeout:15),"Review must contain exactly one generated item")

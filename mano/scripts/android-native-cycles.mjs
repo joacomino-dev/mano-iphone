@@ -25,16 +25,17 @@ async function favoriteRefreshAndUndo(){
 }
 async function pendingSurvivesTermination(){
  const before=(await lab.call('assets')).assets.map(a=>a.id).sort();await click('.bar-discard');await wait(`JSON.parse(localStorage.getItem('cocowash-library-session-v1'))?.record.pending.length===1`);
+ await wait(`(()=>{const b=document.querySelector('#review-trigger');return b&&!b.disabled&&b.textContent.includes('1 para eliminar');})()`);
  const pending=(await stored()).record.pending;assert.ok(pending.every(id=>ownedIds.has(id)));lab.close();
  await adb('shell','am','force-stop',PKG);await adb('shell','am','start','-W','-n',PKG+'/.MainActivity');await sleep(4000);lab=await connect();
  await wait(`!!document.querySelector('.photo-card.front')`,60000);assert.deepEqual((await stored()).record.pending,pending,'Persisted queue must survive actual process termination');
  assert.deepEqual((await lab.call('assets')).assets.map(a=>a.id).sort(),before);await click('#review-trigger');await click('.recover-all');await wait(`JSON.parse(localStorage.getItem('cocowash-library-session-v1'))?.record.pending.length===0`);await click('.native-sheet header button');report.pendingSurvivesTermination=true;
 }
 async function shot(name){await run('adb',['exec-out','screencap','-p'],{encoding:'buffer',timeout:30000,maxBuffer:12<<20}).then(r=>fs.writeFile(`${OUT}/${name}.png`,r.stdout));}
-async function systemAllow(allow=true){
- for(let i=0;i<20;i++){await sleep(500);await adb('shell','uiautomator','dump','/sdcard/coco-cycle.xml');const xml=await adb('shell','cat','/sdcard/coco-cycle.xml');
+async function systemAllow(allow=true,completed){
+ for(let i=0;i<20;i++){if(completed&&await completed())return 'system-completed-before-observation';await sleep(500);await adb('shell','uiautomator','dump','/sdcard/coco-cycle.xml');const xml=await adb('shell','cat','/sdcard/coco-cycle.xml');
  const node=[...xml.matchAll(/<node [^>]*>/g)].map(m=>m[0]).find(n=>(allow?/text="(?:Allow|ALLOW|Permitir|PERMITIR)"/:/text="(?:Deny|DENY|Cancel|CANCEL|Don.t allow|Denegar|Cancelar)"/).test(n)&&/clickable="true"/.test(n)&&/package="(?:com\.google\.android\.providers\.media\.module|com\.android\.providers\.media(?:\.module)?|com\.google\.android\.permissioncontroller|com\.android\.permissioncontroller)"/.test(n));
- const b=node&&/bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/.exec(node);if(b){await adb('shell','input','tap',String((+b[1]+ +b[3])>>1),String((+b[2]+ +b[4])>>1));return;}}
+ const b=node&&/bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/.exec(node);if(b){await adb('shell','input','tap',String((+b[1]+ +b[3])>>1),String((+b[2]+ +b[4])>>1));return 'system-dialog';}}
  throw Error('Expected real Android confirmation was not offered');
 }
 async function processSnapshot(){
@@ -63,7 +64,14 @@ async function round(queuedFavorite,cancelFirst=false){
  }
  await systemAllow();
  await wait(`!!document.querySelector('.status-actions .primary-empty')`,45000);
- if(queuedFavorite){await systemAllow();await wait(`Object.keys(JSON.parse(localStorage.getItem('cocowash-android-favorites-v1')||'{}')).length===0`);assert.equal((await lab.call('assets')).assets.find(a=>a.id===queuedFavorite)?.favorite,true,'System-confirmed favorite must exist in MediaStore');assert.ok((await stored()).record.favorites.includes(queuedFavorite));report.favoriteNativeFlush=true;}
+ if(queuedFavorite){
+  report.favoriteConfirmation=await systemAllow(true,async()=>Object.keys(await favorites()).length===0&&(await lab.call('assets')).assets.find(a=>a.id===queuedFavorite)?.favorite===true);
+  await wait(`Object.keys(JSON.parse(localStorage.getItem('cocowash-android-favorites-v1')||'{}')).length===0`);
+  assert.equal((await lab.call('assets')).assets.find(a=>a.id===queuedFavorite)?.favorite,true,'System-confirmed favorite must exist in MediaStore');assert.ok((await stored()).record.favorites.includes(queuedFavorite));
+  const transcript=await adb('logcat','-d','-s','CocoWash:I');await fs.writeFile(`${OUT}/system-request-log.txt`,transcript);
+  assert.match(transcript,/COCOWASH_SYSTEM_LAUNCH method=favorite /);assert.match(transcript,/COCOWASH_SYSTEM_RESULT method=favorite code=-1/,'Real native favorite callback must confirm success');
+  report.favoriteNativeFlush=true;
+ }
  const fresh=(await lab.call('assets')).assets;assert.equal(fresh.length,beforeAssets.length-1,'Confirmed UI deletion must remove exactly the generated item');
  await wait(`JSON.parse(localStorage.getItem('cocowash-library-session-v1'))?.record.pending.length===0`);const state=await stored(),freshIds=new Set(fresh.map(a=>a.id)),gone=beforeAssets.filter(a=>!freshIds.has(a.id)).map(a=>a.id),recorded=state.record.removed.filter(id=>!previousRemoved.has(id));assert.ok(gone.length===1&&recorded.length===1&&gone[0]===recorded[0],'UI removal must equal the exact fixture confirmed absent from MediaStore');
  await adb('shell','input','keyevent','3');await sleep(1000);await adb('shell','am','start','-W','-n',PKG+'/.MainActivity');await sleep(1000);

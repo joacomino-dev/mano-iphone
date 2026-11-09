@@ -1,0 +1,38 @@
+{
+  "updated": "2026-11-08",
+  "live": {
+    "run": 42519482281,
+    "source": "131b99a",
+    "status": "FAIL exact RGBA",
+    "crop": [
+      512,
+      734
+    ],
+    "changedPixels": 2462,
+    "maximumChannelDelta": 2,
+    "pixelsWithChannelDeltaOver2": 0,
+    "interpretation": "Same key-image content is visible; exact raster differs after video compositing. No evidence here that an arbitrary motion frame remains.",
+    "candidateChange": "Paused Live card video display:none; real native exact-RGBA rerun required.",
+    "browser": "5 scenarios PASS including normal/reduced motion, preparation cancellation, anchor, timeline and pinch."
+  },
+  "androidFavorite": {
+    "run": 42519758181,
+    "source": "d362af4",
+    "functionalCyclesBeforeTestFailure": 9,
+    "nativeFavoriteBeforeQueue": false,
+    "failurePending": {},
+    "failureInFlight": {},
+    "failureNativeFavorite": true,
+    "nativeLog": [
+      "20:32:14.861 COCOWASH_SYSTEM_LAUNCH method=favorite windowFocus=true finishing=false",
+      "20:32:15.455 COCOWASH_SYSTEM_RESULT method=favorite code=-1"
+    ],
+    "finding": "Native operation completed successfully before the test finished looking for a visible dialog. The prior run remains FAIL; do not relabel its cycles.",
+    "regressionChange": "Accept completion only with queue empty, exact gallery favorite true, core record true and real native launch/RESULT_OK log. Still requires the next complete native run."
+  },
+  "longPress": {
+    "nativeRegression": "Card/text/review long press checks persistent system menu and retains screenshots; album test still requires exact editable input.",
+    "status": "NOT TESTED on this source",
+    "limitation": "No automated assertion proves transient loupe absence during held touch; Claude/physical observation still required."
+  }
+}
