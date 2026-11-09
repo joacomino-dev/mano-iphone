@@ -58,7 +58,8 @@ El próximo gate prueba únicamente las correcciones de XCTest; R-67 sigue abier
 
 CW-CX-062: 2794e4b confirma bucle y todos los casos de seguridad; solo falla destino
 de zoom. Se elige el ancestro real del timeline con centro encima de los controles.
-Revisión integrada sin hallazgos; nuevo full pendiente, sin cambiar la aplicación.
+Revisión integrada sin hallazgos; afbd2f9 enviado y [full42682535759](https://github.com/joacomino-dev/mano-iphone/actions/runs/42682535759)
+en curso. No duplicarlo ni repetir builds de app sin cambios.
 
 ### Estado anterior 0.9.9.1 (CW-CX-057)
 

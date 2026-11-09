@@ -4,7 +4,7 @@
 
 **Estado: FAIL técnico / distribución BLOCKED. No apta para enviar.**
 Código de aplicación `fa318baa2b9937c812c1ff606751aa6bfa708530`;
-checkpoint de pruebas `2794e4bf9626aec393429d0651f88f173773b6bc`.
+checkpoint final de pruebas `afbd2f991aeddbd850b72eac547fe6cfc420714b`.
 El diff entre ambos no cambia fuentes compiladas de la app: solo XCTest,
 instrucciones del artefacto Android y documentación. La entrega documental final
 se identifica con `git log -1 --format=%H -- docs/apple-readiness/RELEASE_CANDIDATE.md`.
@@ -24,13 +24,16 @@ versión nativa. No se han firmado archivos comerciales, subido apps ni publicad
 | Presupuestos Android | PASS | 65 elementos generados, API35; PSS 219097→228590 KiB, pendiente 515,15 KiB/ciclo. Mismos límites; detalle de CPU y picos debajo |
 | Diario tras terminación real | PASS | Decisión reconocida conserva pendientes ×5 en ambos simuladores; no promete durabilidad con almacenamiento averiado |
 | Gate Fotos iOS completo | FAIL | 2794e4b / 42669952998: 5 PASS, 1 FAIL, 2 SKIP; solo destino del pellizco anclado |
-| Ajuste del destino de pellizco | NOT TESTED | CW-CX-062: ancestro del timeline real; revisión y nueva compilación nativa pendientes |
+| Ajuste del destino de pellizco | NOT TESTED | afbd2f9 / 42682535759 en curso; revisión integrada, runtime28, release9 y contratos4 PASS |
 | iOS17/18/26, Duo y hardware físico | BLOCKED | Matriz por modelo/OS y postura; ningún nuevo teléfono utilizado en esta entrega |
-| Privacidad de fuente/hosts/manifiestos | PASS parcial | Declaración estática comprobada; aceptación del archivo y bloqueo ATT físicos BLOCKED |
+| Privacidad de fuente/hosts/manifiestos | PASS | Declaración estática comprobada; no acredita exhaustividad ni bloqueo de red |
+| Privacidad del archivo y ATT físico | BLOCKED | Privacy Report agregado y pruebas en TestFlight físico pendientes |
 | Monetización comercial | BLOCKED | Se conserva estrategia; IDs Android/clave Play, consolas, contratos y compras sandbox pendientes |
-| Internacionalización/metadata | PASS parcial | ES/EN/FR/DE/IT/AR/JA preparados y comprobados; aceptación visual y hardware pendientes |
-| Accesibilidad | PASS parcial | Automatización web; VoiceOver/Dynamic Type físico y declaraciones de tienda BLOCKED |
-| Iconos/launch/resources | PASS parcial | Recursos existentes preservados; aceptación artística final de Claude/propietario pendiente |
+| Textos y metadatos de siete idiomas | PASS | ES/EN/FR/DE/IT/AR/JA comprobados en fuente, límites y recursos del bundle |
+| Aceptación visual de localizaciones | BLOCKED | Capturas reales preparadas; falta aprobación de Claude/propietario |
+| Accesibilidad de lanzamiento | BLOCKED | Seis escenarios web PASS; VoiceOver/Dynamic Type físico y declaraciones de tienda pendientes |
+| Iconos y recursos compilados | PASS | Icono aprobado preservado, dimensiones/alpha comprobados y compilación nativa PASS |
+| Aceptación artística final | BLOCKED | R-20 y revisión de Claude/propietario pendientes; sin reemplazar recursos aprobados |
 | Firma, TestFlight y Play interno | BLOCKED | Cuentas, identidades existentes, QA y autorización de subida separada |
 
 ### Correcciones y límites
@@ -46,7 +49,8 @@ xcresult registra una lectura AX de 2,87 s: se observa hasta cuatro bucles de 3 
 sin quitar la exigencia de posición baja real, cambio de píxeles ni controles sin
 escalar. Revisión integrada sin hallazgos. El gate `2794e4b` confirma bucle, pero no encuentra
 el vídeo por label. El ajuste CW-CX-062 usa el ancestro del timeline real y
-conserva las aserciones; todavía no está aceptado nativamente.
+conserva las aserciones. [Gate actual](https://github.com/joacomino-dev/mano-iphone/actions/runs/42682535759)
+en curso; no se repiten Android ni binarios porque sus fuentes no cambiaron.
 
 **R-67 P1 sigue abierto:** tras un relanzamiento la jerarquía WKWebView no tenía
 contenido y no apareció Eliminar durante 120 s. Bridge inicializado y documento

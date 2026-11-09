@@ -1,6 +1,6 @@
 {
   "updated": "2026-11-09",
-  "sourceCheckpoint": "2794e4bf9626aec393429d0651f88f173773b6bc",
+  "sourceCheckpoint": "afbd2f991aeddbd850b72eac547fe6cfc420714b",
   "releaseState": "FAIL",
   "publishAuthorized": false,
   "bundle": "work.joaquin.mano",
@@ -55,7 +55,8 @@
     "androidCandidateNativeSuite": "PASS",
     "nativeDeleteCancellation": "PASS",
     "nativeLiveTimelineLoop": "PASS",
-    "nativeLivePinch": "FAIL"
+    "nativeLivePinch": "FAIL",
+    "candidateIosFullSuite": "NOT TESTED"
   },
   "blockers": [
     "iOS2794e4b full run:5PASS/1FAIL/2SKIP, only missing AX video-label pinch target. Key/timeline/loop, cancellation, five terminations and ten rounds pass. Candidate parent target CW-CX-062 pending. Prior R67 empty WebView not reproduced here, root cause remains open; no startup retry.",
@@ -95,9 +96,10 @@
     "ipa0992": "evidence/strategic/0992-delivered-ipa.json",
     "android0992": "evidence/strategic/0992-android-2794e4b.json",
     "publicPolicy0992": "evidence/strategic/0992-public-policies.json",
-    "ios0992": "evidence/strategic/0992-ios-2794e4b.json"
+    "ios0992": "evidence/strategic/0992-ios-2794e4b.json",
+    "iosCandidateFullRun": 42682535759
   },
-  "scopeNote": "0.9.9.2 app source fa318ba; 2794e4b changes XCTest and Android artifact warning only. Android complete PASS including 17 checks, ten rounds, five immediate termination trials and original CPU/memory budgets. iOS store/development PASS; full suite 4PASS/2FAIL/2SKIP, new full run pending. R67 blank WKWebView remains open. No physical, iCloud, VoiceOver, Instruments, signed archive, sandbox purchases or store distribution acceptance. Prior evidence stays scoped to its source. Android2794e4b also PASS complete; current APK/AAB source2794e4b, iOS IPA sourcefa318ba (application sources unchanged). Public policy URLs HTTP200 with browser agent, old content without Android; default urllib agent403. Latest iOS2794e4b:5PASS/1FAIL/2SKIP, only pinch target. Cancellation, five terminations, key/timeline/loop and ten rounds passed; R67 not reproduced, not closed.",
+  "scopeNote": "0.9.9.2 app source fa318ba; 2794e4b changes XCTest and Android artifact warning only. Android complete PASS including 17 checks, ten rounds, five immediate termination trials and original CPU/memory budgets. iOS store/development PASS; full suite 4PASS/2FAIL/2SKIP, new full run pending. R67 blank WKWebView remains open. No physical, iCloud, VoiceOver, Instruments, signed archive, sandbox purchases or store distribution acceptance. Prior evidence stays scoped to its source. Android2794e4b also PASS complete; current APK/AAB source2794e4b, iOS IPA sourcefa318ba (application sources unchanged). Public policy URLs HTTP200 with browser agent, old content without Android; default urllib agent403. Latest iOS2794e4b:5PASS/1FAIL/2SKIP, only pinch target. Cancellation, five terminations, key/timeline/loop and ten rounds passed; R67 not reproduced, not closed. Final XCTest checkpoint afbd2f9: actual ancestor slider target, integrated review and local release9/contracts4/runtime28 pass; full run42682535759 in progress. App-compiled sources unchanged versus delivered binaries. Do not duplicate running gate.",
   "deliveredDevelopmentIPA": {
     "date": "2026-11-09",
     "source": "fa318baa2b9937c812c1ff606751aa6bfa708530",
@@ -177,5 +179,6 @@
     "productionReady": false,
     "boundary": "APK development and unsigned AAB, verified build artifacts only. Native acceptance is recorded separately; real Android AdMob IDs, Play configuration, upload signing and sandbox remain owner gates. Never uninstall existing decisions for a signing conflict.",
     "evidence": "0992-android-2794e4b.json"
-  }
+  },
+  "candidateIosRunStatus": "in_progress"
 }

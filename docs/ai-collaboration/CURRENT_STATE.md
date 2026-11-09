@@ -4,18 +4,19 @@ Actualizado: 2026-11-09, America/Bogota.
 
 ## Codex CW-CX-061 — entrega 0.9.9.2 y cierre nativo en curso
 
-Base de app fa318ba; checkpoint de pruebas `2794e4b`, main enviada. Visible 0.9.9.2;
-iOS0.9.9/build44/min17; Android0.9.9.2/code4. Tienda/desarrollo iOS PASS en fa318ba.
-Android2794e4b/42669935821 PASS completo: 17 checks, diez rondas, cinco
+Base de app fa318ba; checkpoint de pruebas afbd2f9, main enviada. Visible 0.9.9.2;
+iOS 0.9.9/build44/min17; Android 0.9.9.2/code4. Tienda/desarrollo iOS PASS en fa318ba.
+Android 2794e4b/42669935821 PASS completo: 17 checks, diez rondas, cinco
 terminaciones y presupuestos originales. IPA/APK/AAB verificados en Descargas;
 IPA unsigned/iLoader, APK firma temporal, AAB unsigned. No desinstalar por firma.
 
-Fotos iOS2794e4b/42669952998: 5 PASS, 1 FAIL, 2 SKIP. Cancelación, relanzamiento×5,
+Fotos iOS 2794e4b/42669952998: 5 PASS, 1 FAIL, 2 SKIP. Cancelación, relanzamiento×5,
 key/timeline/bucle y diez rondas PASS; solo falla búsqueda del vídeo para pellizcar.
 R-67 (WebView vacío anterior) no se reproduce aquí; causa sigue abierta, sin retry.
 Reserva CW-CX-062: solo PhotosSmokeTests.swift, elegir el ancestro visible del
 slider real con controles abajo, conservar cambio de píxeles y controles sin escalar.
-CW-CX-062 revisado sin defectos nuevos; compilación nativa pendiente. App/PhotoKit/diario/arte intactos.
+CW-CX-062 afbd2f9 enviado; revisión integrada, runtime28/release9/contratos4 PASS.
+Gate 42682535759 standard/full en curso, no duplicarlo. App/PhotoKit/diario/arte intactos.
 
 Políticas públicas 200 pero anteriores sin Android; paquete ES/EN preparado,
 sin autorización de despliegue. Apple exige clase mediana en su resumen vigente;

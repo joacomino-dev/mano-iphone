@@ -98,6 +98,36 @@ Mac/iPad/visionOS requieren decisión de disponibilidad y QA propio.
 
 ## Recibo por caso
 
+### R-67: arranque intermitente — NOT TESTED en hardware
+
+Observado en fa318ba/42634699746: bridge listo y documento principal cargado,
+pero jerarquía de WKWebView vacía durante 120s. No se inició ningún borrado.
+No se reproduce en 2794e4b; su causa sigue abierta. No ocultarlo con retries.
+
+1. Instalar la IPA de desarrollo 0.9.9.2/build44 conservando la identidad/firma y
+   datos existentes. Si la firma impide actualizar, detenerse y usar la identidad
+   anterior o un equipo de pruebas limpio; no desinstalar para resolverlo.
+2. Registrar modelo/OS, SHA/canal, permiso, red, espacio libre y hora con zona.
+   La biblioteca personal solo se usa para arranque y navegación de lectura.
+   Álbumes/favoritas/decisiones de prueba requieren la biblioteca sintética de QA.
+3. Hacer 20 cierres/arranques desde el selector de apps, con la app en reposo entre
+   ellos. Cronometrar interfaz utilizable. Ante la primera pantalla vacía, parar
+   la serie, conservarla abierta y registrar si persiste hasta 120s. No repetir
+   hasta obtener un verde ni borrar cachés, preferencias o datos.
+4. En Mac con el dispositivo ya emparejado, abrir Consola, seleccionar el teléfono
+   y grabar antes del arranque: proceso CocoWash/App y WebKit. Registrar PID/hora,
+   bridge, carga de recursos, errores JS y almacenamiento. Conservar logs privados
+   fuera de Git; capturas y material compartido deben contener solo fixtures.
+5. Para inspeccionar JavaScript, reproducir con una compilación Debug del mismo
+   SHA y fixtures en Mac/simulador. Capacitor8.6.0 habilita isInspectable por defecto
+   en Debug; abrir Safari › Desarrollo › simulador/dispositivo › CocoWash. La IPA
+   Release entregada no garantiza ese inspector. Comprobar módulo JS pendiente,
+   initializeJournal/IndexedDB, terminación de WebContent o bloqueo del cargador.
+   Distinguir hipótesis con evidencia antes de cambiar persistencia o arranque.
+6. Registrar PASS/FAIL del procedimiento y enlazar el diagnóstico local en la
+   plantilla. 20 arranques satisfactorios son evidencia acotada; no explican por
+   sí solos el fallo anterior ni constituyen aprobación de publicación.
+
 ```text
 Fecha / operador:
 SHA / diff / canal / versión-build:

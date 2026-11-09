@@ -9,3 +9,4 @@ sha,version,build,model,os,xcode,sdk,fixture_set,permission,scenario,status,elap
 ,,,,,,,,,voiceover_dynamic_type_reduce_motion,NOT TESTED,,,,,,
 ,,,,,,,,,instruments_1k_10k_50k,NOT TESTED,,,,,,
 ,,,,,,,,,duo_closed_open_fold_rotate_split_continuity,NOT TESTED,,,,,,
+,,,,,,,,,r67_cold_launch_20_diagnostic,NOT TESTED,,,,,,

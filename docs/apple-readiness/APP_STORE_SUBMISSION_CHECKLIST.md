@@ -1,6 +1,6 @@
 # Checklist operativo de envío — CocoWash
 
-2026-11-09. **Envío bloqueado.** Candidato **0.9.9.2**, app `fa318ba`, pruebas `2794e4b`, en validación.
+2026-11-09. **Envío bloqueado.** Candidato **0.9.9.2**, app `fa318ba`, pruebas `afbd2f9`, en validación.
 Configurado: iOS **0.9.9 / build44**, Android **0.9.9.2 / code4**. Confirmar que
 estén libres en las consolas antes de firmar/subir; no volver a utilizar build43.
 PASS exige evidencia del SHA/binario exacto;
@@ -30,8 +30,9 @@ El [checklist previo](APP_STORE_SUBMISSION_CHECKLIST_2026-11-07.md) es históric
    5 PASS, 1 FAIL, 2 SKIP; solo falta el destino del pellizco de Live anclada.
    Pasan cancelación, cinco terminaciones, foto clave/timeline/bucle y diez rondas.
    R-67 no se reproduce aquí, pero su causa sigue abierta. CW-CX-062 prepara el
-   destino en el contenedor del timeline; probarlo tras su checkpoint con una
-   única rc-native-gate.yml standard/full. Auto/full prueba Duo por separado.
+   destino en el contenedor del timeline: [afbd2f9/42682535759](https://github.com/joacomino-dev/mano-iphone/actions/runs/42682535759)
+   standard/full ya está en curso. Consultar ese resultado, sin duplicarlo.
+   Auto/full prueba Duo por separado.
    Exigir todas las aserciones, métricas y postaudit; no ocultar fallos con retries.
    Validar logs con `python scripts/verify-native-gate-evidence.py mano/build/simulator-smoke full`.
 5. **Gate Android real — PASS acotado.** [fa318ba / 42634538249](https://github.com/joacomino-dev/mano-iphone/actions/runs/42634538249)
@@ -76,8 +77,9 @@ El [checklist previo](APP_STORE_SUBMISSION_CHECKLIST_2026-11-07.md) es históric
 11. **Capturas — generación PASS, aceptación visual pendiente.** Ya hay 28 capturas por plataforma, siete idiomas: iOS 42516036408 y Android 42516038859. Claude debe aceptar el resultado. Para regenerar, ejecutar apple-store-screens.yml y
     android-store-screens.yml; descargar artefactos del SHA exacto, revisar files/report,
     hashes, idioma/RTL/textos/controles ycadaPNG. Usar capturas RGB24 reales, sin alpha,
-    sin contenido personal ni marcos simulados. Android 1080×1920; iPhone dimensiones
-    oficiales detectadas, sin reescalar. No usar un conjunto incompleto como final.
+    sin contenido personal ni marcos simulados. Android 1080×1920; iPhone1206×2622, clase mediana exigida en el resumen vigente de Apple, sin reescalar.
+    Confirmar los slots reales del portal: la tabla conserva una condición contradictoria
+    de clase grande; no declarar un bloqueo nuevo ni una prueba ProMax por inferencia. No usar un conjunto incompleto como final.
 12. **Preparar firma sin distribuir.** Ejecutar apple-signing-dry-run.yml: exit78
     es correcto mientras privacidad/credenciales/gates estén bloqueados. El propietario
     elige versión/build sin reutilización en ASC, TeamID, identidadAppleDistribution y
