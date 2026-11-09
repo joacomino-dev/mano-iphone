@@ -23,7 +23,19 @@ una puerta nativa, comercial o de distribución.
 **Estados:** Hecho · En curso · Pendiente · Bloqueado (falta herramienta, acceso o decisión) · FAIL
 (comprobado y fallando). **Quién:** U = usuario · CX = Codex · CL = Claude · C = cualquiera de los dos.
 
-## Dónde estamos (2026-11-08, CW-CL-063/064 — Claude tomó el relevo de Codex)
+## Dónde estamos (2026-11-09, CW-CX-055 — relevo de Claude)
+
+- Base `37facf1`, limpia y al día con GitHub; iOS tienda y desarrollo PASS en ese SHA.
+- R-47b reproducido en el artefacto Android: el aviso inicial ya está cerrado, pero Atrás deja el vídeo
+  en fullscreen. Corrección candidata: un solo callback nativo, prioridad fullscreen y salida del estado
+  DOM; la regresión exige conservar reproductor, fuente, posición y sonido. Pendiente de emulador.
+- R-07b: solo cambia el test. El pellizco de XCTest se dirige al vídeo anclado, no al centro de toda la
+  aplicación. La captura anterior muestra los controles cerca de ese centro. La app y sus gestos no cambian.
+- `InlineVideo` y `Inspector` conservan sus hashes de `37facf1`; no se mezcla sonido con reproducción.
+  R-64 conserva recuperación silenciosa. TypeScript, runtime28 y ambos builds web PASS; gate nativo pendiente.
+- Se mantiene el [paquete del usuario](#paquete-del-usuario--pasos-en-orden). No apta para enviar.
+
+### Estado recibido de Claude (2026-11-08, CW-CL-063/064)
 
 - **Última prueba del usuario en su iPhone (IPA `37d1ad2`) y lo que se corrigió (CW-CL-064):**
   1. **R-00 lentitud al salir/volver (P0):** desde la RC (CW-CX-018) cada vuelta a la app releía TODA la

@@ -12,18 +12,28 @@ import com.getcapacitor.BridgeActivity
  */
 class MainActivity : BridgeActivity() {
     private var onBack: (() -> Unit)? = null
+    private var webBackActive = false
     private var fullscreenClient: CocoWebChromeClient? = null
 
-    /** Enabled only while a sheet or the anchored view is open: Back closes it.
+    /** Fullscreen first, then the web sheet or anchored view: Back closes one layer.
      * Otherwise disabled, so Back (and the predictive back-to-home preview) behaves
      * like any Android app. */
     private val back = object : OnBackPressedCallback(false) {
-        override fun handleOnBackPressed() { onBack?.invoke() }
+        override fun handleOnBackPressed() {
+            if (fullscreenClient?.handleBack() == true) return
+            devLog("COCOWASH_BACK route=web")
+            onBack?.invoke()
+        }
+    }
+
+    private fun syncBackHandling() {
+        back.isEnabled = webBackActive || fullscreenClient?.isFullscreen == true
     }
 
     fun setBackHandling(active: Boolean, handler: () -> Unit) {
         onBack = if (active) handler else null
-        back.isEnabled = active
+        webBackActive = active
+        syncBackHandling()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,7 +47,7 @@ class MainActivity : BridgeActivity() {
         // Videos stream from MediaStore through the WebView (see CocoWebViewClient).
         bridge?.let {
             it.webViewClient = CocoWebViewClient(it)
-            fullscreenClient = CocoWebChromeClient(it, this)
+            fullscreenClient = CocoWebChromeClient(it, this) { syncBackHandling() }
             it.webView.webChromeClient = fullscreenClient
         }
     }

@@ -40,7 +40,7 @@ async function inlineFullscreen(){
  await wait(`document.querySelector('.inspection video')?.readyState>=2`,30000);
  await lab.page(`const v=document.querySelector('.inspection video');if(v.paused)document.querySelector('.inspection .video-controls button').click();return true;`);
  await wait(`(()=>{const v=document.querySelector('.inspection video');return v&&!v.paused&&v.currentTime>0;})()`,15000);
- const original=await lab.page(`const v=document.querySelector('.inspection video');window.cocoFullscreenProbe=v;return {src:v.currentSrc,time:v.currentTime};`);
+ const original=await lab.page(`const v=document.querySelector('.inspection video');window.cocoFullscreenProbe=v;return {src:v.currentSrc,time:v.currentTime,muted:v.muted,volume:v.volume};`);
  const point=await lab.page(`const b=document.querySelector('.inspection .video-controls button:last-child');if(!b||b.disabled)throw Error('Fullscreen control unavailable');const r=b.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};`);
  // Trusted WebView input, not a JavaScript override of requestFullscreen.
  await lab.cdp('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[point]});await lab.cdp('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
@@ -55,14 +55,15 @@ async function inlineFullscreen(){
   if(bounds){await adb('shell','input','tap',String((+bounds[1]+ +bounds[3])>>1),String((+bounds[2]+ +bounds[4])>>1));report.fullscreenEducationDismissed=true;await adb('shell','input','keyevent','4');}
  }
  await wait(`!document.fullscreenElement&&!!document.querySelector('.inspection video')`,15000);
- const returned=await lab.page(`const v=document.querySelector('.inspection video');return {same:v===window.cocoFullscreenProbe,src:v.currentSrc,time:v.currentTime};`);
+ const returned=await lab.page(`const v=document.querySelector('.inspection video');return {same:v===window.cocoFullscreenProbe,src:v.currentSrc,time:v.currentTime,muted:v.muted,volume:v.volume};`);
  assert.equal(returned.same,true,'Back must retain the original inline player');assert.equal(returned.src,original.src);assert.ok(returned.time>=original.time-.25,'Fullscreen must not restart the inline clip');
+ assert.equal(returned.muted,original.muted,'Leaving fullscreen must preserve the sound setting');assert.equal(returned.volume,original.volume);
  await adb('shell','input','keyevent','4');await wait(`!document.querySelector('.inspection')`,15000);
  assert.deepEqual((await lab.call('assets')).assets.map(a=>a.id).sort(),before,'Fullscreen must not mutate MediaStore');
  await click('#filter-trigger');await click('.sheet-tabs button:first-child');
  await click('.filter-chips.lead-row button:first-child');
  await click('.filter-apply button');await wait(`!!document.querySelector('.photo-card.front')`,30000);
- report.inlineFullscreen={playingBeforeFullscreen:true,samePlayer:true,backReturnsToInspector:true,galleryUnchanged:true};
+ report.inlineFullscreen={playingBeforeFullscreen:true,samePlayer:true,backReturnsToInspector:true,soundPreserved:true,galleryUnchanged:true};
 }
 async function shot(name){await run('adb',['exec-out','screencap','-p'],{encoding:'buffer',timeout:30000,maxBuffer:12<<20}).then(r=>fs.writeFile(`${OUT}/${name}.png`,r.stdout));}
 async function systemAllow(allow=true,completed){

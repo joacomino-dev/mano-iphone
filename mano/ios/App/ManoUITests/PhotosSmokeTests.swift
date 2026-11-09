@@ -679,11 +679,16 @@ final class PhotosSmokeTests: XCTestCase {
         XCTAssertTrue(looped,"Playback must wrap past the end of the paired video")
         pause.tap();Thread.sleep(forTimeInterval:2)
         attachScreenshot(app,"Native Live Photo anchored with timeline")
-        // A paused, settled image isolates the real two-finger zoom from motion.
-        let region=CGRect(x:app.frame.width*0.2,y:app.frame.height*0.2,width:app.frame.width*0.6,height:app.frame.height*0.45)
+        // Pinch the media, not the application: with Geek open the app's centre
+        // falls beside the picture's controls. Both fingers must start on it.
+        let picture=try XCTUnwrap(app.descendants(matching:.any).matching(NSPredicate(format:"label == %@","Reproducir Live Photo")).allElementsBoundByIndex.first(where:{$0.isHittable && $0.frame.width>180 && $0.frame.height>180}),"Pinned Live media must expose a visible gesture target")
+        let bounds=picture.frame
+        print("COCOWASH_UI_LIVE_PINCH_TARGET frame=\(bounds)")
+        // A paused, settled interior crop excludes controls and isolates zoom.
+        let region=CGRect(x:bounds.minX+bounds.width*0.2,y:bounds.minY+bounds.height*0.2,width:bounds.width*0.6,height:bounds.height*0.5)
         let beforePinch=try nativePhotoCrop(app,region,"Live pinned before pinch")
         let timelineFrame=timeline.frame
-        app.pinch(withScale:1.8,velocity:1)
+        picture.pinch(withScale:1.8,velocity:1)
         Thread.sleep(forTimeInterval:2)
         let afterPinch=try nativePhotoCrop(app,region,"Live pinned after pinch")
         XCTAssertEqual(timeline.frame,timelineFrame,"Pinch must zoom the photo without scaling its controls")

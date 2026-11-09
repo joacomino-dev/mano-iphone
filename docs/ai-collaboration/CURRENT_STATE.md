@@ -1,6 +1,15 @@
 # CocoWash — estado vigente
 
-Actualizado: 2026-11-08, America/Bogota. Codex trabaja solo por indicación del usuario.
+Actualizado: 2026-11-09, America/Bogota.
+
+## Codex CW-CX-055 — Atrás en fullscreen y gesto del gate iOS (en curso)
+
+Base `37facf1`, limpia y sincronizada con origin/main. Relevo CW-CL-068 leído;
+138 Node, TypeScript y protected28 PASS antes de editar. Codex reserva únicamente
+la navegación Atrás de `MainActivity`/`CocoWebChromeClient`, su regresión nativa y
+el gesto de XCTest R-07b. `InlineVideo`, sonido/reproducción, `Inspector`, diseño,
+PhotoKit y recuperación silenciosa R-64 se conservan. Revisión integrada antes
+del push y una suite combinada por checkpoint; sin publicar ni tocar cuentas.
 
 ## Claude CW-CL-063/064 — relevo de Codex y defectos del iPhone (vigente)
 
