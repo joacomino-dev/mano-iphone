@@ -5,10 +5,10 @@ import assert from 'node:assert/strict';
 import {installAppleFixture} from './apple-fixture.mjs';
 const url=process.env.APPLE_AUDIT_URL||'http://127.0.0.1:4186/native.html';
 const browser=await chromium.launch({channel:process.env.APPLE_BROWSER_CHANNEL||'msedge',headless:true});let failed=false;
-async function run(name,body){
+async function run(name,body,options={}){
  const context=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'});
  try{
-  await context.addInitScript(installAppleFixture,{});
+  await context.addInitScript(installAppleFixture,options);
   const page=await context.newPage();page.setDefaultTimeout(12000);await page.goto(url);
   await page.locator('.photo-card.front').waitFor();await page.waitForFunction(()=>!document.querySelector('.splash-lockup'));
   await page.locator('.photo-card.front').getByRole('button',{name:'Anclar',exact:true}).dispatchEvent('click');
@@ -26,6 +26,15 @@ try{
  await run('a long drag closes the anchored photo',async page=>{
   await drag(page,220);await page.waitForFunction(()=>!document.querySelector('.inspection.is-pinned'));
  });
+ await run('anchored video zooms with a pinch like photos (user, 2026-11-09)',async page=>{
+  const frame=page.locator('.inspection.is-pinned .inspection-photo'),box=await frame.boundingBox(),cdp=await page.context().newCDPSession(page);
+  const x=box.x+box.width/2,y=box.y+box.height/3;
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:x-40,y,id:1},{x:x+40,y,id:2}]});
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x-40,y,id:1},{x:x+110,y,id:2}]});
+  const scale=await page.evaluate(()=>Math.max(...[...document.querySelectorAll('.inspection-media video,.inspection-media img')].map(el=>Number(/scale\(([^)]+)/.exec(el.getAttribute('style')||'')?.[1]||1))));
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  assert.ok(scale>1.2,`video zoom scale ${scale}`);assert.equal(await page.locator('.inspection.is-pinned').count(),1,'a pinch never closes the view');
+ },{video:true});
  await run('a short drag springs back and stays anchored',async page=>{
   await drag(page,30);await page.waitForTimeout(700);assert.equal(await page.locator('.inspection.is-pinned').count(),1);
  });

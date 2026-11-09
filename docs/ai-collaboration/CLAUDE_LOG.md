@@ -807,3 +807,14 @@ Gate 42554023066 (8f2549e): 7/8 PASS; el Swift nuevo (`PHPhotoLibraryChangeObser
 álbum, cancelar borrado, R-61 ×5, pulsación larga, 10 rondas, anclar y pellizco de carta. Falla el pellizco
 sobre la Live anclada (R-07b), primera ejecución nativa de ese paso; línea de tiempo y bucle PASS.
 Impacto para Codex: R-07b y R-47b abiertos; no reintroducir `focus()` sin `preventScroll` en capas animadas.
+
+
+### CW-CL-066 — Zoom y anclar en todo; cierre por cupo
+Fecha: 2026-11-09, America/Bogota
+Agente: Claude
+Estado: completada; relevo a Codex.
+Usuario en iPhone: la raya al anclar desapareció; el pellizco en Live anclada funciona. Regla del usuario: zoom y
+anclar deben servir en todo (fotos, Live, vídeos) y ninguna animación debe dejar ver bordes ni «popping».
+Cambio: `Inspector.tsx` usa el mismo modelo de gestos para vídeos (pellizco, arrastre con zoom, arrastrar para
+cerrar sin zoom); los controles del vídeo conservan sus toques. `anchored-flow.mjs` 4/4, Live 5/5, Apple 19/19.
+Relevo: [PROMPT_CODEX_2026-11-09](../ai-handoff/PROMPT_CODEX_2026-11-09.md). Claude paró por cupo semanal.
