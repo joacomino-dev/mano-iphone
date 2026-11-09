@@ -1,10 +1,14 @@
 # Matriz técnica inicial de compatibilidad
 
-**Seguimiento 2026-11-09:** candidato 0.9.9.2, código `837875e`, mínimo iOS 17 sin cambios.
-Suite iOS estándar y emulador Android en curso; los resultados se enlazan en
-[Release Candidate](RELEASE_CANDIDATE.md). El usuario confirma Live anclada y la
-ausencia de raya en su iPhone, sin modelo/OS registrados. Esa observación no
-completa las filas de hardware ni acredita Duo, iCloud o Instruments.
+**Seguimiento 2026-11-09:** candidato 0.9.9.2; app fa318ba y pruebas `2794e4b`;
+mínimo iOS17 conservado. iPhone18Pro/iOS27.0/arm64: build tienda/desarrollo,
+álbum, metadata, cinco relanzamientos de decisiones y diez rondas PASS; suite
+completa `2794e4b` FAIL solo en destino del pellizco. Timeline y bucle pasan. R-67
+no se reproduce en ese run, pero su causa permanece abierta. Ajuste solo XCTest en curso. Android emulador API35: suite17, Back, diez rondas,
+force-stop×5 y presupuestos originales PASS. [Evidencia](evidence/strategic/0992-native-fa318ba.json).
+Ningún nuevo hardware físico probado. iOS17/18/26, Duo y otras familias siguen
+pendientes. El usuario confirma Live anclada y ausencia de raya en su iPhone,
+sin modelo/OS registrados: no completa filas de hardware, iCloud o Instruments.
 
 **Evidencia actual2026-11-08:** iPhone18Pro/iOS27.0, run42514969280,
 fuente662e67d: Releasearm64 sin firma, permiso completo, álbum exacto/relectura,
@@ -37,7 +41,7 @@ que un modelo reciente admita instalar un iOS anterior al que traía de fábrica
 | 11–15 Pro / Pro Max | 17, 18, 26, 27 | Sí, en versiones que el modelo admite | Island según generación, 48 MP/RAW/HDR y vídeos largos | NO VERIFICABLE físico |
 | 16 / 16 Plus / 16 Pro / 16 Pro Max / 16e | 18, 26, 27 | Sí, condicionado a QA | Live Photos, HDR, alta resolución y tasa de refresco | NO VERIFICABLE físico |
 | 17 / 17 Pro / 17 Pro Max / Air / 17e | 26, 27 | Sí, condicionado a QA | Nuevas dimensiones, Island, reanudación y anuncios nativos | NO VERIFICABLE físico |
-| 18 Pro / 18 Pro Max | 27 | Sí por mínimo/arquitectura; pendiente ejecución | SDK 27.1 disponible en CI de la base; no basta para aprobar hardware nuevo | NO VERIFICABLE físico ni simulador identificado |
+| 18 Pro / 18 Pro Max | 27 | Candidatos por mínimo/arquitectura; 18Pro ejecutado en simulador | SDK27.1; no basta para aprobar hardware nuevo | 18Pro/iOS27.0: PASS parcial, suite FAIL fa318ba; ProMax y físico sin probar |
 | Otras variantes llamadas “18” / “18 Plus” | Sin establecer | NO VERIFICABLE: no se inventa un modelo | Las fuentes oficiales consultadas identifican 18 Pro y Pro Max | Ninguna |
 | Duo cerrado, ambas orientaciones y márgenes laterales | 27.1 para la experiencia del dispositivo | Candidato por arquitectura; adaptación completa NO acreditada | Cámara/barra lateral, insets asimétricos, continuidad | NO VERIFICABLE nativo/físico; solamente estrés geométrico web |
 | Duo abierto, plano o plegado parcialmente | 27.1 | Candidato; no declarar optimizado | Interior regular/regular, orientación dinámica, regiones reservadas/cámara/bisagra | NO VERIFICABLE nativo/físico |

@@ -1,13 +1,23 @@
 # Capturas App Store — inventario y procedimiento
 
-**BLOCKED: no hay capturas nativas de esta RC.** Las imágenes ejecutadas en Edge
-con puente/media sintéticos sirven para QA; no se entregan como capturas de iPhone
-o prueba de funcionamiento PhotoKit. No se fabricó una composición publicitaria.
-Icono aprobado:1024×1024 RGB sin alfa, SHA256
-`84ed91a8d86ed35fb3a442578bd28d3949990a8d01159914c52bc19e94a0a46f`.
-No fue editado. Compilación de asset catalog/launch screen sigue pendiente en Xcode.
+Actualizado 2026-11-09. **Captura nativa PASS; aceptación visual pendiente.**
+Hay 28 capturas por plataforma, cuatro pantallas × siete idiomas: iOS 1206×2622
+RGB24 (42516036408) y Android 1080×1920 RGB24 (42516038859), con fixtures propios.
+Corresponden a sus SHA históricos, no prueban automáticamente la UI de 0.9.9.2;
+Claude debe aceptar vigencia, textos, RTL y arte antes de la ficha final.
+No son imágenes del runtime de navegador ni composiciones generadas.
 
-## Inventario ES y EN
+La sección vigente Required device sizes de Apple exige al menos una captura
+Dynamic Island **medium display**. Las existentes 1206×2622 cubren esa clase.
+La tabla mantiene una condición de clase grande que contradice ese resumen;
+no se impone un nuevo tamaño por inferencia. Confirmar los slots del portal antes
+de subir. No se cambió selección/validador ni se ejecutó otra CI de capturas.
+
+Icono aprobado 1024×1024 RGB sin alfa, SHA256
+`84ed91a8d86ed35fb3a442578bd28d3949990a8d01159914c52bc19e94a0a46f`.
+Sin cambios. Compilación nativa tienda fa318ba/42634699549 PASS; firma final pendiente.
+
+## Inventario previsto ES y EN (ampliaciones opcionales)
 
 | Orden | Pantalla real y estado que capturar | Copy breve opcional |
 | --- | --- | --- |
@@ -23,11 +33,13 @@ lettering/personajes/arte aprobados y mostrar producto real. No representar comp
 sin catálogo funcional, métricas inventadas o eliminación sin confirmación. No
 editar una captura para que aparente soporte Duo que no se haya ejecutado.
 
-## Tamaños consultados 7 noviembre 2026
+## Tamaños reconsultados 9 de noviembre de 2026
 
 La [especificación oficial de capturas](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/)
-admite1–10 imágenes JPEG/PNG sin alfa. Para iPhone, preparar6.9 pulgadas; si no se
-aporta esa clase, se requiere6.5. Consultar la tabla de ASC al subir:
+admite 1–10 imágenes JPEG/PNG sin alfa. El resumen vigente pide clase mediana
+Dynamic Island: 1179×2556 o 1206×2622 en retrato. Confirmar Media Manager antes
+de subir. Las siguientes clases grandes son alternativas adicionales; no se
+aplica la antigua obligación 6.9/6.5 como condición universal:
 
 - 6.9:1260×2736,1290×2796 o1320×2868 en retrato, según dispositivo aceptado.
 - 6.5:1284×2778 o1242×2688 en retrato.

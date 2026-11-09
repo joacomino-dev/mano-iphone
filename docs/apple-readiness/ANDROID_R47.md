@@ -1,6 +1,11 @@
 # R-47 — carta nativa Android y vídeo
 
-Actualizado 2026-11-09. Candidato `6386f55`; no aceptación visual ni distribución.
+Actualizado 2026-11-09. 0.9.9.2, fuente de app `fa318ba`: **PASS nativo acotado**
+[42634538249](https://github.com/joacomino-dev/mano-iphone/actions/runs/42634538249).
+Back sale de fullscreen conservando reproductor/fuente/posición/sonido/galería;
+siguiente Back cierra visor. E2E17, diez rondas, force-stop×5 y presupuestos PASS.
+Sin hardware físico ni aceptación visual/comercial. Pruebas2794e4b no cambian la app.
+Las incidencias siguientes documentan el diagnóstico histórico, no un FAIL actual de Back.
 
 ## Cambios acotados
 

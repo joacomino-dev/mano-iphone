@@ -36,15 +36,22 @@ una puerta nativa, comercial o de distribución.
   243919→246092 KiB, pendiente 765,83 KiB/ciclo, CPU inactiva tardía 0,47 %. Solo emulador y biblioteca pequeña.
 - [Tienda iOS](https://github.com/joacomino-dev/mano-iphone/actions/runs/42634699549) y
   [desarrollo iOS](https://github.com/joacomino-dev/mano-iphone/actions/runs/42634699515) **PASS** en fa318ba.
-  [Fotos iOS](https://github.com/joacomino-dev/mano-iphone/actions/runs/42634699746) **FAIL**: 4 PASS,
-  2 FAIL, 2 SKIP. Pasan relanzamiento ×5 y diez rondas; fallan arranque de cancelación y bucle Live.
+  [Fotos iOS2794e4b](https://github.com/joacomino-dev/mano-iphone/actions/runs/42669952998) **FAIL**:
+  5 PASS, 1 FAIL, 2 SKIP. Pasan cancelación, relanzamiento ×5, key/timeline/bucle y diez rondas;
+  solo falla encontrar el vídeo para el gesto de zoom. Ajuste CW-CX-062 hacia el padre del timeline.
 - R-67 **P1 abierto**: WKWebView vacío después de relanzar, antes de cualquier operación de borrado;
-  causa sin determinar. No se oculta con reintentos. R-07b corrige solo XCTest: marco visible del medio
+  causa sin determinar; no reproducido en2794e4b. No se oculta con reintentos. R-07b corrige solo XCTest: marco visible del medio
   (gestos en el padre) y ventana de cuatro bucles para lecturas AX que tardan 2,87 s. Conserva todas
   las aserciones finales. Nuevo gate completo pendiente; [evidencia](apple-readiness/evidence/strategic/0992-native-fa318ba.json).
 - Sonido/reproducción, Inspector, PhotoKit, recuperación silenciosa R-64 y arte intactos.
   Siguen QA física/visual, privacidad del archivo, comercio y firma.
   **No apta para enviar.**
+- Actualización CW-CX-061: Android `2794e4b` /42669935821 confirma PASS completo.
+  IPA iOS build44 y APK/AAB Android code4 verificados en Descargas; AAB unsigned,
+  APK con firma temporal. No desinstalar apps con decisiones por conflicto de firma.
+  Políticas públicas200 pero anteriores sin Android; ZIP corregido preparado sin publicar.
+  Capturas1206×2622 cubren clase mediana que exige el resumen vigente de Apple;
+  no se lanzó otra CI ni se modificó el selector por la tabla contradictoria.
 
 CW-CX-060: revisión integrada sin defectos nuevos; release9 y protected28 PASS.
 El próximo gate prueba únicamente las correcciones de XCTest; R-67 sigue abierto.
@@ -125,9 +132,9 @@ El próximo gate prueba únicamente las correcciones de XCTest; R-67 sigue abier
 | R-64 | **Sin avisos de almacenamiento** («No se pudo guardar…», «operación interrumpida»): recuperación silenciosa (usuario, 2026-11-08) | CL | Corregido local; nativo pendiente | CW-CL-064; `durableSession.ts`, `native.tsx`, `ManoApp.tsx`; persistencia 8+7 PASS en navegador |
 | R-65 | Vista anclada: solo «Cerrar» y deslizar para cerrar (usuario, 2026-11-08) | CL | Corregido local | `Inspector.tsx`; `tests/anchored-flow.mjs` 3/3 |
 | R-66 | Raya/rectángulo claro abajo al anclar un vídeo (usuario, 2026-11-08) | CL | **PASS (usuario en iPhone)** | 1) barra del vídeo sin `backdrop-filter`; 2) causa real según la captura del usuario: `frame.focus()` sin `preventScroll` desplazaba el WebView y asomaba el fondo crema de la página bajo la vista anclada → `focus({preventScroll:true})` y desplazamiento del documento fijo en 0 mientras está anclada (`Inspector.tsx`) |
-| R-07b | Live anclada: bucle y pellizco del gate nativo | CX | **PASS en iPhone (usuario); FAIL de gate, corrección de test pendiente** | 837875e solo falla isHittable del vídeo; fa318ba falla antes en ventana del bucle. CW-CX-060 conserva píxeles cambiados y controles sin escalar; no cambia reproducción |
-| R-47b | Android: Atrás sale de fullscreen y luego cierra visor | CX | **PASS emulador API35; físico pendiente** | fa318ba / 42634538249: mismo reproductor/fuente/posición/sonido/galería, E2E17 + diez rondas + force-stop ×5 y presupuestos PASS |
-| R-67 | **P1 · Arranque iOS intermitente sin contenido accesible tras relanzar** | CX | **FAIL, causa pendiente** | fa318ba / 42634699746 testV línea504: 120s sin Eliminar, WKWebView vacío; bridge listo y documento principal comprometido. La prueba no llegó al borrado. No añadir retry que oculte el fallo |
+| R-07b | Live anclada: bucle y pellizco del gate nativo | CX | **PASS en iPhone (usuario); FAIL de gate, corrección de test pendiente** | 2794e4b pasa bucle y falla solo destino por label; CW-CX-062 elige padre del timeline. Conserva píxeles cambiados y controles sin escalar; no cambia reproducción |
+| R-47b | Android: Atrás sale de fullscreen y luego cierra visor | CX | **PASS emulador API35; físico pendiente** | fa318ba / 42634538249 y2794e4b/42669935821: mismo reproductor/fuente/posición/sonido/galería, E2E17 + diez rondas + force-stop ×5 y presupuestos PASS |
+| R-67 | **P1 · Arranque iOS intermitente sin contenido accesible tras relanzar** | CX | **FAIL, causa pendiente** | fa318ba / 42634699746 testV línea504: 120s sin Eliminar, WKWebView vacío; bridge listo y documento principal comprometido. La prueba no llegó al borrado. No reproducido en2794e4b, causa abierta. No añadir retry |
 
 ## A · Código y pruebas iOS (antes de firmar)
 
@@ -136,7 +143,7 @@ El próximo gate prueba únicamente las correcciones de XCTest; R-67 sigue abier
 | R-01 | Álbum iOS: teclado no recibe texto con WKPreferences desactivada | CX | **PASS estándar; Duo/min17 pendientes** | Matriz42513277098 falseFAIL/truePASS; fix662e67d probado sin observer42514969280: nombreexacto/creación/relectura/avancePASS. Gestos pinch/anclajePASS. |
 | R-02 | Privacidad de distribución ydominios de tracking | CX + U | **PASS declaración; BLOCKED final** | Usuario aprueba2hosts;423e79eincorpora y5tests/strictPASS. Captura real anteriorATT2estadosPASS42514971530; repetir conmanifestnuevo42516799297. SDKfirmasPASS42516183457; archivo/exhaustividad/web pendientes. |
 | R-03 | Captura del fallo del smoke en dispositivos de 2 pantallas (`simctl io screenshot` exige `--display`) | CX | **PASS (colector)** | CW-CX-027/030:simctl real displays3/1 exit0 yxcresult42488119404 exporta la captura exacta durante el fallo. No acredita adaptación visual Duo |
-| R-04 | Revisar invalidación de snapshots alrededor de la cola de favoritas Android y el `flushFavorites()` de fin de ronda | CX | **Corregido localmente; QA nativa bloqueada** | CW-CX-024:4 fallos reproducidos,7 casos web+2 puros PASS; cola/acuse/undo y snapshots protegidos. [Evidencia](apple-readiness/ANDROID_FAVORITES.md) |
+| R-04 | Invalidación de snapshots y cola de favoritas Android | CX | **PASS emulador; físico pendiente** | fa318ba / 42634538249: favoritas/undo/flush nativo y diez rondas. Regresiones web de CW-CX-024 conservadas |
 | R-05 | QA destructiva ypermisos adversos con fixtures | CX | **PASS confirmación/postaudit; pendiente adverso completo** | iOS42514969280:10rondas/10ausentes/unknown0PASS. Cancel/error/favorita externa/revocado/interrupción yR61 pendientes. AndroidE2E nativo enCI, ningún borrado personal. |
 | R-06 | Tamaño del bundle web (> 500 kB, aviso de Vite) | C | Pendiente | Solo con medición en Instruments; no tocar sin evidencia |
 
@@ -150,8 +157,8 @@ El próximo gate prueba únicamente las correcciones de XCTest; R-67 sigue abier
 | R-13 | Perfil de pagos de AdMob | U | Pendiente | AdMob iOS y mensajes ya hechos (2026-11-06) |
 | R-14 | Marca «CocoWash» sin conflicto en los mercados | U | Pendiente | — |
 | R-15 | Productos en ASC con IDs exactos: `noads.year` (no renovable), `noads.lifetime` (no consumible), `coffee` (consumible); precios | U (+C textos) | Pendiente | Textos en `docs/appstore/in-app-purchases.md` |
-| R-16 | Versión y build de envío (no reutilizar 43; consultar ASC) | U + C | Pendiente | No subir versiones sin ASC |
-| R-17 | Publicar las políticas corregidas ES/EN con apartado Android (`web/cocowash/`) y comprobarlas tras desplegar | U autoriza, C prepara | Pendiente | La web pública sigue con la versión anterior (comprobado 2026-11-07) |
+| R-16 | Versión y build de envío | U + C | **Configuración PASS; disponibilidad BLOCKED** | Visible0.9.9.2; iOS0.9.9/build44; Android0.9.9.2/code4. Consultar ambas consolas antes de firmar |
+| R-17 | Publicar políticas corregidas ES/EN con Android | U autoriza, C prepara | **Preparadas; publicación BLOCKED** | 9nov: ambas URL y soporte200 con agente navegador; archivos anteriores sin Android. [Recibo](apple-readiness/evidence/strategic/0992-public-policies.json); sin despliegue |
 | R-18 | Ficha, etiquetas de privacidad, clasificación por edad, notas de revisión | U + C | En curso | Borradores en `docs/appstore/` y `docs/apple-readiness/storefront/`; revisión nativa de textos pendiente |
 
 ## C · Arte y capturas
@@ -159,7 +166,7 @@ El próximo gate prueba únicamente las correcciones de XCTest; R-67 sigue abier
 | ID | Qué | Quién | Estado | Evidencia / siguiente paso |
 |---|---|---|---|---|
 | R-20 | Icono definitivo del basurero (sello «Eliminar») y la otra imagen pendiente | U | Pendiente | — |
-| R-21 | Capturas nativas reales de iPhone 6,9" (sin fotos personales) | U + CL | Bloqueado | Requiere dispositivo o simulador; plan en `docs/appstore/screenshots.md` |
+| R-21 | Capturas nativas reales sin fotos personales | CL + U | **Generación PASS; aceptación pendiente** | 28 iOS1206×2622 y28 Android1080×1920 RGB24, siete idiomas, runs42516036408/42516038859. Claude debe aceptar textos/arte/RTL y vigencia frente a la app final |
 
 ## D · Distribución iOS
 
@@ -175,12 +182,12 @@ El próximo gate prueba únicamente las correcciones de XCTest; R-67 sigue abier
 |---|---|---|---|---|
 | R-40 | Teléfono Android 11+ y cuenta de Play Console verificada | U | Pendiente | Bloquea todo Play |
 | R-41 | Si corresponde por tipo/fecha de cuenta personal: mínimo12 testers inscritos continuamente14 días en prueba cerrada y solicitar acceso a producción | U | Pendiente | [Regla oficial Google](https://support.google.com/googleplay/android-developer/answer/14151465): cuentas personales posteriores al13-11-2023. Confirmar requisito de la cuenta real; no es regla universal de15–20 |
-| R-42 | Keystore de desarrollo en los secretos de GitHub | U | Pendiente | Clave en `C:\Users\Joaco\Developer\cocowash-keys` (LEEME) |
-| R-43 | IDs reales de AdMob Android y canal de tienda Android en `main` (ya no hay rama `release`) | U (IDs) + CX | BLOCKED IDs; mecanismo en curso | CW-CX-032:variables Android separadas,debug sample ygate estricto preparados; falta CI yconfiguración del propietario, no usar iOS |
+| R-42 | Keystore de desarrollo en secretos GitHub | U | **BLOCKED configuración** | Run42669935821 confirma clave de desarrollo no configurada: firma temporal. Usar la clave existente local, sin enviarla por chat ni desinstalar para actualizar |
+| R-43 | IDs reales AdMob Android y canal de tienda | U (IDs) + CX | **Mecanismo PASS; IDs BLOCKED** | fa318ba valida canales por hash. Faltan variables reales Android y verifyStoreConfiguration; no usar muestras ni IDs iOS |
 | R-44 | Con `main` en canal de tienda, el APK de desarrollo oculta «Modo developer»: decidir si su CI cambia su copia a desarrollo como la IPA | CX | **PASS** | CW-CX-028: run42486725664 valida hashes de APK developer/AAB tienda,5 regresiones yE2E emulador PASS. IDs reales/firma/compras siguen en sus gates |
 | R-45 | P3 posterior: detector de texto/embedder adicional Android | CX si se autoriza | Pendiente, fuera de primera publicación | Texto no disponible se mantiene oculto; parecido dHash existente no equivale a embedder. No incorporar modelos nuevos ni anunciar funciones incompletas para cerrar la primera versión |
-| R-46 | Verificar firma de compras con la clave de licencias | CX + U | En curso; sandbox BLOCKED | CW-CX-032:verificador local y7 vectores RSA,errores/recibos no verificados nunca éxito; CI Java/Kotlin pendiente. [Configuración y límites](playstore/PURCHASE_VERIFICATION.md) |
-| R-47 | Carta de anuncio con Fredoka y espejo RTL; vídeo a pantalla completa | CX + CL | Implementación candidata; nativo y aceptación pendientes | [Cambios, prueba y límites](apple-readiness/ANDROID_R47.md). Sin alterar anuncios ni monetización. |
+| R-46 | Firma de compras Android | CX + U | **JVM/Kotlin PASS; Play sandbox BLOCKED** | fa318ba compila y prueba verificador; sin clave no ofrece compras falsas. Clave pública/configuración/transacciones Play pendientes. [Límites](playstore/PURCHASE_VERIFICATION.md) |
+| R-47 | Carta de anuncio Fredoka/RTL y vídeo fullscreen | CX + CL | **Fullscreen PASS emulador; visual BLOCKED** | R-47b confirmado en fa318ba. Claude conserva aceptación visual de capturas reales; no altera monetización |
 | R-48 | Prueba interna, cerrada (14 días) y solicitud de producción | U + C | Bloqueado | Tras R-40…R-43 |
 | R-49 | Firma de producción Android: Play App Signing, clave de subida/recuperación y AAB del canal real; contratos de pagos/productos Play y Data safety contrastado con SDK/tráfico | U configura + CX verifica | Pendiente | La clave de desarrollo R-42 y una CI verde no acreditan firma comercial ni productos Google Play funcionales |
 
@@ -192,7 +199,7 @@ El próximo gate prueba únicamente las correcciones de XCTest; R-67 sigue abier
 | R-51 | Copias locales antiguas (`CocoWash-b24`, `CocoWash-stage1` con cambios sin confirmar, worktree de Codex, OneDrive) | U decide | Pendiente | No usarlas como base; archivar tras revisar los cambios de `CocoWash-stage1` |
 | R-52 | Workflows heredados (`build-ios.yml`, `build-ios-package.yml`) y avisos de Node 20 en acciones | C | Pendiente | Solo manuales; decidir si se retiran |
 | R-53 | Elegir/verificar disponibilidad efectiva iPhone en iPad, Mac Apple silicon y visionOS; pruebas y accesibilidad para destinos ofrecidos | U decide + CX/CL verifican | Pendiente | Familia iPhone no sustituye opciones de disponibilidad de ASC. No prometer destinos sin QA |
-| R-54 | Gate final por tienda: cero P0/P1 abiertos, recurso/capturas reales, accesibilidad/locales, privacidad/SDK/consentimiento y compras del artefacto exacto | CX técnico + CL visual + U envío | Bloqueado | Separar fuente, simulador, hardware y distribución. R-00 físico, R-01 y R-02 impiden aceptar la RC; scripts preparados no cierran gates |
+| R-54 | Gate final por tienda: cero P0/P1 abiertos, recurso/capturas reales, accesibilidad/locales, privacidad/SDK/consentimiento y compras del artefacto exacto | CX técnico + CL visual + U envío | Bloqueado | Separar fuente, simulador, hardware y distribución. R-67/Live, QA física, privacidad y comercio impiden aceptar la RC; scripts preparados no cierran gates |
 
 ## Detalle R-00
 

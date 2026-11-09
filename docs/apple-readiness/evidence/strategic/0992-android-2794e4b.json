@@ -1,0 +1,91 @@
+{
+  "date": "2026-11-09",
+  "source": "2794e4bf9626aec393429d0651f88f173773b6bc",
+  "run": 42669935821,
+  "status": "PASS",
+  "nativeChecks": 17,
+  "functionalCycles": 10,
+  "samples": 11,
+  "terminationTrials": 5,
+  "fullscreenBack": "PASS; same player/source/position/sound/gallery, subsequent Back closes inspector",
+  "cancelledDeleteRetained": true,
+  "favoriteFlush": true,
+  "pendingSurvivesTermination": true,
+  "performance": {
+    "status": "PASS",
+    "budgets": {
+      "maxLateMemoryGrowthKiB": 24576,
+      "maxSlopeKiBPerCycle": 1024,
+      "maxLateIdleCpuPercent": 15,
+      "maxIdleCpuGrowthPercentagePoints": 5
+    },
+    "boundary": "Small owned fixture library, ten rounds, simulator only. Not physical iPhone/Android or large-library acceptance.",
+    "baselineMemoryKiB": 219097,
+    "lateMemoryKiB": 228590,
+    "slopeKiBPerCycle": 515.15,
+    "checks": {
+      "lateMemoryGrowth": true,
+      "memorySlope": true,
+      "rolesWithinMemoryBudget": true,
+      "stableProcessesWithinMemoryBudget": true,
+      "lateIdleCpu": true,
+      "idleCpuGrowth": true
+    },
+    "roleTrends": {
+      "renderer": {
+        "baselineMemoryKiB": 106114,
+        "lateMemoryKiB": 111176,
+        "slopeKiBPerCycle": 546.8666666666667,
+        "checks": {
+          "lateMemoryGrowth": true,
+          "memorySlope": true
+        }
+      },
+      "app": {
+        "baselineMemoryKiB": 115236,
+        "lateMemoryKiB": 115992,
+        "slopeKiBPerCycle": -31.716666666666665,
+        "checks": {
+          "lateMemoryGrowth": true,
+          "memorySlope": true
+        }
+      }
+    },
+    "stableProcessTrends": {
+      "4585": {
+        "baselineMemoryKiB": 115236,
+        "lateMemoryKiB": 115992,
+        "slopeKiBPerCycle": -31.716666666666665,
+        "checks": {
+          "lateMemoryGrowth": true,
+          "memorySlope": true
+        },
+        "role": "app"
+      },
+      "4623": {
+        "baselineMemoryKiB": 106114,
+        "lateMemoryKiB": 111176,
+        "slopeKiBPerCycle": 546.8666666666667,
+        "checks": {
+          "lateMemoryGrowth": true,
+          "memorySlope": true
+        },
+        "role": "renderer"
+      }
+    },
+    "baselineIdleCpuPercent": 0,
+    "lateIdleCpuPercent": 0
+  },
+  "signing": {
+    "developmentKey": "throw-away debug key; cannot replace different existing signer without data loss risk",
+    "uploadKey": "not configured",
+    "aabSigned": false
+  },
+  "boundary": "API35 emulator with generated assets. No API30/physical/large-library/battery or real purchase/production-ad acceptance.",
+  "initialAssetCount": 65,
+  "fixtureOwnershipVerified": true,
+  "rawEvidenceArtifact": 13697959563,
+  "rawEvidenceSha256": "cb200698fcabbdc988e0c57618c59f35b73997c99d9e51a9c70b42ec1f65ebfb",
+  "peakSampledCombinedCpuPercent": 102.92340145638416,
+  "cpuBoundary": "Late-window statistic passes the predeclared budget; intermediate sampled bursts exist. Zero tick deltas at the sampler resolution do not mean zero physical CPU consumption."
+}

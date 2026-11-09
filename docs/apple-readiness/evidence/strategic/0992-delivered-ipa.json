@@ -1,0 +1,34 @@
+{
+  "date": "2026-11-09",
+  "source": "fa318baa2b9937c812c1ff606751aa6bfa708530",
+  "run": 42634699515,
+  "artifact": 13682393882,
+  "outerSha256": "73ff542d44f471f1d4f35d6dd9368a4eb8c4a0f572589f3e8057c4d73c12c1d7",
+  "filename": "CocoWash-0.9.9.2-build44-fa318ba.ipa",
+  "bytes": 6828204,
+  "sha256": "9a71e51b235cf82a6e125edcd3f884798c10b4b65def35ecd8fed455e18a150b",
+  "zipCrcVerified": true,
+  "bundle": "work.joaquin.mano",
+  "marketingVersion": "0.9.9",
+  "build": "44",
+  "minimum": "17.0",
+  "architecture": "arm64",
+  "family": [
+    1
+  ],
+  "locales": [
+    "ar",
+    "de",
+    "en",
+    "es",
+    "fr",
+    "it",
+    "ja"
+  ],
+  "developmentReset": false,
+  "testAds": true,
+  "signed": false,
+  "provisioned": false,
+  "installedOnPhysicalDevice": false,
+  "boundary": "Unsigned development IPA for user signing with iLoader; not an App Store/TestFlight artifact, no personal installation or native-full-suite acceptance."
+}

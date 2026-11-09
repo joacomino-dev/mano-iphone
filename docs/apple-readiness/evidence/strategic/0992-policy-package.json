@@ -1,0 +1,11 @@
+{
+  "filename": "CocoWash-0.9.9.2-politicas-ES-EN.zip",
+  "bytes": 12844,
+  "sha256": "889af0d15f0a76dc6be3506449f914cefd523595a55059998a6da501f4b070ce",
+  "source": "2794e4bf9626aec393429d0651f88f173773b6bc",
+  "files": {
+    "privacidad.html": "31f3267dcae054745ee03f84ba808c7ed7a4f4eb1500233ef1e5b057442de230",
+    "privacy.html": "84dbe66b640e04a20ef92675b28024f8166e5a234dd50fb592c4794efededa5a"
+  },
+  "deployed": false
+}

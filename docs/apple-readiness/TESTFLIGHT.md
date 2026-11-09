@@ -1,6 +1,6 @@
 # Protocolo de dispositivos físicos y TestFlight
 
-**RC:** fuente ya preparada con developer=false y ajustes comerciales Release existentes, sin cambio de estrategia. Archivo/subida no realizados. Seguir el [gate Mac actualizado](NATIVE_GATE.md) y [checklist de envío](APP_STORE_SUBMISSION_CHECKLIST.md); resolver P1 de dominios antes de firmar. El texto siguiente conserva procedimientos de Fase2.
+**RC 0.9.9.2, actualizado 2026-11-09:** fuente ya preparada con developer=false y ajustes comerciales Release existentes, sin cambio de estrategia. Archivo/subida no realizados. Seguir el [gate Mac actualizado](NATIVE_GATE.md) y [checklist de envío](APP_STORE_SUBMISSION_CHECKLIST.md); cerrar R-67/Live y privacidad del archivo antes de firmar. El texto siguiente conserva procedimientos de Fase2.
 
 Preparado 2026-11-07; **PENDIENTE**, no ejecutado. Ninguna subida, publicación,
 compra o modificación de certificados se autoriza por este documento.
@@ -9,7 +9,8 @@ compra o modificación de certificados se autoriza por este documento.
 
 1. Integrar los commits revisados en el canal release conservando la última base.
    Confirmar que DEVELOPER=false, IDs comerciales existentes y ausencia de reset/
-   test ads; no cambiar estrategia de monetización ni usar main como canal de tienda.
+   test ads; mantener `main` como único canal de tienda. El workflow developer cambia solo
+   su copia CI y no es un archivo de TestFlight.
 2. Ejecutar `bash scripts/validate-apple-native.sh` en macOS y conservar SHA, diff,
    Xcode/SDK, Package.resolved, arquitecturas, logs y recursos del bundle.
 3. Ejecutar PhotoKit real en simulador desechable y los casos destructivos definidos
@@ -83,8 +84,9 @@ Mac/iPad/visionOS requieren decisión de disponibilidad y QA propio.
    póster/inline/fallback, pausa/sonido/tiempo al anclar. No interpretar preview como
    descarga completa ni salida de Fotos como espacio físicamente devuelto.
 5. Terminar/suspender/relanzar tras decisiones y confirmaciones, con disco/cuota/
-   presión de memoria. Medir pérdida reciente dentro de los 350 ms de escritura,
-   coherencia del envelope y exactitud de undo; no declarar garantía de cero pérdida.
+   presión de memoria. Verificar decisiones ya reconocidas,
+   coherencia del diario y exactitud de undo; el fallback silencioso cuando falla
+   el almacenamiento no garantiza durabilidad. No reintroducir avisos R-64.
 6. Instruments: arranque/primera carta, Allocations/VM/Leaks, CPU/Energy, scroll de
    revisión e indexación durante tandas 15 min. Guardar dispositivo y condiciones;
    comparar contra baseline, sin extrapolar los tiempos Node de esta fase.

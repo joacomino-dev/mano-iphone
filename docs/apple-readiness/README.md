@@ -1,7 +1,7 @@
 # CocoWash — preparación Apple y distribución
 
-Estado vigente, 2026-11-08: fuente única main en `C:/Users/Joaco/Developer/CocoWash-android`.
-**NO APTA para envío: R-61 requiere validar el diario corregido ante force-stop nativo; privacidad y distribución finales pendientes.**
+Estado vigente, 2026-11-09: fuente única main en `C:/Users/Joaco/Developer/CocoWash-android`.
+**0.9.9.2: NO APTA para envío. Android completo y relanzamiento ×5 de ambas plataformas PASS; R-67/Live iOS, privacidad del archivo, hardware y distribución pendientes.**
 Ya se utilizan runners macOS públicos estándar autorizados. Windows no compila Swift;
 la evidencia de CI se identifica por SHA/run, sin fingir dispositivos físicos.
 

@@ -1,0 +1,44 @@
+{
+  "date": "2026-11-09",
+  "method": "Read-only urllib HTTPS GET with Mozilla/5.0 user agent, 12s timeout; no login/deployment",
+  "initialAttempt": "Default urllib user-agent received HTTP403 on all three URLs; browser user-agent repeated read-only",
+  "results": [
+    {
+      "url": "https://joaquinmino.work/cocowash/privacidad.html",
+      "status": 200,
+      "finalURL": "https://joaquinmino.work/cocowash/privacidad.html",
+      "contentType": "text/html",
+      "bytes": 14725,
+      "sha256": "6637a64fc2b95462b8327c0b61fb37d1eb1f2e27e2160c5a4e59a9af4f59f15e",
+      "matchesPreparedFile": false,
+      "mentionsAndroid": false,
+      "mentionsAdMob": true,
+      "contactPresent": true
+    },
+    {
+      "url": "https://joaquinmino.work/cocowash/privacy.html",
+      "status": 200,
+      "finalURL": "https://joaquinmino.work/cocowash/privacy.html",
+      "contentType": "text/html",
+      "bytes": 13876,
+      "sha256": "74947c11da46d5fb2fe137b992aec4bea3a448c1da7e690c28c94c42a68e467b",
+      "matchesPreparedFile": false,
+      "mentionsAndroid": false,
+      "mentionsAdMob": true,
+      "contactPresent": true
+    },
+    {
+      "url": "https://joaquinmino.work/cocowash/support.html",
+      "status": 200,
+      "finalURL": "https://joaquinmino.work/cocowash/support.html",
+      "contentType": "text/html",
+      "bytes": 9285,
+      "sha256": "1ad4dec958672326c7ca6d5fd654346d6aadfa6839ab375d533faa9520ed4a0b",
+      "matchesPreparedFile": false,
+      "mentionsAndroid": false,
+      "mentionsAdMob": false,
+      "contactPresent": true
+    }
+  ],
+  "deployment": "NOT AUTHORIZED / NOT EXECUTED"
+}

@@ -1,6 +1,6 @@
 # Privacidad y monetización de la RC
 
-2026-11-07. PASS significa comprobación del alcance indicado, no aprobación legal.
+Actualizado 2026-11-09. PASS significa comprobación del alcance indicado, no aprobación legal.
 
 ## Decisiones confirmadas
 
@@ -12,11 +12,11 @@ versión gratuita sin monetización. No se añadieron servicios, productos o pre
 | --- | --- |
 | PhotoKit, medios/iCloud | PASS inspección: procesamiento local; descargas desde iCloud de la persona. Sin endpoint propio de subida. BLOCKED tráfico/runtime nativo |
 | Vision | PASS: parecido, nitidez, OCR y conteo de caras existentes; no identidad facial ni agrupación Personas. No se amplió el análisis |
-| Decisiones/preferencias | PASS: claves locales existentes y envelope atómico. Puede entrar en backups; fallo de cuota se comunica; terminación antes del flush de 350 ms sigue como prueba nativa pendiente |
+| Decisiones/preferencias | PASS: diario IndexedDB local y espejo; cinco terminaciones reales por plataforma conservan decisiones reconocidas. Puede entrar en backups. R-64 usa recuperación silenciosa; el fallback con almacenamiento averiado no garantiza durabilidad |
 | Lugares | PASS código: geocodificación Apple opcional con coordenadas redondeadas. No equivale a cero comunicaciones |
 | Compartir | PASS código: elección explícita, hoja iOS/destino de la persona. Se corrigió la promesa demasiado amplia «nunca salen» |
 | Ads y UMP | PASS integración real, binarios oficiales fijados y manifiestos inspeccionados. BLOCKED consentimiento regional, tráfico, inventario comercial y SDK firmado en archivo |
-| Identificadores | PASS declaración de DeviceID vinculado/rastreo del proveedor; ATT en fuente. No se ha medido IDFA real ni dominios |
+| Identificadores | PASS declaración de DeviceID vinculado/rastreo del proveedor; ATT en fuente. Dominios observados y dos hosts aprobados incorporados; IDFA y bloqueo ATT físico pendientes |
 | Compras | PASS StoreKit local verificado en fuente; catálogo dinámico y restore. BLOCKED productos, precios/países, contratos y sandbox reales |
 | Diagnósticos | Sin telemetría propia en fuente; Ads declara diagnóstico y analítica. No usar «Data Not Collected» |
 
@@ -33,15 +33,19 @@ UserDefaultsCA92.1. Capacitor8.6.0 instalado incluye manifiestos Capacitor/Cordo
 sin recogida declarada. Falta confirmar el empaquetado/resolución real del archivo.
 No se copian justificaciones del SDK al código propio sin uso que las sustente.
 
-**BLOCKED:** Privacy Report agregado, validación Xcode de firmas SDK y dominios de
-rastreo. Los `_CodeSignature` presentes no verifican identidad/integridad Apple.
-**FAIL P1 para envío:** tracking=true con lista de dominios vacía incumple la
-declaración esperada por [Apple TN3182](https://developer.apple.com/documentation/technotes/tn3182-adding-privacy-tracking-keys-to-your-privacy-manifest).
-La evidencia confirma la ausencia; resolver los valores requiere proveedor/tráfico.
-`python scripts/check-apple-privacy.py --submission` falla explícitamente y el
-script de archivo lo exige antes de firmar/exportar. No se inventa una lista
-de dominios para rellenar el array vacío. Las
-[etiquetas propuestas](../appstore/app-privacy.md) siguen pendientes de contraste.
+**PASS de declaración:** los dos hosts exactos aprobados están en el manifiesto,
+las cinco regresiones y `python scripts/check-apple-privacy.py --submission` pasan.
+Firmas del proveedor GMA/UMP verificadas en macOS (42516183457). La IPA de prueba
+0.9.9.2 contiene ambos hosts. **BLOCKED final:** Privacy Report agregado del archivo
+firmado, exhaustividad de SDK/tráfico, bloqueo ATT en TestFlight físico y compras.
+No se promete ausencia de recogida ni se considera exhaustiva una lista de dos hosts.
+
+Políticas ES/EN completas preparadas. El 9 de noviembre las URL públicas y soporte responden
+200 con agente de navegador, pero difieren de los archivos preparados y no contienen
+Android. [Recibo](evidence/strategic/0992-public-policies.json). Actualizarlas requiere
+la autorización de despliegue separada. Las [etiquetas propuestas](../appstore/app-privacy.md)
+requieren contraste final con el archivo y decisiones del propietario.
+
 
 Reproducir desde raíz: `python scripts/inspect-apple-sdks.py` y
 `python scripts/check-apple-privacy.py`. Python3 estándar; descarga de SDKs en

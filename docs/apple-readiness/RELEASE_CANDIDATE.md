@@ -1,47 +1,116 @@
 # CocoWash — Release Candidate en estabilización
 
-## Candidato 0.9.9.2 — CW-CX-058, 9 de noviembre de 2026
+## Candidato 0.9.9.2 — 9 de noviembre de 2026
 
-Código `837875e474fc9870c5c01fcd8f6ebf2ebbb0f33e`. Etiqueta visible **0.9.9.2**,
-iOS **0.9.9 (44)**, mínimo **17.0**; Android **0.9.9.2 (4)**, mínimo API30 y target36.
-El cuarto componente es la etiqueta de CocoWash; Apple exige tres componentes
-para CFBundleShortVersionString. Los números de envío deben estar libres en las
-consolas. No se ha firmado, subido ni publicado esta entrega.
+**Estado: FAIL técnico / distribución BLOCKED. No apta para enviar.**
+Código de aplicación `fa318baa2b9937c812c1ff606751aa6bfa708530`;
+checkpoint de pruebas `2794e4bf9626aec393429d0651f88f173773b6bc`.
+El diff entre ambos no cambia fuentes compiladas de la app: solo XCTest,
+instrucciones del artefacto Android y documentación. La entrega documental final
+se identifica con `git log -1 --format=%H -- docs/apple-readiness/RELEASE_CANDIDATE.md`.
 
-**PASS local:** 138 Node, TypeScript, protected28, builds web/native-web,
-9 release (incluida regresión de versión inválida), 4 contratos, 25 Python y
-56 escenarios Edge con medios sintéticos. Cuatro fixtures Bash verifican que el
-reintento iOS se limita al bootstrap anterior a cualquier marcador UI. Revisión
-integrada sin hallazgos. [Evidencia](evidence/strategic/0992-local.json).
-`InlineVideo`, `Inspector`, dominio, PhotoKit, recuperación silenciosa R-64,
-arte y dependencias se conservan.
+Etiqueta visible **0.9.9.2**; iOS **0.9.9 (44)**, mínimo **17.0**, arm64/iPhone;
+Android **0.9.9.2 (4)**, mínimo API30, target36. Confirmar que los números están
+libres en las consolas antes de firmar. Apple exige tres componentes para la
+versión nativa. No se han firmado archivos comerciales, subido apps ni publicado.
 
-**Gates del mismo código:**
+| Requisito | Estado | Evidencia y límite |
+| --- | --- | --- |
+| Node, TypeScript, builds web y native-web | PASS | 138 Node; builds ejecutados sobre las mismas fuentes de app |
+| Runtime protegido e identidad | PASS | 28 archivos intactos; Inspector/InlineVideo conservan hashes; sin cambios de arte |
+| Regresiones locales | PASS | 9 release, 4 contratos, 25 Python, 56 escenarios Edge y 4 fixtures Bash de bootstrap |
+| Compilación iOS tienda/desarrollo | PASS | fa318ba: 42634699549 / 42634699515; desarrollo prueba arranque y relanzamiento |
+| Android nativo completo | PASS | 2794e4b / 42669935821 confirma de nuevo E2E17, Back, favoritas, cancelación, diez rondas y force-stop ×5 |
+| Presupuestos Android | PASS | 65 elementos generados, API35; PSS 219097→228590 KiB, pendiente 515,15 KiB/ciclo. Mismos límites; detalle de CPU y picos debajo |
+| Diario tras terminación real | PASS | Decisión reconocida conserva pendientes ×5 en ambos simuladores; no promete durabilidad con almacenamiento averiado |
+| Gate Fotos iOS completo | FAIL | 2794e4b / 42669952998: 5 PASS, 1 FAIL, 2 SKIP; solo destino del pellizco anclado |
+| Ajuste del destino de pellizco | NOT TESTED | CW-CX-062: ancestro del timeline real; revisión y nueva compilación nativa pendientes |
+| iOS17/18/26, Duo y hardware físico | BLOCKED | Matriz por modelo/OS y postura; ningún nuevo teléfono utilizado en esta entrega |
+| Privacidad de fuente/hosts/manifiestos | PASS parcial | Declaración estática comprobada; aceptación del archivo y bloqueo ATT físicos BLOCKED |
+| Monetización comercial | BLOCKED | Se conserva estrategia; IDs Android/clave Play, consolas, contratos y compras sandbox pendientes |
+| Internacionalización/metadata | PASS parcial | ES/EN/FR/DE/IT/AR/JA preparados y comprobados; aceptación visual y hardware pendientes |
+| Accesibilidad | PASS parcial | Automatización web; VoiceOver/Dynamic Type físico y declaraciones de tienda BLOCKED |
+| Iconos/launch/resources | PASS parcial | Recursos existentes preservados; aceptación artística final de Claude/propietario pendiente |
+| Firma, TestFlight y Play interno | BLOCKED | Cuentas, identidades existentes, QA y autorización de subida separada |
 
-- [Tienda iOS](https://github.com/joacomino-dev/mano-iphone/actions/runs/42628838115): PASS, compilación sin firma y canal de tienda.
-- [Desarrollo iOS](https://github.com/joacomino-dev/mano-iphone/actions/runs/42628837557): en curso.
-- [Android](https://github.com/joacomino-dev/mano-iphone/actions/runs/42628837411): en curso; debe demostrar Back, diez ciclos y persistencia.
-- [Fotos iOS completo](https://github.com/joacomino-dev/mano-iphone/actions/runs/42628871026): en cola tras el gate anterior; no duplicar.
+### Correcciones y límites
 
-Android exige que el aviso inicial desaparezca y que CocoWash tenga foco antes
-de enviar Back; todas las postcondiciones se mantienen. El gate iOS conserva
-las aserciones y permite un solo reintento del fallo de background assertion
-demostrado en el primer lanzamiento, antes de toda aceptación UI. No se altera
-la app para obtener un PASS. Estas correcciones necesitan su resultado nativo.
+R-47b está comprobado en emulador: Atrás sale del fullscreen al mismo visor y el
+siguiente Atrás lo cierra, conservando elemento, fuente, posición, sonido y galería.
+La medición Android usa `dumpsys meminfo --local`: el modo normal invocaba GC en el
+proceso medido. No se cambiaron presupuestos ni código de rendimiento de la app.
 
-**Preflight de firma ejecutado:** cuatro comprobaciones de fuente PASS;
-distribución BLOCKED, exit78 esperado. No inspecciona certificados ni claves,
-no firma y no contacta cuentas Apple. La plantilla
-[ExportOptions](ExportOptions.example.plist) y los procedimientos de archivo,
-[TestFlight](TESTFLIGHT.md) y [envío](APP_STORE_SUBMISSION_CHECKLIST.md) están preparados.
-Credenciales existentes, cuenta, Privacy Report del archivo, disponibilidad de
-versiones, comercio, política pública, aceptación visual y QA física siguen
-pendientes. **NO APTA para enviar hasta cerrar esos gates.**
+R-07b modifica solo XCTest: el vídeo usa pointer-events:none y los gestos los
+recibe Inspector; se elige un marco visible y se exige timeline accesible. El
+xcresult registra una lectura AX de 2,87 s: se observa hasta cuatro bucles de 3 s,
+sin quitar la exigencia de posición baja real, cambio de píxeles ni controles sin
+escalar. Revisión integrada sin hallazgos. El gate `2794e4b` confirma bucle, pero no encuentra
+el vídeo por label. El ajuste CW-CX-062 usa el ancestro del timeline real y
+conserva las aserciones; todavía no está aceptado nativamente.
 
-Requisitos reconsultados: [versión Apple](https://developer.apple.com/documentation/bundleresources/information-property-list/cfbundleshortversionstring),
-[Xcode26/SDK26 desde abril de 2026](https://developer.apple.com/news/upcoming-requirements/?id=04282026a),
-[target API36 de Play](https://support.google.com/googleplay/android-developer/answer/11926878?hl=en-mt).
-Xcode27.1/SDK27.1 configurados en CI; no se reduce iOS17 ni se actualizan dependencias.
+**R-67 P1 sigue abierto:** tras un relanzamiento la jerarquía WKWebView no tenía
+contenido y no apareció Eliminar durante 120 s. Bridge inicializado y documento
+principal comprometido; causa no determinada. La prueba no llegó al borrado.
+No se oculta con un relanzamiento automático ni se modifica persistencia por hipótesis.
+En `2794e4b` pasan cancelación, cinco relanzamientos y diez rondas; R-67 no se
+reproduce allí. Una ejecución posterior satisfactoria no demuestra la causa ni
+cierra por sí sola el fallo intermitente. [Resultado reciente](evidence/strategic/0992-ios-2794e4b.json).
+[Evidencia nativa](evidence/strategic/0992-native-fa318ba.json),
+[evidencia local](evidence/strategic/0992-local.json).
+
+Se conserva recuperación silenciosa R-64: reintento, memoria y espejo local;
+el fallback no garantiza durabilidad ante terminación. No se repiten operaciones
+de Fotos. Sin Personas, Breakup, nuevos modelos, dependencias o cambios de diseño.
+
+### Instaladores de prueba
+
+IPA preparada en Descargas: `CocoWash-0.9.9.2-build44-fa318ba.ipa`,
+6.828.204 bytes, SHA-256
+`9a71e51b235cf82a6e125edcd3f884798c10b4b65def35ecd8fed455e18a150b`.
+[Recibo](evidence/strategic/0992-delivered-ipa.json): ZIP/CRC, fuente, bundle,
+arm64, mínimo17, siete InfoPlist.strings, dos hosts y ausencia de reset verificados.
+Sin firma/provisioning, anuncios de prueba: requiere firma personal mediante
+iLoader. No es el archivo de TestFlight ni una instalación física verificada.
+Conservar app/datos existentes; no desinstalar para resolver un conflicto de firma.
+Android 2794e4b / 42669935821 PASS. En Descargas:
+`CocoWash-0.9.9.2-android-build4-2794e4b.apk` (24.598.910 bytes), SHA-256
+`2062b9b1b0b67edfc638b857a0541ea163379c499e42f95731a3f71d0b77325b`;
+AAB (11.381.661 bytes), SHA-256
+`6c30fab747a1c000ab02d41f699b6dd379f9fb9569f65086793cf23dca4192d2`.
+[Recibo](evidence/strategic/0992-delivered-android.json): digest/CRC y hashes de
+canal developer del APK/canal tienda del AAB comprobados. APK con firma temporal;
+AAB sin firma ni configuración comercial aceptada: no subirlo a Play.
+
+[Métricas Android](evidence/strategic/0992-android-2794e4b.json): mediana CPU de las
+últimas tres ventanas 0 % a resolución del contador, con picos intermedios de CPU
+combinada 102,92 %. No representa consumo físico nulo ni medición de batería.
+Conservar esos picos para QA física/Perfetto; no se alteran presupuestos para aceptar.
+
+### Acciones humanas y distribución
+
+El [checklist operativo](APP_STORE_SUBMISSION_CHECKLIST.md) ordena ambas tiendas.
+Preflight de fuente ejecutado: cuatro comprobaciones PASS, distribución BLOCKED,
+exit78 esperado. [Recibo](evidence/strategic/0992-signing-dry-run.json).
+El script de archivo local y [ExportOptions](ExportOptions.example.plist) están
+preparados; no crean certificados ni suben archivos. Véanse [gate Mac](NATIVE_GATE.md),
+[TestFlight y hardware](TESTFLIGHT.md) y [compras Play](../playstore/PURCHASE_VERIFICATION.md).
+
+Faltan cuentas/acuerdos/DSA, identidades y perfiles existentes, números libres,
+productos/precios/sandbox, configuración AdMob Android y clave pública de licencias,
+Privacy Report agregado y ATT físico, políticas públicas actualizadas, aceptación
+visual y QA de permisos/iCloud/bibliotecas grandes/Instruments/VoiceOver. El
+propietario ya confirmó responsable/contacto y conservar la monetización; no se
+reabren esas decisiones. Cada subida y publicación necesita autorización separada.
+Paquete local `CocoWash-0.9.9.2-politicas-ES-EN.zip` en Descargas, solo los dos
+HTML y sus instrucciones/hashes; [recibo](evidence/strategic/0992-policy-package.json).
+Las URL actuales 200 tienen contenido anterior sin Android; no se ha desplegado.
+
+Requisitos consultados: [versión Apple](https://developer.apple.com/documentation/bundleresources/information-property-list/cfbundleshortversionstring),
+[App Review](https://developer.apple.com/app-store/review/guidelines/),
+[SDK mínimo](https://developer.apple.com/news/upcoming-requirements/?id=04282026a),
+[target Play](https://support.google.com/googleplay/android-developer/answer/11926878?hl=en-mt).
+CI real: Xcode27.1 build27A9275, SDK27.1, simulador iPhone18Pro/iOS27.0.
+[Compatibilidad](COMPATIBILITY.md): mantener iOS17; no extrapolar esas pruebas a otras familias.
 
 ## Historial 0.9.9.1 — no es la aceptación del candidato actual
 
@@ -125,7 +194,7 @@ sus rutas b24, rama antigua y ausencia de push no describen esta fuente integrad
 | Política ES/EN | PASS borrador / BLOCKED pública | Responsable/contacto confirmados; documentos ajustados a SDK ygeocodificación. Publicación web requiere autorización y comprobación posterior |
 | Localización7idiomas | PASS fuente / NOT TESTED nativa completa | ES/EN/FR/DE/IT/AR/JA; límites Apple/Play PASS. Android42516038859 completa28capturas nativas; revisar artefactos yRTL. Primer intento12/28falló al recargar; causa no demostrada |
 | Accesibilidad | PASS parcial / NOT TESTED Apple | Alternativas de botones ypruebasweb existentes; VoiceOver/DynamicType/gestos físicos pendientes. No declarar etiquetas Accessibility completadas |
-| Metadatos/icono | PASS preparación |7fichas,notas,revisión/IAP;icono aprobado1024RGB. Capturas finales nativas completas/QA pendientes |
+| Metadatos/icono | PASS preparación |7fichas,notas,revisión/IAP;icono aprobado 1024RGB. Capturas finales nativas completas/QA pendientes |
 | Archivo/firma/exportación | BLOCKED | Dryrun42515287168 ejecutado yexit78: fuentePASS,privacidadFAIL,credenciales/versión/autorizaciónBLOCKED. Sin firma niupload |
 | TestFlight / Play interno / App Review | BLOCKED | No enviado; requiere cerrar P0/P1, credenciales, cuentas yautorización explícita |
 

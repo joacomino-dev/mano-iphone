@@ -1,22 +1,18 @@
-# Incidencias vigentes — actualización 2026-11-08
+# Incidencias vigentes — 2026-11-09, candidato 0.9.9.2
 
 | Problema | Prioridad | Estado comprobado |
 | --- | --- | --- |
-| R61: decisión perdida tras force-stop Android | P0 | FAIL reproducido antes de React; diario implementado y regresiones locales PASS; force-stop nativo pendiente |
-| R01: edición de álbum bloqueada por WKPreferences | P1 | PASS iPhone18Pro/27.0 sin observer42514969280; Duo/mínimo17 pendientes |
-| R02: privacidad de distribución | P1 | Dos hosts aprobados incorporados, declaraciónstrictPASS; tráfico nuevo/archivo/exhaustividad/web pendientes |
-| R07: Live Photo completa | P1 | Movimiento nativo PASS; RGBA anterior FAIL. Superficie pausada corregida, cinco casos web PASS; nativo pendiente |
-| R60: CI devolvía cero sin XCTest | P1 | Corregido; ejecución ypostcondiciones independientes verificadas en matriz07d09a9 |
-| R62: compras Android desconocidas=>adFreefalse | P1 | Compilación y 17 checks E2E PASS en 42517332458; sandbox BLOCKED por cuentas |
-| Rendimiento662e67d | Gate |11muestras peroCPUBLOCKED porPIDnuevo en ronda7; no aceptar comoPASS. Nuevo muestreo acotado25testsPASS |
+| R-61: durabilidad de decisiones reconocidas | P0 | PASS relanzamiento×5 en ambos simuladores; almacenamiento averiado/físico pendientes, con límites silenciosos R-64 |
+| R-67: WKWebView vacío tras relanzar | P1 | FAIL intermitente fa318ba/42634699746: 120s sin interfaz; no se reproduce en2794e4b; causa abierta, sin retry |
+| R-07b: Live anclada | P1 | Foto clave/timeline/bucle PASS2794e4b; solo destino de zoom XCTest FAIL. Ajuste de padre CW-CX-062 pendiente; usuario confirma pinch físico |
+| R-47b: Android fullscreen Back | P1 | PASS emulador fa318ba/42634538249: reproductor/posición/sonido/galería conservados, segundo Back cierra visor |
+| R-01: álbum | P1 | PASS estándar iPhone18Pro/iOS27; Duo/mínimo17 pendientes |
+| R-02: privacidad de distribución | P1 | Declaración y firmas proveedor PASS; archivo/ATT físico/exhaustividad/políticas publicadas BLOCKED |
+| Comercio, firma y QA física | P1 | BLOCKED cuentas/configuración/identidades/QA/autorización de subida |
 
-R-63: PASS nativo acotado en 42539523601, diez rondas y favorita confirmada. El gate completo sigue FAIL antes de force-stop por idioma del test; corregido, no ejecutado todavía.
-
-[Roadmap vivo](../ROADMAP.md), [RC actual](RELEASE_CANDIDATE.md) y
-[evidencias](evidence/strategic/) contienen los SHA ylos resultados completos.
-Las tablas siguientes pertenecen a auditorías anteriores, no al estado vigente.
-
----
+[Roadmap único](../ROADMAP.md) · [Pruebas y límites](RELEASE_CANDIDATE.md) ·
+[Evidencia](evidence/strategic/0992-native-fa318ba.json).
+El contenido siguiente es histórico y no declara aceptación del candidato actual.
 
 # Registro priorizado de problemas y correcciones
 

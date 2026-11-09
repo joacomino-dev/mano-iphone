@@ -2,34 +2,28 @@
 
 Actualizado: 2026-11-09, America/Bogota.
 
-## Codex CW-CX-058 — cierre técnico 0.9.9.2 (en curso)
+## Codex CW-CX-061 — entrega 0.9.9.2 y cierre nativo en curso
 
-Reserva CW-CX-060: solo XCTest, instrucciones del artefacto Android y evidencia.
-`fa318ba` tiene Android completo PASS (17 checks, diez rondas, relanzamiento ×5,
-presupuestos originales), tienda/desarrollo iOS PASS. Fotos iOS falla espera
-inicial de cancelación y bucle Live; el checkpoint anterior también detectó que
-XCTest exige hit-testing directo al vídeo aunque los gestos pertenecen al padre.
-Se inspeccionan los xcresult antes de corregir pruebas. Sin cambios de aplicación.
+Base de app fa318ba; checkpoint de pruebas `2794e4b`, main enviada. Visible 0.9.9.2;
+iOS0.9.9/build44/min17; Android0.9.9.2/code4. Tienda/desarrollo iOS PASS en fa318ba.
+Android2794e4b/42669935821 PASS completo: 17 checks, diez rondas, cinco
+terminaciones y presupuestos originales. IPA/APK/AAB verificados en Descargas;
+IPA unsigned/iLoader, APK firma temporal, AAB unsigned. No desinstalar por firma.
 
-Avance CW-CX-059: `837875e` compila tienda/desarrollo iOS; Android confirma
-fullscreen Back, cancelación, favoritas, diez rondas y relanzamiento ×5. El
-workflow Android falla solo presupuesto CPU; AOSP15 demuestra que meminfo
-normal fuerza GC en el proceso medido. Se corrige a --local, sin cambiar límites.
-El xcresult 6386f55 muestra un formulario UMP «Mis preferencias de datos» tapando
-Filtros; XCTest incorpora opt-out real y Guardar/cerrar, sin suprimir el SDK.
-Revisión integrada sin hallazgos; nuevas verificaciones nativas pendientes.
-Sonido, Inspector, PhotoKit, decisiones, arte y dependencias siguen intactos.
+Fotos iOS2794e4b/42669952998: 5 PASS, 1 FAIL, 2 SKIP. Cancelación, relanzamiento×5,
+key/timeline/bucle y diez rondas PASS; solo falla búsqueda del vídeo para pellizcar.
+R-67 (WebView vacío anterior) no se reproduce aquí; causa sigue abierta, sin retry.
+Reserva CW-CX-062: solo PhotosSmokeTests.swift, elegir el ancestro visible del
+slider real con controles abajo, conservar cambio de píxeles y controles sin escalar.
+WIP Swift todavía sin commit; revisión integrada en curso. App/PhotoKit/diario/arte intactos.
 
-Usuario autoriza finalizar ambas plataformas con etiqueta 0.9.9.2. Base
-`2e10bc6`, limpia y sincronizada; 138 Node, TypeScript y protected28 PASS.
-Codex reserva diagnóstico/pruebas de fullscreen Android y del gate iOS,
-versionado, materiales y procedimientos de distribución. Sin cambios de arte,
-sonido/reproducción, PhotoKit o semántica de decisiones salvo fallo demostrado.
-Esquema actual conservado: visible 0.9.9.2; iOS 0.9.9/build44; Android
-0.9.9.2/code4. Disponibilidad en consolas pendiente del propietario antes del envío.
-No publicar, subir a tiendas, tocar cuentas/certificados ni usar fotos personales.
-Una ejecución nativa combinada por checkpoint, revisión integrada y commits
-recuperables; no repetir el gate 42623622241 mientras siga en curso.
+Políticas públicas 200 pero anteriores sin Android; paquete ES/EN preparado,
+sin autorización de despliegue. Apple exige clase mediana en su resumen vigente;
+1206×2622 existente sirve. Propuesta de clase grande descartada antes de commit/CI,
+selector/verificador conservados. Claude mantiene aceptación visual de capturas.
+No publicar/subir tiendas, tocar cuentas/certificados ni borrar fotos personales.
+R-64 recuperación silenciosa y separación sonido/reproducción se conservan.
+Estado y pasos exactos: docs/apple-readiness/RELEASE_CANDIDATE.md y ROADMAP.
 
 ## Codex CW-CX-057 — IPA de iOS entregada; resultados actualizados
 

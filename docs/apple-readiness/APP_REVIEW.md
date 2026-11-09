@@ -1,13 +1,16 @@
-Actualización 2026-11-08: declaración de tracking estática PASS con dos hosts
-aprobados y firmas GMA/UMP verificadas en macOS. R-61 tiene corrección y pruebas
-locales, pero necesita force-stop nativo. R-63 pasa en Android; Live, suite completa,
-Privacy Report del archivo y QA física/comercial siguen pendientes. No hay aprobación
-de App Review. Seguir el [checklist actual](APP_STORE_SUBMISSION_CHECKLIST.md).
-El contenido siguiente conserva la auditoría inicial.
+Actualización 2026-11-09: candidato 0.9.9.2, app fa318ba/pruebas `2794e4b`.
+Android completo, compilaciones iOS y relanzamiento×5 de ambas plataformas PASS.
+Suite Fotos iOS2794e4b: 5 PASS, 1 FAIL, 2 SKIP; solo destino de pellizco.
+R-67 arranque intermitente no reproducido en ese run; causa abierta. Declaración de
+tracking y firmas del proveedor PASS acotado; Privacy Report del archivo, ATT
+físico, comercio y QA siguen BLOCKED. Políticas públicas200, versión anterior
+sin Android. No hay aprobación de App Review. [Checklist actual](APP_STORE_SUBMISSION_CHECKLIST.md).
+Las tablas siguientes conservan la auditoría inicial; su estado no sustituye
+[la RC actual](RELEASE_CANDIDATE.md).
 
 # Checklist de preparación para App Review
 
-**RC actual:** seguir [checklist operativo](APP_STORE_SUBMISSION_CHECKLIST.md) y [criterios](RELEASE_CANDIDATE.md). Privacidad estricta FAIL por dominios; vinculación/categorías corregidas contra SDKs. Políticas completas ES/EN preparadas, web aún anterior. Canal tienda corregido, compras faltantes ocultas y errores traducidos. App Completeness/privacidad/IAP/accesibilidad nativos siguen pendientes; la tabla siguiente conserva la auditoría inicial.
+**RC histórica2026-11-07:** seguir [checklist operativo](APP_STORE_SUBMISSION_CHECKLIST.md) y [criterios](RELEASE_CANDIDATE.md). Privacidad estricta FAIL por dominios; vinculación/categorías corregidas contra SDKs. Políticas completas ES/EN preparadas, web aún anterior. Canal tienda corregido, compras faltantes ocultas y errores traducidos. App Completeness/privacidad/IAP/accesibilidad nativos siguen pendientes; la tabla siguiente conserva la auditoría inicial.
 
 Revisión técnica 2026-11-07 sobre build 43 y diff local CW-CX-018. **No enviado a
 Apple; no se acredita aprobación ni cumplimiento legal mundial.**

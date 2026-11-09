@@ -1,7 +1,8 @@
 # Verificación de compras Android
 
-Estado: implementación **NOT TESTED** en CI al preparar este cambio; claves y
-transacciones reales **BLOCKED** por configuración del propietario. No servidor
+Actualizado2026-11-09: verificador JVM y plugin Kotlin **PASS** en
+fa318ba/42634538249; claves y transacciones reales **BLOCKED** por configuración
+del propietario. La prueba de firma local no equivale a compras Play sandbox. No servidor
 nuevo, telemetría, subida de recibos ni cambio de productos/precios.
 
 Fallo comprobado en el código anterior: `entitlements` y `onPurchasesUpdated`

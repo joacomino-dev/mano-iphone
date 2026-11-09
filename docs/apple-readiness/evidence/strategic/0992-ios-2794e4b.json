@@ -1,0 +1,41 @@
+{
+  "date": "2026-11-09",
+  "source": "2794e4bf9626aec393429d0651f88f173773b6bc",
+  "run": 42669952998,
+  "status": "FAIL",
+  "simulator": "iPhone 18 Pro, iOS27.0, arm64",
+  "tests": {
+    "executed": 8,
+    "passed": 5,
+    "failed": 1,
+    "skipped": 2,
+    "durationSeconds": 1102.392
+  },
+  "passed": [
+    "Full Photos authorization and generated album",
+    "Local metadata",
+    "Card pinch and anchor",
+    "Actual system deletion cancellation retains and recovers item",
+    "Acknowledged pending decision survives actual termination, five trials",
+    "Long press releases without persistent system menu",
+    "Live card motion, restored key raster within unchanged tolerances, anchored timeline and looping",
+    "Ten native generated deletion rounds and relaunch"
+  ],
+  "failed": {
+    "test": "testYGeneratedLivePhotoInlineAndAnchored",
+    "location": "PhotosSmokeTests.swift:698",
+    "assertion": "Pinned Live media must expose an on-screen gesture frame",
+    "cause": "Video-label query returns no visible media element. Paused video is not exposed by WebKit AX. Inspector owns the gesture and a real timeline within its focusable parent.",
+    "applicationChanged": false
+  },
+  "r67": {
+    "status": "OPEN INTERMITTENT FAILURE",
+    "latestObservation": "Not reproduced: cancellation and all five termination trials pass on this run. No startup retry or application correction; root cause remains unproven."
+  },
+  "export": {
+    "run": 42680961502,
+    "artifact": 13703120514,
+    "sha256": "8fa14571a16092ed9dee23a10baa906652198d592a172c128a7d23cce13aee0d"
+  },
+  "boundary": "Real simulator fixture tests only. Full gate remains FAIL and post-gate metrics/audit acceptance is not inferred. No physical/iCloud/ATT/distribution acceptance."
+}

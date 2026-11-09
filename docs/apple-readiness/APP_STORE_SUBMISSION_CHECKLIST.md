@@ -1,6 +1,6 @@
 # Checklist operativo de envío — CocoWash
 
-2026-11-09. **Envío bloqueado.** Candidato **0.9.9.2**, código `837875e`, en validación.
+2026-11-09. **Envío bloqueado.** Candidato **0.9.9.2**, app `fa318ba`, pruebas `2794e4b`, en validación.
 Configurado: iOS **0.9.9 / build44**, Android **0.9.9.2 / code4**. Confirmar que
 estén libres en las consolas antes de firmar/subir; no volver a utilizar build43.
 PASS exige evidencia del SHA/binario exacto;
@@ -11,13 +11,13 @@ El [checklist previo](APP_STORE_SUBMISSION_CHECKLIST_2026-11-07.md) es históric
 1. **Fijar fuente.** Usar main de `C:/Users/Joaco/Developer/CocoWash-android`.
    Ejecutar `git status --short`, `git rev-parse HEAD`, revisar diff/log yregistrar SHA.
    No usar b24, OneDrive, stage1 ni rama release antigua. No sobrescribir trabajo.
-2. **R-61 — validación nativa del candidato pendiente.** El diario está implementado y revisado. Cerrar las pruebas nativas de errores,
-   transacciones abortadas, respuestas fuera de orden, Deshacer yforce-stop inmediatamente
-   después de la confirmación visible. Repetir Android y iOS con biblioteca sintética.
-   No confirmar borrados en biblioteca personal ni convertir una demora de seis segundos
-   en corrección. iOS `8f2549e` ya pasa relanzamiento ×5; falta Android y repetir el SHA final.
-   Contrato R-64: recuperación silenciosa con reintento/memoria/espejo local. No mostrar otra vez
-   avisos retirados ni afirmar que el fallback garantiza durabilidad cuando falla el almacenamiento.
+2. **R-61 — PASS acotado; hardware y fallos pendientes.** fa318ba conserva una
+   decisión reconocida tras cinco terminaciones reales en iOS y Android, sin demora
+   artificial. Fixtures web cubren abortos y respuestas fuera de orden. Completar
+   pruebas físicas con biblioteca sintética, almacenamiento insuficiente, Deshacer y
+   suspensión. Contrato R-64: recuperación silenciosa con reintento/memoria/espejo;
+   no restaurar avisos ni prometer durabilidad del fallback con almacenamiento averiado.
+   No confirmar borrados en biblioteca personal.
 3. **Pruebas locales — PASS por ejecución, repetir al cerrar código.** Desde mano:
    `npm ci --no-audit --no-fund` si faltan dependencias; `npm test`;
    `npx tsc --noEmit`; `npm run check:runtime`; `npm run build`;
@@ -26,23 +26,23 @@ El [checklist previo](APP_STORE_SUBMISSION_CHECKLIST_2026-11-07.md) es históric
    `node --experimental-strip-types --test tests/native-contract.test.mjs` y,
    desde raíz, `python -B -m unittest discover -s scripts/tests -p 'test_native*.py' -v`.
    Guardar comandos/logs. Build web no acredita Swift.
-4. **Gate iOS real — NOT TESTED completo en SHA final.** El run
-   [42628871026](https://github.com/joacomino-dev/mano-iphone/actions/runs/42628871026)
-   de `837875e` ya está en cola: consultar su resultado, sin duplicarlo. Para un checkpoint futuro, despachar
-   `.github/workflows/rc-native-gate.yml` en main: standard y auto(Duo), runner público
-   estándar xcode-27/Xcode27.1. No usar runners de pago. Exigir build arm64 Release,
-   Swift, Photos real, álbum exacto, metadata, Livekey/timeline/loop/zoom, diez ciclos,
-   métricas app/WebContent ypostauditPhotoKit. Leer xcresult/logs; ejecutar
-   `python scripts/verify-native-gate-evidence.py mano/build/simulator-smoke full`.
-   Un fallo conserva FAIL; no omitir autorizaciones ni fabricar resultados.
-5. **Gate Android real — R-47b en validación.** `build-android.yml`: Kotlin/Java +RSAJVM, APKdeveloper yAABtienda
-   separados por hash,16KB yE2E17checks +ten ciclos, favoritoencolado/Deshacer/Back,
-   cancelación yforce-stop. Atrás debe salir de fullscreen sin cerrar el visor ni cambiar
-   reproductor, posición o sonido; el siguiente Atrás cierra el visor. Exigir el resultado
-   del checkpoint, no el PASS de una compilación anterior. Verificar varianteAPI30 yactual;
-   no concluir rendimiento de teléfonos a partir del emulador API35.
-   Run actual: [42628837411](https://github.com/joacomino-dev/mano-iphone/actions/runs/42628837411).
-   La prueba debe acreditar aviso cerrado y ventana enfocada antes de enviar Back.
+4. **Gate iOS real — FAIL.** [2794e4b / 42669952998](https://github.com/joacomino-dev/mano-iphone/actions/runs/42669952998):
+   5 PASS, 1 FAIL, 2 SKIP; solo falta el destino del pellizco de Live anclada.
+   Pasan cancelación, cinco terminaciones, foto clave/timeline/bucle y diez rondas.
+   R-67 no se reproduce aquí, pero su causa sigue abierta. CW-CX-062 prepara el
+   destino en el contenedor del timeline; probarlo tras su checkpoint con una
+   única rc-native-gate.yml standard/full. Auto/full prueba Duo por separado.
+   Exigir todas las aserciones, métricas y postaudit; no ocultar fallos con retries.
+   Validar logs con `python scripts/verify-native-gate-evidence.py mano/build/simulator-smoke full`.
+5. **Gate Android real — PASS acotado.** [fa318ba / 42634538249](https://github.com/joacomino-dev/mano-iphone/actions/runs/42634538249)
+   pasa Kotlin/Java, firmas RSA, canales por hash, 16KB, E2E17, fullscreen Back,
+   cancelación, favoritas, diez rondas, force-stop ×5 y presupuestos originales.
+   2794e4b / 42669935821 confirma PASS completo y sus instaladores se verificaron
+   por digest/CRC/hashes de canal. API30 y teléfono real
+   siguen pendientes; API35 y biblioteca pequeña no acreditan otros dispositivos.
+   Si cambia la firma, no desinstalar la app con decisiones: conservar la misma clave
+   o utilizar un dispositivo de pruebas limpio. Un AAB sin firma/configuración real
+   no puede enviarse como producción.
 6. **QA de dispositivos — BLOCKED propietario.** Completar [plantilla](device-results.template.csv)
    y[procedimiento](TESTFLIGHT.md) con SE2/3, mini/estándar, ProMax/Island e iOS17/18/26/27.
    Duo: exterior/interior/transición, modal/teclado/vídeo/selección sin perder contexto.
@@ -59,7 +59,9 @@ El [checklist previo](APP_STORE_SUBMISSION_CHECKLIST_2026-11-07.md) es históric
    cocowash@joaquinmino.work. Revisar ES/EN de web/cocowash junto con declaraciones
    SDK/geocodificación/compras. Autorizar publicación por separado; después comprobar
    URLHTTPS real accesible sin login en ambas lenguas y enlaces desde app/metadatos.
-   No inventar URLni publicar sin permiso.
+   No inventar URL ni publicar sin permiso. Las tres URL públicas respondieron 200 con
+   agente de navegador el 9 de noviembre, pero conservan archivos anteriores sin Android;
+   [recibo](evidence/strategic/0992-public-policies.json).
 9. **Comercio — BLOCKED cuentas.** Mantener estrategia actual. En consolas crear/validar
    IDsexactos existentes, contratos/impuestos/banco, precios/regiones/restauración y
    expiración. Android: IDsAdMobAndroid porVariables yclave públicaPlay porSecret;
@@ -74,7 +76,7 @@ El [checklist previo](APP_STORE_SUBMISSION_CHECKLIST_2026-11-07.md) es históric
 11. **Capturas — generación PASS, aceptación visual pendiente.** Ya hay 28 capturas por plataforma, siete idiomas: iOS 42516036408 y Android 42516038859. Claude debe aceptar el resultado. Para regenerar, ejecutar apple-store-screens.yml y
     android-store-screens.yml; descargar artefactos del SHA exacto, revisar files/report,
     hashes, idioma/RTL/textos/controles ycadaPNG. Usar capturas RGB24 reales, sin alpha,
-    sin contenido personal ni marcos simulados. Android1080×1920; iPhone dimensiones
+    sin contenido personal ni marcos simulados. Android 1080×1920; iPhone dimensiones
     oficiales detectadas, sin reescalar. No usar un conjunto incompleto como final.
 12. **Preparar firma sin distribuir.** Ejecutar apple-signing-dry-run.yml: exit78
     es correcto mientras privacidad/credenciales/gates estén bloqueados. El propietario
@@ -94,7 +96,7 @@ El [checklist previo](APP_STORE_SUBMISSION_CHECKLIST_2026-11-07.md) es históric
     presión de memoria. No confundir IPA unsigned/iLoader con aceptación TestFlight.
 15. **Play interno/cerrado — BLOCKED.** ClaveUpload/AppSigning/recuperación yAABtienda
     validados,DataSafety/ficha/edades/ads yproductos reales. Autorizar subida aparte.
-    Cumplir prueba cerrada exigida por la cuenta (si corresponde,14días ytestersreales),
+    Cumplir prueba cerrada exigida por la cuenta (si corresponde,12 testers inscritos continuamente14 días y participación real),
     sin inventar participación ni elegibilidad para producción.
 16. **Envío final — BLOCKED.** Consolidar ReleaseReadiness yroadmap del SHA/binario,
     cerrar QAvisual con Claude, ypedir autorización expresa de AppReview/producción.
