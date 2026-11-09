@@ -645,8 +645,17 @@ final class PhotosSmokeTests: XCTestCase {
         pause.tap();_ = try nativeLiveControl(app,"Reproducir Live Photo",timeout:15);Thread.sleep(forTimeInterval:2)
         let keyAfter=try nativePhotoCrop(app,card.frame,"Live key after pause")
         let differences=zip(keyBefore,keyAfter).filter{$0.0 != $0.1}.count
-        print("COCOWASH_UI_LIVE_KEY_PIXELS bytes=\(keyBefore.count) changedChannels=\(differences)")
-        XCTAssertEqual(keyAfter,keyBefore,"Pausing on the card must restore its key photo, not freeze an arbitrary video frame")
+        // Exact bytes are not the contract: compositing re-rasterizes the same key
+        // photo with ±1–2 levels (runs 42519482281, 42547955639). The contract is
+        // «the key photo, not a frozen motion frame»: visually identical to the key
+        // and far closer to it than to the motion frames.
+        func distance(_ a:[UInt8],_ b:[UInt8])->(max:Int,sum:Int){var m=0,s=0;for (x,y) in zip(a,b){let d=abs(Int(x)-Int(y));m=max(m,d);s+=d};return (m,s)}
+        let toKey=distance(keyAfter,keyBefore),motionToKey=distance(motion1,keyBefore)
+        print("COCOWASH_UI_LIVE_KEY_PIXELS bytes=\(keyBefore.count) changedChannels=\(differences) maxDelta=\(toKey.max) sum=\(toKey.sum) motionSum=\(motionToKey.sum)")
+        XCTAssertEqual(keyAfter.count,keyBefore.count,"Key photo crop size must not change")
+        XCTAssertLessThanOrEqual(toKey.max,12,"Pausing on the card must restore its key photo (max channel delta)")
+        XCTAssertLessThan(differences*100,keyBefore.count,"Pausing on the card must restore its key photo (<1% channels differ)")
+        XCTAssertLessThan(toKey.sum*20,motionToKey.sum,"The paused card must match the key photo, not freeze a motion frame")
         attachScreenshot(app,"Native Live Photo paused key photo")
         print("COCOWASH_UI_LIVE_CARD_KEY_OK")
         app.buttons["Ver datos del archivo"].firstMatch.tap()
