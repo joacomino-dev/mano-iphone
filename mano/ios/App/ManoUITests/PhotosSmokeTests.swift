@@ -691,12 +691,22 @@ final class PhotosSmokeTests: XCTestCase {
         attachScreenshot(app,"Native Live Photo anchored with timeline")
         // Pinch the media, not the application: with Geek open the app's centre
         // falls beside the picture's controls. Both fingers must start on it.
-        // CSS deliberately keeps the video pointer-events:none; Inspector's
-        // parent receives the touches. XCTest pinch uses this visible frame,
-        // not the video's direct hit-test eligibility. Controls must be usable.
+        // WebKit omits the paused video from AX (2794e4b xcresult). The
+        // focusable Inspector frame owns both its gestures and real timeline.
+        // Pick its smallest visible ancestor, not a video label or app centre.
         XCTAssertTrue(timeline.isHittable,"Pinned controls must remain reachable")
-        let picture=try XCTUnwrap(app.descendants(matching:.any).matching(NSPredicate(format:"label == %@","Reproducir Live Photo")).allElementsBoundByIndex.first(where:{$0.frame.width>180 && $0.frame.height>180 && app.frame.contains($0.frame)}),"Pinned Live media must expose an on-screen gesture frame")
+        let controlBounds=timeline.frame
+        let candidates=app.descendants(matching:.any).containing(.slider,identifier:"Posición del vídeo").allElementsBoundByIndex.filter {
+            let box=$0.frame
+            return box.width>180 && box.height>180 && app.frame.contains(box) && box.contains(controlBounds) && controlBounds.midY>box.minY+box.height*0.75
+        }
+        if candidates.isEmpty {
+            attachScreenshot(app,"Pinned Live gesture ancestor missing")
+            print("COCOWASH_UI_LIVE_PINCH_AX \(app.debugDescription)")
+        }
+        let picture=try XCTUnwrap(candidates.min(by:{$0.frame.width*$0.frame.height < $1.frame.width*$1.frame.height}),"Pinned timeline must have an on-screen media ancestor")
         let bounds=picture.frame
+        XCTAssertLessThan(bounds.midY,controlBounds.minY,"Pinch centre must be above the controls")
         print("COCOWASH_UI_LIVE_PINCH_TARGET frame=\(bounds)")
         // A paused, settled interior crop excludes controls and isolates zoom.
         let region=CGRect(x:bounds.minX+bounds.width*0.2,y:bounds.minY+bounds.height*0.2,width:bounds.width*0.6,height:bounds.height*0.5)

@@ -15,7 +15,7 @@ key/timeline/bucle y diez rondas PASS; solo falla búsqueda del vídeo para pell
 R-67 (WebView vacío anterior) no se reproduce aquí; causa sigue abierta, sin retry.
 Reserva CW-CX-062: solo PhotosSmokeTests.swift, elegir el ancestro visible del
 slider real con controles abajo, conservar cambio de píxeles y controles sin escalar.
-WIP Swift todavía sin commit; revisión integrada en curso. App/PhotoKit/diario/arte intactos.
+CW-CX-062 revisado sin defectos nuevos; compilación nativa pendiente. App/PhotoKit/diario/arte intactos.
 
 Políticas públicas 200 pero anteriores sin Android; paquete ES/EN preparado,
 sin autorización de despliegue. Apple exige clase mediana en su resumen vigente;

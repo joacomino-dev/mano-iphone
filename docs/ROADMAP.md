@@ -56,6 +56,10 @@ una puerta nativa, comercial o de distribución.
 CW-CX-060: revisión integrada sin defectos nuevos; release9 y protected28 PASS.
 El próximo gate prueba únicamente las correcciones de XCTest; R-67 sigue abierto.
 
+CW-CX-062: 2794e4b confirma bucle y todos los casos de seguridad; solo falla destino
+de zoom. Se elige el ancestro real del timeline con centro encima de los controles.
+Revisión integrada sin hallazgos; nuevo full pendiente, sin cambiar la aplicación.
+
 ### Estado anterior 0.9.9.1 (CW-CX-057)
 
 - Código `6386f55`, sobre la última versión funcional de Claude; sin cambios de app en esta entrega.
