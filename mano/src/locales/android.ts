@@ -9,6 +9,24 @@ import type { Lang } from '../i18n.ts';
  * empties it. */
 type Text = Record<Lang, string>;
 export const ANDROID_TEXT: Record<string, Text> = {
+  "Una operación de Fotos quedó interrumpida. Comprueba su resultado en Fotos antes de volver a intentarla. Tus decisiones guardadas se conservan.": {
+    "es": "Una operación de la galería quedó interrumpida. Comprueba su resultado en la galería antes de volver a intentarla. Tus decisiones guardadas se conservan.",
+    "en": "A gallery operation was interrupted. Check its result in your gallery before trying it again. Your saved decisions are preserved.",
+    "fr": "Une opération de la galerie a été interrompue. Vérifie son résultat dans la galerie avant de réessayer. Tes décisions enregistrées sont conservées.",
+    "de": "Ein Galerie-Vorgang wurde unterbrochen. Prüfe das Ergebnis in deiner Galerie, bevor du ihn erneut versuchst. Deine gespeicherten Entscheidungen bleiben erhalten.",
+    "it": "Un’operazione della galleria è stata interrotta. Controlla il risultato nella galleria prima di riprovare. Le decisioni salvate sono conservate.",
+    "ar": "توقفت عملية في المعرض. تحقّق من نتيجتها في المعرض قبل المحاولة مجددًا. قراراتك المحفوظة لم تتغير.",
+    "ja": "ギャラリーの操作が中断されました。再試行する前にギャラリーで結果を確認してください。保存済みの選択は保持されています。"
+},
+  "Fotos no muestra ahora los elementos pendientes. Puedes recuperarlos de la cola; no se darán por eliminados.": {
+    "es": "La galería no muestra ahora los elementos pendientes. Puedes recuperarlos de la cola; no se darán por eliminados.",
+    "en": "Your gallery is not showing the queued items right now. You can recover them from the queue; they will not be marked as deleted.",
+    "fr": "La galerie n’affiche pas les éléments en attente pour le moment. Tu peux les retirer de la file ; ils ne seront pas considérés comme supprimés.",
+    "de": "Deine Galerie zeigt die vorgemerkten Elemente gerade nicht an. Du kannst sie aus der Warteschlange zurückholen; sie werden nicht als gelöscht markiert.",
+    "it": "La galleria non mostra gli elementi in coda al momento. Puoi recuperarli dalla coda; non verranno segnati come eliminati.",
+    "ar": "لا يعرض المعرض العناصر المعلقة حاليًا. يمكنك استعادتها من قائمة الانتظار؛ لن تُعتبر محذوفة.",
+    "ja": "現在ギャラリーに保留中の項目が表示されていません。削除待ちから戻すことができます。削除済みとして扱われることはありません。"
+},
   // End of round: deleted items wait 30 days in the gallery's trash.
   'Fotos te pedirá confirmación; lo eliminado queda 30 días en «Eliminado recientemente», también en iCloud.': {
     es: 'Android te pedirá confirmación; lo eliminado queda 30 días en la papelera de tu galería.',

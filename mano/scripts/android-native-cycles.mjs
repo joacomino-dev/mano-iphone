@@ -25,11 +25,35 @@ async function favoriteRefreshAndUndo(){
 }
 async function pendingSurvivesTermination(){
  const before=(await lab.call('assets')).assets.map(a=>a.id).sort();await click('.bar-discard');await wait(`JSON.parse(localStorage.getItem('cocowash-library-session-v1'))?.record.pending.length===1`);
- await wait(`(()=>{const b=document.querySelector('#review-trigger');return b&&!b.disabled&&b.textContent.includes('1 para eliminar');})()`);
+ await wait(`(()=>{const b=document.querySelector('#review-trigger');return b&&!b.disabled&&b.getAttribute('aria-disabled')==='false'&&b.querySelector('.finish-count')?.textContent.trim()==='1';})()`);
  const pending=(await stored()).record.pending;assert.ok(pending.every(id=>ownedIds.has(id)));lab.close();
  await adb('shell','am','force-stop',PKG);await adb('shell','am','start','-W','-n',PKG+'/.MainActivity');await sleep(4000);lab=await connect();
  await wait(`!!document.querySelector('.photo-card.front')`,60000);assert.deepEqual((await stored()).record.pending,pending,'Persisted queue must survive actual process termination');
  assert.deepEqual((await lab.call('assets')).assets.map(a=>a.id).sort(),before);await click('#review-trigger');await click('.recover-all');await wait(`JSON.parse(localStorage.getItem('cocowash-library-session-v1'))?.record.pending.length===0`);await click('.native-sheet header button');report.pendingSurvivesTermination=true;
+}
+async function inlineFullscreen(){
+ const before=(await lab.call('assets')).assets.map(a=>a.id).sort();
+ await click('#filter-trigger');await click('.sheet-tabs button:first-child');
+ await click('.filter-chips.lead-row button:nth-child(3)');
+ await click('.filter-apply button');await wait(`!!document.querySelector('.photo-card.front video')`,45000);
+ await click('.photo-card.front .zoom-access');await wait(`!!document.querySelector('.inspection video')`,30000);
+ await wait(`document.querySelector('.inspection video')?.readyState>=2`,30000);
+ await lab.page(`const v=document.querySelector('.inspection video');if(v.paused)document.querySelector('.inspection .video-controls button').click();return true;`);
+ await wait(`(()=>{const v=document.querySelector('.inspection video');return v&&!v.paused&&v.currentTime>0;})()`,15000);
+ const original=await lab.page(`const v=document.querySelector('.inspection video');window.cocoFullscreenProbe=v;return {src:v.currentSrc,time:v.currentTime};`);
+ const point=await lab.page(`const b=document.querySelector('.inspection .video-controls button:last-child');if(!b||b.disabled)throw Error('Fullscreen control unavailable');const r=b.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};`);
+ // Trusted WebView input, not a JavaScript override of requestFullscreen.
+ await lab.cdp('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[point]});await lab.cdp('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+ await wait(`!!document.fullscreenElement`,15000);await shot('video-fullscreen-native');
+ await adb('shell','input','keyevent','4');await wait(`!document.fullscreenElement&&!!document.querySelector('.inspection video')`,15000);
+ const returned=await lab.page(`const v=document.querySelector('.inspection video');return {same:v===window.cocoFullscreenProbe,src:v.currentSrc,time:v.currentTime};`);
+ assert.equal(returned.same,true,'Back must retain the original inline player');assert.equal(returned.src,original.src);assert.ok(returned.time>=original.time-.25,'Fullscreen must not restart the inline clip');
+ await adb('shell','input','keyevent','4');await wait(`!document.querySelector('.inspection')`,15000);
+ assert.deepEqual((await lab.call('assets')).assets.map(a=>a.id).sort(),before,'Fullscreen must not mutate MediaStore');
+ await click('#filter-trigger');await click('.sheet-tabs button:first-child');
+ await click('.filter-chips.lead-row button:first-child');
+ await click('.filter-apply button');await wait(`!!document.querySelector('.photo-card.front')`,30000);
+ report.inlineFullscreen={playingBeforeFullscreen:true,samePlayer:true,backReturnsToInspector:true,galleryUnchanged:true};
 }
 async function shot(name){await run('adb',['exec-out','screencap','-p'],{encoding:'buffer',timeout:30000,maxBuffer:12<<20}).then(r=>fs.writeFile(`${OUT}/${name}.png`,r.stdout));}
 async function systemAllow(allow=true,completed){
@@ -92,6 +116,7 @@ try{
  await click('#filter-trigger');await click('.sheet-tabs button:nth-child(2)');await wait(`!!document.querySelector('.test-mode-field')`);await shot('developer-channel-native');
  report.developerControlsVisible=true;await adb('shell','input','keyevent','4');await wait(`!document.querySelector('.native-sheet')`);report.nativeBackClosesSheet=true;
  await favoriteRefreshAndUndo();
+ await inlineFullscreen();
  await sleep(20000);await sample(0);
  for(let cycle=1;cycle<=10;cycle++){const favorite=cycle===10?await queueFavorite():null;await round(favorite,cycle===1);report.functionalCycles=cycle;await sample(cycle);if(cycle===5||cycle===10)await shot('native-cycle-'+cycle);}
  report.functionalCycles=10;

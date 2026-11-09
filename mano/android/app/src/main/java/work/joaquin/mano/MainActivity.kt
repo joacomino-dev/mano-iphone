@@ -12,6 +12,7 @@ import com.getcapacitor.BridgeActivity
  */
 class MainActivity : BridgeActivity() {
     private var onBack: (() -> Unit)? = null
+    private var fullscreenClient: CocoWebChromeClient? = null
 
     /** Enabled only while a sheet or the anchored view is open: Back closes it.
      * Otherwise disabled, so Back (and the predictive back-to-home preview) behaves
@@ -32,8 +33,14 @@ class MainActivity : BridgeActivity() {
         registerPlugin(PhotoLibraryPlugin::class.java)
         registerPlugin(CocoMonetizationPlugin::class.java)
         super.onCreate(savedInstanceState)
-        // Videos stream from MediaStore through the WebView (see CocoWebViewClient).
-        bridge?.let { it.webViewClient = CocoWebViewClient(it) }
         onBackPressedDispatcher.addCallback(this, back)
+        // Videos stream from MediaStore through the WebView (see CocoWebViewClient).
+        bridge?.let {
+            it.webViewClient = CocoWebViewClient(it)
+            fullscreenClient = CocoWebChromeClient(it, this)
+            it.webView.webChromeClient = fullscreenClient
+        }
     }
+
+    override fun onDestroy() { fullscreenClient?.exitFullscreen();super.onDestroy() }
 }

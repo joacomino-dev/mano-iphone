@@ -29,7 +29,7 @@ una puerta nativa, comercial o de distribución.
 - R-61 P0 reproducido y corrección de diario local **aprobada**. Implementación local y 8 regresiones IndexedDB PASS (CW-CX-051); force-stop nativo pendiente.
 - R-01 tiene un PASS nativo anterior; el gate completo 42518372819 falla otra vez en álbum y otros casos. No hay aceptación global.
 - R-07 reproduce movimiento real, pero no restaura píxeles idénticos en pausa: 42519482281 FAIL.
-- R-63 Android: 42519758181 vuelve a fallar al esperar confirmación final de favoritas. Diagnósticos disponibles, causa pendiente.
+- R-63 PASS nativo acotado en 42539523601: diez rondas y favorita confirmada. R-61 aún requiere force-stop; el test se detuvo antes por idioma incorrecto.
 - Capturas nativas: 28 por plataforma, siete idiomas. Claude debe aceptar Live, anuncio y ausencia de selección/lupa. No se ha generado un IPA/APK final aceptado.
 - Dos hosts aprobados en manifiesto; declaración estática y firmas del proveedor PASS. Privacy Report del archivo y bloqueo ATT físico pendientes; no repetir sondas de bloqueo en simulador.
 - Medición e infraestructura congeladas. No apta para enviar; no se ha publicado ni cambiado cuentas.
@@ -102,7 +102,7 @@ una puerta nativa, comercial o de distribución.
 | R-44 | Con `main` en canal de tienda, el APK de desarrollo oculta «Modo developer»: decidir si su CI cambia su copia a desarrollo como la IPA | CX | **PASS** | CW-CX-028: run42486725664 valida hashes de APK developer/AAB tienda,5 regresiones yE2E emulador PASS. IDs reales/firma/compras siguen en sus gates |
 | R-45 | P3 posterior: detector de texto/embedder adicional Android | CX si se autoriza | Pendiente, fuera de primera publicación | Texto no disponible se mantiene oculto; parecido dHash existente no equivale a embedder. No incorporar modelos nuevos ni anunciar funciones incompletas para cerrar la primera versión |
 | R-46 | Verificar firma de compras con la clave de licencias | CX + U | En curso; sandbox BLOCKED | CW-CX-032:verificador local y7 vectores RSA,errores/recibos no verificados nunca éxito; CI Java/Kotlin pendiente. [Configuración y límites](playstore/PURCHASE_VERIFICATION.md) |
-| R-47 | Carta de anuncio con Fredoka y espejo RTL; vídeo a pantalla completa | C | Pendiente | — |
+| R-47 | Carta de anuncio con Fredoka y espejo RTL; vídeo a pantalla completa | CX + CL | Implementación candidata; nativo y aceptación pendientes | [Cambios, prueba y límites](apple-readiness/ANDROID_R47.md). Sin alterar anuncios ni monetización. |
 | R-48 | Prueba interna, cerrada (14 días) y solicitud de producción | U + C | Bloqueado | Tras R-40…R-43 |
 | R-49 | Firma de producción Android: Play App Signing, clave de subida/recuperación y AAB del canal real; contratos de pagos/productos Play y Data safety contrastado con SDK/tráfico | U configura + CX verifica | Pendiente | La clave de desarrollo R-42 y una CI verde no acreditan firma comercial ni productos Google Play funcionales |
 
@@ -244,7 +244,7 @@ Autorizados push normal a main y workflows estándar públicos gratuitos, relanz
 | ID | Prioridad | Estado | Evidencia / siguiente paso |
 | --- | --- | --- | --- |
 | R-60 | P1 gate de CI | **PASS corrección de infraestructura** | Se excluye42511286263: noXCTest. Bash3.2 invoca xcodebuild real ypostcondición independiente verifica casos/xcresult/PhotoKit;25testsinfra actualesPASS. Nuevas suites fallidas no se ocultan. |
-| R-61 | P0 persistencia | **FAIL; aprobación de diario pendiente** | 42513754519:pending1→0 ya antes deReact alforce-stop inmediato; background6s retiene. No PhotoKitdelete en ese caso. ExperimentoIDBstrict separado retiene, no es fix de producto. |
+| R-61 | P0 persistencia | **Implementado; force-stop nativo pendiente** | 42513754519:pending1→0 ya antes deReact alforce-stop inmediato; background6s retiene. No PhotoKitdelete en ese caso. ExperimentoIDBstrict separado retiene, no es fix de producto. |
 
 - 2026-11-08 · Codex CW-CX-036:se rechaza falsoverde42511286263(noXCTest), corrige arrayvacíoBash3.2 y añade postcondición independiente. NuevotestAndroid revelaR61P0 pérdida de descarte tras cierre forzado; prioridadsobre materiales. No declarar RC lista.
 
@@ -279,7 +279,7 @@ Autorizados push normal a main y workflows estándar públicos gratuitos, relanz
 
 | ID | Prioridad | Estado | Evidencia / siguiente paso |
 | --- | --- | --- | --- |
-| R-63 | P1 validación nativa | INVESTIGATING | Android42517332458/5d20e6a:9rondas verificadas;en10 no aparece nuevaconfirmaciónfavorite. No se sabe si ya terminó/permiso previo/colisión ActivityResult/fallo de app. Diagnóstico DEBUG de resultado/cola/galería preparado; no relajar criterio por suposición. |
+| R-63 | P1 validación nativa | **PASS acotado** | 3c19d3d/42539523601: 10 rondas, favorita nativa, colas vacías y RESULT_OK. La suite falla después por texto de prueba español en UI inglesa; force-stop no ejecutado. [Evidencia](apple-readiness/evidence/strategic/android-journal-cycles-3c19d3d.json). |
 
 - 2026-11-08 · CW-CX-049: R62nativo17checksPASScompilado; fullAndroidFAIL R63últimafavorite,no10PASS. ATTdosdominiosPASSfuncionalpero bloqueoNO VERIFICADO(adsTESTtambiénrecibidos); comprobar.app empaquetada yhardware. Capturas56totales reales completas,QAvisualpendiente.
 
@@ -298,3 +298,5 @@ Ya resuelto: responsable legal/contacto, mantener monetización, dos hosts de tr
 - 2026-11-08 · CW-CX-050: consolidados borradores y autorizaciones. [Live RGBA FAIL](https://github.com/joacomino-dev/mano-iphone/actions/runs/42519482281); R-61 pasa a implementación, no a PASS.
 
 - 2026-11-08 · CW-CX-051: diario R-61 local y revisión integrada PASS; [evidencia](apple-readiness/evidence/strategic/r61-local-journal.json). No se cierra el P0 sin prueba nativa.
+
+- 2026-11-08 · CW-CX-053: R-63 nativo acotado PASS; R-47 implementado con revisión y contratos ES/AR. Compilación y fullscreen nativos pendientes.

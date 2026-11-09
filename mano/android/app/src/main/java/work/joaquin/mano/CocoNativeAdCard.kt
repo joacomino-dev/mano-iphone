@@ -61,6 +61,7 @@ class CocoNativeAdCard(context: Context, val ad: NativeAd, private val deck: Boo
         val againSpoken = pick("againSpoken", "Desliza otra vez para seguir")
         val spokenDeck = pick("spokenDeck", "Anuncio. Desliza dos veces para volver a tus fotos.")
         val skip = pick("skip", "Seguir sin el anuncio")
+        val rtl = pick("direction", "ltr") == "rtl"
     }
 
     var dismiss: (() -> Unit)? = null
@@ -77,11 +78,15 @@ class CocoNativeAdCard(context: Context, val ad: NativeAd, private val deck: Boo
     private fun text(size: Float, color: Int, bold: Boolean = false) = TextView(context).apply {
         setTextSize(TypedValue.COMPLEX_UNIT_SP, size)
         setTextColor(color)
-        typeface = Typeface.create("sans-serif-medium", if (bold) Typeface.BOLD else Typeface.NORMAL)
+        typeface = Typeface.create(letterFont(context), if (bold) 600 else 500, false)
+        gravity = Gravity.START or Gravity.CENTER_VERTICAL
+        textDirection = View.TEXT_DIRECTION_FIRST_STRONG
         includeFontPadding = false
     }
 
     init {
+        layoutDirection = if (labels.rtl) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
+        textDirection = View.TEXT_DIRECTION_FIRST_STRONG
         clipChildren = false
         clipToPadding = false
         val creative = NativeAdView(context)
@@ -189,6 +194,7 @@ class CocoNativeAdCard(context: Context, val ad: NativeAd, private val deck: Boo
 
         if (deck) {
             hint.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+            hint.typeface = letterFont(context)
             hint.setTextColor(INK_SOFT)
             hint.gravity = Gravity.CENTER
             hint.text = labels.hint
@@ -334,6 +340,17 @@ class CocoNativeAdCard(context: Context, val ad: NativeAd, private val deck: Boo
     }
 
     companion object {
+        @Volatile private var cachedLetterFont: Typeface? = null
+        private fun letterFont(context: Context): Typeface = cachedLetterFont ?: synchronized(this) {
+            cachedLetterFont ?: runCatching {
+                Typeface.Builder(context.assets, "fonts/fredoka-variable.ttf")
+                    .setFontVariationSettings("'wght' 600, 'wdth' 100")
+                    .setFallback("sans-serif").build()
+            }.getOrNull().let { font ->
+                // A missing font must never make advertising crash the gallery.
+                (font ?: Typeface.create("sans-serif", Typeface.NORMAL)).also { cachedLetterFont = it }
+            }
+        }
         // Same values as the web tokens (prototype.css) and the iOS letter.
         val IVORY = Color.rgb(255, 253, 247)
         val INK = Color.rgb(37, 58, 58)

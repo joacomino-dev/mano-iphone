@@ -1,0 +1,17 @@
+{
+  "source": "3c19d3d40c5c9aaa89b7dd87bcf009e224b88032",
+  "run": 42539523601,
+  "nativePluginChecks": 17,
+  "functionalCycles": 10,
+  "samples": 11,
+  "favoriteNativeFlush": true,
+  "favoriteConfirmation": "system-completed-before-observation",
+  "cancelledDeleteRetained": true,
+  "nativeBackClosesSheet": true,
+  "favoriteRefreshAndUndo": true,
+  "overallGate": "FAIL",
+  "remainingFailure": "Test expected Spanish text, actual native UI says Finish , 1 to delete (enabled=true). Force-stop was not executed in this run. Locale-neutral visible badge predicate replaces the incorrect text check.",
+  "durability": "NOT TESTED in native force-stop for this source",
+  "evidenceArtifact": 13640658414,
+  "boundary": "Disposable API35 x86_64 emulator and generated MediaStore library only; no physical-device or large-library claim."
+}

@@ -29,7 +29,7 @@ export function installAppleFixture({ onboarded = true, status = 'authorized', l
           if(outcome==='purchased'&&args.id!=='work.joaquin.mano.coffee')fixture.adFree=true;
           return {adFree:fixture.adFree??true,products:fixture.products??[],outcome};
         }
-        return { adFree: fixture.adFree ?? true, products: fixture.products ?? [], ready: false };
+        return { adFree: fixture.adFree ?? true, products: fixture.products ?? [], ready: fixture.adReady ?? false, shown: fixture.adReady ?? false };
       }
       switch (method) {
         case 'permissionStatus': {

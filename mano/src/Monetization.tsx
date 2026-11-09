@@ -156,6 +156,7 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
 type Monetization = ReturnType<typeof useMonetization>;
 /** Texts of the native letter, in the app's language. */
 const letterLabels = () => ({
+  direction: locale.startsWith('ar') ? 'rtl' : 'ltr',
   stamp: t('Publicidad'), greeting: t('Esta carta mantiene CocoWash gratis'), hint: t('‹  Desliza para seguir  ›'),
   again: t('Una vez más y seguimos'), againSpoken: t('Desliza otra vez para seguir'), spokenDeck: t('Anuncio. Desliza dos veces para volver a tus fotos.'),
   spokenInline: t('Anuncio'), skip: t('Seguir sin el anuncio'),
