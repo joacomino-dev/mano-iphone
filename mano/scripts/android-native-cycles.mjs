@@ -45,15 +45,29 @@ async function inlineFullscreen(){
  // Trusted WebView input, not a JavaScript override of requestFullscreen.
  await lab.cdp('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[point]});await lab.cdp('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
  await wait(`!!document.fullscreenElement`,15000);await shot('video-fullscreen-native');
- await adb('shell','input','keyevent','4');await sleep(1000);
- if(await lab.page(`return !!document.fullscreenElement;`)){
-  // Android's first-use immersive education can consume Back. Dismiss only its
-  // observed system-owned acknowledgement, never an unknown permission dialog.
-  await adb('shell','uiautomator','dump','/sdcard/coco-fullscreen.xml');const xml=await adb('shell','cat','/sdcard/coco-fullscreen.xml');
-  const node=[...xml.matchAll(/<node [^>]*>/g)].map(m=>m[0]).find(n=>/package="(?:com\.android\.systemui|android)"/.test(n)&&/text="(?:Got it|Entendido)"/.test(n)&&/clickable="true"/.test(n));
-  const bounds=node&&/bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/.exec(node);
-  if(bounds){await adb('shell','input','tap',String((+bounds[1]+ +bounds[3])>>1),String((+bounds[2]+ +bounds[4])>>1));report.fullscreenEducationDismissed=true;await adb('shell','input','keyevent','4');}
+ // Establish the native input precondition before sending Back. The previous
+ // test sent it immediately after tapping immersive education; neither the
+ // Activity's key handler nor its fullscreen callback received that event.
+ const education=async()=>{
+  await adb('shell','uiautomator','dump','/sdcard/coco-fullscreen.xml');
+  const xml=await adb('shell','cat','/sdcard/coco-fullscreen.xml');
+  return [...xml.matchAll(/<node [^>]*>/g)].map(m=>m[0]).find(n=>/package="(?:com\.android\.systemui|android)"/.test(n)&&/text="(?:Got it|Entendido)"/.test(n)&&/clickable="true"/.test(n));
+ };
+ const notice=await education(),bounds=notice&&/bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/.exec(notice);
+ if(bounds){
+  await adb('shell','input','tap',String((+bounds[1]+ +bounds[3])>>1),String((+bounds[2]+ +bounds[4])>>1));
+  const deadline=Date.now()+15000;let visible;
+  do{visible=await education();if(visible)await sleep(250);}while(visible&&Date.now()<deadline);
+  assert.equal(visible,undefined,'Immersive education must actually close before Back');report.fullscreenEducationDismissed=true;
  }
+ const focusDeadline=Date.now()+15000;let windowState,focused=false;
+ do{windowState=await adb('shell','dumpsys','window');focused=/mCurrentFocus=.*work\.joaquin\.mano\/(?:work\.joaquin\.mano)?\.MainActivity\b/.test(windowState);if(!focused)await sleep(250);}while(!focused&&Date.now()<focusDeadline);
+ await fs.writeFile(`${OUT}/fullscreen-before-back-window.txt`,windowState);
+ assert.ok(focused,'Back requires CocoWash to own the focused Android window');
+ assert.equal(await lab.page(`return !!document.fullscreenElement;`),true,'Fullscreen must still be active before the tested Back');
+ report.fullscreenBackPrecondition={focusedActivity:true,educationClosed:true};
+ await adb('shell','input','keyevent','4');
+ await fs.writeFile(`${OUT}/fullscreen-after-back-window.txt`,await adb('shell','dumpsys','window'));
  await wait(`!document.fullscreenElement&&!!document.querySelector('.inspection video')`,15000);
  const returned=await lab.page(`const v=document.querySelector('.inspection video');return {same:v===window.cocoFullscreenProbe,src:v.currentSrc,time:v.currentTime,muted:v.muted,volume:v.volume};`);
  assert.equal(returned.same,true,'Back must retain the original inline player');assert.equal(returned.src,original.src);assert.ok(returned.time>=original.time-.25,'Fullscreen must not restart the inline clip');

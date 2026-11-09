@@ -1,0 +1,48 @@
+{
+  "date": "2026-11-09",
+  "base": "2e10bc62e4884997d9cb50a188e1cc67bb733bd1",
+  "visibleVersion": "0.9.9.2",
+  "ios": {
+    "version": "0.9.9",
+    "build": 44,
+    "minimum": "17.0"
+  },
+  "android": {
+    "versionName": "0.9.9.2",
+    "versionCode": 4
+  },
+  "tests": {
+    "node": 138,
+    "release": 9,
+    "nativeContracts": 4,
+    "nativeInfrastructurePython": 25,
+    "edge": {
+      "mute": 1,
+      "anchored": 5,
+      "live": 5,
+      "resume": 3,
+      "durableSession": 8,
+      "safety": 9,
+      "accessibilityLayout": 6,
+      "readiness": 19
+    },
+    "bootstrapRetryBashFixtures": 4
+  },
+  "webBuild": "PASS",
+  "nativeWebBuild": "PASS",
+  "typescript": "PASS",
+  "protected28": "PASS",
+  "review": "No introduced actionable findings",
+  "releaseRegression": "Four-component native marketing version accepted before correction, rejected afterwards",
+  "nativeExecution": "NOT TESTED for this checkpoint",
+  "boundary": "Windows + Edge synthetic fixtures; no physical/iCloud/VoiceOver/Instruments or store distribution acceptance",
+  "unchangedSHA256": {
+    "InlineVideo.tsx": "A30986B1C3C5516F960F9D4E4F6BFD1ABA5440F5A2172D37B9A8F85D02CAFDBC",
+    "Inspector.tsx": "84A641FA5FCF7544ABCCAF346F823514DA659B28945EDFFECDC7C28567A20A19"
+  },
+  "officialRequirements": {
+    "appleVersion": "https://developer.apple.com/documentation/bundleresources/information-property-list/cfbundleshortversionstring",
+    "appleSDK": "https://developer.apple.com/news/upcoming-requirements/?id=04282026a",
+    "googleTargetAPI": "https://support.google.com/googleplay/android-developer/answer/11926878?hl=en-mt"
+  }
+}

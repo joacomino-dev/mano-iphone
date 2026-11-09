@@ -354,8 +354,16 @@ if ! run_ui_test; then
   # initialize for UI testing ... Timed out waiting for AX loaded notification")
   # on a loaded simulator; no app code ran. Retry once for exactly that runner
   # bootstrap failure. Any test assertion or app failure still fails right here.
-  if grep -q -e 'failed to initialize for UI testing' -e 'Timed out waiting for AX loaded notification' "$smoke_dir/ui-test.log"; then
-    echo 'XCTest runner did not initialize accessibility; retrying the UI test once on the same device.' >&2
+  # 571b1e5 failed at the first app.launch(), before any UI marker, while
+  # acquiring XCTest's background assertion. Later cases only lacked that
+  # initial authorized session. Retry this infrastructure bootstrap once too;
+  # never retry it after any CocoWash UI step has been acknowledged.
+  launch_assertion_failure=0
+  if grep -q 'testFullPhotosAuthorizationStartsSession.*Failed to get background assertion' "$smoke_dir/ui-test.log" && ! grep -q 'COCOWASH_UI_' "$smoke_dir/ui-test.log"; then
+    launch_assertion_failure=1
+  fi
+  if grep -q -e 'failed to initialize for UI testing' -e 'Timed out waiting for AX loaded notification' "$smoke_dir/ui-test.log" || [ "$launch_assertion_failure" = 1 ]; then
+    echo 'XCTest bootstrap failed before UI acceptance; retrying once on the same device with all assertions intact.' >&2
     mv "$smoke_dir/ui-test.log" "$smoke_dir/ui-test-attempt1.log"
     rm -rf "$smoke_dir/PhotosSmoke-attempt1.xcresult"
     mv "$smoke_dir/PhotosSmoke.xcresult" "$smoke_dir/PhotosSmoke-attempt1.xcresult" 2>/dev/null || true

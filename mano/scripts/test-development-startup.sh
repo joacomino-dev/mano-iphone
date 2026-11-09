@@ -39,7 +39,7 @@ APP=build/startup-safety/derived/Build/Products/Release-iphonesimulator/App.app
 /usr/libexec/PlistBuddy -c 'Add :CocoWashDevelopmentReset bool true' "$APP/Info.plist"
 sim 180 install "$SIM" "$APP"
 DATA=$(sim 60 get_app_container "$SIM" work.joaquin.mano data)
-export DATA
+export DATA APP
 python3 - <<'PY'
 import os
 from pathlib import Path
@@ -54,9 +54,11 @@ python3 - <<'PY'
 import os,time,plistlib
 from pathlib import Path
 p=Path(os.environ['DATA']);stamp=p/'Library/Preferences/work.joaquin.mano.plist'
+info=plistlib.loads((Path(os.environ['APP'])/'Info.plist').read_bytes())
+expected=f"{info['CFBundleShortVersionString']}-{info['CFBundleVersion']}"
 for _ in range(120):
  try:
-  if plistlib.loads(stamp.read_bytes()).get('cocowash-development-data-build')=='0.9.9-43':break
+  if plistlib.loads(stamp.read_bytes()).get('cocowash-development-data-build')==expected:break
  except (OSError,ValueError):pass
  time.sleep(1)
 else:raise SystemExit('Reset did not commit build marker')

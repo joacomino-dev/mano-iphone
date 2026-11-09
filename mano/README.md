@@ -4,7 +4,7 @@ App de iPhone y Android para ordenar la biblioteca de fotos con decisiones rápi
 foto o vídeo llega como una postal y se decide con un gesto. Todo el análisis ocurre en el
 teléfono; nada se borra sin la confirmación del sistema (Fotos en iPhone, Android en Android).
 
-Estado: **0.9.9.1** (versión de bundle `0.9.9`; el build se ve en el arranque). iOS 17+,
+Estado: **0.9.9.2** (versión de bundle `0.9.9`; el build se ve en el arranque). iOS 17+,
 solo iPhone, 7 idiomas (es, en, fr, de, it, ar, ja). Bundle `work.joaquin.mano`.
 **Android** (en preparación para Google Play): Android 11+ (minSdk 30, targetSdk 36), mismo
 `applicationId`, plugins Kotlin en `android/app/src/main/java/work/joaquin/mano/`, `npm run

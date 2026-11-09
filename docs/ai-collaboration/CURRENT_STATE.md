@@ -2,6 +2,19 @@
 
 Actualizado: 2026-11-09, America/Bogota.
 
+## Codex CW-CX-058 — cierre técnico 0.9.9.2 (en curso)
+
+Usuario autoriza finalizar ambas plataformas con etiqueta 0.9.9.2. Base
+`2e10bc6`, limpia y sincronizada; 138 Node, TypeScript y protected28 PASS.
+Codex reserva diagnóstico/pruebas de fullscreen Android y del gate iOS,
+versionado, materiales y procedimientos de distribución. Sin cambios de arte,
+sonido/reproducción, PhotoKit o semántica de decisiones salvo fallo demostrado.
+Esquema actual conservado: visible 0.9.9.2; iOS 0.9.9/build44; Android
+0.9.9.2/code4. Disponibilidad en consolas pendiente del propietario antes del envío.
+No publicar, subir a tiendas, tocar cuentas/certificados ni usar fotos personales.
+Una ejecución nativa combinada por checkpoint, revisión integrada y commits
+recuperables; no repetir el gate 42623622241 mientras siga en curso.
+
 ## Codex CW-CX-057 — IPA de iOS entregada; resultados actualizados
 
 Sin cambios de aplicación. Fuente `6386f55`; IPA en Descargas, build 43,

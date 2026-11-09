@@ -23,7 +23,24 @@ una puerta nativa, comercial o de distribución.
 **Estados:** Hecho · En curso · Pendiente · Bloqueado (falta herramienta, acceso o decisión) · FAIL
 (comprobado y fallando). **Quién:** U = usuario · CX = Codex · CL = Claude · C = cualquiera de los dos.
 
-## Dónde estamos (2026-11-09, CW-CX-057 — IPA para prueba física)
+## Dónde estamos (2026-11-09, CW-CX-058 — candidato 0.9.9.2)
+
+- Usuario autoriza cerrar ambas plataformas con etiqueta **0.9.9.2**. iOS mantiene versión nativa
+  **0.9.9**, build candidato **44**; Android **0.9.9.2**, código **4**. Consultar disponibilidad en las
+  consolas antes del envío; no se publicará ni se tocarán cuentas o certificados.
+- PASS local: 138 Node, TypeScript, protected28, ambos builds web, 9 release, 4 contratos, 25 Python
+  y 56 escenarios Edge. Revisión integrada sin hallazgos. Es evidencia local, no aceptación nativa.
+- R-47b: la prueba enviaba Back inmediatamente después de tocar el aviso inicial. Ahora exige que el
+  aviso desaparezca y que la ventana de CocoWash tenga foco; conserva visor, reproductor, posición,
+  sonido y galería. La corrección no se cierra hasta ejecutar el nuevo gate Android.
+- El primer `app.launch()` del gate iOS anterior falla al obtener una background assertion de XCTest,
+  antes de cualquier marcador UI. Se permite un único reintento de ese bootstrap; cualquier error de
+  app o prueba posterior sigue fallando. No se modifica CocoWash para aparentar un resultado correcto.
+- Sonido/reproducción, Inspector, PhotoKit, recuperación silenciosa R-64 y arte intactos.
+  Gates del nuevo checkpoint pendientes; siguen QA física/visual, privacidad del archivo, comercio y firma.
+  **No apta para enviar.**
+
+### Estado anterior 0.9.9.1 (CW-CX-057)
 
 - Código `6386f55`, sobre la última versión funcional de Claude; sin cambios de app en esta entrega.
 - IPA `CocoWash-0.9.9.1-build43-6386f55.ipa` descargada en Descargas para iLoader. Fuente, digest,

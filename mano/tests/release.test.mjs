@@ -1,6 +1,10 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import os from 'node:os';import path from 'node:path';import {execFileSync} from 'node:child_process';
 import {checkRelease,inputs} from '../scripts/check-release.mjs';
 test('release source, approved icon and seven-language metadata pass static checks',()=>assert.equal(checkRelease(inputs()).status,'PASS'));
+test('release gate rejects a four-component native Apple marketing version',()=>{
+ const value=inputs();value.project=value.project.replaceAll('MARKETING_VERSION = 0.9.9;','MARKETING_VERSION = 0.9.9.2;');
+ assert.throws(()=>checkRelease(value),/three.*integers/i);
+});
 test('release gate rejects UTF-8 keywords above 100 bytes even below 100 characters',()=>{
  const value=inputs();value.metadata.localizations.ja.keywords='写真整理'.repeat(9);
  assert.throws(()=>checkRelease(value),/keywords.*bytes/);
@@ -24,12 +28,11 @@ test('Capacitor configuration preserves the selected marketing version and uniqu
   for(const file of ['App.xcodeproj/project.pbxproj','App/Base.lproj/Main.storyboard','App/SceneDelegate.swift','App/Info.plist']){
    const target=path.join(dir,'ios/App',file);fs.mkdirSync(path.dirname(target),{recursive:true});
    let text=fs.readFileSync(path.join('ios/App',file),'utf8');
-   if(file.endsWith('pbxproj'))text=text.replaceAll('MARKETING_VERSION = 0.9.9;','MARKETING_VERSION = 1.0;').replaceAll('CURRENT_PROJECT_VERSION = 43;','CURRENT_PROJECT_VERSION = 72;');
+   if(file.endsWith('pbxproj'))text=text.replace(/MARKETING_VERSION = [^;]+;/g,'MARKETING_VERSION = 1.0;').replace(/CURRENT_PROJECT_VERSION = \d+;/g,'CURRENT_PROJECT_VERSION = 72;');
    fs.writeFileSync(target,text);
   }
   execFileSync(process.execPath,[path.resolve('scripts/configure-ios.mjs')],{cwd:dir});
   const after=fs.readFileSync(path.join(dir,'ios/App/App.xcodeproj/project.pbxproj'),'utf8');
   assert.ok(after.includes('MARKETING_VERSION = 1.0;'));assert.ok(after.includes('CURRENT_PROJECT_VERSION = 72;'));
-  assert.ok(!after.includes('CURRENT_PROJECT_VERSION = 43;'));
  }finally{fs.rmSync(dir,{recursive:true,force:true});} // Only the just-created temporary fixture.
 });

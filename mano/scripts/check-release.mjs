@@ -9,6 +9,8 @@ export function checkRelease({ channel, project, info, metadata, icon }) {
   const release = [...project.matchAll(/\/\* Release \*\/ = \{[\s\S]*?buildSettings = \{([\s\S]*?)\};\s*name = Release;/g)]
     .map(m => m[1]).find(text => text.includes('PRODUCT_BUNDLE_IDENTIFIER = work.joaquin.mano;'));
   assert.ok(release, 'App Release configuration missing');
+  assert.match(release, /MARKETING_VERSION = \d+\.\d+\.\d+;/, 'Apple marketing version requires three period-separated integers');
+  assert.match(release, /CURRENT_PROJECT_VERSION = [1-9]\d*;/, 'Native build must be a positive integer');
   assert.match(release, /COCO_ADMOB_APP_ID = "ca-app-pub-5676353604168025~4587143429";/);
   assert.match(release, /COCO_ADMOB_NATIVE_UNIT_ID = "ca-app-pub-5676353604168025\/8219266678";/);
   assert.match(release, /TARGETED_DEVICE_FAMILY = 1;/);
