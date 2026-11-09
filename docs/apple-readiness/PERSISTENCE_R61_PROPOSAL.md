@@ -1,6 +1,6 @@
 # R61 — propuesta de persistencia duradera
 
-**FAIL reproducido. Cambio aprobado expresamente por el usuario el 2026-11-08; implementación pendiente.**
+**FAIL reproducido. Cambio aprobado expresamente por el usuario el 2026-11-08; implementación local en validación nativa.**
 
 Run42513754519/27b03ca: descarte sintético encola1, localStorage devuelve1, cierre
 forzado inmediato yarranque devuelven0. Observer antes de React confirma que no se
@@ -51,3 +51,24 @@ No prometer tolerancia universal a fallo físico de almacenamiento/corte de ener
 
 Fuentes: [W3C IndexedDB, transacciones/durabilidad](https://www.w3.org/TR/IndexedDB/),
 [Chromium, localStorage commit diferido](https://chromium.googlesource.com/chromium/src.git/+/435e399c1f5938df9301f4e96e19a3df24489a94/components/services/storage/dom_storage/local_storage_impl.cc).
+
+## Implementación y evidencia local — CW-CX-051
+
+Diario IndexedDB local con transacciones `strict`, acuse en `oncomplete`, revisiones
+comparadas dentro de la transacción y cola serial. Arranque antes de React, migración
+sin descartar datos ilegibles, cola Android y decisión atómicas. El espejo legacy es
+opcional después del commit. Las decisiones, Deshacer, recuperación y reset demo
+esperan el guardado. Se conservan las transformaciones del dominio y los contratos nativos.
+
+Intención antes de favorita iOS, álbum y borrado; si falla el guardado tras el sistema,
+no hay éxito inventado ni repetición automática. Al reconocer la advertencia se
+reconsulta la galería. Un ID no visible conserva su pendiente y puede retirarse de la
+cola, sin inferir que se borró. Esa recuperación no recupera archivos de Fotos.
+
+PASS local: 138 pruebas Node (8 nuevas), 8 casos Edge/IndexedDB reales, TypeScript,
+protected28, builds y sincronización de fuentes iOS. `/review` integrado sin hallazgos.
+[Resultados y condiciones](evidence/strategic/r61-local-journal.json). Las métricas
+Windows de 100/5.000/50.000 registros no describen rendimiento de un iPhone.
+
+**Gate de force-stop Android/iOS: NOT TESTED en esta implementación. R-61 no está
+cerrado hasta ejecutar esas pruebas nativas.** Ninguna confirmación sobre fotos personales.

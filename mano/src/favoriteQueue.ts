@@ -2,25 +2,32 @@ import { Library } from './library';
 import { onAndroid } from './locales/android';
 import { acknowledgeFavorites, favoritesToSend, queueFavorites, withoutFavorites, type PendingFavorites } from './favoritePending';
 import type { Asset } from './domain';
+import { activeJournal, FAVORITES_KEY, IN_FLIGHT_KEY, STORAGE_FAILURE } from './durableSession';
 
 /** Favourites in the gallery. On the iPhone, Photos takes each change at once
  * (unchanged). On Android every change needs the system's confirmation, so a
  * favourite is CocoWash's decision at once and reaches the gallery in one batch
  * when the round ends (user decision, 2026-11-07): one dialog for the hearts,
  * one for any removed hearts. Pending changes survive closing the app. */
-const KEY = 'cocowash-android-favorites-v1';
+const KEY = FAVORITES_KEY;
 // Persist before calling Android: after termination the gallery may have changed
 // without our receiving its callback. Keep a later undo as an explicit intent.
-const IN_FLIGHT = 'cocowash-android-favorites-inflight-v1';
+const IN_FLIGHT = IN_FLIGHT_KEY;
 
 function read(key = KEY): PendingFavorites {
+  const journal = activeJournal('cocowash-library-session-v1');
+  if (journal) return key === IN_FLIGHT ? journal.snapshot.inFlight : journal.snapshot.favorites;
   try {
     const value = JSON.parse(localStorage.getItem(key) ?? '{}') as unknown;
     return value && typeof value === 'object' && !Array.isArray(value) ? Object.fromEntries(Object.entries(value).filter(([,v])=>typeof v==='boolean')) : {};
   } catch { return {}; }
 }
-function save(pending: PendingFavorites, key = KEY) {
-  if (Object.keys(pending).length) localStorage.setItem(key, JSON.stringify(pending)); else localStorage.removeItem(key);
+async function update(change: (pending: PendingFavorites, inFlight: PendingFavorites) => { favorites: PendingFavorites; inFlight: PendingFavorites }) {
+  const journal = activeJournal('cocowash-library-session-v1');
+  if (journal) return journal.queues(change);
+  const next = change(read(), read(IN_FLIGHT));
+  if(Object.keys(next.favorites).length)localStorage.setItem(KEY, JSON.stringify(next.favorites));else localStorage.removeItem(KEY);
+  if(Object.keys(next.inFlight).length)localStorage.setItem(IN_FLIGHT, JSON.stringify(next.inFlight));else localStorage.removeItem(IN_FLIGHT);
 }
 
 /** Only reconciliation overlays queued choices; raw assets remain gallery truth. */
@@ -31,7 +38,7 @@ export function withPendingFavorites(assets: Asset[]): Asset[] {
 
 export async function setFavorite(ids: string[], value: boolean, ignoreMissing = false): Promise<{ missing: string[] }> {
   if (!onAndroid()) return Library.favorite({ ids, value, ignoreMissing });
-  save(queueFavorites(read(), ids, value, read(IN_FLIGHT)));
+  await update((pending,inFlight)=>({favorites:queueFavorites(pending,ids,value,inFlight),inFlight}));
   return { missing: [] };
 }
 
@@ -48,17 +55,17 @@ export function flushFavorites(only?: readonly string[], invalidate?:()=>void): 
       const ids = favoritesToSend(read(), value, only);
       if (!ids.length) continue;
       let started=false;
+      await update((favorites,inFlight)=>({favorites,inFlight:{...inFlight,...Object.fromEntries(ids.map(id=>[id,value]))}}));
       try {
-        save({...read(IN_FLIGHT),...Object.fromEntries(ids.map(id=>[id,value]))},IN_FLIGHT);
         invalidate?.();started=true;
         await Library.favorite({ ids, value, ignoreMissing: true });
-        save(acknowledgeFavorites(read(), ids, value));
-        save(withoutFavorites(read(IN_FLIGHT), ids),IN_FLIGHT);
+        await update((pending,inFlight)=>({favorites:acknowledgeFavorites(pending,ids,value),inFlight:withoutFavorites(inFlight,ids)}));
       } catch (error) {
         if ((error as { code?: string })?.code === 'CANCELLED') {
           // Keep an opposite choice made while this exact batch was pending.
-          try { save(acknowledgeFavorites(read(),ids,value));save(withoutFavorites(read(IN_FLIGHT),ids),IN_FLIGHT); } catch { /* retained for an idempotent retry */ }
+          await update((pending,inFlight)=>({favorites:acknowledgeFavorites(pending,ids,value),inFlight:withoutFavorites(inFlight,ids)}));
         }
+        else if (error instanceof Error && error.message === STORAGE_FAILURE) throw error;
       } finally { if(started)invalidate?.(); }
     }
   };

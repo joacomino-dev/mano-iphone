@@ -436,5 +436,7 @@ const table: Record<string, string> = {
   "Preparación cancelada.": "Vorbereitung abgebrochen.",
   "El archivo del vídeo no está disponible. Comprueba iCloud y reintenta.": "Die Videodatei ist nicht verfügbar. Prüfe iCloud und versuche es erneut.",
   "No se pudo guardar el vídeo para reproducirlo. Comprueba el espacio libre y reintenta.": "Das Video konnte nicht zur Wiedergabe gespeichert werden. Prüfe den freien Speicher und versuche es erneut.",
+  "Una operación de Fotos quedó interrumpida. Comprueba su resultado en Fotos antes de volver a intentarla. Tus decisiones guardadas se conservan.": "Ein Vorgang in Fotos wurde unterbrochen. Prüfe das Ergebnis in Fotos, bevor du ihn erneut versuchst. Deine gespeicherten Entscheidungen bleiben erhalten.",
+  "Fotos no muestra ahora los elementos pendientes. Puedes recuperarlos de la cola; no se darán por eliminados.": "Fotos zeigt die vorgemerkten Elemente gerade nicht an. Du kannst sie aus der Warteschlange zurückholen; sie werden nicht als gelöscht markiert.",
 };
 export default table;

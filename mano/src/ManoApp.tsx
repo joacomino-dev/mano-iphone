@@ -17,6 +17,7 @@ import { InlineVideo, type VideoControl } from './InlineVideo';
 import { Filters } from './Filters';
 import { Inspector, type InspectOrigin } from './Inspector';
 import { readSession, SessionWriter, DEMO_SESSION_KEY, LIBRARY_SESSION_KEY, type ActiveSession } from './session';
+import { activeJournal, STORAGE_FAILURE, INTERRUPTED_OPERATION, type NativeIntent } from './durableSession';
 import { readDisplay, saveDisplay, polaroidCaption, formatBytes, ONBOARDING_KEY, type DisplaySettings, type PhotoMeta } from './meta';
 import { usePlace, prefetchPlaces } from './place';
 import { haptic, setHapticsEnabled } from './haptics';
@@ -244,8 +245,13 @@ export function ManoApp() {
   const [adsOff,setAdsOff]=useState(()=>isNative&&readAdsOff());
   const demo = !isNative||testMode; const key = demo ? 'mano-demo-v1' : 'mano-library-v1';
   const sessionKey=demo?DEMO_SESSION_KEY:LIBRARY_SESSION_KEY;
-  const [saved]=useState(()=>readSession(sessionKey));const resumeContext=useRef(saved?.active?saved.context:undefined);
-  const [state,setState] = useState<RecordState>(()=>saved?.record??readState(key));
+  const journal=activeJournal(sessionKey);
+  const [saved]=useState(()=>journal?.session??readSession(sessionKey));const resumeContext=useRef(saved?.active?saved.context:undefined);
+  const [state,applyState] = useState<RecordState>(()=>saved?.record??readState(key));
+  const recordNow=useRef(state);
+  const setState=useCallback((value:RecordState|((s:RecordState)=>RecordState))=>{recordNow.current=typeof value==='function'?value(recordNow.current):value;applyState(recordNow.current);},[]);
+  const operationBusy=useRef(false);const deferredLibrary=useRef<Asset[]|null>(null);
+  const reconcileFresh=useCallback((fresh:Asset[])=>{if(operationBusy.current)deferredLibrary.current=fresh;else setState(s=>reconcileLibrary(s,withPendingFavorites(fresh)));},[]);
   const [sessionOpen,setSessionOpen]=useState(saved?.active??false);
   // The hand on the table, locked until the person acts on it (sequence.ts).
   const [lock,setLock]=useState<HandLock>(()=>saved?.active?restoreHand(saved.context,[]):NO_HAND);
@@ -279,7 +285,7 @@ export function ManoApp() {
   const [session,setSession] = useState(false); const [selected,setSelected] = useState<string[]>(saved?.active?saved.context.selected:[]);
   const [sheet,setSheet] = useState<'filters'|'review'|'albums'|null>(null); const [albums,setAlbums] = useState<Album[]>([]);
   const [loading,setLoading] = useState(false); const [busy,setBusy] = useState(false); const [connected,setConnected] = useState(demo); const [limited,setLimited] = useState(false);
-  const [notice,setNoticeState] = useState<Notice|null>(null); const [error,setError] = useState('');
+  const [notice,setNoticeState] = useState<Notice|null>(null); const [error,setError] = useState(()=>journal?.snapshot.intent?t(INTERRUPTED_OPERATION):'');
   const noticeId=useRef(0);
   /** One notice at a time: a new one replaces the current (crossfade); the
    * same text again only restarts its time. '\n' breaks the two lines. */
@@ -346,10 +352,10 @@ export function ManoApp() {
   const libraryRevision=useRef(0);
   // A mutation invalidates asset snapshots, never the latest permission answer.
   const permissionRevision=useRef(0);
-  const invalidateLibrary=useCallback(()=>{initialLibrary.current=null;setLoading(false);return ++libraryRevision.current;},[]);
+  const invalidateLibrary=useCallback(()=>{initialLibrary.current=null;deferredLibrary.current=null;setLoading(false);return ++libraryRevision.current;},[]);
   const clearLibraryAccess=useCallback(()=>{analysisEpoch.current++;analysisCoverage.clear();if(analysisRunning.current)void Library.cancelAnalysis().catch(()=>{});cancelWarmup();setConnected(false);setAssets([]);setInspect(null);setPinnedInspect(false);setSelected([]);setSheet(null);},[]);
   const loadLibrary=useCallback(()=>{if(demo)return;let alive=true;const revision=libraryRevision.current;setLoadError('');const request=initialLibrary.current??(initialLibrary.current=Library.permissionStatus().then(({status})=>{if(revision!==libraryRevision.current)return {assets:[] as Asset[],status};setPermission(status as PhotoPermission);return ['authorized','limited'].includes(status)?Library.assets():{assets:[] as Asset[],status};}));
-    request.then(result=>{if(!alive||revision!==libraryRevision.current)return;setPermission(result.status as PhotoPermission);setLimited(result.status==='limited');if(['authorized','limited'].includes(result.status)){setAssets(savedGroups(result.assets));setConnected(true);setState(s=>reconcileLibrary(s,withPendingFavorites(result.assets)));setInspect(a=>a&&result.assets.some(fresh=>fresh.id===a.id)?a:null);}else clearLibraryAccess();}).catch(e=>{if(revision!==libraryRevision.current)return;initialLibrary.current=null;if(alive)setLoadError(e instanceof Error?t(e.message):t('Inténtalo de nuevo en un momento.'));});return()=>{alive=false;};},[clearLibraryAccess]);
+    request.then(result=>{if(!alive||revision!==libraryRevision.current)return;setPermission(result.status as PhotoPermission);setLimited(result.status==='limited');if(['authorized','limited'].includes(result.status)){setAssets(savedGroups(result.assets));setConnected(true);reconcileFresh(result.assets);setInspect(a=>a&&result.assets.some(fresh=>fresh.id===a.id)?a:null);}else clearLibraryAccess();}).catch(e=>{if(revision!==libraryRevision.current)return;initialLibrary.current=null;if(alive)setLoadError(e instanceof Error?t(e.message):t('Inténtalo de nuevo en un momento.'));});return()=>{alive=false;};},[clearLibraryAccess]);
   useEffect(()=>loadLibrary(),[]);
   // Photos may change both the permission and the selected limited set while
   // away. Refresh even when its status is unchanged; keep decisions and the
@@ -402,15 +408,27 @@ export function ManoApp() {
   const envelope:ActiveSession={version:1,active:sessionOpen,seed:seed.current,filter,context:session?context:resumeContext.current??context,updatedAt:Date.now(),record:state};
   const latest=useRef(envelope);latest.current=envelope;
   const [writer]=useState(()=>new SessionWriter());
-  // Saving: the record and the session envelope are written together, at most
-  // once every 350 ms while the person sorts (not once per swipe: each write
-  // serialises the whole record), and at once when the app is hidden or closed.
+  // Only presentation context is batched. A decision is committed before its UI acknowledgement.
   const dirty=useRef(false);const flushTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
-  const flush=useCallback((checkpoint=false)=>{if(flushTimer.current){clearTimeout(flushTimer.current);flushTimer.current=null;}if(!dirty.current)return;
-    if(writer.save(sessionKey,latest.current,undefined,checkpoint?key:undefined))dirty.current=false;
-    else setError(t('No se pudo guardar el progreso. Libera espacio antes de continuar.'));},[key,sessionKey,writer]);
-  useEffect(()=>{dirty.current=true;if(!flushTimer.current)flushTimer.current=setTimeout(flush,350);},[state,sessionOpen,filter,windowHandKey,selected,session]);
-  useEffect(()=>{const persist=()=>{dirty.current=true;flush(true);};document.addEventListener('visibilitychange',persist);window.addEventListener('pagehide',persist);return()=>{persist();document.removeEventListener('visibilitychange',persist);window.removeEventListener('pagehide',persist);};},[flush]);
+  const flush=useCallback(async(checkpoint=false)=>{
+    if(flushTimer.current){clearTimeout(flushTimer.current);flushTimer.current=null;}
+    if(!dirty.current||operationBusy.current)return;
+    const snapshot=latest.current;dirty.current=false;
+    try { if(journal)await journal.save(snapshot);else if(!writer.save(sessionKey,snapshot,undefined,checkpoint?key:undefined))throw new Error(STORAGE_FAILURE); }
+    catch {dirty.current=true;setError(t(STORAGE_FAILURE));}
+  },[key,sessionKey,writer,journal]);
+  useEffect(()=>{dirty.current=true;if(!flushTimer.current)flushTimer.current=setTimeout(()=>void flush(),350);},[state,sessionOpen,filter,windowHandKey,selected,session]);
+  useEffect(()=>{const persist=()=>{dirty.current=true;void flush(true);};document.addEventListener('visibilitychange',persist);window.addEventListener('pagehide',persist);return()=>{persist();document.removeEventListener('visibilitychange',persist);window.removeEventListener('pagehide',persist);};},[flush]);
+  const startOperation=()=>{if(operationBusy.current)return false;if(journal?.snapshot.intent){setError(t(INTERRUPTED_OPERATION));return false;}operationBusy.current=true;setBusy(true);setError('');return true;};
+  const endOperation=()=>{operationBusy.current=false;setBusy(false);const fresh=deferredLibrary.current;deferredLibrary.current=null;if(fresh)reconcileFresh(fresh);};
+  const persistRecord=async(next:RecordState,patch:Partial<ActiveSession>={},favorite?:{ids:string[];value:boolean},clearIntent=false)=>{
+    const nextEnvelope={...latest.current,...patch,record:next,updatedAt:Date.now()};
+    if(journal)await journal.save(nextEnvelope,{favorite,clearIntent});
+    else if(!writer.save(sessionKey,nextEnvelope,undefined,key))throw new Error(STORAGE_FAILURE);
+    latest.current=nextEnvelope;dirty.current=false;setState(next);
+  };
+  const beforeNative=async(kind:NativeIntent['kind'],ids:string[])=>{await journal?.intent({kind,ids:[...ids],started:Date.now()});};
+  const nativeFailed=async(e:unknown)=>{if(e instanceof Error&&e.message===STORAGE_FAILURE){setError(t(journal?.snapshot.intent?INTERRUPTED_OPERATION:STORAGE_FAILURE));return;}try{await journal?.intent();messageError(e);}catch{setError(t(INTERRUPTED_OPERATION));}};
   const openFilters=()=>{money.clear();setError('');setSheet('filters');};
   const active=hand[0]; const targetIds=selected.filter(id=>hand.some(a=>a.id===id)); const targets=targetIds.length?targetIds:active?[active.id]:[];
   // Ads (Monetization.tsx): only while cleaning, never over a sheet, the inspector or the splash.
@@ -428,7 +446,7 @@ export function ManoApp() {
   const messageError=(e:unknown)=>cancelled(e)?undefined:setError(e instanceof Error?t(e.message):t('No se pudo completar la acción. Inténtalo de nuevo.'));
   const connect=useCallback(async()=>{const permission=++permissionRevision.current;const revision=invalidateLibrary();setLoading(true);setError('');try{
     const access=await Library.authorize();if(permission!==permissionRevision.current)return false;setPermission(access.status as PhotoPermission);if(!['authorized','limited'].includes(access.status)){clearLibraryAccess();return false;}if(revision!==libraryRevision.current)return false;
-    const result=await Library.assets();if(revision!==libraryRevision.current)return false;setPermission(result.status as PhotoPermission);if(!['authorized','limited'].includes(result.status)){clearLibraryAccess();return false;}setAssets(savedGroups(result.assets));setState(s=>reconcileLibrary(s,withPendingFavorites(result.assets)));setLimited(result.status==='limited');setConnected(true);analysisCoverage.retry();return savedGroups(result.assets);
+    const result=await Library.assets();if(revision!==libraryRevision.current)return false;setPermission(result.status as PhotoPermission);if(!['authorized','limited'].includes(result.status)){clearLibraryAccess();return false;}setAssets(savedGroups(result.assets));reconcileFresh(result.assets);setLimited(result.status==='limited');setConnected(true);analysisCoverage.retry();return savedGroups(result.assets);
   }catch(e){if(revision===libraryRevision.current)messageError(e);return false;}finally{if(revision===libraryRevision.current)setLoading(false);}},[invalidateLibrary,clearLibraryAccess]);
   const beginSession=async()=>{
     if(loading||warming)return;
@@ -470,33 +488,45 @@ export function ManoApp() {
   // The front video card: a quick tap pauses/plays it; holding it hands its frame to the held view.
   const videoControl=useRef<VideoControl|null>(null);const heldVideo=useRef<HTMLVideoElement|null>(null);
   const hideSeals=()=>{setDisplay(d=>({...d,photo:{...d.photo,seal:false}}));haptic('selection');setNotice(t('Sellos ocultos\nVuelven en Ajustes'));};
-  const record=(action:Action,ids:string[],apply=(s:RecordState)=>decide(s,ids,action,Date.now(),context))=>{
-    // The rest of the hand stays exactly as shown; an empty hand deals the next.
-    setState(apply);setLock(afterDecision(hand,ids,best));setPinnedInspect(false);setInspect(null);setSelected([]);
+  const record=async(action:Action,ids:string[],apply=(s:RecordState)=>decide(s,ids,action,Date.now(),context),favorite?:{ids:string[];value:boolean},clearIntent=false)=>{
+    const nextLock=afterDecision(hand,ids,best);
+    await persistRecord(apply(recordNow.current),{context:{...context,handIds:nextLock.ids,selected:[],best:nextLock.best}},favorite,clearIntent);
+    setLock(nextLock);setPinnedInspect(false);setInspect(null);setSelected([]);
     if(action!=='unfavorite'){setStats(previous=>({...previous,[action]:previous[action]+ids.length}));setFlash({kind:action,key:Date.now()});}setDecidedHere(previous=>new Set([...previous,...ids]));money.review(ids);
     setSpoken(`${SPOKEN[action]()}${ids.length>1?`: ${formatNumber(ids.length)}`:''}`);
   };
-  /** Resolves true when the decision was recorded. */
-  const act=async(requested:Action,ids=targets):Promise<boolean>=>{if(busy||!ids.length)return false;
-    // In «Favoritas» the heart (and the swipe up) takes items out of Favorites,
-    // and nothing there can be queued for deletion.
+  /** Resolves true only after the decision and any Android queue are committed. */
+  const act=async(requested:Action,ids=targets):Promise<boolean>=>{
+    if(!ids.length||operationBusy.current)return false;
     const action:Action=favView&&requested==='favorite'?'unfavorite':requested;
     if(favView&&action==='discard'){haptic('warning');setNotice(t('Las favoritas\nno se eliminan'));return false;}
-    setBusy(true);setError('');haptic(action==='favorite'||action==='unfavorite'?'medium':action==='later'?'soft':'light');try{
-    if((action==='favorite'||action==='unfavorite')&&!demo){if(!onAndroid())invalidateLibrary();await setFavorite(ids,action==='favorite');if(!onAndroid())invalidateLibrary();}
-    record(action,ids);return true;
-  }catch(e){haptic('error');messageError(e);return false;}finally{setBusy(false);}};
-  const undoLast=async()=>{if(busy)return;const last=state.history.at(-1);if(!last)return;setBusy(true);try{
-    let missing=0;let missingIds:string[]=[];
-    if((last.action==='favorite'||last.action==='unfavorite')&&!demo){if(!onAndroid())invalidateLibrary();const result=await setFavorite(last.ids,last.action==='unfavorite',true);if(!onAndroid())invalidateLibrary();missing=result.missing.length;missingIds=result.missing;}
-    const undone=last.action;haptic('soft');if(undone!=='unfavorite')setStats(previous=>({...previous,[undone]:Math.max(0,previous[undone]-last.ids.length)}));
-    // Back to the very hand the decision was made on, in the order it was shown.
-    setState(undo);const previous=last.context;setLock(restoreHand(previous,last.ids));setSelected(previous?.selected??[]);if(previous?.filter)setFilter(previous.filter);if(missing)setNotice(missing===last.ids.length?t('Ya no está\nen Fotos'):t('Algunas ya no\nestán en Fotos'));setSpoken(t('Última decisión deshecha'));
-    // No library reload here (it re-read every asset over the bridge while the
-    // buttons waited): Photos already confirmed the change; items it reported
-    // missing leave the pile locally.
-    if(missingIds.length){const gone=new Set(missingIds);setAssets(prev=>prev.filter(a=>!gone.has(a.id)));}
-  }catch(e){messageError(e);}finally{setBusy(false);}};
+    if(!startOperation())return false;
+    const favorite=(action==='favorite'||action==='unfavorite')&&!demo?{ids,value:action==='favorite'}:undefined;
+    const nativeFavorite=!!favorite&&!onAndroid();
+    try {
+      if(nativeFavorite){await beforeNative('favorite',ids);invalidateLibrary();await setFavorite(ids,favorite!.value);invalidateLibrary();}
+      // The legacy preview path keeps its existing queue; native journals commit both atomically.
+      if(favorite&&onAndroid()&&!journal)await setFavorite(ids,favorite.value);
+      await record(action,ids,undefined,favorite&&onAndroid()?favorite:undefined,nativeFavorite);
+      haptic(action==='favorite'||action==='unfavorite'?'medium':action==='later'?'soft':'light');return true;
+    }catch(e){haptic('error');await nativeFailed(e);return false;}finally{endOperation();}
+  };
+  const undoLast=async()=>{
+    const last=recordNow.current.history.at(-1);if(!last||!startOperation())return;
+    let missingIds:string[]=[];
+    const favorite=(last.action==='favorite'||last.action==='unfavorite')&&!demo?{ids:last.ids,value:last.action==='unfavorite'}:undefined;
+    const nativeFavorite=!!favorite&&!onAndroid();
+    try {
+      if(nativeFavorite){await beforeNative('favorite',last.ids);invalidateLibrary();const result=await setFavorite(last.ids,favorite!.value,true);missingIds=result.missing;invalidateLibrary();}
+      if(favorite&&onAndroid()&&!journal)await setFavorite(last.ids,favorite.value,true);
+      const previous=last.context;
+      await persistRecord(undo(recordNow.current),{context:previous??context,filter:previous?.filter??filter},favorite&&onAndroid()?favorite:undefined,nativeFavorite);
+      const undone=last.action;haptic('soft');if(undone!=='unfavorite')setStats(p=>({...p,[undone]:Math.max(0,p[undone]-last.ids.length)}));
+      setLock(restoreHand(previous,last.ids));setSelected(previous?.selected??[]);if(previous?.filter)setFilter(previous.filter);
+      if(missingIds.length){setNotice(missingIds.length===last.ids.length?t('Ya no está\nen Fotos'):t('Algunas ya no\nestán en Fotos'));const gone=new Set(missingIds);setAssets(prev=>prev.filter(a=>!gone.has(a.id)));}
+      setSpoken(t('Última decisión deshecha'));
+    }catch(e){await nativeFailed(e);}finally{endOperation();}
+  };
   const cycle=()=>{if(active&&hand.length>1){const refocus=document.activeElement?.classList.contains('photo-card');setLock(cycleHand(hand,best));if(refocus)requestAnimationFrame(()=>document.querySelector<HTMLElement>('.photo-card.front')?.focus({preventScroll:true}));}};
   const select=(id:string)=>setSelected(prev=>prev.includes(id)?prev.filter(x=>x!==id):[...prev,id]);
   const windowOf=(element:Element)=>(element.querySelector('.photo-window')??element).getBoundingClientRect();
@@ -555,7 +585,7 @@ export function ManoApp() {
     // Only touch state that changed: a plain tap must not re-render the whole app.
     gesture.current=null;if(g.zone)setZone('');resetPeek();if(g.held&&!g.review&&hookHover.current){setPinnedInspect(true);haptic('rigid');}else if(g.held){setPinnedInspect(false);setInspect(null);}
     if(hookHover.current){hookHover.current=false;setOverHook(false);}
-    if(g.review){if(g.element)(g.element as HTMLElement).style.transform='';if(g.held&&x>65){setState(s=>restore(s,g.id));setSpoken(t('Elemento recuperado'));haptic('light');}return;}if(g.held)return;
+    if(g.review){if(g.element)(g.element as HTMLElement).style.transform='';if(g.held&&x>65)void recoverDecision(g.id);return;}if(g.held)return;
     const decision:Action|null=Math.abs(x)>65&&Math.abs(x)>Math.abs(y)?(x>0?'keep':'discard'):y< -70&&Math.abs(y)>Math.abs(x)?'favorite':y>70&&Math.abs(y)>Math.abs(x)?'later':null;
     if(decision){
       // Decided cards leave from where the finger let go; the others spring back
@@ -590,29 +620,40 @@ export function ManoApp() {
   const stopAnalysis=async()=>{try{await Library.cancelAnalysis();}catch(e){messageError(e);}};
   /** Album = assign, then keep and advance (undoable like a swipe). If Fotos
    * fails, nothing is kept and the card stays. */
-  const saveToAlbum=async(write:()=>Promise<{title:string;added?:number}>)=>{const ids=targets;if(busy||!ids.length)return false;setBusy(true);setError('');
-    const outcome=await assignToAlbum(write,ids);
-    if(outcome.ok){record('keep',ids,s=>afterAlbum(s,ids,outcome,Date.now(),context));setSheet(null);haptic('success');setNotice(t('Guardada en\n«{album}»',{album:outcome.title}));}
-    else{haptic('error');messageError(outcome.error);}
-    setBusy(false);return outcome.ok;};
+  const saveToAlbum=async(write:()=>Promise<{title:string;added?:number}>)=>{
+    const ids=targets;if(!ids.length||!startOperation())return false;
+    try {
+      if(!demo)await beforeNative('album',ids);
+      const outcome=await assignToAlbum(write,ids);
+      if(!outcome.ok){await nativeFailed(outcome.error);haptic('error');return false;}
+      await record('keep',ids,s=>afterAlbum(s,ids,outcome,Date.now(),context),undefined,!demo);
+      setSheet(null);haptic('success');setNotice(t('Guardada en\n«{album}»',{album:outcome.title}));return true;
+    }catch(e){await nativeFailed(e);return false;}finally{endOperation();}
+  };
   const createAlbum=async()=>{const title=newAlbum.trim();if(!title)return;const ok=await saveToAlbum(async()=>{const result=demo?{album:{id:`demo-${Date.now()}`,title},added:targets.length}:await Library.createAlbum({title,ids:targets});setAlbums(a=>[result.album,...a]);return {title:result.album.title,added:result.added};});if(ok){setNewAlbum('');setCreatingAlbum(false);}};
   const openAlbums=async()=>{if(!targets.length)return;setSheet('albums');setCreatingAlbum(false);setNewAlbum('');setError('');try{setAlbums(demo&&albums.length?albums:demo?[{id:'viajes',title:t('Viajes')},{id:'recuerdos',title:t('Recuerdos')},{id:'familia',title:t('Familia')}]:(await Library.albums()).albums);}catch(e){messageError(e);}};
   const addAlbum=(album:Album)=>void saveToAlbum(async()=>{if(!demo)await Library.addToAlbum({ids:targets,albumId:album.id});return {title:album.title};});
-  const commitDelete=async()=>{if(busy)return;invalidateLibrary();setBusy(true);setError('');const ids=reviewAssets.map(a=>a.id);try{
-    // Android: a heart removed this round reaches the gallery first, or the system
-    // would still protect that item as a favourite (no-op on the iPhone).
-    if(!demo)await flushFavorites(ids,invalidateLibrary);
-    const result=demo?{deleted:ids}:await Library.deleteAssets({ids});
-    // A foreground snapshot begun before Photos confirmed this change must
-    // never reconcile those confirmed removals back into the live library.
+  const commitDelete=async()=>{
+    const ids=reviewAssets.map(a=>a.id);if(!ids.length||!startOperation())return;
     invalidateLibrary();
-    // The reward: what this deletion frees (measured weights; «al menos» when some
-    // were unknown), counted for the round and for CocoWash as a whole.
-    const gone=reviewAssets.filter(a=>result.deleted.includes(a.id));const bytes=gone.reduce((n,a)=>n+(a.bytes??0),0);const videos=gone.filter(a=>a.kind==='video').length;
-    setStats(p=>({...p,freed:p.freed+bytes,freedPhotos:p.freedPhotos+gone.length-videos,freedVideos:p.freedVideos+videos,freedPartial:p.freedPartial||gone.some(a=>!a.bytes)}));
-    setState(s=>({...s,pending:s.pending.filter(id=>!result.deleted.includes(id)),removed:[...new Set([...s.removed,...result.deleted])],history:[]}));
-    money.finish();cancelWarmup();setLock(NO_HAND);setSessionOpen(false);setSheet(null);setSession(false);setShowDone(true);haptic('success');if(demo)setNotice(t('Borrado simulado\nTus fotos, intactas'));else setSpoken(tn('sentToDeleted',result.deleted.length));
-  }catch(e){if(cancelled(e)){haptic('soft');setNotice(t('No se borró nada\nSigue en tu cola'));}else messageError(e);}finally{setBusy(false);}};
+    try {
+      if(!demo)await flushFavorites(ids,invalidateLibrary);
+      if(!demo)await beforeNative('delete',ids);
+      const result=demo?{deleted:ids}:await Library.deleteAssets({ids});
+      invalidateLibrary();
+      // Only IDs confirmed by this request may become removed. Missing visibility is not deletion.
+      const confirmed=new Set(result.deleted.filter(id=>ids.includes(id)));
+      const next=recordNow.current;
+      await persistRecord({...next,pending:next.pending.filter(id=>!confirmed.has(id)),removed:[...new Set([...next.removed,...confirmed])],history:[]},
+        confirmed.size===ids.length?{active:false,context:{...context,handIds:[],selected:[]}}:{},undefined,!demo);
+      const gone=reviewAssets.filter(a=>confirmed.has(a.id));const bytes=gone.reduce((n,a)=>n+(a.bytes??0),0);const videos=gone.filter(a=>a.kind==='video').length;
+      setStats(p=>({...p,freed:p.freed+bytes,freedPhotos:p.freedPhotos+gone.length-videos,freedVideos:p.freedVideos+videos,freedPartial:p.freedPartial||gone.some(a=>!a.bytes)}));
+      if(confirmed.size!==ids.length){if(confirmed.size)setSpoken(tn('sentToDeleted',confirmed.size));setError(t('No se pudo completar la acción. Inténtalo de nuevo.'));return;}
+      money.finish();cancelWarmup();setLock(NO_HAND);setSessionOpen(false);setSheet(null);setSession(false);setShowDone(true);haptic('success');
+      if(demo)setNotice(t('Borrado simulado\nTus fotos, intactas'));else setSpoken(tn('sentToDeleted',confirmed.size));
+    }catch(e){await nativeFailed(e);if(cancelled(e)){haptic('soft');setNotice(t('No se borró nada\nSigue en tu cola'));}}
+    finally{endOperation();}
+  };
   const play=async(asset:Asset)=>{if(demo){setNotice(testMode?t('Modo de prueba\nsin pantalla completa'):t('Pantalla completa\nsolo en el iPhone'));return;}try{await Library.preview({id:asset.id});}catch(e){messageError(e);}};
   const requestAccess=async():Promise<PhotoPermission>=>{if(demo)return 'authorized';try{const {status}=await Library.authorize();setPermission(status as PhotoPermission);if(['authorized','limited'].includes(status)){initialLibrary.current=null;loadLibrary();}return status as PhotoPermission;}catch{return 'denied';}};
   const finishOnboarding=(status:PhotoPermission)=>{try{localStorage.setItem(ONBOARDING_KEY,'done');}catch{/* shown again next launch */}setOnboarded(true);haptic(['authorized','limited'].includes(status)?'success':'warning');};
@@ -622,7 +663,7 @@ export function ManoApp() {
   // No landing page: once onboarded and allowed, the session (or its resume) starts by itself.
   useEffect(()=>{if(onboarded&&allowed&&connected&&!session&&!showDone&&!warming&&!loading&&!loadError)void beginSession();},[onboarded,allowed,connected,session,showDone,warming,loading,loadError]);
   // Android: the round's favourites reach the gallery together, in one system dialog.
-  useEffect(()=>{if(showDone&&!demo)void flushFavorites(undefined,invalidateLibrary);},[showDone,demo,invalidateLibrary]);
+  useEffect(()=>{if(showDone&&!demo)void flushFavorites(undefined,invalidateLibrary).catch(messageError);},[showDone,demo,invalidateLibrary]);
   useEffect(()=>{setDecidedHere(new Set());},[filterKey]);
   // «Modo de prueba» never runs out: when fewer than eight cards remain, another
   // round of postcards is dealt. A round that adds nothing (filters exclude it)
@@ -650,7 +691,8 @@ export function ManoApp() {
   const noticeRoom=useNoticeRoom();
   const filtersButton=<button id="filter-trigger" className="header-action header-filters" onClick={openFilters}><SlidersHorizontalIcon size={18}/><span>{t('Filtros')}</span></button>;
   const brand=<h1 id="session-heading" tabIndex={-1} className="header-brand"><BrandStatus notice={notice}/></h1>;
-  const alert=error&&!sheet?<ErrorAlert message={error} clear={()=>setError('')}/>:null;
+  const visibleError=!operationBusy.current&&journal?.snapshot.intent?t(INTERRUPTED_OPERATION):error;
+  const alert=visibleError&&!sheet?<ErrorAlert message={visibleError} clear={()=>void acknowledgeError()}/>:null;
   // 9.8: the round summary is a closing moment — no way into Filtros from here, only «Seguir revisando».
   const doneHeader=<><header ref={noticeRoom} className="archive-header"><span className="header-spacer" aria-hidden="true"/>{brand}<span className="header-spacer" aria-hidden="true"/></header>{alert}</>;
   const pending=state.pending.length;
@@ -706,8 +748,20 @@ export function ManoApp() {
     {limited&&<button className="sheet-action secondary" onClick={()=>void manageLimited()}>{t('Elegir más fotos')}</button>}
   </>;
   const reviewEnd=useRef<HTMLDivElement>(null);
-  const recoverAll=()=>{if(busy)return;setState(s=>({...s,pending:[],history:s.history.filter(d=>d.action!=='discard')}));setSpoken(t('Todo recuperado'));haptic('soft');};
-  const recoverReview=useCallback((id:string)=>{if(busy)return;setState(s=>restore(s,id));setSpoken(t('Elemento recuperado'));},[busy]);
+  const recoverDecision=async(id?:string)=>{
+    if(!startOperation())return;
+    try {const next=recordNow.current;await persistRecord(id?restore(next,id):{...next,pending:[],history:next.history.filter(d=>d.action!=='discard')});setSpoken(id?t('Elemento recuperado'):t('Todo recuperado'));haptic('soft');}
+    catch(e){messageError(e);}finally{endOperation();}
+  };
+  const resetDemo=async()=>{
+    if(!demo||!startOperation())return;
+    try {await persistRecord(initialState(),{active:false,filter:initialFilter,context:{handIds:[],selected:[],rotated:[]}});
+      demoRounds.current=0;roundCheck.current=null;roundsStuck.current='';if(testMode){saveTestRounds(0);setAssets(demoAssets);}setStats(EMPTY_STATS);setSessionOpen(false);setSession(false);setShowDone(false);setLock(NO_HAND);setFilter(initialFilter);setSelected([]);setSheet(null);setSpoken(t('Demostración reiniciada'));
+    }catch(e){messageError(e);}finally{endOperation();}
+  };
+  const recoverAll=()=>void recoverDecision();
+  const recoverReview=(id:string)=>void recoverDecision(id);
+  const acknowledgeError=async()=>{try{if(journal?.snapshot.intent){if(operationBusy.current)return;await journal.intent();invalidateLibrary();loadLibrary();}setError('');}catch{setError(t(STORAGE_FAILURE));}};
   // Long press never opens the system menu or loupe; text fields keep theirs.
   const blockMenu=(e:MouseEvent)=>{if(!(e.target as HTMLElement).closest('input,textarea'))e.preventDefault();};
   return <div ref={root} className={`mano-app ${isNative?'on-device':''} ${session?'in-session':'on-screen'}`} onContextMenu={blockMenu}>
@@ -716,21 +770,22 @@ export function ManoApp() {
     {splash&&<Splash done={()=>setSplash(false)}/>}
     <AnimatePresence>{inspect&&<InspectorBoundary key={inspect.id} close={closeInspect}><Inspector asset={inspect} src={sharpPreview(inspect)??(preloader.current?.get(inspect)?.poster||undefined)} cloud={!!preloader.current?.peek(inspect)?.value?.cloud} pinned={pinnedInspect} origin={inspectOrigin.current} peek={{x:peekX,y:peekY}} anchor={anchor} armed={overHook} geek={!!filter.geek} close={closeInspect} pin={()=>{setPinnedInspect(true);haptic('rigid');}}
       video={(inspect.kind==='video'&&inspect.id===active?.id)||(inspect.kind==='live'&&!onAndroid())?{state:inspect.kind==='live'?inspectedLive:frontVideo,request:()=>requestLive(inspect),retry:()=>getVideos().retry(motionAsset(inspect)),download:()=>{requestLive(inspect);getVideos().download(motionAsset(inspect));},fullscreen:()=>{if(inspect.kind==='video')void play(inspect);},openSettings,sound:videoSound,onSound:()=>setVideoSound(v=>!v),freeze:inspect.kind==='video'?heldVideo.current:undefined}:undefined}/></InspectorBoundary>}</AnimatePresence>
-    <Sheet open={sheet==='filters'} close={()=>setSheet(null)} title={sheetTab==='filters'?t('Filtros'):sheetTab==='support'?t('Apoyo'):t('Ajustes')} description={sheetTab==='filters'?t('Elige qué fotos entran en la pila.'):sheetTab==='support'?t('Quita los anuncios o invita un café a quien la hace.'):t('Elige cómo se ven tus recuerdos.')} error={error} returnTo="filter-trigger">
+    <Sheet open={sheet==='filters'} close={()=>setSheet(null)} title={sheetTab==='filters'?t('Filtros'):sheetTab==='support'?t('Apoyo'):t('Ajustes')} description={sheetTab==='filters'?t('Elige qué fotos entran en la pila.'):sheetTab==='support'?t('Quita los anuncios o invita un café a quien la hace.'):t('Elige cómo se ven tus recuerdos.')} error={visibleError} returnTo="filter-trigger">
       <div className="sheet-tabs" role="group" aria-label={t('Sección')}><button aria-pressed={sheetTab==='filters'} onClick={()=>{haptic('selection');setSheetTab('filters');}}>{t('Filtros')}</button><button aria-pressed={sheetTab==='settings'} onClick={()=>{haptic('selection');setSheetTab('settings');}}>{t('Ajustes')}</button>{money.available&&<button aria-pressed={sheetTab==='support'} onClick={()=>{haptic('selection');setSheetTab('support');}}>{t('Apoyo')}</button>}</div>
       <div hidden={sheetTab!=='filters'}>
         <Filters filter={filter} assets={assets} state={state} preview={draft=>prewarm(eligible(assets,state,draft,Date.now(),seed.current))} index={{sized:index.sized,total:rawAssets.length,analyzed:index.analyzed,photos:index.photos,measuring:index.measuring,analyzing:index.analyzing}} apply={value=>{resumeContext.current=undefined;setFilter(f=>({...value,geek:f.geek}));setSelected([]);setLock(NO_HAND);setSheet(null);haptic('light');setSpoken(t('Filtros aplicados'));}}/>
-        {demo&&<button className="sheet-action secondary" onClick={()=>{demoRounds.current=0;roundCheck.current=null;roundsStuck.current='';if(testMode){saveTestRounds(0);setAssets(demoAssets);}setState(initialState());setStats(EMPTY_STATS);setSessionOpen(false);setSession(false);setShowDone(false);setLock(NO_HAND);setFilter(initialFilter);setSelected([]);setSheet(null);setSpoken(t('Demostración reiniciada'));}}>{t('Reiniciar demostración')}</button>}
+        {demo&&<button className="sheet-action secondary" onClick={()=>void resetDemo()}>{t('Reiniciar demostración')}</button>}
       </div>
       {/* Mounted only when shown: measured while hidden (display:none), the VHS preview
           laid out at zero size and flashed when the tab opened. */}
       <div hidden={sheetTab!=='settings'}>{sheetTab==='settings'&&<DisplaySettingsPanel display={display} change={setDisplay} geek={!!filter.geek} setGeek={value=>setFilter(f=>({...f,geek:value}))} library={libraryActions} replayIntro={()=>{setSheet(null);setOnboarded(false);haptic('selection');}} testing={isNative&&DEVELOPER?{on:testMode,set:on=>setTestMode(on),ads:!adsOff,setAds:on=>{saveAdsOff(!on);setAdsOff(!on);haptic('selection');}}:undefined}/>}</div>
       {money.available&&<div hidden={sheetTab!=='support'}>{sheet==='filters'&&sheetTab==='support'&&<PurchaseOptions money={money}/>}</div>}
     </Sheet>
-    <Sheet open={sheet==='albums'} close={()=>setSheet(null)} title={t('Guardar en un álbum')} description={t('Se conserva y pasa a la siguiente. También sigue en tu carrete.')} error={error} returnTo="album-trigger"><p className="sheet-intro">{parts(tn('selected',targets.length),{n:<strong key="n">{formatNumber(targets.length)}</strong>})}</p><button className="album-row album-new" onClick={()=>setCreatingAlbum(v=>!v)} disabled={busy}><span className="row-icon"><PlusIcon size={20} weight="bold"/></span>{t('Crear álbum nuevo')}</button>{creatingAlbum&&<div className="new-album"><label className="field">{t('Nombre del álbum')}<AlbumInput value={newAlbum} change={setNewAlbum}/></label><button className="sheet-action" onClick={createAlbum} disabled={busy||!newAlbum.trim()}>{tn('createAndAdd',targets.length)}</button></div>}{albums.map(a=><button className="album-row" key={a.id} onClick={()=>addAlbum(a)} disabled={busy}><span className="row-icon"><FolderOpenIcon size={20}/></span>{a.title}<CaretRightIcon size={16} weight="bold" className="flip-rtl"/></button>)}</Sheet>
-    <Sheet open={sheet==='review'} close={()=>setSheet(null)} footer={reviewAssets.length>0&&money.available&&(money.placement==='review'||money.awaiting==='review')&&<div className="review-monetization">{money.placement==='review'?<AdSlot where="review" money={money}/>:<AdRoom where="review"/>}</div>} title={t('Una última mirada')} description={t('Recupera lo que quieras conservar antes de eliminar.')} error={error} returnTo={session?'review-trigger':'filter-trigger'}><p className="sheet-intro">{reviewAssets.length?parts(freeLabel?(reviewBytes.partial?t('{count}: liberarías al menos {size}. Aún no se ha borrado nada.'):t('{count}: liberarías {size}. Aún no se ha borrado nada.')):t('{count}. Aún no se ha borrado nada.'),{count:<strong key="count">{t('{n} para eliminar',{n:reviewAssets.length})}</strong>,size:<strong key="size">{freeLabel}</strong>}):t('No hay nada marcado para eliminar.')}</p>
+    <Sheet open={sheet==='albums'} close={()=>setSheet(null)} title={t('Guardar en un álbum')} description={t('Se conserva y pasa a la siguiente. También sigue en tu carrete.')} error={visibleError} returnTo="album-trigger"><p className="sheet-intro">{parts(tn('selected',targets.length),{n:<strong key="n">{formatNumber(targets.length)}</strong>})}</p><button className="album-row album-new" onClick={()=>setCreatingAlbum(v=>!v)} disabled={busy}><span className="row-icon"><PlusIcon size={20} weight="bold"/></span>{t('Crear álbum nuevo')}</button>{creatingAlbum&&<div className="new-album"><label className="field">{t('Nombre del álbum')}<AlbumInput value={newAlbum} change={setNewAlbum}/></label><button className="sheet-action" onClick={createAlbum} disabled={busy||!newAlbum.trim()}>{tn('createAndAdd',targets.length)}</button></div>}{albums.map(a=><button className="album-row" key={a.id} onClick={()=>addAlbum(a)} disabled={busy}><span className="row-icon"><FolderOpenIcon size={20}/></span>{a.title}<CaretRightIcon size={16} weight="bold" className="flip-rtl"/></button>)}</Sheet>
+    <Sheet open={sheet==='review'} close={()=>setSheet(null)} footer={reviewAssets.length>0&&money.available&&(money.placement==='review'||money.awaiting==='review')&&<div className="review-monetization">{money.placement==='review'?<AdSlot where="review" money={money}/>:<AdRoom where="review"/>}</div>} title={t('Una última mirada')} description={t('Recupera lo que quieras conservar antes de eliminar.')} error={visibleError} returnTo={session?'review-trigger':'filter-trigger'}><p className="sheet-intro">{reviewAssets.length?parts(freeLabel?(reviewBytes.partial?t('{count}: liberarías al menos {size}. Aún no se ha borrado nada.'):t('{count}: liberarías {size}. Aún no se ha borrado nada.')):t('{count}. Aún no se ha borrado nada.'),{count:<strong key="count">{t('{n} para eliminar',{n:reviewAssets.length})}</strong>,size:<strong key="size">{freeLabel}</strong>}):t('No hay nada marcado para eliminar.')}</p>
       {/* 9.8.6: every photo first, three across; the decision waits at the end of
           the list, so it is made after seeing all of it. A cue says so until then. */}
+      {!reviewAssets.length&&pending>0&&<><p className="sheet-intro">{t('Fotos no muestra ahora los elementos pendientes. Puedes recuperarlos de la cola; no se darán por eliminados.')}</p><button className="sheet-action secondary recover-all" disabled={busy} onClick={recoverAll}><ArrowCounterClockwiseIcon size={20}/>{t('Recuperar todo ({n})',{n:pending})}</button></>}
       {reviewAssets.length>0&&<><ReviewGrid assets={reviewAssets} open={sheet==='review'} recover={recoverReview} disabled={busy}/>
         <ScrollCue until={reviewEnd}/>
         <div className="review-primary" ref={reviewEnd}><button className="sheet-action secondary recover-all" disabled={busy} onClick={recoverAll}><ArrowCounterClockwiseIcon size={20}/>{reviewAssets.length===1?t('Recuperar'):t('Recuperar todo ({n})',{n:reviewAssets.length})}</button><button className="sheet-action danger" onClick={commitDelete} disabled={busy} aria-busy={busy}><TrashIcon size={20}/>{busy?t('Esperando a Fotos…'):freeLabel&&!reviewBytes.partial?t('Eliminar {n} ({size})',{n:reviewAssets.length,size:freeLabel}):t('Eliminar {n}',{n:reviewAssets.length})}</button><p className="sheet-fine">{t('Fotos te pedirá confirmación; lo eliminado queda 30 días en «Eliminado recientemente», también en iCloud.')}</p></div></>}

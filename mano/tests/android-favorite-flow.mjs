@@ -46,7 +46,7 @@ try{
   const result=await page.evaluate(async()=>{appleFixture.assets[0].favorite=true;localStorage.setItem('cocowash-android-favorites-v1',JSON.stringify({'fixture-0':true}));localStorage.setItem('cocowash-android-favorites-inflight-v1',JSON.stringify({'fixture-0':true}));const q=await import('/src/favoriteQueue.ts');await q.setFavorite(['fixture-0'],false);await q.flushFavorites();return {favorite:appleFixture.assets[0].favorite,marker:localStorage.getItem('cocowash-android-favorites-inflight-v1')};});assert.deepEqual(result,{favorite:false,marker:null});
  });
  await run('failed persistence never records a successful queued favorite',async page=>{
-  await page.evaluate(()=>{const real=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key==='cocowash-android-favorites-v1')throw new DOMException('Fixture storage full','QuotaExceededError');return real.call(this,key,value);};});
+  await page.evaluate(()=>{const real=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(value,...args){const request=real.call(this,value,...args);if(this.name==='sessions')request.addEventListener('success',()=>this.transaction.abort());return request;};});
   await page.getByRole('button',{name:'Añadir a Favoritas',exact:true}).click();await page.waitForTimeout(400);
   assert.deepEqual((await stored(page)).record.favorites,[]);assert.equal(await page.evaluate(()=>appleFixture.calls.some(c=>c.method==='favorite')),false);
  });

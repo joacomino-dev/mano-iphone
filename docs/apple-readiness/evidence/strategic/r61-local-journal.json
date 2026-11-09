@@ -1,0 +1,85 @@
+{
+  "base": "94e495f",
+  "boundary": "Windows Edge real IndexedDB + synthetic Capacitor gallery. No native durability acceptance.",
+  "unitTests": {
+    "total": 138,
+    "pass": 138
+  },
+  "browserScenarios": [
+    {
+      "name": "real transaction abort after request success cannot acknowledge or advance a discard",
+      "status": "PASS"
+    },
+    {
+      "name": "acknowledged decision/history survives reload even with stale legacy storage; Undo restores hand",
+      "status": "PASS"
+    },
+    {
+      "name": "Android favorite queue and decision either both commit or both remain unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "native success followed by failed durable acknowledgement retains intent and reports uncertainty",
+      "status": "PASS"
+    },
+    {
+      "name": "pending item hidden by a library change remains recoverable and is never inferred deleted",
+      "status": "PASS"
+    },
+    {
+      "name": "confirmed native deletion with failed durable acknowledgement cannot display a completed round or retry deletion",
+      "status": "PASS"
+    },
+    {
+      "name": "corrupt durable data blocks startup rather than falling back to older localStorage",
+      "status": "PASS"
+    },
+    {
+      "name": "real IndexedDB journal round-trip at 100, 5000 and 50000 synthetic decisions",
+      "status": "PASS"
+    }
+  ],
+  "metrics": {
+    "engine": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36 Edg/157.0.0.0",
+    "conditions": "Windows headless Edge, real IndexedDB strict, synthetic records, one measured sample; not iPhone metrics",
+    "rows": [
+      {
+        "size": 100,
+        "openAndSaveMs": 1.7999999523162842,
+        "serializedBytes": 4907
+      },
+      {
+        "size": 5000,
+        "openAndSaveMs": 11.900000095367432,
+        "serializedBytes": 239207
+      },
+      {
+        "size": 50000,
+        "openAndSaveMs": 99.5,
+        "serializedBytes": 2439207
+      }
+    ]
+  },
+  "review": {
+    "command": "codex review --uncommitted",
+    "result": "No actionable regressions found; physical-device durability remains unverified.",
+    "scope": "R61 implementation, native-operation intent, startup and Android queues; read-only review also executed checks."
+  },
+  "checks": {
+    "typescript": "PASS",
+    "protected28": "PASS",
+    "webBuild": "PASS",
+    "nativeWebBuild": "PASS",
+    "syncIosWindows": "PASS",
+    "releaseMetadata8": "PASS",
+    "nativeContracts4": "PASS"
+  },
+  "sha256": {
+    "mano/src/durableSession.ts": "66140f02ee8f9dad25d463abb7b294402cba95e2babbf8a1e66b44c8c3bd7c3b",
+    "mano/src/session.ts": "de542017a243de6f816e5101b632bcc327fb58064c04844f44c0170c189bd5f2",
+    "mano/src/native.tsx": "067c3167e00436578a9a5d7ac7800d3df2293cb8082ccf65e1d1f441d55b0551",
+    "mano/src/ManoApp.tsx": "6247ca653da1d77c3a304f0513ea744426f11bc9b6de424e423b9167ddebd94c",
+    "mano/src/favoriteQueue.ts": "c5b5d6cfaa9a2d82bd11719c704745bc1d8a07125d750189f9e1ac94f063653c"
+  },
+  "nativeCrashRecovery": "NOT TESTED for this implementation; prior R61 failure remains the acceptance baseline"
+}

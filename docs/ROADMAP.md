@@ -26,7 +26,7 @@ una puerta nativa, comercial o de distribución.
 ## Dónde estamos (2026-11-08, CW-CX-050)
 
 - Fuente única: `main`, `C:/Users/Joaco/Developer/CocoWash-android`; checkpoint d362af4 enviado.
-- R-61 P0 reproducido y corrección de diario local **aprobada**. Siguiente tarea: implementarla y probarla.
+- R-61 P0 reproducido y corrección de diario local **aprobada**. Implementación local y 8 regresiones IndexedDB PASS (CW-CX-051); force-stop nativo pendiente.
 - R-01 tiene un PASS nativo anterior; el gate completo 42518372819 falla otra vez en álbum y otros casos. No hay aceptación global.
 - R-07 reproduce movimiento real, pero no restaura píxeles idénticos en pausa: 42519482281 FAIL.
 - R-63 Android: 42519758181 vuelve a fallar al esperar confirmación final de favoritas. Diagnósticos disponibles, causa pendiente.
@@ -296,3 +296,5 @@ Preguntar juntas al cierre del bloque; continuar el trabajo técnico independien
 Ya resuelto: responsable legal/contacto, mantener monetización, dos hosts de tracking y diario duradero R-61. No volver a pedirlos.
 
 - 2026-11-08 · CW-CX-050: consolidados borradores y autorizaciones. [Live RGBA FAIL](https://github.com/joacomino-dev/mano-iphone/actions/runs/42519482281); R-61 pasa a implementación, no a PASS.
+
+- 2026-11-08 · CW-CX-051: diario R-61 local y revisión integrada PASS; [evidencia](apple-readiness/evidence/strategic/r61-local-journal.json). No se cierra el P0 sin prueba nativa.

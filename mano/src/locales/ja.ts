@@ -440,5 +440,7 @@ const table: Record<string, string> = {
   "Preparación cancelada.": "準備がキャンセルされました。",
   "El archivo del vídeo no está disponible. Comprueba iCloud y reintenta.": "ビデオファイルを利用できません。iCloudを確認して再試行してください。",
   "No se pudo guardar el vídeo para reproducirlo. Comprueba el espacio libre y reintenta.": "再生用のビデオを保存できませんでした。空き容量を確認して再試行してください。",
+  "Una operación de Fotos quedó interrumpida. Comprueba su resultado en Fotos antes de volver a intentarla. Tus decisiones guardadas se conservan.": "写真の操作が中断されました。再試行する前に「写真」で結果を確認してください。保存済みの選択は保持されています。",
+  "Fotos no muestra ahora los elementos pendientes. Puedes recuperarlos de la cola; no se darán por eliminados.": "現在「写真」に保留中の項目が表示されていません。削除待ちから戻すことができます。削除済みとして扱われることはありません。",
 };
 export default table;

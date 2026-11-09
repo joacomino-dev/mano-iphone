@@ -2,7 +2,9 @@
  * they are raised (PhotoLibrary.swift, album.ts, preload.ts). The app shows them
  * through t(message), so each one is a key in every language; the i18n test
  * checks that none is missing. Keep this list in step with those files. */
+import { STORAGE_FAILURE, INTERRUPTED_OPERATION } from './durableSession.ts';
 export const NATIVE_MESSAGES = [
+  STORAGE_FAILURE, INTERRUPTED_OPERATION,
   'Falta el identificador de preparación.',
   'No se pudo abrir Ajustes.',
   'No se pudo abrir el enlace.',

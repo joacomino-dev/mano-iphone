@@ -453,5 +453,7 @@ const table: Record<string, string> = {
   "Preparación cancelada.": "Preparation cancelled.",
   "El archivo del vídeo no está disponible. Comprueba iCloud y reintenta.": "The video file isn’t available. Check iCloud and try again.",
   "No se pudo guardar el vídeo para reproducirlo. Comprueba el espacio libre y reintenta.": "Couldn’t save the video for playback. Check free space and try again.",
+  "Una operación de Fotos quedó interrumpida. Comprueba su resultado en Fotos antes de volver a intentarla. Tus decisiones guardadas se conservan.": "A Photos operation was interrupted. Check its result in Photos before trying it again. Your saved decisions are preserved.",
+  "Fotos no muestra ahora los elementos pendientes. Puedes recuperarlos de la cola; no se darán por eliminados.": "Photos is not showing the queued items right now. You can recover them from the queue; they will not be marked as deleted.",
 };
 export default table;
