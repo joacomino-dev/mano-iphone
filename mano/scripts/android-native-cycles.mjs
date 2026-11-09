@@ -50,7 +50,7 @@ async function inlineFullscreen(){
   // Android's first-use immersive education can consume Back. Dismiss only its
   // observed system-owned acknowledgement, never an unknown permission dialog.
   await adb('shell','uiautomator','dump','/sdcard/coco-fullscreen.xml');const xml=await adb('shell','cat','/sdcard/coco-fullscreen.xml');
-  const node=[...xml.matchAll(/<node [^>]*>/g)].map(m=>m[0]).find(n=>/package="com.android.systemui"/.test(n)&&/text="(?:Got it|Entendido)"/.test(n)&&/clickable="true"/.test(n));
+  const node=[...xml.matchAll(/<node [^>]*>/g)].map(m=>m[0]).find(n=>/package="(?:com\.android\.systemui|android)"/.test(n)&&/text="(?:Got it|Entendido)"/.test(n)&&/clickable="true"/.test(n));
   const bounds=node&&/bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/.exec(node);
   if(bounds){await adb('shell','input','tap',String((+bounds[1]+ +bounds[3])>>1),String((+bounds[2]+ +bounds[4])>>1));report.fullscreenEducationDismissed=true;await adb('shell','input','keyevent','4');}
  }
