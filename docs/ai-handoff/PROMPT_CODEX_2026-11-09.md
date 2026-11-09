@@ -30,6 +30,11 @@ nativa combinada por checkpoint; usa `token-efficiency` y `/review` antes de pus
   - **R-66 raya clara al anclar vídeos:** `frame.focus()` sin `preventScroll` desplazaba el WebView;
     ahora `focus({preventScroll:true})` y documento fijo en 0 mientras está anclada; además la barra del vídeo
     anclado no usa `backdrop-filter`. **Pendiente de confirmar por el usuario en iPhone.**
+- **Zoom y anclar en todo (usuario, 2026-11-09):** fotos, Live y vídeos comparten gestos en la vista anclada:
+  pellizco, **doble toque para hacer zoom en el punto tocado y otro doble toque para deshacerlo**, arrastre con
+  zoom y arrastrar para cerrar sin zoom (`Inspector.tsx`, `tests/anchored-flow.mjs` 5/5).
+- **Silenciar un vídeo ya no hace play/pausa:** iOS redirige al botón un toque que cae junto a él, pero la carta
+  recibía el `pointerdown` y lo tomaba como toque rápido; la carta ignora toques a <14 px de sus botones.
 - CI: los tres builds automáticos solo arrancan con archivos que usan (antes 107 ejecuciones/día).
 - Gate nativo `8f2549e` 7/8 PASS: álbum, cancelar borrado, R-61 relanzar ×5, pulsación larga sin menú,
   10 rondas, anclar, pellizco de carta, foto clave Live (criterio visual), línea de tiempo y bucle Live.

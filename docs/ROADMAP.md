@@ -203,6 +203,7 @@ textos con hablantes nativos, 1.0.1 para lo que salga.
 
 Una línea por intervención: fecha · agente · entrada · puntos cerrados/abiertos.
 
+- 2026-11-09 · Claude · CW-CL-067 · Silenciar un vídeo ya no hace play/pausa (toque redirigido por iOS); doble toque para zoom/deshacer en la vista anclada. Claude para por cupo; relevo en `PROMPT_CODEX_2026-11-09.md`.
 - 2026-11-09 · Claude · CW-CL-066 · Usuario confirma en iPhone: raya al anclar resuelta y pellizco en Live anclada OK. Regla: zoom y anclar en todo (fotos, Live, vídeos) → vídeos anclados ahora hacen pellizco/arrastre como fotos (`Inspector.tsx`, `anchored-flow` 4/4). Sin «popping» ni bordes visibles en ninguna animación.
 - 2026-11-08 · Claude · CW-CL-065 · Usuario: «la app se siente excelente y súper fluida». R-66: raya crema bajo la vista anclada = desplazamiento por `focus()` (corregido). Gate 8f2549e 7/8; R-07b pellizco en Live anclada a confirmar en iPhone.
 - 2026-11-08 · Claude · CW-CL-064 · Defectos del usuario en iPhone: R-00 vuelta a la app sin releer la fototeca (observador de cambios de Fotos), R-64 sin avisos de almacenamiento (reconexión/espejo), R-65 vista anclada solo «Cerrar» + deslizar para cerrar, R-66 rectángulo blanco (backdrop-filter). 138 Node, 80 casos navegador + 8 runtime PASS. Pendiente: gate nativo y confirmación del usuario en iPhone.

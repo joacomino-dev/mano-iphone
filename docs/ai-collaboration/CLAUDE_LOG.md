@@ -818,3 +818,15 @@ anclar deben servir en todo (fotos, Live, vídeos) y ninguna animación debe dej
 Cambio: `Inspector.tsx` usa el mismo modelo de gestos para vídeos (pellizco, arrastre con zoom, arrastrar para
 cerrar sin zoom); los controles del vídeo conservan sus toques. `anchored-flow.mjs` 4/4, Live 5/5, Apple 19/19.
 Relevo: [PROMPT_CODEX_2026-11-09](../ai-handoff/PROMPT_CODEX_2026-11-09.md). Claude paró por cupo semanal.
+
+
+### CW-CL-067 — Silencio sin play/pausa y doble toque para zoom
+Fecha: 2026-11-09, America/Bogota
+Agente: Claude
+Estado: completada local; confirmar en iPhone.
+- Usuario: al silenciar un vídeo también se pausaba o reproducía. Causa: iOS redirige al botón el clic de un
+  toque que cae junto a él, mientras el `pointerdown` llega a la carta y cuenta como toque rápido. `ManoApp`
+  ignora en la carta los toques que empiezan a <14 px de sus botones.
+- Usuario: en la vista anclada, doble toque hace zoom ×2,5 en el punto tocado y otro doble toque lo deshace
+  (`Inspector.tsx`; fotos, Live y vídeos).
+Validaciones: 138 Node, tsc, Apple 19, seguridad 9, accesibilidad 6, anclada 5, Live 5.

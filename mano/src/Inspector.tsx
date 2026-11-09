@@ -72,12 +72,21 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
  const endDismiss=(e:PointerEvent)=>{const d=dismiss.current;if(!d||d.id!==e.pointerId)return 0;const distance=Math.hypot(e.clientX-d.x,e.clientY-d.y),speed=distance/Math.max(1,performance.now()-d.t);dismiss.current=null;
   if(distance>110||(distance>40&&speed>.6)){animate(dismissX,0,settle);animate(dismissY,0,settle);close();}else{animate(dismissX,0,settle);animate(dismissY,0,settle);}return distance;};
  const rebase=()=>{const p=[...points.current.values()];base.current={distance:p.length>1?Math.hypot(p[1].x-p[0].x,p[1].y-p[0].y):0,zoom,x:p[0]?.x??0,y:p[0]?.y??0,panX:pan.x,panY:pan.y};};
- const down=(e:PointerEvent)=>{if(!pinned||onControl(e))return;e.stopPropagation();e.currentTarget.setPointerCapture(e.pointerId);points.current.set(e.pointerId,{x:e.clientX,y:e.clientY});if(points.current.size===1)startDismiss(e);else resetDismiss();rebase();};
+ const down=(e:PointerEvent)=>{if(!pinned||onControl(e))return;e.stopPropagation();if(!points.current.size)downAt.current={x:e.clientX,y:e.clientY};e.currentTarget.setPointerCapture(e.pointerId);points.current.set(e.pointerId,{x:e.clientX,y:e.clientY});if(points.current.size===1)startDismiss(e);else resetDismiss();rebase();};
  const move=(e:PointerEvent)=>{if(moveDismiss(e)){e.stopPropagation();if(points.current.has(e.pointerId))points.current.set(e.pointerId,{x:e.clientX,y:e.clientY});return;}if(!points.current.has(e.pointerId))return;e.stopPropagation();points.current.set(e.pointerId,{x:e.clientX,y:e.clientY});const p=[...points.current.values()],b=base.current;
   if(p.length>1&&b.distance){setZoom(Math.min(5,Math.max(1,b.zoom*Math.hypot(p[1].x-p[0].x,p[1].y-p[0].y)/b.distance)));}
   else if(zoom>1){const rect=frame.current!.getBoundingClientRect();const maxX=rect.width*(zoom-1)/2,maxY=rect.height*(zoom-1)/2;setPan({x:Math.min(maxX,Math.max(-maxX,b.panX+e.clientX-b.x)),y:Math.min(maxY,Math.max(-maxY,b.panY+e.clientY-b.y))});}
  };
- const up=(e:PointerEvent)=>{endDismiss(e);points.current.delete(e.pointerId);rebase();};
+ // Double tap on the anchored media zooms in at that point; another double tap
+ // zooms back out (user, 2026-11-09). Single taps keep their meaning.
+ const lastTap=useRef<{t:number;x:number;y:number}|null>(null);const downAt=useRef({x:0,y:0});
+ const doubleTap=(e:PointerEvent,moved:number)=>{if(!pinned||moved>=10||points.current.size||onControl(e))return;const now=performance.now(),prev=lastTap.current;
+  if(prev&&now-prev.t<320&&Math.hypot(e.clientX-prev.x,e.clientY-prev.y)<30){lastTap.current=null;
+   if(zoom>1){setZoom(1);setPan({x:0,y:0});}else{const rect=frame.current!.getBoundingClientRect(),k=scale.current||1,z=2.5;
+    const px=(e.clientX-(rect.left+rect.width/2))/k,py=(e.clientY-(rect.top+rect.height/2))/k,maxX=rect.width/k*(z-1)/2,maxY=rect.height/k*(z-1)/2;
+    setZoom(z);setPan({x:Math.min(maxX,Math.max(-maxX,-px*(z-1))),y:Math.min(maxY,Math.max(-maxY,-py*(z-1)))});}
+  }else lastTap.current={t:now,x:e.clientX,y:e.clientY};};
+ const up=(e:PointerEvent)=>{endDismiss(e);points.current.delete(e.pointerId);rebase();if(e.currentTarget===frame.current)doubleTap(e,Math.hypot(e.clientX-downAt.current.x,e.clientY-downAt.current.y));};
  // Anchored: the area around the photo is part of it. A pinch or a pan there
  // works on the photo; a single tap there closes, like «Cerrar».
  const tap=useRef<{x:number;y:number;multi:boolean}|null>(null);

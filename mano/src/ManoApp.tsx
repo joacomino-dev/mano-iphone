@@ -561,7 +561,11 @@ export function ManoApp() {
       // Holding a photo that lives in iCloud is a reason to fetch the larger
       // preview now: «Anclar» then joins this download instead of starting one.
       if(g.asset.kind!=='video'&&preloader.current?.peek(g.asset)?.value?.cloud)void cloudPreviews.fetch(g.asset,'zoom').catch(()=>{});}};
-  const start=(e:PointerEvent,asset:Asset,review=false)=>{if(busy||(e.target as HTMLElement).closest('button'))return;
+  // iOS retargets a tap that lands just outside a small button (mute, VHS letters) to that
+  // button's click, while pointerdown still reaches the card: muting also toggled play
+  // (user, 2026-11-09). A touch starting within 14 px of a card control is the control's.
+  const nearControl=(e:PointerEvent)=>[...(e.currentTarget as HTMLElement).querySelectorAll('button')].some(b=>{const r=b.getBoundingClientRect();return r.width>0&&e.clientX>=r.left-14&&e.clientX<=r.right+14&&e.clientY>=r.top-14&&e.clientY<=r.bottom+14;});
+  const start=(e:PointerEvent,asset:Asset,review=false)=>{if(busy||(e.target as HTMLElement).closest('button')||nearControl(e))return;
     // A finger lifted while its card unmounted never reached end(): drop stale ids.
     if(!gesture.current)pointers.current.clear();
     pointers.current.set(e.pointerId,{x:e.clientX,y:e.clientY});
