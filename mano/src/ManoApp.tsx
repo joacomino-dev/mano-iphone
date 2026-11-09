@@ -17,7 +17,7 @@ import { InlineVideo, type VideoControl } from './InlineVideo';
 import { Filters } from './Filters';
 import { Inspector, type InspectOrigin } from './Inspector';
 import { readSession, SessionWriter, DEMO_SESSION_KEY, LIBRARY_SESSION_KEY, type ActiveSession } from './session';
-import { activeJournal, STORAGE_FAILURE, INTERRUPTED_OPERATION, type NativeIntent } from './durableSession';
+import { activeJournal, STORAGE_FAILURE, type NativeIntent } from './durableSession';
 import { readDisplay, saveDisplay, polaroidCaption, formatBytes, ONBOARDING_KEY, type DisplaySettings, type PhotoMeta } from './meta';
 import { usePlace, prefetchPlaces } from './place';
 import { haptic, setHapticsEnabled } from './haptics';
@@ -250,8 +250,12 @@ export function ManoApp() {
   const [state,applyState] = useState<RecordState>(()=>saved?.record??readState(key));
   const recordNow=useRef(state);
   const setState=useCallback((value:RecordState|((s:RecordState)=>RecordState))=>{recordNow.current=typeof value==='function'?value(recordNow.current):value;applyState(recordNow.current);},[]);
-  const operationBusy=useRef(false);const deferredLibrary=useRef<Asset[]|null>(null);
-  const reconcileFresh=useCallback((fresh:Asset[])=>{if(operationBusy.current)deferredLibrary.current=fresh;else setState(s=>reconcileLibrary(s,withPendingFavorites(fresh)));},[]);
+  const operationBusy=useRef(false);const loadedVersion=useRef<number|undefined>(undefined);const deferredLibrary=useRef<Asset[]|null>(null);
+  const reconcileFresh=useCallback((fresh:Asset[])=>{if(operationBusy.current)deferredLibrary.current=fresh;else setState(s=>reconcileLibrary(s,withPendingFavorites(fresh)));
+    // An intent left by an earlier run (closed during a Photos operation) is settled
+    // by this fresh enumeration, which is what Photos holds now. Silent; the
+    // interrupted operation is never repeated automatically.
+    if(!operationBusy.current&&journal?.snapshot.intent)void journal.intent().catch(()=>{});},[journal]);
   const [sessionOpen,setSessionOpen]=useState(saved?.active??false);
   // The hand on the table, locked until the person acts on it (sequence.ts).
   const [lock,setLock]=useState<HandLock>(()=>saved?.active?restoreHand(saved.context,[]):NO_HAND);
@@ -285,7 +289,7 @@ export function ManoApp() {
   const [session,setSession] = useState(false); const [selected,setSelected] = useState<string[]>(saved?.active?saved.context.selected:[]);
   const [sheet,setSheet] = useState<'filters'|'review'|'albums'|null>(null); const [albums,setAlbums] = useState<Album[]>([]);
   const [loading,setLoading] = useState(false); const [busy,setBusy] = useState(false); const [connected,setConnected] = useState(demo); const [limited,setLimited] = useState(false);
-  const [notice,setNoticeState] = useState<Notice|null>(null); const [error,setError] = useState(()=>journal?.snapshot.intent?t(INTERRUPTED_OPERATION):'');
+  const [notice,setNoticeState] = useState<Notice|null>(null); const [error,setError] = useState('');
   const noticeId=useRef(0);
   /** One notice at a time: a new one replaces the current (crossfade); the
    * same text again only restarts its time. '\n' breaks the two lines. */
@@ -355,12 +359,17 @@ export function ManoApp() {
   const invalidateLibrary=useCallback(()=>{initialLibrary.current=null;deferredLibrary.current=null;setLoading(false);return ++libraryRevision.current;},[]);
   const clearLibraryAccess=useCallback(()=>{analysisEpoch.current++;analysisCoverage.clear();if(analysisRunning.current)void Library.cancelAnalysis().catch(()=>{});cancelWarmup();setConnected(false);setAssets([]);setInspect(null);setPinnedInspect(false);setSelected([]);setSheet(null);},[]);
   const loadLibrary=useCallback(()=>{if(demo)return;let alive=true;const revision=libraryRevision.current;setLoadError('');const request=initialLibrary.current??(initialLibrary.current=Library.permissionStatus().then(({status})=>{if(revision!==libraryRevision.current)return {assets:[] as Asset[],status};setPermission(status as PhotoPermission);return ['authorized','limited'].includes(status)?Library.assets():{assets:[] as Asset[],status};}));
-    request.then(result=>{if(!alive||revision!==libraryRevision.current)return;setPermission(result.status as PhotoPermission);setLimited(result.status==='limited');if(['authorized','limited'].includes(result.status)){setAssets(savedGroups(result.assets));setConnected(true);reconcileFresh(result.assets);setInspect(a=>a&&result.assets.some(fresh=>fresh.id===a.id)?a:null);}else clearLibraryAccess();}).catch(e=>{if(revision!==libraryRevision.current)return;initialLibrary.current=null;if(alive)setLoadError(e instanceof Error?t(e.message):t('Inténtalo de nuevo en un momento.'));});return()=>{alive=false;};},[clearLibraryAccess]);
+    request.then(result=>{if(!alive||revision!==libraryRevision.current)return;setPermission(result.status as PhotoPermission);setLimited(result.status==='limited');if(['authorized','limited'].includes(result.status)){loadedVersion.current=typeof (result as {version?:number}).version==='number'?(result as {version?:number}).version:undefined;setAssets(savedGroups(result.assets));setConnected(true);reconcileFresh(result.assets);setInspect(a=>a&&result.assets.some(fresh=>fresh.id===a.id)?a:null);}else clearLibraryAccess();}).catch(e=>{if(revision!==libraryRevision.current)return;initialLibrary.current=null;if(alive)setLoadError(e instanceof Error?t(e.message):t('Inténtalo de nuevo en un momento.'));});return()=>{alive=false;};},[clearLibraryAccess]);
   useEffect(()=>loadLibrary(),[]);
-  // Photos may change both the permission and the selected limited set while
-  // away. Refresh even when its status is unchanged; keep decisions and the
-  // locked hand, and ignore an older request finishing after a newer resume.
-  useEffect(()=>{if(demo)return;const recheck=()=>{if(document.visibilityState!=='visible')return;const permission=++permissionRevision.current;invalidateLibrary();void Library.permissionStatus().then(({status})=>{if(permission!==permissionRevision.current)return;setPermission(status as PhotoPermission);setLimited(status==='limited');if(['authorized','limited'].includes(status))loadLibrary();else clearLibraryAccess();}).catch(e=>{if(permission!==permissionRevision.current)return;setInspect(null);setSheet(null);setLoadError(e instanceof Error?t(e.message):t('Inténtalo de nuevo en un momento.'));});};document.addEventListener('visibilitychange',recheck);return()=>document.removeEventListener('visibilitychange',recheck);},[loadLibrary,clearLibraryAccess,invalidateLibrary]);
+  // Returning to the app only asks for the permission and Photos' change counter
+  // (both cheap). The whole library is enumerated again only when the permission
+  // changed, Photos reported a change since the last enumeration (or cannot say,
+  // e.g. Android), access is limited (a small set) or nothing is loaded yet. Re-reading every photo on every return (since the RC) made each
+  // resume do full-library work and the phone slower each time (user, 2026-11-08);
+  // build 43 did not. Decisions, the locked hand and the older-request guard stay.
+  const resumeStatus=useRef('');useEffect(()=>{resumeStatus.current=permission;},[permission]);
+  const connectedNow=useRef(false);connectedNow.current=connected;
+  useEffect(()=>{if(demo)return;const recheck=()=>{if(document.visibilityState!=='visible')return;const permission=++permissionRevision.current;void Library.permissionStatus().then(({status})=>{if(permission!==permissionRevision.current)return;const changed=status!==resumeStatus.current;setPermission(status as PhotoPermission);setLimited(status==='limited');if(['authorized','limited'].includes(status)){const reload=()=>{invalidateLibrary();loadLibrary();};if(changed||status==='limited'||!connectedNow.current)reload();else void Library.libraryVersion().then(({version})=>{if(permission===permissionRevision.current&&(typeof version!=='number'||version!==loadedVersion.current))reload();}).catch(()=>{if(permission===permissionRevision.current)reload();});}else clearLibraryAccess();}).catch(e=>{if(permission!==permissionRevision.current)return;setInspect(null);setSheet(null);setLoadError(e instanceof Error?t(e.message):t('Inténtalo de nuevo en un momento.'));});};document.addEventListener('visibilitychange',recheck);return()=>document.removeEventListener('visibilitychange',recheck);},[loadLibrary,clearLibraryAccess,invalidateLibrary]);
   // Weight and clean-up signals measured in the background (indexer.ts); the
   // pile, counters and filters all read the enriched list.
   // Recomputed only when the set of items or their edits change (groups or
@@ -415,20 +424,21 @@ export function ManoApp() {
     if(!dirty.current||operationBusy.current)return;
     const snapshot=latest.current;dirty.current=false;
     try { if(journal)await journal.save(snapshot);else if(!writer.save(sessionKey,snapshot,undefined,checkpoint?key:undefined))throw new Error(STORAGE_FAILURE); }
-    catch {dirty.current=true;setError(t(STORAGE_FAILURE));}
+    // Silent: the journal already retries; a failed legacy write is retried on the next change.
+    catch {dirty.current=true;}
   },[key,sessionKey,writer,journal]);
   useEffect(()=>{dirty.current=true;if(!flushTimer.current)flushTimer.current=setTimeout(()=>void flush(),350);},[state,sessionOpen,filter,windowHandKey,selected,session]);
   useEffect(()=>{const persist=()=>{dirty.current=true;void flush(true);};document.addEventListener('visibilitychange',persist);window.addEventListener('pagehide',persist);return()=>{persist();document.removeEventListener('visibilitychange',persist);window.removeEventListener('pagehide',persist);};},[flush]);
-  const startOperation=()=>{if(operationBusy.current)return false;if(journal?.snapshot.intent){setError(t(INTERRUPTED_OPERATION));return false;}operationBusy.current=true;setBusy(true);setError('');return true;};
+  const startOperation=()=>{if(operationBusy.current)return false;operationBusy.current=true;setBusy(true);setError('');return true;};
   const endOperation=()=>{operationBusy.current=false;setBusy(false);const fresh=deferredLibrary.current;deferredLibrary.current=null;if(fresh)reconcileFresh(fresh);};
   const persistRecord=async(next:RecordState,patch:Partial<ActiveSession>={},favorite?:{ids:string[];value:boolean},clearIntent=false)=>{
     const nextEnvelope={...latest.current,...patch,record:next,updatedAt:Date.now()};
     if(journal)await journal.save(nextEnvelope,{favorite,clearIntent});
-    else if(!writer.save(sessionKey,nextEnvelope,undefined,key))throw new Error(STORAGE_FAILURE);
+    else if(!writer.save(sessionKey,nextEnvelope,undefined,key))dirty.current=true; // kept in memory; retried silently
     latest.current=nextEnvelope;dirty.current=false;setState(next);
   };
   const beforeNative=async(kind:NativeIntent['kind'],ids:string[])=>{await journal?.intent({kind,ids:[...ids],started:Date.now()});};
-  const nativeFailed=async(e:unknown)=>{if(e instanceof Error&&e.message===STORAGE_FAILURE){setError(t(journal?.snapshot.intent?INTERRUPTED_OPERATION:STORAGE_FAILURE));return;}try{await journal?.intent();messageError(e);}catch{setError(t(INTERRUPTED_OPERATION));}};
+  const nativeFailed=async(e:unknown)=>{if(e instanceof Error&&e.message===STORAGE_FAILURE)return;try{await journal?.intent();}catch{/* journal retries silently */}messageError(e);};
   const openFilters=()=>{money.clear();setError('');setSheet('filters');};
   const active=hand[0]; const targetIds=selected.filter(id=>hand.some(a=>a.id===id)); const targets=targetIds.length?targetIds:active?[active.id]:[];
   // Ads (Monetization.tsx): only while cleaning, never over a sheet, the inspector or the splash.
@@ -691,7 +701,7 @@ export function ManoApp() {
   const noticeRoom=useNoticeRoom();
   const filtersButton=<button id="filter-trigger" className="header-action header-filters" onClick={openFilters}><SlidersHorizontalIcon size={18}/><span>{t('Filtros')}</span></button>;
   const brand=<h1 id="session-heading" tabIndex={-1} className="header-brand"><BrandStatus notice={notice}/></h1>;
-  const visibleError=!operationBusy.current&&journal?.snapshot.intent?t(INTERRUPTED_OPERATION):error;
+  const visibleError=error;
   const alert=visibleError&&!sheet?<ErrorAlert message={visibleError} clear={()=>void acknowledgeError()}/>:null;
   // 9.8: the round summary is a closing moment — no way into Filtros from here, only «Seguir revisando».
   const doneHeader=<><header ref={noticeRoom} className="archive-header"><span className="header-spacer" aria-hidden="true"/>{brand}<span className="header-spacer" aria-hidden="true"/></header>{alert}</>;
@@ -761,7 +771,7 @@ export function ManoApp() {
   };
   const recoverAll=()=>void recoverDecision();
   const recoverReview=(id:string)=>void recoverDecision(id);
-  const acknowledgeError=async()=>{try{if(journal?.snapshot.intent){if(operationBusy.current)return;await journal.intent();invalidateLibrary();loadLibrary();}setError('');}catch{setError(t(STORAGE_FAILURE));}};
+  const acknowledgeError=async()=>{try{if(journal?.snapshot.intent){if(operationBusy.current)return;await journal.intent();invalidateLibrary();loadLibrary();}setError('');}catch{setError('');}};
   // Long press never opens the system menu or loupe; text fields keep theirs.
   const blockMenu=(e:MouseEvent)=>{if(!(e.target as HTMLElement).closest('input,textarea'))e.preventDefault();};
   return <div ref={root} className={`mano-app ${isNative?'on-device':''} ${session?'in-session':'on-screen'}`} onContextMenu={blockMenu}>

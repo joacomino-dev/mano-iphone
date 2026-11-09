@@ -15,7 +15,9 @@ export type AssetMetadata = {
 };
 type LibraryPlugin = {
   authorize(): Promise<{ status: string }>;
-  assets(): Promise<{ assets: Asset[]; status: string }>;
+  assets(): Promise<{ assets: Asset[]; status: string; version?: number }>;
+  /** iOS: counter of real Photos changes (PHPhotoLibraryChangeObserver); absent = unknown. */
+  libraryVersion(): Promise<{ version?: number }>;
   /** network false: only what is on the iPhone; `cloud` marks a smaller local
    * version of an iCloud original (code IN_CLOUD when there is none). */
   thumbnail(options: { id: string; size?: number; requestId?: string; cacheBytes?: number; network?: boolean }): Promise<{ path: string; cloud?: boolean }>;

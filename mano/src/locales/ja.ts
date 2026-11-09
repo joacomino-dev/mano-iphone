@@ -170,7 +170,6 @@ const table: Record<string, string> = {
   'Recuerdo ampliado': '拡大した思い出',
   'En iCloud. Ancla para descargarla.': 'iCloud上にあります。ピン留めするとダウンロードします。',
   'No se pudo cargar la imagen.': '画像を読み込めませんでした。',
-  'Anclada': 'ピン留め中',
   'Suelta para anclar': '離すとピン留め',
   'Arrastra aquí para anclar': 'ここまでドラッグしてピン留め',
   'Datos del archivo': 'ファイルの情報',

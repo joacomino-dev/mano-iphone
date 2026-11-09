@@ -424,7 +424,7 @@ final class PhotosSmokeTests: XCTestCase {
         // Any of the anchored view's own elements proves it opened; print what is
         // on screen either way (run 41203340645 saw none of them after the tap).
         let anchoredSignals: [XCUIElement] = [
-            app.staticTexts["Anclada"].firstMatch,
+            app.buttons["Cerrar"].firstMatch,
             app.buttons["Reducir zoom"].firstMatch,
             app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Inspeccionar recuerdo")).firstMatch,
             app.staticTexts["Modo Geek"].firstMatch,
@@ -478,13 +478,13 @@ final class PhotosSmokeTests: XCTestCase {
         print("COCOWASH_UI_PROBE app=\(app.frame) card=\(card.exists ? "\(card.frame)" : "gone") info=\(info.exists ? "\(info.frame)" : "gone")")
         let press = card.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
         card.pinch(withScale: 2.0, velocity: 1.5)
-        let pinched = app.staticTexts["Anclada"].firstMatch.waitForExistence(timeout: 6)
+        let pinched = app.buttons["Cerrar"].firstMatch.waitForExistence(timeout: 6)
         print(pinched ? "COCOWASH_UI_PINCH_OK" : "COCOWASH_UI_PINCH_UNCONFIRMED")
         if pinched, !closeOverlay(app, until: finish) { print("COCOWASH_UI_PROBE stopped: anchored view did not close"); return }
         let dock = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.89))
         press.press(forDuration: 1.0, thenDragTo: dock, withVelocity: .slow, thenHoldForDuration: 0.4)
         attachScreenshot(app, "After hold and drag to the anchor dock")
-        if app.staticTexts["Anclada"].firstMatch.waitForExistence(timeout: 6) {
+        if app.buttons["Cerrar"].firstMatch.waitForExistence(timeout: 6) {
             print("COCOWASH_UI_ANCHOR_GESTURE_OK")
             _ = closeOverlay(app, until: finish)
         } else {
@@ -659,13 +659,17 @@ final class PhotosSmokeTests: XCTestCase {
         attachScreenshot(app,"Native Live Photo paused key photo")
         print("COCOWASH_UI_LIVE_CARD_KEY_OK")
         app.buttons["Ver datos del archivo"].firstMatch.tap()
-        XCTAssertTrue(app.staticTexts["Anclada"].firstMatch.waitForExistence(timeout:30))
+        XCTAssertTrue(app.buttons["Cerrar"].firstMatch.waitForExistence(timeout:30))
         let timeline=app.sliders["Posición del vídeo"].firstMatch
         XCTAssertTrue(timeline.waitForExistence(timeout:30))
         let anchoredPlay=app.buttons["Reproducir"].firstMatch
         XCTAssertTrue(anchoredPlay.exists);anchoredPlay.tap()
         XCTAssertTrue(pause.waitForExistence(timeout:15));Thread.sleep(forTimeInterval:1)
-        pause.tap();timeline.adjust(toNormalizedSliderPosition:0.85)
+        // The anchored view's only dock control is «Cerrar» (user, 2026-11-08). XCTest
+        // cannot adjust() an HTML range in WKWebView: drag its thumb like a finger.
+        pause.tap()
+        let thumb=max(0.02,min(0.98,nativeLivePosition(timeline) ?? 0.02))
+        timeline.coordinate(withNormalizedOffset:CGVector(dx:thumb,dy:0.5)).press(forDuration:0.05,thenDragTo:timeline.coordinate(withNormalizedOffset:CGVector(dx:0.85,dy:0.5)))
         let before=try XCTUnwrap(nativeLivePosition(timeline))
         XCTAssertGreaterThan(before,0.6,"Timeline must seek the actual three-second paired clip")
         anchoredPlay.tap()

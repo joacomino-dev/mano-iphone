@@ -170,7 +170,6 @@ const table: Record<string, string> = {
   'Recuerdo ampliado': 'ذكرى مكبّرة',
   'En iCloud. Ancla para descargarla.': 'في iCloud. ثبّتها لتنزيلها.',
   'No se pudo cargar la imagen.': 'تعذّر تحميل الصورة.',
-  'Anclada': 'مثبّتة',
   'Suelta para anclar': 'أفلِت للتثبيت',
   'Arrastra aquí para anclar': 'اسحب هنا للتثبيت',
   'Datos del archivo': 'بيانات الملف',

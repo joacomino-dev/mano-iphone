@@ -746,3 +746,49 @@ heap 36,9 → 39,4 MB y estabilizándose, listeners/DOM constantes. Cada vuelta 
 Decisiones relevantes (usuario): Live Photo en bucle hasta pausar con foto clave en pausa; anclada = foto clave con
 play/pausa y línea de tiempo, sin reproductor aparte.
 Impacto para Codex: R-00 primero (medir en iPhone con Instruments/Web Inspector), luego R-07.
+
+
+### CW-CL-063 — Relevo de Codex: WIP terminado, cascada del gate y CI
+Fecha: 2026-11-08, America/Bogota
+Agente: Claude
+Estado: completada.
+Base Git / commit: `main` `12e43e6` → `37d1ad2`, `9c350da`, `e5edb0d`/`4021e9e`.
+Cambios realizados:
+- Terminado el WIP de Codex: la carta Live en pausa retira el `<video>` para mostrar la foto clave real.
+- Gate iOS: el lanzador de pruebas cierra el aviso de «operación interrumpida» que dejaba un test anterior
+  (causa de la cascada de 5 fallos) con el mismo botón que usaría la persona, y lo registra.
+- Android: el aviso «Viewing full screen — Got it» viene del paquete `android`; el test lo reconoce.
+- Live: la comparación exacta de bytes pasa a criterio visual (máx. 12 niveles, <1 % canales y 20× más
+  cerca de la clave que de un fotograma en movimiento); la línea de tiempo se arrastra (XCTest no puede
+  `adjust()` un range HTML).
+- CI: los tres builds automáticos solo arrancan con archivos que usan.
+Validaciones: gate iOS 42547955639 sobre 37d1ad2 7/8 PASS (álbum, cancelar borrado, R-61 ×5, pulsación larga,
+10 rondas, anclar, pellizco); Live 42551186645: foto clave PASS. Android 42549137917 FAIL: Atrás no sale de
+pantalla completa (R-47b). IPA `C:/Users/Joaco/Downloads/CocoWash-0.9.9.1-build43-37d1ad2.ipa`.
+Impacto para Codex: R-47b (Atrás en pantalla completa Android) queda abierto; revisar
+`CocoWebChromeClient`/orden de callbacks con evidencia del emulador.
+
+### CW-CL-064 — Defectos del usuario en iPhone: lentitud al volver, avisos, vista anclada
+Fecha: 2026-11-08, America/Bogota
+Agente: Claude
+Estado: completada local; gate nativo y confirmación en iPhone pendientes.
+Petición del usuario: lentitud creciente al salir y volver («funcionaba mejor antes»), ningún aviso de
+almacenamiento («todo tras bambalinas»), vista anclada solo «Cerrar» y deslizar para cerrar, rectángulo
+blanco al anclar un vídeo.
+Causas y cambios:
+- R-00: desde la RC (CW-CX-018) `visibilitychange` releía toda la fototeca en cada vuelta; build 43 no.
+  Ahora `PhotoLibrary.swift` registra `PHPhotoLibraryChangeObserver` (contador), `assets()` devuelve
+  `version` y `libraryVersion()` lo consulta; `ManoApp` relee solo si cambió el permiso o el contador, si
+  el acceso es limitado o si no hay nada cargado. Android (sin contador) mantiene la relectura.
+- R-64: `durableSession.ts` reabre la conexión IndexedDB y reintenta; si falla, conserva el estado en
+  memoria/espejo y el siguiente guardado sobrescribe. `native.tsx` arranca sin diario si no es legible.
+  `ManoApp` ya no muestra `STORAGE_FAILURE` ni `INTERRUPTED_OPERATION`; la intención antigua se resuelve
+  con la primera enumeración fresca; nunca se repite una operación de Fotos.
+- R-65: `Inspector.tsx` solo «Cerrar»; arrastre para cerrar (no sobre controles de vídeo; con zoom mueve).
+- R-66: `prototype.css` sin `backdrop-filter` en la barra/estados del vídeo anclado (WKWebView los pinta
+  en blanco durante la animación).
+Validaciones: 138 Node, tsc, runtime 28, Release/Sites 12, contratos 4; navegador 80 casos en 12 suites
+(nuevas `resume-flow.mjs` 3 y `anchored-flow.mjs` 3; persistencia ajustada al nuevo contrato 8+7) + 8 runtime.
+Swift nuevo pendiente de compilar en CI.
+Impacto para Codex: el contrato R-61 cambió por decisión del usuario (sin avisos ni bloqueo por
+almacenamiento); no reintroducir avisos. Medir R-00 en iPhone si el usuario aún nota lentitud.

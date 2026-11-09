@@ -2,6 +2,16 @@
 
 Actualizado: 2026-11-08, America/Bogota. Codex trabaja solo por indicación del usuario.
 
+## Claude CW-CL-063/064 — relevo de Codex y defectos del iPhone (vigente)
+
+Claude retomó en `main` donde Codex se quedó sin cupo y corrigió lo que el usuario encontró en su iPhone:
+lentitud al salir/volver (la app releía toda la fototeca en cada vuelta; ahora usa el observador de cambios
+de Fotos), avisos de almacenamiento eliminados (recuperación silenciosa del diario IndexedDB), vista anclada
+con solo «Cerrar» y deslizar para cerrar, y el rectángulo blanco al anclar un vídeo. Detalle y evidencia en
+`docs/ROADMAP.md` («Dónde estamos») y `CLAUDE_LOG` CW-CL-063/064. **Contrato R-61 cambiado por el usuario:**
+los fallos de almacenamiento nunca se muestran ni bloquean; las pruebas de persistencia se ajustaron a eso.
+Abierto: Android Atrás en pantalla completa (R-47b), confirmación en iPhone de R-00/R-66, R-02 físico, cuentas.
+
 ## Codex CW-CX-026 — misión estratégica en curso
 
 2026-11-08. Usuario autoriza push normal main y CI estándar pública gratuita; no tiendas/web/cuentas/certificados/AdMob ni secretos por chat. Base df983ad limpia ya enviada a main. Reserva de pruebas/gates nativos iOS/Android, privacidad con evidencia (cambio manifest requiere aprobación de dominios), firma dry-run y materiales7 idiomas. Sin modelos nuevos/arte/monetización/min17/hash28.

@@ -171,7 +171,6 @@ const table: Record<string, string> = {
   'Recuerdo ampliado': 'Souvenir agrandi',
   'En iCloud. Ancla para descargarla.': 'Sur iCloud. Épingle-la pour la télécharger.',
   'No se pudo cargar la imagen.': 'Impossible de charger l’image.',
-  'Anclada': 'Épinglée',
   'Suelta para anclar': 'Lâche pour épingler',
   'Arrastra aquí para anclar': 'Glisse ici pour épingler',
   'Datos del archivo': 'Infos du fichier',

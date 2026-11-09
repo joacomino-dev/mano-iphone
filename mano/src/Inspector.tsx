@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type PointerEvent } from 'react';
-import { motion, useReducedMotion, useSpring, useTransform, type MotionValue } from 'motion/react';
+import { animate, motion, useMotionValue, useReducedMotion, useSpring, useTransform, type MotionValue } from 'motion/react';
 import { PushPinIcon, XIcon } from '@phosphor-icons/react';
 import { Library, thumbnail, inCloudError, type AssetMetadata } from './library';
 import { InlineVideo } from './InlineVideo';
@@ -56,19 +56,31 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
   if(asset.demo){setMeta({filename:t('Recuerdo de demostración'),width:asset.width,height:asset.height,kind:asset.kind,duration:asset.duration,creationDate:asset.date,exifStatus:'unavailable'} as AssetMetadata);return;}
   Library.metadata({id:asset.id}).then(value=>{if(alive)setMeta(value);return Library.metadata({id:asset.id,includeExif:true});}).then(value=>{if(alive)setMeta(value);}).catch(()=>{if(alive)setMetaError(t('Algunos datos no están disponibles en este iPhone.'));});return()=>{alive=false;};
  },[asset.id,geek]);
+ // Anchored and not zoomed: dragging the photo (or a video's picture, never its
+ // controls) away closes it, like a photo viewer (user, 2026-11-08). Short or
+ // slow drags spring back; zoomed photos keep panning instead.
+ const dismissX=useMotionValue(0),dismissY=useMotionValue(0);
+ const dismissFade=useTransform(()=>1-Math.min(.5,Math.hypot(dismissX.get(),dismissY.get())/480));
+ const dismiss=useRef<{id:number;x:number;y:number;t:number}|null>(null);
+ const onControl=(e:PointerEvent)=>!!(e.target as HTMLElement).closest('button,input,a,.video-controls');
+ const startDismiss=(e:PointerEvent)=>{if(!pinned||zoom>1||onControl(e)||dismiss.current)return false;dismiss.current={id:e.pointerId,x:e.clientX,y:e.clientY,t:performance.now()};return true;};
+ const resetDismiss=()=>{dismiss.current=null;animate(dismissX,0,settle);animate(dismissY,0,settle);};
+ const moveDismiss=(e:PointerEvent)=>{const d=dismiss.current;if(!d||d.id!==e.pointerId)return false;if(points.current.size>1){resetDismiss();return false;}dismissX.set((e.clientX-d.x)/scale.current);dismissY.set((e.clientY-d.y)/scale.current);return true;};
+ const endDismiss=(e:PointerEvent)=>{const d=dismiss.current;if(!d||d.id!==e.pointerId)return 0;const distance=Math.hypot(e.clientX-d.x,e.clientY-d.y),speed=distance/Math.max(1,performance.now()-d.t);dismiss.current=null;
+  if(distance>110||(distance>40&&speed>.6)){animate(dismissX,0,settle);animate(dismissY,0,settle);close();}else{animate(dismissX,0,settle);animate(dismissY,0,settle);}return distance;};
  const rebase=()=>{const p=[...points.current.values()];base.current={distance:p.length>1?Math.hypot(p[1].x-p[0].x,p[1].y-p[0].y):0,zoom,x:p[0]?.x??0,y:p[0]?.y??0,panX:pan.x,panY:pan.y};};
- const down=(e:PointerEvent)=>{if(!pinned||asset.kind==='video')return;e.stopPropagation();e.currentTarget.setPointerCapture(e.pointerId);points.current.set(e.pointerId,{x:e.clientX,y:e.clientY});rebase();};
- const move=(e:PointerEvent)=>{if(!points.current.has(e.pointerId))return;e.stopPropagation();points.current.set(e.pointerId,{x:e.clientX,y:e.clientY});const p=[...points.current.values()],b=base.current;
+ const down=(e:PointerEvent)=>{if(!pinned)return;if(asset.kind==='video'){if(startDismiss(e)){e.stopPropagation();e.currentTarget.setPointerCapture(e.pointerId);}return;}e.stopPropagation();e.currentTarget.setPointerCapture(e.pointerId);points.current.set(e.pointerId,{x:e.clientX,y:e.clientY});if(points.current.size===1)startDismiss(e);else resetDismiss();rebase();};
+ const move=(e:PointerEvent)=>{if(moveDismiss(e)){e.stopPropagation();if(points.current.has(e.pointerId))points.current.set(e.pointerId,{x:e.clientX,y:e.clientY});return;}if(!points.current.has(e.pointerId))return;e.stopPropagation();points.current.set(e.pointerId,{x:e.clientX,y:e.clientY});const p=[...points.current.values()],b=base.current;
   if(p.length>1&&b.distance){setZoom(Math.min(5,Math.max(1,b.zoom*Math.hypot(p[1].x-p[0].x,p[1].y-p[0].y)/b.distance)));}
   else if(zoom>1){const rect=frame.current!.getBoundingClientRect();const maxX=rect.width*(zoom-1)/2,maxY=rect.height*(zoom-1)/2;setPan({x:Math.min(maxX,Math.max(-maxX,b.panX+e.clientX-b.x)),y:Math.min(maxY,Math.max(-maxY,b.panY+e.clientY-b.y))});}
  };
- const up=(e:PointerEvent)=>{points.current.delete(e.pointerId);rebase();};
+ const up=(e:PointerEvent)=>{endDismiss(e);points.current.delete(e.pointerId);rebase();};
  // Anchored: the area around the photo is part of it. A pinch or a pan there
  // works on the photo; a single tap there closes, like «Cerrar».
  const tap=useRef<{x:number;y:number;multi:boolean}|null>(null);
- const shadeDown=(e:PointerEvent)=>{if(!pinned)return;tap.current=tap.current?{...tap.current,multi:true}:{x:e.clientX,y:e.clientY,multi:false};if(asset.kind==='video'){e.currentTarget.setPointerCapture(e.pointerId);return;}down(e);};
- const shadeUp=(e:PointerEvent)=>{const start=tap.current;if(asset.kind!=='video'){up(e);if(points.current.size)return;}tap.current=null;if(start&&!start.multi&&Math.hypot(e.clientX-start.x,e.clientY-start.y)<10)close();};
- const shadeCancel=(e:PointerEvent)=>{if(asset.kind!=='video')up(e);tap.current=null;};
+ const shadeDown=(e:PointerEvent)=>{if(!pinned)return;tap.current=tap.current?{...tap.current,multi:true}:{x:e.clientX,y:e.clientY,multi:false};if(asset.kind==='video'){e.currentTarget.setPointerCapture(e.pointerId);startDismiss(e);return;}down(e);};
+ const shadeUp=(e:PointerEvent)=>{const start=tap.current;if(asset.kind!=='video'){up(e);if(points.current.size)return;}else endDismiss(e);tap.current=null;if(start&&!start.multi&&Math.hypot(e.clientX-start.x,e.clientY-start.y)<10)close();};
+ const shadeCancel=(e:PointerEvent)=>{if(asset.kind!=='video')up(e);else resetDismiss();tap.current=null;};
  useEffect(()=>{if(zoom===1)setPan({x:0,y:0});},[zoom]);
  const expanded=meta?{...meta,...meta.exif,...meta.location}:null;
  const weight=formatBytes(asset.bytes,locale);
@@ -83,20 +95,19 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
  const atOrigin=space?toBox(space.origin):undefined;
  const pose=!space?undefined:pinned?{x:0,y:0,scale:1}:toBox(space.origin,reduced?1:1.03);
  return <div ref={outer} className={`inspection ${pinned?'is-pinned':''} ${geek?'is-geek':''}`} role={pinned?'dialog':undefined} aria-modal={pinned?true:undefined} aria-label={t('Inspeccionar recuerdo')}>
-  <motion.div className="inspection-shade" onPointerDown={shadeDown} onPointerMove={e=>{if(asset.kind!=='video')move(e);}} onPointerUp={shadeUp} onPointerCancel={shadeCancel} initial={{opacity:0}} animate={{opacity:pinned?.94:.84}} exit={{opacity:0}} transition={{duration:reduced?0:.2,ease:[.2,.8,.2,1]}}/>
-  {space&&<motion.div className="inspection-follow" style={{x:reduced?fingerX:smoothX,y:reduced?fingerY:smoothY}}><motion.div ref={frame} className="inspection-photo" tabIndex={pinned?0:-1} style={{left:space.target.x,top:space.target.y,width:space.target.width,height:space.target.height,'--inspect-ratio':asset.width/asset.height} as CSSProperties}
+  <motion.div className="inspection-shade" onPointerDown={shadeDown} onPointerMove={e=>{if(asset.kind!=='video')move(e);else moveDismiss(e);}} onPointerUp={shadeUp} onPointerCancel={shadeCancel} initial={{opacity:0}} animate={{opacity:pinned?.94:.84}} exit={{opacity:0}} transition={{duration:reduced?0:.2,ease:[.2,.8,.2,1]}}/>
+  {space&&<motion.div className="inspection-follow" style={{x:reduced?fingerX:smoothX,y:reduced?fingerY:smoothY}}><motion.div className="inspection-dismiss" style={{x:dismissX,y:dismissY,opacity:dismissFade}}><motion.div ref={frame} className="inspection-photo" tabIndex={pinned?0:-1} style={{left:space.target.x,top:space.target.y,width:space.target.width,height:space.target.height,'--inspect-ratio':asset.width/asset.height} as CSSProperties}
    initial={reduced?false:atOrigin} animate={pose} exit={reduced?{opacity:0,transition:{duration:0}}:{...atOrigin,transition:settle}}
-   transition={reduced?{duration:0}:settle} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onClick={e=>e.stopPropagation()}>
+   transition={reduced?{duration:0}:settle} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={e=>{resetDismiss();up(e);}} onClick={e=>e.stopPropagation()}>
    {video?<div className="inspection-media"><InlineVideo asset={asset} state={video.state} request={video.request} mediaStyle={asset.kind==='live'?{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}:undefined} mode={pinned?'full':'peek'} sound={video.sound} onSound={video.onSound} retry={video.retry} download={video.download} fullscreen={video.fullscreen} openSettings={video.openSettings}>{freeze?<canvas ref={still} className="inspection-still"/>:(poster||sharp||download?.src)?<img src={pinned&&sharp?sharp:poster||download?.src} alt="" draggable={false} style={asset.kind==='live'?{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}:undefined}/>:null}</InlineVideo></div>
     :poster||(pinned&&sharp)||download?.src?<img src={pinned&&sharp?sharp:poster||download?.src} alt={t('Recuerdo ampliado')} draggable={false} style={{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}}/>:<span>{posterCloud?(pinned?'':t('En iCloud. Ancla para descargarla.')):posterError?t('No se pudo cargar la imagen.'):''}{posterError&&pinned&&<button onClick={()=>setPosterRetry(v=>v+1)}>{t('Reintentar')}</button>}</span>}
    {!sharp&&(cloud||download?.status==='downloading')&&<CloudBadge className="cloud-download" state={download?.status==='ready'?undefined:download} lite={cloud} onRetry={()=>void cloudPreviews.retry(asset,'zoom').then(setSharp).catch(()=>{})}/>}
-  </motion.div></motion.div>}
+  </motion.div></motion.div></motion.div>}
   <motion.div layout={!reduced} className={`inspection-dock ${pinned?'is-pinned':''} ${armed?'is-armed':''}`} data-inspection-hook style={{'--anchor':anchor} as CSSProperties}
    initial={reduced?false:{opacity:0,y:16}} animate={{opacity:1,y:0}} exit={reduced?{opacity:0,transition:{duration:0}}:{opacity:0,y:16}} transition={reduced?{duration:0}:{type:'spring',stiffness:420,damping:36}}>
    {pinned?<>
-    {/* 9.8.1: zoom is a pinch (on the photo or around it); the dock only says
-        where you are and how to leave. Tapping outside the photo also closes. */}
-    <span className="dock-state"><PushPinIcon weight="fill" size={18}/>{t('Anclada')}</span>
+    {/* Only «Cerrar» (user, 2026-11-08: «Anclada» was redundant). Tapping outside
+        the photo or dragging it away also closes; zoom is a pinch. */}
     <button className="inspection-close" onClick={close}><XIcon size={18} weight="bold"/>{t('Cerrar')}</button>
    </>:<button className="dock-target" tabIndex={-1} onClick={pin}><PushPinIcon weight={armed?'fill':'regular'} size={20}/><span>{armed?t('Suelta para anclar'):t('Arrastra aquí para anclar')}</span></button>}
   </motion.div>

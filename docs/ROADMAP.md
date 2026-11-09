@@ -23,7 +23,35 @@ una puerta nativa, comercial o de distribución.
 **Estados:** Hecho · En curso · Pendiente · Bloqueado (falta herramienta, acceso o decisión) · FAIL
 (comprobado y fallando). **Quién:** U = usuario · CX = Codex · CL = Claude · C = cualquiera de los dos.
 
-## Dónde estamos (2026-11-08, CW-CX-050)
+## Dónde estamos (2026-11-08, CW-CL-063/064 — Claude tomó el relevo de Codex)
+
+- **Última prueba del usuario en su iPhone (IPA `37d1ad2`) y lo que se corrigió (CW-CL-064):**
+  1. **R-00 lentitud al salir/volver (P0):** desde la RC (CW-CX-018) cada vuelta a la app releía TODA la
+     fototeca (enumeración nativa completa + puente + reconciliación + guardado). Build 43 no lo hacía.
+     Ahora iOS usa `PHPhotoLibraryChangeObserver`: al volver solo se consulta el permiso y un contador de
+     cambios de Fotos; se relee solo si cambió el permiso, si Fotos informó un cambio (o no puede decirlo,
+     p. ej. Android), si el acceso es limitado o si aún no hay nada cargado. Prueba `tests/resume-flow.mjs`.
+  2. **Avisos de almacenamiento (R-64):** «No se pudo guardar el progreso…» y «Una operación de Fotos quedó
+     interrumpida…» **ya no se muestran nunca** (decisión del usuario). Causa del primero: iOS corta la
+     conexión IndexedDB en segundo plano y el diario la reutilizaba. Ahora el diario reabre y reintenta; si
+     sigue fallando conserva el estado en memoria y en el espejo localStorage y el siguiente guardado
+     sobrescribe. Sin diario legible la app arranca con la copia local. Una intención antigua se resuelve
+     sola con la primera enumeración fresca; nunca se repite una operación de Fotos.
+  3. **Vista anclada (R-65):** solo «Cerrar» (se quitó «Anclada»); arrastrar la foto/vídeo sin zoom más
+     de ~110 px (o rápido) la cierra, como un visor de fotos; con zoom el arrastre mueve. `tests/anchored-flow.mjs`.
+  4. **Rectángulo blanco al anclar un vídeo (R-66):** `backdrop-filter` de la barra de controles dentro de
+     un ancestro que se anima; en la vista anclada se usa fondo sólido del mismo color. Confirmar en iPhone.
+- Antes (CW-CL-063): gate nativo iOS `37d1ad2` 7/8 PASS (álbum, cancelar borrado, **R-61 relanzar ×5**,
+  pulsación larga sin menú, 10 rondas, anclar, pellizco); Live: la foto clave ya PASS con criterio visual
+  (máx. 12 niveles, <1 % canales, 20× más cerca de la clave que del movimiento); faltaba el paso de la
+  línea de tiempo (XCTest no puede `adjust()` un range HTML: ahora arrastra el punto).
+- **Abierto:** Android Atrás no sale de pantalla completa de vídeo en el emulador (R-47b, FAIL; Android no
+  publicable aún, no se quemaron ciclos); R-02 Privacy Report/ATT físico; cuentas, firma, TestFlight.
+- CI: los tres builds automáticos ya no arrancan por suites locales, tests de UI ni archivos de la otra
+  plataforma (107 ejecuciones en un día antes). Pushes de solo docs con `[skip ci]`.
+- No apta para enviar.
+
+### Estado anterior (2026-11-08, CW-CX-050)
 
 - Fuente única: `main`, `C:/Users/Joaco/Developer/CocoWash-android`; checkpoint d362af4 enviado.
 - R-61 P0 reproducido y corrección de diario local **aprobada**. Implementación local y 8 regresiones IndexedDB PASS (CW-CX-051); force-stop nativo pendiente.
@@ -50,6 +78,10 @@ una puerta nativa, comercial o de distribución.
 |---|---|---|---|---|
 | R-00 | **P0 · El iPhone se vuelve cada vez más lento** tras eliminar unas fotos y terminar la sesión 4–5 veces seguidas (reporte del usuario en su teléfono). Ver [detalle R-00](#detalle-r-00) | CX | **PASS regresión nativa pequeña; QA física BLOCKED** | CW-CX-021/033:11→1 búsquedas sintéticas y10rondas nativas reales iOS42492831273/Android42492831172,PASS presupuestos. [Métricas ylímites](apple-readiness/NATIVE_LAB.md). Recuento finalPhotoKit pendiente;no acredita teléfono físico/biblioteca grande |
 | R-07 | **Live Photo**: reproducción en la carta y en la vista anclada. Ver [detalle R-07](#detalle-r-07) | CX (+CL visual) | **En curso (P1), nativo bloqueado** | CW-CX-022/025: reproducción inline, foto clave en pausa, anclaje/timeline/pinch implementados;5 escenarios web PASS. [Evidencia y QA nativa](apple-readiness/LIVE_PHOTO.md) |
+| R-64 | **Sin avisos de almacenamiento** («No se pudo guardar…», «operación interrumpida»): recuperación silenciosa (usuario, 2026-11-08) | CL | Corregido local; nativo pendiente | CW-CL-064; `durableSession.ts`, `native.tsx`, `ManoApp.tsx`; persistencia 8+7 PASS en navegador |
+| R-65 | Vista anclada: solo «Cerrar» y deslizar para cerrar (usuario, 2026-11-08) | CL | Corregido local | `Inspector.tsx`; `tests/anchored-flow.mjs` 3/3 |
+| R-66 | Rectángulo blanco abajo al anclar un vídeo (usuario, 2026-11-08) | CL | Corregido; confirmar en iPhone | `backdrop-filter` en la barra del vídeo anclado → fondo sólido (`prototype.css`) |
+| R-47b | Android: Atrás no sale de la pantalla completa de vídeo (emulador) | CX | **FAIL** | Run 42549137917; `CocoWebChromeClient`/orden de callbacks de Atrás |
 
 ## A · Código y pruebas iOS (antes de firmar)
 
@@ -169,6 +201,9 @@ textos con hablantes nativos, 1.0.1 para lo que salga.
 ## Registro de avance
 
 Una línea por intervención: fecha · agente · entrada · puntos cerrados/abiertos.
+
+- 2026-11-08 · Claude · CW-CL-064 · Defectos del usuario en iPhone: R-00 vuelta a la app sin releer la fototeca (observador de cambios de Fotos), R-64 sin avisos de almacenamiento (reconexión/espejo), R-65 vista anclada solo «Cerrar» + deslizar para cerrar, R-66 rectángulo blanco (backdrop-filter). 138 Node, 80 casos navegador + 8 runtime PASS. Pendiente: gate nativo y confirmación del usuario en iPhone.
+- 2026-11-08 · Claude · CW-CL-063 · Relevo: WIP de Codex terminado (Live pausa = foto clave), cascada del gate por aviso de operación interrumpida, aviso «Viewing full screen» de Android en el test, filtros de CI. Gate iOS 37d1ad2 7/8 PASS; Live clave PASS con criterio visual. IPA `CocoWash-0.9.9.1-build43-37d1ad2.ipa`.
 
 - 2026-11-07 · Codex · CW-CX-021 (inicio) · Contrastado roadmap con RC/Play: R-41 corregido a12 testers/14 días cuando aplica; R-45 pasa a P3 fuera del primer lanzamiento; añadidos R-49 firma/comercio Play, R-53 destinos Apple y R-54 aceptación del artefacto. R-00 en curso, sin cerrar QA física.
 - 2026-11-07 · Codex · CW-CX-021 · Corregida recurrencia R-00 en JS con cobertura/epochs y regresión10 ciclos;128 Node,5 flujos nuevos y38 regresiones PASS. R-00 físico sigue bloqueado, no se marca Hecho.

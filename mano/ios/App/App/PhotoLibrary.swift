@@ -142,12 +142,13 @@ final class PreparedVideoStreamHandler: NSObject, WKURLSchemeHandler {
 }
 
 @objc(PhotoLibraryPlugin)
-public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
+public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin, PHPhotoLibraryChangeObserver {
     public let identifier = "PhotoLibraryPlugin"
     public let jsName = "PhotoLibrary"
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "authorize", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "assets", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "libraryVersion", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "thumbnail", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "cancelThumbnailPreparation", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "albums", returnType: CAPPluginReturnPromise),
@@ -382,9 +383,34 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
         while let presented = top?.presentedViewController, !presented.isBeingDismissed { top = presented }
         return top
     }
+    // R-00 (user, 2026-11-08): returning to the app re-read the whole library every
+    // time. Photos itself reports real changes; the web side re-reads only when this
+    // counter moved since its last enumeration. Registered once access is granted.
+    private let changeLock = NSLock()
+    private var changeCount = 0
+    private var observingChanges = false
+    private func observeLibraryChanges() {
+        changeLock.lock(); defer { changeLock.unlock() }
+        guard !observingChanges, ["authorized", "limited"].contains(status) else { return }
+        observingChanges = true
+        PHPhotoLibrary.shared().register(self)
+    }
+    public func photoLibraryDidChange(_ changeInstance: PHChange) {
+        changeLock.lock(); changeCount += 1; changeLock.unlock()
+    }
+    @objc func libraryVersion(_ call: CAPPluginCall) {
+        observeLibraryChanges()
+        changeLock.lock(); let version = changeCount, observing = observingChanges; changeLock.unlock()
+        call.resolve(observing ? ["version": version] : [:])
+    }
+    deinit { if observingChanges { PHPhotoLibrary.shared().unregisterChangeObserver(self) } }
+
     @objc func assets(_ call: CAPPluginCall) {
         devLog("COCOWASH_PHOTOS_REQUEST status=%@", status)
         guard ["authorized", "limited"].contains(status) else { call.resolve(["assets": [], "status": status]); return }
+        // Read before enumerating: a change during the fetch moves it past this value.
+        observeLibraryChanges()
+        changeLock.lock(); let version = changeCount; changeLock.unlock()
         DispatchQueue.global(qos: .userInitiated).async {
             let options = PHFetchOptions()
             // Favourites are listed too, flagged: the web layer keeps them out of the
@@ -405,7 +431,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin {
             }
             // Runtime smoke-test signal: no asset IDs, names, paths or image data.
             devLog("COCOWASH_PHOTOS_READ_OK count=%d status=%@", items.count, self.status)
-            call.resolve(["assets": items, "status": self.status])
+            call.resolve(["assets": items, "status": self.status, "version": version])
         }
     }
     @objc func thumbnail(_ call: CAPPluginCall) {

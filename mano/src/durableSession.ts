@@ -11,7 +11,10 @@ export type JournalEntry = {
 };
 export interface JournalBackend {
   read(key: string): Promise<unknown>;
-  write(key: string, entry: JournalEntry, expectedRevision: number): Promise<void>;
+  /** null: overwrite (the in-memory entry is newer after a degraded write). */
+  write(key: string, entry: JournalEntry, expectedRevision: number | null): Promise<void>;
+  /** Drop a lost connection (iOS suspends WebView storage in the background). */
+  reconnect?(): Promise<void>;
 }
 export const STORAGE_FAILURE = 'No se pudo guardar el progreso. Libera espacio antes de continuar.';
 export const INTERRUPTED_OPERATION = 'Una operación de Fotos quedó interrumpida. Comprueba su resultado en Fotos antes de volver a intentarla. Tus decisiones guardadas se conservan.';
@@ -34,6 +37,7 @@ function validateEntry(raw: unknown): JournalEntry {
  * A rejected write never changes its acknowledged snapshot. No request-success ack. */
 export class SessionJournal {
   private tail: Promise<unknown> = Promise.resolve();
+  private degraded = false;
   private writer = new SessionWriter();
   readonly key: string;
   private backend: JournalBackend;
@@ -54,8 +58,16 @@ export class SessionJournal {
     const run = async () => {
       const next = change(structuredClone(this.entry));
       next.revision = this.entry.revision + 1;
-      try { await this.backend.write(this.key, next, this.entry.revision); }
-      catch { throw new Error(STORAGE_FAILURE); }
+      // Never surfaced to the person (user, 2026-11-08): a lost connection is
+      // reopened and retried; if storage still refuses, the newest state stays in
+      // memory and in the localStorage mirror below, and the next write retries
+      // with an overwrite. Decisions are never blocked by a storage error.
+      const expected = this.degraded ? null : this.entry.revision;
+      try { await this.backend.write(this.key, next, expected); this.degraded = false; }
+      catch {
+        try { await this.backend.reconnect?.(); await this.backend.write(this.key, next, null); this.degraded = false; }
+        catch { this.degraded = true; }
+      }
       this.entry = next;
       // Compatibility mirrors are best-effort, never the commit acknowledgement.
       try {
@@ -85,15 +97,16 @@ export class SessionJournal {
 /** Revision check and write share one transaction. strict is a durability hint;
  * native force-stop tests remain required on each WebView implementation. */
 export async function openIndexedDB(factory: IDBFactory = indexedDB): Promise<JournalBackend> {
-  const db = await new Promise<IDBDatabase>((resolve, reject) => {
+  const connect = () => new Promise<IDBDatabase>((resolve, reject) => {
     const request = factory.open('cocowash-decisions-v1', 1);
     request.onupgradeneeded = () => request.result.createObjectStore('sessions');
     request.onerror = () => reject(new Error(STORAGE_FAILURE));
     request.onblocked = () => reject(new Error(STORAGE_FAILURE));
-    request.onsuccess = () => resolve(request.result);
+    request.onsuccess = () => { const db = request.result; db.onversionchange = () => db.close(); resolve(db); };
   });
-  db.onversionchange = () => db.close();
+  let db = await connect();
   return {
+    reconnect: async () => { try { db.close(); } catch { /* already lost */ } db = await connect(); },
     read: key => new Promise((resolve, reject) => {
       const tx = db.transaction('sessions', 'readonly');
       const request = tx.objectStore('sessions').get(key);
@@ -105,7 +118,7 @@ export async function openIndexedDB(factory: IDBFactory = indexedDB): Promise<Jo
       const store = tx.objectStore('sessions');
       const previous = store.get(key);
       previous.onsuccess = () => {
-        if ((previous.result?.revision ?? 0) !== expected) { tx.abort(); return; }
+        if (expected !== null && (previous.result?.revision ?? 0) !== expected) { tx.abort(); return; }
         store.put(entry, key);
       };
       tx.oncomplete = () => resolve();

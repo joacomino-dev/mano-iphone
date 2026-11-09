@@ -1,9 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { ManoApp } from './ManoApp';
-import { LoadErrorScreen } from './Screens';
 import { DEMO_SESSION_KEY, LIBRARY_SESSION_KEY } from './session';
-import { initializeJournal, migrateSession, legacyFavorites, FAVORITES_KEY, IN_FLIGHT_KEY, STORAGE_FAILURE } from './durableSession';
+import { initializeJournal, migrateSession, legacyFavorites, FAVORITES_KEY, IN_FLIGHT_KEY } from './durableSession';
 import { DEVELOPER } from './channel';
 import { readTestMode } from './testMode';
 import './native.css';
@@ -20,8 +19,10 @@ async function start() {
     }));
     root.render(<React.StrictMode><ManoApp/></React.StrictMode>);
   } catch {
-    // Never mount an older localStorage session when the durable store cannot be read.
-    root.render(<LoadErrorScreen message={STORAGE_FAILURE} retry={() => void start()}/>);
+    // No storage notice for the person (user, 2026-11-08): without a readable
+    // journal the app still starts, on the localStorage copy that every journal
+    // write mirrors. Nothing is deleted; the journal is tried again next launch.
+    root.render(<React.StrictMode><ManoApp/></React.StrictMode>);
   }
 }
 void start();

@@ -13,6 +13,7 @@ async function entry(page){return page.evaluate(async()=>{
 });}
 async function waitEntry(page,predicate){const until=Date.now()+10000;while(Date.now()<until){if(predicate(await entry(page)))return;await new Promise(r=>setTimeout(r,50));}throw Error('Durable state was not committed');}
 async function ready(page){await page.locator('.photo-card.front').waitFor();await page.waitForFunction(()=>!document.querySelector('.splash-lockup'));}
+const noNotice=async page=>{assert.equal(await page.getByText(/No se pudo guardar|quedó interrumpida/).count(),0,'Storage problems are never shown (user, 2026-11-08)');};
 async function scenario(name,run,android=false){
  const context=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'});
  try{
@@ -37,18 +38,21 @@ async function scenario(name,run,android=false){
  finally{await context.close();}console.log(results.at(-1).status,name,results.at(-1).error??'');
 }
 try{
- await scenario('real transaction abort after request success cannot acknowledge or advance a discard',async page=>{
+ // Contract changed by the user (2026-11-08): storage problems are handled behind the
+ // scenes. A refused durable write never blocks or shows a notice; the decision stays
+ // in memory and in the localStorage mirror and the next write commits it.
+ await scenario('aborted journal writes are silent: the discard advances and the next write commits it',async page=>{
   const front=await page.locator('.photo-card.front').getAttribute('data-testid');
   await page.evaluate(()=>window.abortJournalWrites=true);
   await page.getByRole('button',{name:'Eliminar',exact:true}).click();
-  await page.getByRole('alert').filter({hasText:'No se pudo guardar el progreso'}).waitFor();
-  assert.equal(await page.evaluate(()=>window.realRequestSucceededBeforeAbort),true);
-  assert.equal(await page.locator('.photo-card.front').getAttribute('data-testid'),front);
-  assert.deepEqual(JSON.parse((await entry(page)).session).record.pending,[]);
+  await page.waitForFunction(id=>document.querySelector('.photo-card.front')?.getAttribute('data-testid')!==id,front);
+  assert.equal(await page.evaluate(()=>window.realRequestSucceededBeforeAbort),true);await noNotice(page);
+  assert.deepEqual(JSON.parse((await entry(page)).session).record.pending,[],'the refused write left storage unchanged');
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('cocowash-library-session-v1')).record.pending.length),1,'the mirror keeps the decision');
   assert.equal(await page.evaluate(()=>appleFixture.calls.some(c=>c.method==='deleteAssets')),false);
   await page.evaluate(()=>window.abortJournalWrites=false);
   await page.getByRole('button',{name:'Eliminar',exact:true}).click();
-  await waitEntry(page,e=>JSON.parse(e.session).record.pending.length===1);
+  await waitEntry(page,e=>JSON.parse(e.session).record.pending.length===2);
  });
  await scenario('acknowledged decision/history survives reload even with stale legacy storage; Undo restores hand',async page=>{
   const before=await page.locator('.photo-card.front').getAttribute('data-testid');
@@ -62,26 +66,23 @@ try{
   await page.waitForFunction(id=>document.querySelector('.photo-card.front')?.getAttribute('data-testid')===id,before);
   assert.deepEqual(JSON.parse((await entry(page)).session).record.pending,[]);
  });
- await scenario('Android favorite queue and decision either both commit or both remain unchanged',async page=>{
+ await scenario('Android favorite queue and decision commit together; a refused write is silent and retried',async page=>{
   await page.evaluate(()=>window.abortJournalWrites=true);
-  await page.getByRole('button',{name:'Añadir a Favoritas',exact:true}).click();
-  await page.getByRole('alert').filter({hasText:'No se pudo guardar el progreso'}).waitFor();
+  await page.getByRole('button',{name:'Añadir a Favoritas',exact:true}).click();await page.waitForTimeout(400);await noNotice(page);
   let stored=await entry(page);assert.deepEqual(stored.favorites,{});assert.deepEqual(JSON.parse(stored.session).record.favorites,[]);
   assert.equal(await page.evaluate(()=>appleFixture.calls.some(c=>c.method==='favorite')),false);
   await page.evaluate(()=>window.abortJournalWrites=false);await page.getByRole('button',{name:'Añadir a Favoritas',exact:true}).click();
-  await waitEntry(page,e=>Object.keys(e.favorites).length===1);
+  await waitEntry(page,e=>Object.keys(e.favorites).length===2);
   stored=await entry(page);assert.deepEqual(Object.keys(stored.favorites),JSON.parse(stored.session).record.favorites);
   await page.reload();await ready(page);assert.deepEqual((await entry(page)).favorites,stored.favorites);
  },true);
- await scenario('native success followed by failed durable acknowledgement retains intent and reports uncertainty',async page=>{
+ await scenario('native success with a refused acknowledgement is silent; the next launch settles the intent without replaying it',async page=>{
   await page.evaluate(()=>window.abortAfterNative=true);
-  await page.getByRole('button',{name:'Añadir a Favoritas',exact:true}).click();
-  await page.getByRole('alert').filter({hasText:'Una operación de Fotos quedó interrumpida'}).waitFor();
+  await page.getByRole('button',{name:'Añadir a Favoritas',exact:true}).click();await page.waitForTimeout(500);await noNotice(page);
   const stored=await entry(page);assert.equal(stored.intent.kind,'favorite');assert.deepEqual(JSON.parse(stored.session).record.favorites,[]);
   assert.equal(await page.evaluate(()=>appleFixture.calls.filter(c=>c.method==='favorite').length),1);
-  await page.reload();await ready(page);
-  await page.getByRole('alert').filter({hasText:'Una operación de Fotos quedó interrumpida'}).waitFor();
-  assert.equal((await entry(page)).intent.kind,'favorite');assert.equal(await page.evaluate(()=>appleFixture.calls.some(c=>c.method==='favorite')),false,'Never replay a native mutation on startup');
+  await page.reload();await ready(page);await waitEntry(page,e=>!e.intent);await noNotice(page);
+  assert.equal(await page.evaluate(()=>appleFixture.calls.some(c=>c.method==='favorite')),false,'Never replay a native mutation on startup');
  });
  await scenario('pending item hidden by a library change remains recoverable and is never inferred deleted',async page=>{
   await page.getByRole('button',{name:'Eliminar',exact:true}).click();
@@ -94,24 +95,22 @@ try{
   assert.deepEqual(JSON.parse((await entry(page)).session).record.removed,[]);
   assert.equal(await page.evaluate(()=>appleFixture.calls.some(c=>c.method==='deleteAssets')),false);
  });
- await scenario('confirmed native deletion with failed durable acknowledgement cannot display a completed round or retry deletion',async page=>{
+ await scenario('confirmed native deletion with a refused acknowledgement is silent and never repeated',async page=>{
   await page.getByRole('button',{name:'Eliminar',exact:true}).click();
   await page.getByRole('button',{name:/^Terminar.*1 para eliminar/}).click();
   await page.evaluate(()=>{appleFixture.deleteMode='success';window.abortAfterNative=true;});
-  await page.getByRole('button',{name:/^Eliminar 1/}).click();
-  await page.getByRole('alert').filter({hasText:'Una operación de Fotos quedó interrumpida'}).waitFor();
-  const stored=await entry(page);assert.equal(stored.intent.kind,'delete');assert.equal(JSON.parse(stored.session).record.pending.length,1);assert.deepEqual(JSON.parse(stored.session).record.removed,[]);
-  assert.equal(await page.locator('.status-actions .primary-empty').count(),0);
+  await page.getByRole('button',{name:/^Eliminar 1/}).click();await page.waitForTimeout(600);await noNotice(page);
+  const stored=await entry(page);assert.equal(stored.intent.kind,'delete');assert.deepEqual(JSON.parse(stored.session).record.removed,[],'storage never claims a success it did not record');
   assert.equal(await page.evaluate(()=>appleFixture.assets.length),2);
-  await page.getByRole('button',{name:/^Eliminar 1/}).click();
-  assert.equal(await page.evaluate(()=>appleFixture.calls.filter(c=>c.method==='deleteAssets').length),1);
+  await page.reload();await ready(page);await waitEntry(page,e=>!e.intent);await noNotice(page);
+  assert.equal(await page.evaluate(()=>appleFixture.calls.filter(c=>c.method==='deleteAssets').length),0,'the deletion is never replayed after restart');
  });
- await scenario('corrupt durable data blocks startup rather than falling back to older localStorage',async page=>{
+ await scenario('corrupt durable data never blocks startup: the app starts from the local copy',async page=>{
   await page.evaluate(async()=>{
    const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('cocowash-decisions-v1',1);r.onsuccess=()=>resolve(r.result);r.onerror=reject;});
    await new Promise((resolve,reject)=>{const tx=db.transaction('sessions','readwrite',{durability:'strict'});tx.objectStore('sessions').put({version:99,revision:99},'cocowash-library-session-v1');tx.oncomplete=resolve;tx.onabort=reject;});db.close();
   });
-  await page.reload();await page.getByRole('alert').filter({hasText:'No se pudo guardar el progreso'}).waitFor();assert.equal(await page.locator('.photo-card').count(),0);
+  await page.reload();await page.locator('.photo-card.front').waitFor();await noNotice(page);
  });
  await scenario('real IndexedDB journal round-trip at 100, 5000 and 50000 synthetic decisions',async page=>{
   const metrics=await page.evaluate(async()=>{

@@ -1,24 +1,29 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { SessionJournal, STORAGE_FAILURE, migrateSession } from '../src/durableSession.ts';
+import { SessionJournal, migrateSession } from '../src/durableSession.ts';
 import { initialState, initialFilter, decide, undo } from '../src/domain.ts';
 import { validateSession } from '../src/session.ts';
 import { acknowledgeFavorites, withoutFavorites } from '../src/favoritePending.ts';
 const key='cocowash-library-session-v1';
 const session=()=>({version:1,active:true,seed:43,filter:initialFilter,context:{handIds:['a','b'],selected:['a'],rotated:[]},updatedAt:1,record:initialState()});
 const fallback=()=>({session:session(),favorites:{},inFlight:{}});
-function backend(){return {data:undefined,fail:false,pause:undefined,async read(){return structuredClone(this.data);},async write(k,value,expected){if(this.pause)await this.pause;if(this.fail)throw Error('quota');assert.equal(this.data?.revision??0,expected);this.data=structuredClone(value);}};}
+function backend(){return {data:undefined,fail:false,pause:undefined,async read(){return structuredClone(this.data);},async write(k,value,expected){if(this.pause)await this.pause;if(this.fail)throw Error('quota');if(expected!==null)assert.equal(this.data?.revision??0,expected);this.data=structuredClone(value);}};}
 test('migration preserves envelope/history/queues and reopens without legacy reads',async()=>{
  const db=backend(),original=session();original.record=decide(original.record,['a'],'discard',100,original.context);
  let j=await SessionJournal.open(key,db,()=>({session:original,favorites:{b:true},inFlight:{b:true}}));
  j=await SessionJournal.open(key,db,()=>{throw Error('must not use stale legacy');});
  assert.deepEqual(j.session,validateSession(original));assert.deepEqual(j.snapshot.favorites,{b:true});assert.deepEqual(j.snapshot.inFlight,{b:true});
 });
-test('failed write preserves acknowledged record and queues; retry commits both',async()=>{
+// Contract changed by the user (2026-11-08): storage errors never reach the person.
+// A failed write keeps the newest state in memory (and the localStorage mirror) and
+// the next successful write commits it by overwriting; nothing throws.
+test('failed write is silent: newest record/queues stay in memory and the next write commits them',async()=>{
  const db=backend(),j=await SessionJournal.open(key,db,fallback),next=session();next.record=decide(next.record,['a'],'favorite',100,next.context);
- db.fail=true;await assert.rejects(j.save(next,{favorite:{ids:['a'],value:true}}),{message:STORAGE_FAILURE});
- assert.deepEqual(j.session.record,initialState());assert.deepEqual(j.snapshot.favorites,{});
- db.fail=false;await j.save(next,{favorite:{ids:['a'],value:true}});assert.deepEqual(j.session.record,next.record);assert.deepEqual(j.snapshot.favorites,{a:true});
+ db.fail=true;await j.save(next,{favorite:{ids:['a'],value:true}});
+ assert.deepEqual(j.session.record,next.record);assert.deepEqual(j.snapshot.favorites,{a:true});
+ assert.deepEqual(JSON.parse(db.data.session).record,initialState(),'storage still holds the older state until a write succeeds');
+ db.fail=false;const later={...next,record:decide(next.record,['b'],'keep',101,next.context)};await j.save(later);
+ assert.deepEqual(JSON.parse(db.data.session).record,later.record);assert.deepEqual(db.data.favorites,{a:true});assert.equal(db.data.revision,j.snapshot.revision);
 });
 test('acknowledgement waits for backend completion and serializes subsequent writes',async()=>{
  const db=backend(),j=await SessionJournal.open(key,db,fallback);let release;db.pause=new Promise(r=>release=r);
@@ -36,7 +41,7 @@ test('undo restores exact history/context and a newer opposite favorite survives
 });
 test('native intent survives interrupted completion; no success state is invented',async()=>{
  const db=backend(),j=await SessionJournal.open(key,db,fallback);await j.intent({kind:'delete',ids:['a'],started:100});db.fail=true;
- await assert.rejects(j.save({...session(),record:{...initialState(),removed:['a']}},{clearIntent:true}));db.fail=false;
+ await j.save({...session(),record:{...initialState(),removed:['a']}},{clearIntent:true});db.fail=false;
  const reopened=await SessionJournal.open(key,db,fallback);assert.equal(reopened.snapshot.intent.kind,'delete');assert.deepEqual(reopened.session.record.removed,[]);
  await reopened.intent();assert.equal(reopened.snapshot.intent,undefined);
 });

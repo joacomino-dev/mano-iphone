@@ -178,7 +178,6 @@ const table: Record<string, string> = {
   'Recuerdo ampliado': 'Enlarged memory',
   'En iCloud. Ancla para descargarla.': 'In iCloud. Pin it to download.',
   'No se pudo cargar la imagen.': 'Couldn’t load the image.',
-  'Anclada': 'Pinned',
   'Suelta para anclar': 'Let go to pin',
   'Arrastra aquí para anclar': 'Drag here to pin',
   'Datos del archivo': 'File details',

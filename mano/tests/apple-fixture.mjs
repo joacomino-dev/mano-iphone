@@ -10,7 +10,7 @@ export function installAppleFixture({ onboarded = true, status = 'authorized', l
   if(nativeMedia)fixture.assets=fixture.assets.map(a=>({...a,demo:false}));
   fixture.thumbnailMode=cloudOffline?'offline':'online';
   window.webkit = { messageHandlers: { bridge: { postMessage() { throw new Error('Real native bridge forbidden'); } } } };
-  const methods = ['authorize','permissionStatus','assets','thumbnail','diagnostic','haptic','place','sizes','classify',
+  const methods = ['authorize','permissionStatus','assets','libraryVersion','thumbnail','diagnostic','haptic','place','sizes','classify',
     'cancelClassify','analyze','cancelAnalysis','deleteAssets','albums','createAlbum','addToAlbum','favorite',
     'cancelThumbnailPreparation','cancelVideoPreparation','releasePreparedVideos','metadata','manageLimitedAccess','preview','share','openSettings','openLink'];
   const storeMethods = ['status','catalog','buy','restore','prepare','show','hide','privacy'];
@@ -39,10 +39,12 @@ export function installAppleFixture({ onboarded = true, status = 'authorized', l
         }
         case 'authorize': return { status: fixture.status };
         case 'assets': {
-          const snapshot = {status: fixture.status, assets: structuredClone(fixture.assets)};
+          const snapshot = {status: fixture.status, assets: structuredClone(fixture.assets), ...(fixture.version === undefined ? {} : {version: fixture.version})};
           if(fixture.holdAssets) return new Promise(resolve => (fixture.pendingAssets ||= []).push(() => resolve({...snapshot,status:fixture.status})));
           return snapshot;
         }
+        // Photos change counter (iOS PHPhotoLibraryChangeObserver); absent unless a test sets it.
+        case 'libraryVersion': return fixture.version === undefined ? {} : { version: fixture.version };
         case 'sizes': return { sizes: measured ? Object.fromEntries(args.ids.map(id=>[id,1000000])) : {} };
         case 'thumbnail': {
           if(fixture.thumbnailMode==='offline')throw Object.assign(new Error(args.network?'Fixture: network unavailable':'Fixture: asset in iCloud'),{code:args.network?'NETWORK_ERROR':'IN_CLOUD'});

@@ -45,10 +45,13 @@ try{
  await run('interrupted confirmation marker keeps an undo explicit after restart',async page=>{
   const result=await page.evaluate(async()=>{appleFixture.assets[0].favorite=true;localStorage.setItem('cocowash-android-favorites-v1',JSON.stringify({'fixture-0':true}));localStorage.setItem('cocowash-android-favorites-inflight-v1',JSON.stringify({'fixture-0':true}));const q=await import('/src/favoriteQueue.ts');await q.setFavorite(['fixture-0'],false);await q.flushFavorites();return {favorite:appleFixture.assets[0].favorite,marker:localStorage.getItem('cocowash-android-favorites-inflight-v1')};});assert.deepEqual(result,{favorite:false,marker:null});
  });
- await run('failed persistence never records a successful queued favorite',async page=>{
+ // Contract changed by the user (2026-11-08): a refused durable write is silent; the
+ // queued favorite stays (memory + local mirror) and is never sent to the gallery early.
+ await run('refused durable write keeps the queued favorite silently; nothing is sent before the round ends',async page=>{
   await page.evaluate(()=>{const real=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(value,...args){const request=real.call(this,value,...args);if(this.name==='sessions')request.addEventListener('success',()=>this.transaction.abort());return request;};});
   await page.getByRole('button',{name:'Añadir a Favoritas',exact:true}).click();await page.waitForTimeout(400);
-  assert.deepEqual((await stored(page)).record.favorites,[]);assert.equal(await page.evaluate(()=>appleFixture.calls.some(c=>c.method==='favorite')),false);
+  assert.equal((await stored(page)).record.favorites.length,1);assert.equal(await page.getByText(/No se pudo guardar/).count(),0);
+  assert.equal(await page.evaluate(()=>appleFixture.calls.some(c=>c.method==='favorite')),false);
  });
 }finally{await browser.close();await fs.writeFile(path.join(out,'results.json'),JSON.stringify({boundary:'Edge + synthetic Android bridge; not native execution',results},null,2)+'\n');}
 if(results.some(r=>r.status==='FAIL'))process.exitCode=1;
