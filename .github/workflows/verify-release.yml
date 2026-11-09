@@ -7,7 +7,8 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['mano/**', '.github/workflows/verify-release.yml']
+    # Only what this build uses: local browser suites, UI tests and Android files do not start it.
+    paths: ['mano/**', '!mano/tests/*-flow.mjs', '!mano/tests/apple-*.mjs', '!mano/tests/rc-*.mjs', '!mano/tests/qa-*.mjs', '!mano/tests/app-*-ui.mjs', '!mano/tests/leak-cycles.mjs', '!mano/tests/benchmark-*.mjs', '!mano/ios/App/ManoUITests/**', '!mano/android/**', '!mano/scripts/android-*', '.github/workflows/verify-release.yml']
 permissions:
   contents: read
 concurrency:

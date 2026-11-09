@@ -3,7 +3,8 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['mano/**', 'docs/playstore/**', '.github/workflows/build-android.yml']
+    # Only what this build uses: local browser suites, iOS files and UI tests do not start it.
+    paths: ['mano/**', '!mano/tests/*-flow.mjs', '!mano/tests/apple-*.mjs', '!mano/tests/rc-*.mjs', '!mano/tests/qa-*.mjs', '!mano/tests/app-*-ui.mjs', '!mano/tests/leak-cycles.mjs', '!mano/tests/benchmark-*.mjs', '!mano/ios/App/ManoUITests/**', '!mano/ios/**', 'docs/playstore/**', '.github/workflows/build-android.yml']
 permissions:
   contents: read
 concurrency:
