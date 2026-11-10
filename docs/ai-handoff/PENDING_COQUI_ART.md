@@ -35,10 +35,11 @@ Integrado (recortado al dibujo y exportado a WebP con Edge/canvas, sin redibujar
 | Coqui abrazando un corazón | Sello «Favorita» | `mano/public/assets/stamps/favorite.webp` (477×480) | `mano/brand/stamps/favorite-source.png` |
 | Coqui apoyado en un reloj | Sello «Más tarde» | `mano/public/assets/stamps/later.webp` (480×479) | `mano/brand/stamps/later-source.png` |
 | Coqui enjabonándose (principal) | Splash de arranque junto al lettering y héroe de la tarjeta 1 | `mano/public/assets/characters/coqui-hero.webp` (631×900) | `mano/brand/characters/coqui-hero-source.png` |
-| Coqui en la piscina de burbujas | Privacidad (tarjeta 4); también fin de ronda sin borrar y pila vacía tras decidir (`coqui-calm`) | `mano/public/assets/characters/coqui-calm.webp` (720×611) | `mano/brand/characters/coqui-calm-source.png` |
+| Coqui con la caja fuerte | Privacidad (tarjeta 4, «Tus fotos no salen de tu iPhone») (`coqui-safe`) | `mano/public/assets/characters/coqui-safe.webp` (900×682) | `mano/brand/characters/coqui-safe-source.png` |
+| Coqui en la piscina de burbujas | Fin de ronda sin borrar y pila vacía tras decidir (`coqui-calm`) | `mano/public/assets/characters/coqui-calm.webp` (720×611) | `mano/brand/characters/coqui-calm-source.png` |
 
-Nota: el usuario describió la quinta como «Coqui con caja fuerte»; el archivo recibido es Coqui en una
-piscina de burbujas. Se integró ese archivo; si debía ser otro, se sustituye en la misma ruta.
+La caja fuerte llegó después como archivo aparte (el primero era la piscina); la piscina pasó a las
+pantallas tranquilas.
 El sello «Eliminar» anterior (basurero sin personaje) se conserva en `mano/brand/retired/discard-trash/`.
 El candado de la tarjeta de privacidad (ya existente) queda sobre el borde de la piscina; ajustable en
 `.ob-privacy .ob-lock` (`mano/src/prototype.css`) si el usuario lo prefiere en otro sitio.

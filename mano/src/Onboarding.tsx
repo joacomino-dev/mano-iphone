@@ -122,10 +122,10 @@ function PhotoDemo({ step, still, waiting, phase, gesture, turn }: { step: 1 | 2
   </div>;
 }
 
-/** Card 4 — privacy before the system prompt: Coqui relaxing (coqui-calm); everything stays here. */
+/** Card 4 — privacy before the system prompt: Coqui guarding a safe; everything stays here. */
 function PrivacyDemo({ still }: { still: boolean }) {
   return <div className="ob-demo ob-privacy" aria-hidden="true">
-    <Character pose="coqui-calm" height={150} motion="sway"/>
+    <Character pose="coqui-safe" height={150} motion="sway"/>
     <motion.span className="ob-lock" initial={still ? false : { scale: .4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 420, damping: 22, delay: .35 }}><LockSimpleIcon size={18} weight="fill"/></motion.span>
   </div>;
 }

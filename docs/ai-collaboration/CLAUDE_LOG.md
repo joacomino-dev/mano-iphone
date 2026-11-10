@@ -865,3 +865,12 @@ Coqui principal en splash y tarjeta 1; Coqui en la piscina en privacidad (`coqui
 sello Eliminar anterior en `mano/brand/retired/discard-trash/`. Sellos temporales retirados. Pendientes: `coqui-review`,
 `coqui-wonder`. Validaciones: 138 Node, tsc, runtime 28, release 9, builds, 66 navegador + 8 runtime; capturas en
 `work/coqui-art/` (local). Detalle: [PENDING_COQUI_ART](../ai-handoff/PENDING_COQUI_ART.md).
+
+### CW-CL-071 — Caja fuerte en privacidad
+Fecha: 2026-11-10, America/Bogota
+Agente: Claude
+Estado: completada local en `claude/retire-memo`; sin push.
+El usuario envió la ilustración correcta para privacidad: Coqui con la caja fuerte. Nuevo `coqui-safe`
+(`mano/public/assets/characters/coqui-safe.webp`, 900×682, recortado por la parte visible del dibujo para no incluir
+el resplandor; fuente `mano/brand/characters/coqui-safe-source.png`). La piscina (`coqui-calm`) queda en fin de ronda
+sin borrar y pila vacía tras decidir. 138 Node, runtime 28, tsc, Apple 19, accesibilidad 6; captura en `work/coqui-art/`.

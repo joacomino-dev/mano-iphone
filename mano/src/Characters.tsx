@@ -12,7 +12,7 @@ export const POSES = {
   'coqui-wave': [418, 461], 'coqui-photos': [321, 459], 'coqui-point': [453, 452],
   'coqui-cheer': [445, 470], 'coqui-think': [307, 466], 'coqui-shrug': [474, 450],
   // User's art, 2026-11-10: main Coqui (launch mark, tour card 1) and privacy.
-  'coqui-hero': [631, 900], 'coqui-calm': [720, 611],
+  'coqui-hero': [631, 900], 'coqui-calm': [720, 611], 'coqui-safe': [900, 682],
 } as const;
 /** Slots waiting for new Coqui illustrations (Memo retired, 2026-11-10). Until a
  * slot's file exists it shows `stand`, an existing correct Coqui pose, so no
