@@ -874,3 +874,13 @@ El usuario envió la ilustración correcta para privacidad: Coqui con la caja fu
 (`mano/public/assets/characters/coqui-safe.webp`, 900×682, recortado por la parte visible del dibujo para no incluir
 el resplandor; fuente `mano/brand/characters/coqui-safe-source.png`). La piscina (`coqui-calm`) queda en fin de ronda
 sin borrar y pila vacía tras decidir. 138 Node, runtime 28, tsc, Apple 19, accesibilidad 6; captura en `work/coqui-art/`.
+
+### CW-CL-072 — Arte de Coqui en `main` e IPA build 44
+Fecha: 2026-11-10, America/Bogota
+Agente: Claude
+Estado: integrada en `main` (`3106075`, fast-forward desde `ebf40e5`) a petición del usuario («dame el IPA»).
+CI: tienda iOS 42852601989 PASS; desarrollo iOS 42852601994 PASS (arranque); IPA
+`C:/Users/Joaco/Downloads/CocoWash-0.9.9.2-build44-3106075.ipa`, sha256 `3e382891…34be`, 0.9.9 (44), iOS 17,
+arte nuevo dentro y ningún recurso de Memo. Android 42852601987 FAIL en la ronda 2: el diálogo del sistema
+«Allow CocoWash to move this photo to trash?» quedó sin pulsar por la prueba (tiempo del tapper de
+`android-native-cycles.mjs`), no por la app; para Codex. Rama `claude/wip-r67-startup` (R-67) sigue local sin subir.
