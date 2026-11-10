@@ -7,8 +7,10 @@ export const SPLASH_MS = 1500;
  * (the bundle says 0.9.9: Apple allows three numbers; the fourth is ours). */
 export const APP_VERSION = '0.9.9.2 (44)';
 
-/** Launch mark, like a studio card: the full CocoWash logo — Coqui washing Memo
- * with «CocoWash» to the right — centred, and the maker's mark (Zángano's
+/** Launch mark, like a studio card: the CocoWash lettering centred (the hero
+ * «Coqui washing Memo» was retired on 2026-11-10; slot «splash-hero» waits for the
+ * new Coqui art: add it as public/assets/characters/splash-hero.webp and render it
+ * before the lettering again, see docs/ai-handoff/PENDING_COQUI_ART.md), and the maker's mark (Zángano's
  * isotype) near the bottom. Shown briefly at every launch over the same cream as
  * the native launch screen, so nothing flashes. Purely decorative: it never
  * takes touches and VoiceOver skips it; the app keeps loading underneath.
@@ -28,7 +30,6 @@ export function Splash({ done }: { done: () => void }) {
   return <div className="splash" aria-hidden="true">
     <motion.div className="splash-lockup" initial={reduced ? { opacity: 0 } : { opacity: 0, scale: .94, y: 8 }}
       animate={leaving ? { opacity: 0 } : { opacity: 1, scale: 1, y: 0 }} transition={{ duration: leaving ? .24 : reduced ? .2 : .55, ease }}>
-      <img className="splash-hero" src="/assets/characters/coqui-memo.webp" alt="" draggable={false}/>
       <img className="splash-logo" src="/assets/brand/cocowash-logo.svg" alt="" draggable={false}/>
     </motion.div>
     <motion.div className="splash-maker" initial={{ opacity: 0 }} animate={{ opacity: leaving ? 0 : 1 }} transition={{ delay: leaving || reduced ? 0 : .3, duration: leaving ? .24 : .4, ease }}>

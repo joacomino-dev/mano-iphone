@@ -106,7 +106,7 @@ const table: Record<string, string> = {
   'Restablecer': 'Reset',
   'Filtros generales': 'General filters',
   '{n} en la pila': '{n} in the pile',
-  'Memo revisa tu fototeca en el iPhone: {done} de {total}. Irán apareciendo más.': 'Memo is going through your library on your iPhone: {done} of {total}. More will show up.',
+  'Revisando tu fototeca en el iPhone: {done} de {total}. Irán apareciendo más.': 'Going through your library on your iPhone: {done} of {total}. More will show up.',
   'Contenido': 'Content',
   'Elige una fecha inicial y una final válidas.': 'Pick a valid start and end date.',
   'Orden': 'Order',
@@ -331,7 +331,7 @@ const table: Record<string, string> = {
   'Privacidad de anuncios': 'Ad privacy',
   // Introduction
   'Lo que importa, se queda.': 'What matters, stays.',
-  'Coqui y Memo te ayudan a ordenar tu carrete con decisiones rápidas. Tú eliges qué se queda.': 'Coqui and Memo help you tidy your camera roll with quick decisions. You choose what stays.',
+  'Coqui te ayuda a ordenar tu carrete con decisiones rápidas. Tú eliges qué se queda.': 'Coqui helps you tidy your camera roll with quick decisions. You choose what stays.',
   'Desliza y sella.': 'Swipe and stamp.',
   'Al soltar, el sello confirma tu decisión.': 'When you let go, the stamp confirms your decision.',
   'Toca y haz zoom.': 'Tap and zoom.',

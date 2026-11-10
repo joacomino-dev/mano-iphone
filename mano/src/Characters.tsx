@@ -1,20 +1,32 @@
 import { motion, useReducedMotion } from 'motion/react';
 
-/** Coqui (the coconut, sunglasses) and Memo (the brain) are the app's two
- * characters. Every pose is cut, unchanged, from the user's model sheets in
+/** Coqui (the coconut, sunglasses) is the app's character (Memo, the brain, was
+ * retired from every active surface on 2026-11-10; his art is kept in
+ * brand/retired/memo/). Every pose is cut, unchanged, from the user's model sheets in
  * `brand/characters/` (transparent WebP in `public/assets/characters/`), so
  * their drawing is never re-interpreted in code; only placement and motion are.
  * Images are decorative: the text next to them carries the meaning.
  * Where: tour (hero, privacy), access/preparing/error/end-of-round screens,
  * empty pile, and Coqui's face in every loader. The app icon is the hero. */
 export const POSES = {
-  'coqui-memo': [795, 1017],   // Coqui washing Memo (hero, app icon)
   'coqui-wave': [418, 461], 'coqui-photos': [321, 459], 'coqui-point': [453, 452],
   'coqui-cheer': [445, 470], 'coqui-think': [307, 466], 'coqui-shrug': [474, 450],
-  'memo-cards': [332, 402], 'memo-dance': [438, 396], 'memo-calm': [331, 339], 'memo-wonder': [400, 395],
+} as const;
+/** Slots waiting for new Coqui illustrations (Memo retired, 2026-11-10). Until a
+ * slot's file exists it shows `stand`, an existing correct Coqui pose, so no
+ * screen is incomplete. To integrate: cut the art to
+ * public/assets/characters/<slot>.webp, add `'<slot>': [width, height]` to POSES
+ * and delete the slot here. Inventory: docs/ai-handoff/PENDING_COQUI_ART.md. */
+export const PENDING_ART = {
+  'coqui-hero': { stand: 'coqui-photos', where: 'Tour card 1 (who): replaces «Coqui washing Memo»' },
+  'coqui-calm': { stand: 'coqui-think', where: 'Tour card 4 (privacy), end of round with nothing deleted and empty pile after deciding: Coqui meditating' },
+  'coqui-review': { stand: 'coqui-photos', where: '«Una última mirada» quiet screen behind the review sheet' },
+  'coqui-wonder': { stand: 'coqui-shrug', where: 'Empty pile with nothing to show (was «Memo wondering»)' },
 } as const;
 export type Pose = keyof typeof POSES;
-export const poseSrc = (pose: Pose) => `/assets/characters/${pose}.webp`;
+export type ArtSlot = keyof typeof PENDING_ART;
+const resolve = (pose: Pose | ArtSlot): Pose => pose in PENDING_ART ? PENDING_ART[pose as ArtSlot].stand : pose as Pose;
+export const poseSrc = (pose: Pose | ArtSlot) => `/assets/characters/${resolve(pose)}.webp`;
 
 /** How a character moves while on screen: a few cycles, then rest (calmer, and
  * the screen settles). All stop at once with Reduce Motion. */
@@ -26,8 +38,9 @@ const loops: Record<Exclude<Motion, 'still'>, object> = {
 };
 
 const CYCLES = 3;
-export function Character({ pose, height, className = '', motion: kind = 'idle', delay = 0 }: { pose: Pose; height: number; className?: string; motion?: Motion; delay?: number }) {
+export function Character({ pose: wanted, height, className = '', motion: kind = 'idle', delay = 0 }: { pose: Pose | ArtSlot; height: number; className?: string; motion?: Motion; delay?: number }) {
   const reduced = useReducedMotion();
+  const pose = resolve(wanted);
   const [w, h] = POSES[pose];
   const still = reduced || kind === 'still';
   return <motion.img className={`character ${className}`} src={poseSrc(pose)} alt="" aria-hidden="true" draggable={false}

@@ -32,12 +32,12 @@ function Ghost() {
   </div>;
 }
 
-/** Card 1 — who: Coqui washing Memo, beside the keepsakes they look after. */
+/** Card 1 — who: Coqui beside the keepsakes he looks after (slot «coqui-hero»). */
 function MeetDemo({ still }: { still: boolean }) {
   return <div className="ob-demo ob-meet" aria-hidden="true">
     {FAN.map((src, i) => <motion.span key={src} className={`ob-polaroid paper is-${i}`} initial={still ? false : { y: 24, opacity: 0, rotate: 0 }}
       animate={{ y: 0, opacity: 1, rotate: (i - 1) * 10 }} transition={{ type: 'spring', stiffness: 260, damping: 24, delay: still ? 0 : .08 * i }}><img src={src} alt="" draggable={false}/></motion.span>)}
-    <Character pose="coqui-memo" height={190} className="ob-hero" delay={.2}/>
+    <Character pose="coqui-hero" height={190} className="ob-hero" delay={.2}/>
   </div>;
 }
 
@@ -122,10 +122,10 @@ function PhotoDemo({ step, still, waiting, phase, gesture, turn }: { step: 1 | 2
   </div>;
 }
 
-/** Card 4 — privacy before the system prompt: Memo, calm; everything stays here. */
+/** Card 4 — privacy before the system prompt: Coqui meditating (slot «coqui-calm»); everything stays here. */
 function PrivacyDemo({ still }: { still: boolean }) {
   return <div className="ob-demo ob-privacy" aria-hidden="true">
-    <Character pose="memo-calm" height={150} motion="sway"/>
+    <Character pose="coqui-calm" height={150} motion="sway"/>
     <motion.span className="ob-lock" initial={still ? false : { scale: .4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 420, damping: 22, delay: .35 }}><LockSimpleIcon size={18} weight="fill"/></motion.span>
   </div>;
 }
@@ -135,7 +135,7 @@ function Row({ art, title, children, on }: { art: ReactNode; title: ReactNode; c
 }
 
 const cards = () => [
-  { key: 'meet', title: t('Lo que importa, se queda.'), text: t('Coqui y Memo te ayudan a ordenar tu carrete con decisiones rápidas. Tú eliges qué se queda.') },
+  { key: 'meet', title: t('Lo que importa, se queda.'), text: t('Coqui te ayuda a ordenar tu carrete con decisiones rápidas. Tú eliges qué se queda.') },
   { key: 'how', title: t('Desliza y sella.'), text: t('Al soltar, el sello confirma tu decisión.') },
   { key: 'group', title: t('Toca y haz zoom.'), text: '' },
   { key: 'privacy', title: t('Tus fotos no salen de tu iPhone.'), text: t('CocoWash necesita acceso a Fotos para mostrarte tu carrete. No sube ni comparte nada, y solo se borra lo que confirmes en Fotos.') },

@@ -30,7 +30,7 @@ export function PreparingScreen({ progress, cancel }: { progress?: number; cance
   const [slow, setSlow] = useState(false);
   useEffect(() => { const t = setTimeout(() => setSlow(true), 7000); return () => clearTimeout(t); }, []);
   return <main className="status-screen is-quiet" aria-busy="true">
-    <div className="character-pair"><Character pose="coqui-photos" height={140}/><Character pose="memo-cards" height={112} delay={.15}/></div>
+    <div className="character-pair"><Character pose="coqui-photos" height={140}/></div>
     <CocoLoader size={44} progress={progress} label={t('Preparando tus fotos')}/>
     <p role="status" className="status-line">{t('Coqui está preparando tus fotos…')}</p>
     {slow && <motion.p className="status-hint" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>{t('Si están en iCloud puede tardar un poco más.')}</motion.p>}
@@ -90,12 +90,12 @@ export function SessionDone({ stats, pending, pendingBytes, pendingPartial, agai
   // 0.9.9.1 (40): the amount is the headline — the number large, its unit small.
   const amount = splitAmount(freedLabel ? freedLabel : tn('files', stats.freedPhotos + stats.freedVideos));
   // 9.8.6: after «Eliminar» the screen never scrolls and reads top to bottom —
-  // Coqui and Memo celebrate, the stamp says it, the amount leads, then the one
+  // Coqui celebrates, the stamp says it, the amount leads, then the one
   // step left (Fotos empties «Eliminado recientemente»), then the two ways on.
   return <main className={`status-screen session-done ${compact ? 'has-letter' : ''} ${freed ? 'is-freed' : ''}`}><div className="done-body">
     <div className="done-hero">
-    {total || freed ? <div className="character-pair"><Character pose="coqui-cheer" height={compact ? 96 : 140} motion="hop"/><Character pose="memo-dance" height={compact ? 76 : 110} motion="hop" delay={.2}/></div>
-      : <Character pose="memo-calm" height={compact ? 90 : 120} className="status-character" motion="sway"/>}
+    {total || freed ? <div className="character-pair"><Character pose="coqui-cheer" height={compact ? 96 : 140} motion="hop"/></div>
+      : <Character pose="coqui-calm" height={compact ? 90 : 120} className="status-character" motion="sway"/>}
     <motion.div className="done-stamp" initial={reduced ? false : { scale: 1.6, opacity: 0, rotate: -14 }} animate={{ scale: 1, opacity: 1, rotate: -6 }} transition={{ type: 'spring', stiffness: 380, damping: 18, delay: .05 }} aria-hidden="true">{freed ? t('Eliminado') : t('Guardado')}</motion.div>
     </div>
     {freed ? <motion.section {...rise(reduced, .12)} className="done-freed" aria-label={t('Espacio liberado')}>

@@ -841,3 +841,17 @@ El usuario seguía viendo pausa + play al silenciar. Causa: `sound` era dependen
 `video.muted` dentro del toque (como el toggle VHS) y un efecto aparte sincroniza `muted`; la reproducción lee el
 valor actual por referencia. `tests/mute-flow.mjs`: 0 pausas y 0 `play()` en tres cambios. Live 5, anclada 5,
 Apple 19, 138 Node PASS.
+
+### CW-CL-069 — Retirada de Memo sin rediseño (rama `claude/retire-memo`)
+Fecha: 2026-11-10, America/Bogota
+Agente: Claude
+Estado: completada local en rama aislada; sin push ni publicación; rediseño no iniciado.
+Base Git: `main` `ebf40e5` → `claude/retire-memo`. Trabajo R-67 previo aparcado en la rama local
+`claude/wip-r67-startup` (`ccf393e`, sin subir) por petición del usuario.
+Cambios: Memo sale de recorrido, splash, preparando, «Una última mirada», resumen final, pila vacía y sellos
+«Favorita»/«Más tarde»; textos en 7 idiomas sin Memo. Recursos movidos a `mano/brand/retired/memo/`.
+Espacios `PENDING_ART` en `Characters.tsx` (coqui-hero, coqui-calm, coqui-review, coqui-wonder), `splash-hero`
+y `ART` en `Stamp.tsx`. Inventario y rutas: [PENDING_COQUI_ART](../ai-handoff/PENDING_COQUI_ART.md).
+Validaciones: 138 Node, tsc, runtime 28, Release 9, builds web y native-web; navegador 66 casos en 9 suites
++ 8 runtime; capturas de las 6 pantallas afectadas en `work/memo-retire/` (local).
+Impacto para Codex: no reintroducir rutas de Memo; la tienda (metadatos/capturas) aún menciona a Memo.

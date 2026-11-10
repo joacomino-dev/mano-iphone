@@ -4,7 +4,7 @@ import { t } from './i18n';
 /** CocoWash decision bar: Eliminar · Favorita · Conservar.
  *
  * Three independent buttons drawn as one set, in the cartoon language of Coqui
- * and Memo: solid colour, a cream band, a thick ink contour and an ink base
+ * (Memo, retired 2026-11-10, shared it): solid colour, a cream band, a thick ink contour and an ink base
  * under each piece (the press sinks the face onto it). Everything is vector,
  * computed for the real width: the side buttons are hollowed by the exact
  * outward offset of the heart's silhouette (not a circle), so their concave

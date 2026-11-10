@@ -174,14 +174,14 @@ export const ANDROID_TEXT: Record<string, Text> = {
     es: 'Pantalla completa\nsolo en el teléfono', en: 'Full screen\non the phone only', fr: 'Plein écran\nsur le téléphone seulement',
     de: 'Vollbild\nnur auf dem Handy', it: 'Schermo intero\nsolo sul telefono', ar: 'ملء الشاشة\nعلى الهاتف فقط', ja: '全画面表示は\nスマホのみ',
   },
-  'Memo revisa tu fototeca en el iPhone: {done} de {total}. Irán apareciendo más.': {
-    es: 'Memo revisa tu galería en el teléfono: {done} de {total}. Irán apareciendo más.',
-    en: 'Memo is going through your gallery on your phone: {done} of {total}. More will show up.',
-    fr: 'Memo parcourt ta galerie sur ton téléphone : {done} sur {total}. D’autres vont apparaître.',
-    de: 'Memo geht deine Galerie auf dem Handy durch: {done} von {total}. Es kommen noch mehr.',
-    it: 'Memo sta esaminando la galleria sul telefono: {done} di {total}. Ne arriveranno altre.',
-    ar: 'يراجع Memo معرضك على الهاتف: {done} من {total}. سيظهر المزيد.',
-    ja: 'Memo がスマホのギャラリーを確認中：{total} 件中 {done} 件。まだ増えます。',
+  'Revisando tu fototeca en el iPhone: {done} de {total}. Irán apareciendo más.': {
+    es: 'Revisando tu galería en el teléfono: {done} de {total}. Irán apareciendo más.',
+    en: 'Going through your gallery on your phone: {done} of {total}. More will show up.',
+    fr: 'Analyse de ta galerie sur ton téléphone : {done} sur {total}. D’autres vont apparaître.',
+    de: 'Deine Galerie auf dem Handy wird durchgesehen: {done} von {total}. Es kommen noch mehr.',
+    it: 'Sto esaminando la galleria sul telefono: {done} di {total}. Ne arriveranno altre.',
+    ar: 'جارٍ مراجعة معرضك على الهاتف: {done} من {total}. سيظهر المزيد.',
+    ja: 'スマホのギャラリーを確認中：{total} 件中 {done} 件。まだ増えます。',
   },
   'Se mide lo que está en tu iPhone; lo que solo está en iCloud va al final.': {
     es: 'Se mide el tamaño de cada archivo en tu teléfono.', en: 'Each file’s size is measured on your phone.',
