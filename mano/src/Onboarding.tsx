@@ -32,7 +32,7 @@ function Ghost() {
   </div>;
 }
 
-/** Card 1 — who: Coqui beside the keepsakes he looks after (slot «coqui-hero»). */
+/** Card 1 — who: the main Coqui beside the keepsakes he looks after. */
 function MeetDemo({ still }: { still: boolean }) {
   return <div className="ob-demo ob-meet" aria-hidden="true">
     {FAN.map((src, i) => <motion.span key={src} className={`ob-polaroid paper is-${i}`} initial={still ? false : { y: 24, opacity: 0, rotate: 0 }}
@@ -122,7 +122,7 @@ function PhotoDemo({ step, still, waiting, phase, gesture, turn }: { step: 1 | 2
   </div>;
 }
 
-/** Card 4 — privacy before the system prompt: Coqui meditating (slot «coqui-calm»); everything stays here. */
+/** Card 4 — privacy before the system prompt: Coqui relaxing (coqui-calm); everything stays here. */
 function PrivacyDemo({ still }: { still: boolean }) {
   return <div className="ob-demo ob-privacy" aria-hidden="true">
     <Character pose="coqui-calm" height={150} motion="sway"/>

@@ -48,15 +48,13 @@ export function DecisionIcon({ kind, size = 22, className = '' }: { kind: StampK
  * background). `word`: the stamp with its word to the right (on the cards, over
  * a cream plate so it reads on any photo); without it, the icon alone (tour).
  * A kept item's seal level (I–VIII) stays the drawn seal. */
-/** Stamp art per decision. Favorita and Más tarde showed Memo, retired on
- * 2026-11-10: until their new Coqui illustrations arrive they use a temporary
- * seal with the app's own decision mark (pending-*.svg). To integrate: add the
- * cut art as public/assets/stamps/{favorite,later}.webp (source in
- * brand/stamps/{kind}-source.webp, cut by cut-stamps.py) and set it here.
+/** Stamp art per decision. 2026-11-10: Memo retired; Eliminar, Favorita and Más
+ * tarde are the user's new Coqui seals (sources brand/stamps/*-source.png, cropped
+ * to their drawing and exported as WebP, never redrawn). Conservar is unchanged.
  * Inventory: docs/ai-handoff/PENDING_COQUI_ART.md. */
 const ART: Record<StampKind, string> = {
   keep: '/assets/stamps/keep.webp', discard: '/assets/stamps/discard.webp',
-  favorite: '/assets/stamps/pending-favorite.svg', later: '/assets/stamps/pending-later.svg',
+  favorite: '/assets/stamps/favorite.webp', later: '/assets/stamps/later.webp',
 };
 const WORDS: Record<StampKind, () => string> = { keep: () => t('Conservar'), discard: () => t('Eliminar'), favorite: () => t('Favorita'), later: () => t('Más tarde') };
 export function Stamp({ kind, level, word = false, className = '' }: { kind: StampKind; level?: number; word?: boolean; className?: string }) {

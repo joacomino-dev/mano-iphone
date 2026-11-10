@@ -25,27 +25,33 @@ decisions. You choose what stays.») y «Memo revisa tu fototeca…» → «Revi
 **Sin Memo y sin cambios:** sellos «Conservar» (Coqui) y «Eliminar» (basurero), icono de la app y lettering
 CocoWash, isotipo Zángano, poses de Coqui existentes, lógica de niveles (sellos I–VIII).
 
-## 2. Espacios preparados y archivo que debe integrarse en cada uno
+## 2. Arte nuevo integrado (usuario, 2026-11-10) y espacios que siguen pendientes
 
-Mecanismo: `mano/src/Characters.tsx` → `PENDING_ART`. Cada espacio muestra una pose de Coqui ya
-existente (temporal) hasta que llegue su archivo. Para integrar: recortar sin redibujar la ilustración
-aprobada a la ruta indicada, añadir `'<espacio>': [ancho, alto]` en `POSES` y borrar la entrada de `PENDING_ART`.
+Integrado (recortado al dibujo y exportado a WebP con Edge/canvas, sin redibujar; originales en `brand/`):
 
-| Espacio | Pantalla | Archivo a integrar | Temporal actual |
+| Ilustración del usuario | Uso | Archivo en la app | Fuente conservada |
 |---|---|---|---|
-| `coqui-hero` | Recorrido tarjeta 1 («Lo que importa, se queda.») | `mano/public/assets/characters/coqui-hero.webp` | `coqui-photos` |
-| `coqui-calm` | **Privacidad (tarjeta 4): Coqui meditando**; fin de ronda sin borrar; pila vacía tras decidir | `mano/public/assets/characters/coqui-calm.webp` | `coqui-think` |
+| Coqui tirando una foto al basurero | Sello «Eliminar» (recorrido, arrastre, estampado) | `mano/public/assets/stamps/discard.webp` (479×480) | `mano/brand/stamps/discard-source.png` |
+| Coqui abrazando un corazón | Sello «Favorita» | `mano/public/assets/stamps/favorite.webp` (477×480) | `mano/brand/stamps/favorite-source.png` |
+| Coqui apoyado en un reloj | Sello «Más tarde» | `mano/public/assets/stamps/later.webp` (480×479) | `mano/brand/stamps/later-source.png` |
+| Coqui enjabonándose (principal) | Splash de arranque junto al lettering y héroe de la tarjeta 1 | `mano/public/assets/characters/coqui-hero.webp` (631×900) | `mano/brand/characters/coqui-hero-source.png` |
+| Coqui en la piscina de burbujas | Privacidad (tarjeta 4); también fin de ronda sin borrar y pila vacía tras decidir (`coqui-calm`) | `mano/public/assets/characters/coqui-calm.webp` (720×611) | `mano/brand/characters/coqui-calm-source.png` |
+
+Nota: el usuario describió la quinta como «Coqui con caja fuerte»; el archivo recibido es Coqui en una
+piscina de burbujas. Se integró ese archivo; si debía ser otro, se sustituye en la misma ruta.
+El sello «Eliminar» anterior (basurero sin personaje) se conserva en `mano/brand/retired/discard-trash/`.
+El candado de la tarjeta de privacidad (ya existente) queda sobre el borde de la piscina; ajustable en
+`.ob-privacy .ob-lock` (`mano/src/prototype.css`) si el usuario lo prefiere en otro sitio.
+
+Siguen pendientes (`PENDING_ART` en `mano/src/Characters.tsx`; muestran una pose de Coqui existente):
+
+| Espacio | Pantalla | Archivo a integrar | Temporal |
+|---|---|---|---|
 | `coqui-review` | Fondo tranquilo de «Una última mirada» | `mano/public/assets/characters/coqui-review.webp` | `coqui-photos` |
 | `coqui-wonder` | Pila vacía sin nada que mostrar | `mano/public/assets/characters/coqui-wonder.webp` | `coqui-shrug` |
-| `splash-hero` | Splash de arranque (antes «Coqui lavando a Memo» junto al lettering) | `mano/public/assets/characters/splash-hero.webp` y volver a renderizarlo antes del lettering en `mano/src/Splash.tsx` | solo lettering |
-| Sello `favorite` | «Favorita» en recorrido, arrastre y estampado (`mano/src/Stamp.tsx` → `ART`) | `mano/public/assets/stamps/favorite.webp` (fuente `mano/brand/stamps/favorite-source.webp`, recortar con `cut-stamps.py`) | `pending-favorite.svg` |
-| Sello `later` | «Más tarde» (ídem) | `mano/public/assets/stamps/later.webp` (fuente `mano/brand/stamps/later-source.webp`) | `pending-later.svg` |
 
-Los sellos temporales (`mano/public/assets/stamps/pending-{favorite,later}.svg`) reutilizan la marca de
-decisión que la app ya usa en botones (`DecisionIcon`) sobre un sello crema con contorno de tinta; no son
-arte nuevo ni definitivo y se borran al integrar. Las pantallas «Preparando tus fotos» y el resumen tras
-«Eliminar» quedan con Coqui solo (la pareja se reduce a él); si el arte nuevo vuelve a ser una pareja, se
-añade en `mano/src/Screens.tsx` (`character-pair`).
+Para integrar: recortar a esa ruta, añadir `'<espacio>': [ancho, alto]` en `POSES` y borrar la entrada de
+`PENDING_ART`. Las pantallas «Preparando tus fotos» y el resumen tras «Eliminar» muestran a Coqui solo.
 
 ## 3. Fuera de la app (no modificado en esta rama, pendiente de decisión)
 

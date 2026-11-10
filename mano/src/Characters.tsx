@@ -11,6 +11,8 @@ import { motion, useReducedMotion } from 'motion/react';
 export const POSES = {
   'coqui-wave': [418, 461], 'coqui-photos': [321, 459], 'coqui-point': [453, 452],
   'coqui-cheer': [445, 470], 'coqui-think': [307, 466], 'coqui-shrug': [474, 450],
+  // User's art, 2026-11-10: main Coqui (launch mark, tour card 1) and privacy.
+  'coqui-hero': [631, 900], 'coqui-calm': [720, 611],
 } as const;
 /** Slots waiting for new Coqui illustrations (Memo retired, 2026-11-10). Until a
  * slot's file exists it shows `stand`, an existing correct Coqui pose, so no
@@ -18,8 +20,6 @@ export const POSES = {
  * public/assets/characters/<slot>.webp, add `'<slot>': [width, height]` to POSES
  * and delete the slot here. Inventory: docs/ai-handoff/PENDING_COQUI_ART.md. */
 export const PENDING_ART = {
-  'coqui-hero': { stand: 'coqui-photos', where: 'Tour card 1 (who): replaces «Coqui washing Memo»' },
-  'coqui-calm': { stand: 'coqui-think', where: 'Tour card 4 (privacy), end of round with nothing deleted and empty pile after deciding: Coqui meditating' },
   'coqui-review': { stand: 'coqui-photos', where: '«Una última mirada» quiet screen behind the review sheet' },
   'coqui-wonder': { stand: 'coqui-shrug', where: 'Empty pile with nothing to show (was «Memo wondering»)' },
 } as const;

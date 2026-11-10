@@ -855,3 +855,13 @@ y `ART` en `Stamp.tsx`. Inventario y rutas: [PENDING_COQUI_ART](../ai-handoff/PE
 Validaciones: 138 Node, tsc, runtime 28, Release 9, builds web y native-web; navegador 66 casos en 9 suites
 + 8 runtime; capturas de las 6 pantallas afectadas en `work/memo-retire/` (local).
 Impacto para Codex: no reintroducir rutas de Memo; la tienda (metadatos/capturas) aún menciona a Memo.
+
+### CW-CL-070 — Arte nuevo de Coqui integrado (rama `claude/retire-memo`)
+Fecha: 2026-11-10, America/Bogota
+Agente: Claude
+Estado: completada local; sin push ni publicación.
+Ilustraciones del usuario integradas sin redibujar (recorte al dibujo, WebP): sellos Eliminar, Favorita y Más tarde;
+Coqui principal en splash y tarjeta 1; Coqui en la piscina en privacidad (`coqui-calm`). Fuentes PNG en `mano/brand/`;
+sello Eliminar anterior en `mano/brand/retired/discard-trash/`. Sellos temporales retirados. Pendientes: `coqui-review`,
+`coqui-wonder`. Validaciones: 138 Node, tsc, runtime 28, release 9, builds, 66 navegador + 8 runtime; capturas en
+`work/coqui-art/` (local). Detalle: [PENDING_COQUI_ART](../ai-handoff/PENDING_COQUI_ART.md).
