@@ -884,3 +884,13 @@ CI: tienda iOS 42852601989 PASS; desarrollo iOS 42852601994 PASS (arranque); IPA
 arte nuevo dentro y ningún recurso de Memo. Android 42852601987 FAIL en la ronda 2: el diálogo del sistema
 «Allow CocoWash to move this photo to trash?» quedó sin pulsar por la prueba (tiempo del tapper de
 `android-native-cycles.mjs`), no por la app; para Codex. Rama `claude/wip-r67-startup` (R-67) sigue local sin subir.
+
+### CW-CL-073 — Build 44 aceptado; reparto Codex/Gemini
+Fecha: 2026-11-10, America/Bogota
+Agente: Claude
+El usuario probó el build 44 (0.9.9, `3106075`) en su iPhone: todo correcto salvo una mejora, R-68 (el ojo VHS
+desaparece de las cartas de vídeo con «Letras VHS» apagado en Ajustes; debe verse siempre y alternar). Causa no
+localizada leyendo el código (`InlineVideo.tsx:207` renderiza el botón siempre): Codex debe reproducirla primero.
+Instrucciones completas para Codex (A0 R-68, R-67/CPU, R-07b gate, E2E Android, R-06, APK del probador) y Gemini
+(textos sin Memo, publicar R-17 autorizado, ficha R-18, capturas R-21, guía del probador Android) en
+`docs/ai-handoff/PROMPT_CODEX_GEMINI_2026-11-10.md`. Solo documentación; sin cambios de app ni CI.

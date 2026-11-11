@@ -140,6 +140,7 @@ en curso. No duplicarlo ni repetir builds de app sin cambios.
 | R-07b | Live anclada: bucle y pellizco del gate nativo | CX | **PASS en iPhone (usuario); FAIL de gate, corrección de test pendiente** | 2794e4b pasa bucle y falla solo destino por label; CW-CX-062 elige padre del timeline. Conserva píxeles cambiados y controles sin escalar; no cambia reproducción |
 | R-47b | Android: Atrás sale de fullscreen y luego cierra visor | CX | **PASS emulador API35; físico pendiente** | fa318ba / 42634538249 y2794e4b/42669935821: mismo reproductor/fuente/posición/sonido/galería, E2E17 + diez rondas + force-stop ×5 y presupuestos PASS |
 | R-67 | **P1 · Arranque iOS intermitente sin contenido accesible tras relanzar** | CX | **FAIL, causa pendiente** | fa318ba / 42634699746 testV línea504: 120s sin Eliminar, WKWebView vacío; bridge listo y documento principal comprometido. La prueba no llegó al borrado. No reproducido en2794e4b, causa abierta. No añadir retry |
+| R-68 | Ojo VHS: desaparece de las cartas de vídeo si «Letras VHS» está apagado en Ajustes; debe verse siempre y alternar (usuario, build 44, 2026-11-10) | CX | **Abierto** | Instrucción A0 en [PROMPT_CODEX_GEMINI_2026-11-10](ai-handoff/PROMPT_CODEX_GEMINI_2026-11-10.md); resto del build 44 aceptado por el usuario en iPhone |
 
 ## A · Código y pruebas iOS (antes de firmar)
 
@@ -260,6 +261,7 @@ textos con hablantes nativos, 1.0.1 para lo que salga.
 
 Una línea por intervención: fecha · agente · entrada · puntos cerrados/abiertos.
 
+- 2026-11-10 · Claude · CW-CL-073 · Usuario acepta el build 44 en iPhone; abre R-68 (ojo VHS). Reparto Codex (A0 R-68, R-67/CPU, R-07b gate, E2E Android, R-06, APK probador) y Gemini (textos sin Memo, R-17 publicar, ficha R-18, R-21 capturas, guía probador Android) en `docs/ai-handoff/PROMPT_CODEX_GEMINI_2026-11-10.md`.
 - 2026-11-09 · Codex · CW-CX-057 · IPA 6386f55 descargada y verificada para iLoader; tienda y desarrollo iOS PASS. Android mantiene FAIL fullscreen, gate completo iOS en curso. Roadmap actualizado sin cambios de app ni nueva CI.
 
 - 2026-11-09 · Codex · CW-CX-055/056 · 571b1e5 y 6386f55 enviados tras revisión integrada. R-07b cambia solo el destino del pellizco; R-47b cubre la entrada de Back antes de WebView. Tienda iOS PASS; Android y desarrollo en curso, gate completo en cola. Se conserva sonido, Inspector y R-64.
