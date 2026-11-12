@@ -1,0 +1,41 @@
+{
+  "date": "2026-11-11",
+  "source": "db33b1a",
+  "commits": {
+    "android": "24966e9",
+    "storage": "ce49c4b",
+    "bundle": "437167a",
+    "vhsProbe": "db33b1a"
+  },
+  "local": {
+    "node": 145,
+    "androidDialog": 6,
+    "runtimeProtected": 28,
+    "nativeInfra": 25,
+    "startupFlow": 3,
+    "durableSessionFlow": 8,
+    "vhsEyeFlow": 2,
+    "muteFlow": 1,
+    "buildWeb": "PASS",
+    "buildNativeWeb": "PASS"
+  },
+  "bundle": {
+    "beforeKB": 1008.28,
+    "initialAfterKB": 945.95,
+    "reductionPercent": 6.18,
+    "warningRemains": true
+  },
+  "native": {
+    "full": 43126451617,
+    "live": 43126455524,
+    "android": 43126422530,
+    "status": "IN_PROGRESS"
+  },
+  "limits": [
+    "R68 not reproduced in browser: no speculative application fix; new XCTest probe pending",
+    "R67 native cause and CPU/RSS acceptance pending real gate",
+    "Android requires three consecutive green runs before APK delivery",
+    "A2 prior afbd2f9 XCTest passed: retained actual test, workflow failed performance budget",
+    "Swift cannot be verified on Windows"
+  ]
+}

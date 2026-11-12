@@ -137,10 +137,10 @@ en curso. No duplicarlo ni repetir builds de app sin cambios.
 | R-64 | **Sin avisos de almacenamiento** («No se pudo guardar…», «operación interrumpida»): recuperación silenciosa (usuario, 2026-11-08) | CL | Corregido local; nativo pendiente | CW-CL-064; `durableSession.ts`, `native.tsx`, `ManoApp.tsx`; persistencia 8+7 PASS en navegador |
 | R-65 | Vista anclada: solo «Cerrar» y deslizar para cerrar (usuario, 2026-11-08) | CL | Corregido local | `Inspector.tsx`; `tests/anchored-flow.mjs` 3/3 |
 | R-66 | Raya/rectángulo claro abajo al anclar un vídeo (usuario, 2026-11-08) | CL | **PASS (usuario en iPhone)** | 1) barra del vídeo sin `backdrop-filter`; 2) causa real según la captura del usuario: `frame.focus()` sin `preventScroll` desplazaba el WebView y asomaba el fondo crema de la página bajo la vista anclada → `focus({preventScroll:true})` y desplazamiento del documento fijo en 0 mientras está anclada (`Inspector.tsx`) |
-| R-07b | Live anclada: bucle y pellizco del gate nativo | CX | **PASS en iPhone (usuario); FAIL de gate, corrección de test pendiente** | 2794e4b pasa bucle y falla solo destino por label; CW-CX-062 elige padre del timeline. Conserva píxeles cambiados y controles sin escalar; no cambia reproducción |
+| R-07b | Live anclada: bucle y pellizco del gate nativo | CX | **PASS XCTest afbd2f9; nueva ejecución en curso** | CW-CX-064: log42682535759 confirma COCOWASH_UI_LIVE_ANCHOR_TIMELINE_ZOOM_OK y0fallos XCTest; workflow falla presupuesto posterior. Dedicado43126455524 en db33b1a, sin cambiar app ni test Live.  2794e4b pasa bucle y falla solo destino por label; CW-CX-062 elige padre del timeline. Conserva píxeles cambiados y controles sin escalar; no cambia reproducción |
 | R-47b | Android: Atrás sale de fullscreen y luego cierra visor | CX | **PASS emulador API35; físico pendiente** | fa318ba / 42634538249 y2794e4b/42669935821: mismo reproductor/fuente/posición/sonido/galería, E2E17 + diez rondas + force-stop ×5 y presupuestos PASS |
-| R-67 | **P1 · Arranque iOS intermitente sin contenido accesible tras relanzar** | CX | **FAIL, causa pendiente** | fa318ba / 42634699746 testV línea504: 120s sin Eliminar, WKWebView vacío; bridge listo y documento principal comprometido. La prueba no llegó al borrado. No reproducido en2794e4b, causa abierta. No añadir retry |
-| R-68 | Ojo VHS: desaparece de las cartas de vídeo si «Letras VHS» está apagado en Ajustes; debe verse siempre y alternar (usuario, build 44, 2026-11-10) | CX | **Abierto** | Instrucción A0 en [PROMPT_CODEX_GEMINI_2026-11-10](ai-handoff/PROMPT_CODEX_GEMINI_2026-11-10.md); resto del build 44 aceptado por el usuario en iPhone |
+| R-67 | **P1 · Arranque iOS intermitente sin contenido accesible tras relanzar** | CX | **Corrección candidata; gate nativo en curso** | CW-CX-064/ce49c4b: espera IDB acotada, abort/cierre tardío y mirror con intent conservado; 15 unitarios/startup3/durable8 PASS. Full43126451617 mide CPU/RSS y captura sample sin cambiar presupuestos.  fa318ba / 42634699746 testV línea504: 120s sin Eliminar, WKWebView vacío; bridge listo y documento principal comprometido. La prueba no llegó al borrado. No reproducido en2794e4b, causa abierta. No añadir retry |
+| R-68 | Ojo VHS: desaparece de las cartas de vídeo si «Letras VHS» está apagado en Ajustes; debe verse siempre y alternar (usuario, build 44, 2026-11-10) | CX | **Abierto; no reproducido en navegador** | CW-CX-064/db33b1a: VHS2 y sonido PASS, sin arreglo especulativo; nueva sonda XCTest en full43126451617.  Instrucción A0 en [PROMPT_CODEX_GEMINI_2026-11-10](ai-handoff/PROMPT_CODEX_GEMINI_2026-11-10.md); resto del build 44 aceptado por el usuario en iPhone |
 
 ## A · Código y pruebas iOS (antes de firmar)
 
@@ -151,7 +151,7 @@ en curso. No duplicarlo ni repetir builds de app sin cambios.
 | R-03 | Captura del fallo del smoke en dispositivos de 2 pantallas (`simctl io screenshot` exige `--display`) | CX | **PASS (colector)** | CW-CX-027/030:simctl real displays3/1 exit0 yxcresult42488119404 exporta la captura exacta durante el fallo. No acredita adaptación visual Duo |
 | R-04 | Invalidación de snapshots y cola de favoritas Android | CX | **PASS emulador; físico pendiente** | fa318ba / 42634538249: favoritas/undo/flush nativo y diez rondas. Regresiones web de CW-CX-024 conservadas |
 | R-05 | QA destructiva ypermisos adversos con fixtures | CX | **PASS confirmación/postaudit; pendiente adverso completo** | iOS42514969280:10rondas/10ausentes/unknown0PASS. Cancel/error/favorita externa/revocado/interrupción yR61 pendientes. AndroidE2E nativo enCI, ningún borrado personal. |
-| R-06 | Tamaño del bundle web (> 500 kB, aviso de Vite) | C | Pendiente | Solo con medición en Instruments; no tocar sin evidencia |
+| R-06 | Tamaño del bundle web (> 500 kB, aviso de Vite) | CX | Medido e implementado; aviso residual documentado | CW-CX-064 /437167a: JS inicial1008,28→945,95kB (-6,18%); Ajustes/Introducción/Inspector lazy+idle. Principal719kB conserva runtime/app/locales; ampliar separación sale de A4. protected28 y builds PASS |
 
 ## B · Cuentas, legal y tienda Apple (usuario)
 
@@ -258,6 +258,8 @@ Fallos en el Organizador y en Play Vitals, valoraciones, AdMob (relleno, consent
 textos con hablantes nativos, 1.0.1 para lo que salga.
 
 ## Registro de avance
+
+- 2026-11-11 · Codex · CW-CX-064 · db33b1a enviado: A3 diálogo Android, A1 arranque acotado y sample, A4 -6,18% inicial, A0 pruebas navegador PASS sin reproducción y nueva sonda nativa. Full43126451617/Live43126455524/Android43126422530 en curso; todavía sin tres verdes ni APK nuevo. Evidencia `apple-readiness/evidence/strategic/20261111-block-a-local.json`.
 
 Una línea por intervención: fecha · agente · entrada · puntos cerrados/abiertos.
 

@@ -1,5 +1,24 @@
 # CocoWash — estado vigente
 
+## Codex CW-CX-064 — bloque A integrado, validación nativa (2026-11-11)
+
+Usuario pide ejecutar `PROMPT_CODEX_GEMINI_2026-11-10.md`. Base limpia `51bf762`,
+`main`, checkout canónico `C:/Users/Joaco/Developer/CocoWash-android`.
+Codex reserva A0–A5: controles VHS y regresión, arranque/CPU, XCTest Live,
+diálogo de prueba Android, carga diferida y APK del probador. A0 primero;
+reproducir antes de corregir. Gemini conserva bloque B y sus rutas.
+Push normal y CI gratuita autorizados por el prompt; tiendas, versiones,
+claves, mínimos nativos y protected28 se conservan. OneDrive intacto.
+Código db33b1a enviado; A3=24966e9, A1=ce49c4b, A4=437167a.
+145Node/runtime28/builds/dialog6/startup3/durable8/VHS2/mute/infra25 PASS.
+VHS no reproduce fallo en navegador: sonda XCTest nueva, sin arreglo especulativo.
+Live previo afbd2f9 PASS XCTest; workflow falla CPU/RSS posterior.
+Full43126451617, Live43126455524 y Android43126422530 en curso.
+A3 requiere tres verdes consecutivos; A5 espera APK verificado.
+Bundle inicial -6,18%; aviso residual719kB documentado. Gemini CLI ausente;
+Codex ACP responde pero herramientas Core no disponibles. No cuenta ni secreto nuevo.
+Los estados inferiores son históricos; los runs anteriores ya terminaron.
+
 Actualizado: 2026-11-09, America/Bogota.
 
 ## Codex CW-CX-061 — entrega 0.9.9.2 y cierre nativo en curso
