@@ -139,7 +139,12 @@ export default function LibraryGrid({ assets, state, filter, narrowed, current, 
     edge.current = requestAnimationFrame(step);
   };
   const lastPoint = useRef({ x: 0, y: 0 });
+  // Pinch, as in Photos: fingers together → 5 columns, apart → 3.
+  const fingers = useRef(new Map<number, { x: number; y: number }>()), pinch = useRef<number | null>(null);
+  const spread = () => { const [a, b] = [...fingers.current.values()]; return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 0; };
   const onPointerDown = (e: React.PointerEvent) => {
+    fingers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (fingers.current.size === 2) { const g = gesture.current; if (g) clearTimeout(g.timer); gesture.current = null; pinch.current = spread(); return; }
     const index = indexAt(e.clientX, e.clientY); if (index < 0 || !e.isPrimary) return;
     const id = items[index].id;
     const g = { start: index, x: e.clientX, y: e.clientY, mode: 'wait' as const, adding: !selected.has(id), base: selected, timer: 0, id: e.pointerId };
@@ -151,6 +156,12 @@ export default function LibraryGrid({ assets, state, filter, narrowed, current, 
     gesture.current = g;
   };
   const onPointerMove = (e: React.PointerEvent) => {
+    if (fingers.current.has(e.pointerId)) fingers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch.current !== null && fingers.current.size === 2) {
+      const ratio = spread() / Math.max(1, pinch.current);
+      if ((ratio < .8 && columns === 3) || (ratio > 1.25 && columns === 5)) { pinch.current = null; switchColumns(); }
+      return;
+    }
     const g = gesture.current; if (!g || e.pointerId !== g.id) return;
     lastPoint.current = { x: e.clientX, y: e.clientY };
     const dx = e.clientX - g.x, dy = e.clientY - g.y;
@@ -162,6 +173,7 @@ export default function LibraryGrid({ assets, state, filter, narrowed, current, 
     if (g.mode === 'select') { selectRange(indexAt(e.clientX, e.clientY)); autoScroll(e.clientY); }
   };
   const onPointerUp = (e: React.PointerEvent) => {
+    fingers.current.delete(e.pointerId); if (fingers.current.size < 2) pinch.current = null;
     const g = gesture.current; if (!g || e.pointerId !== g.id) return;
     clearTimeout(g.timer); cancelAnimationFrame(edge.current); gesture.current = null;
     if (g.mode !== 'wait') return;
@@ -169,7 +181,7 @@ export default function LibraryGrid({ assets, state, filter, narrowed, current, 
     if (selecting) { const next = new Set(selected); if (next.has(asset.id)) next.delete(asset.id); else next.add(asset.id); setSelected(next); haptic('selection'); }
     else setPreview(asset);
   };
-  const onPointerCancel = () => { const g = gesture.current; if (g) clearTimeout(g.timer); cancelAnimationFrame(edge.current); gesture.current = null; };
+  const onPointerCancel = (e: React.PointerEvent) => { fingers.current.delete(e.pointerId); pinch.current = null; const g = gesture.current; if (g) clearTimeout(g.timer); cancelAnimationFrame(edge.current); gesture.current = null; };
   // Keyboard and assistive technology: a real click without a pointer gesture.
   const onClick = (e: React.MouseEvent) => {
     if (e.detail !== 0) return;

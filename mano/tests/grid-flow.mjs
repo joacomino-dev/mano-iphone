@@ -23,6 +23,15 @@ try{
  const mounted=await page.locator('.grid-tile').count();
  assert.ok(mounted<150,`only visible rows mount (${mounted} of 3000)`);
  results.push(`opens on the card in hand; ${mounted}/3000 tiles mounted`);
+ // Pinch in → 5 columns, pinch out → 3 (synthetic pointers, as two fingers).
+ const pinch=async(from,to)=>page.evaluate(([from,to])=>{const el=document.querySelector('.grid-scroller'),r=el.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+  const fire=(type,id,dx)=>el.dispatchEvent(new PointerEvent(type,{pointerId:id,isPrimary:id===1,clientX:cx+dx,clientY:cy,bubbles:true,pointerType:'touch'}));
+  fire('pointerdown',1,-from);fire('pointerdown',2,from);for(let k=1;k<=6;k++){const d=from+(to-from)*k/6;fire('pointermove',1,-d);fire('pointermove',2,d);}fire('pointerup',1,-to);fire('pointerup',2,to);},[from,to]);
+ const cols=async()=>page.evaluate(()=>{const t=[...document.querySelectorAll('.grid-tile')];const y=t[0]?.style.transform.split(',')[1];return t.filter(x=>x.style.transform.split(',')[1]===y).length;});
+ await pinch(120,40);await page.waitForTimeout(200);assert.equal(await cols(),5,'pinching in shows 5 columns');
+ await pinch(40,120);await page.waitForTimeout(200);assert.equal(await cols(),3,'pinching out goes back to 3');
+ await page.locator('.grid-tile.is-current').waitFor();
+ results.push('pinch switches 3 ↔ 5 columns and keeps the place');
  // Drag across a row and a half in «Seleccionar».
  await page.getByRole('button',{name:'Seleccionar',exact:true}).click();
  const vis=await visible();const a=await page.locator(`[data-i="${vis[0]}"]`).boundingBox(),z=await page.locator(`[data-i="${vis[4]}"]`).boundingBox();
