@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { CheckIcon, ArrowUUpLeftIcon, CloudIcon, ImageBrokenIcon, SquaresFourIcon, GridNineIcon, FunnelSimpleIcon, FunnelSimpleXIcon, CardsThreeIcon, FolderSimplePlusIcon } from '@phosphor-icons/react';
+import { CheckIcon, ArrowUUpLeftIcon, CloudIcon, ImageBrokenIcon, FunnelSimpleIcon, FunnelSimpleXIcon, CardsThreeIcon, FolderSimplePlusIcon, XIcon, PushPinIcon } from '@phosphor-icons/react';
 import type { Action, Asset, Filter, RecordState } from './domain';
 import { gridMatch } from './domain';
 import { ReviewLoader } from './review';
@@ -14,8 +14,9 @@ import { PileProgress } from './Chrome';
 
 /** «Fototeca» (user, 2026-11-12; docs/ai-handoff/GRID_VIEW_PLAN.md): the whole
  * library in its real order, opened on the card in hand, with each decision's
- * small stamp. Tap opens the anchored view (zoom); «Seleccionar» decides many at
- * once (tap or drag across). Only visible rows mount; thumbnails load a few at a
+ * small stamp. Tapping selects; holding opens one photo large; «Anclar» shows the
+ * selection large to rotate through; the pile's decision bar, shrunk into the
+ * bottom dock, decides the selection. Only visible rows mount; thumbnails load a few at a
  * time and are cancelled as soon as their row scrolls away. With a loaded ad, a
  * letter strip sits after every AD_EVERY rows (50: «cada 5 veces más», user
  * 2026-11-12); only the one on screen hosts it. */
@@ -29,6 +30,14 @@ type Props = {
   close: () => void; decide: (action: Action, ids: string[]) => Promise<boolean>; undo: () => void; notice: (text: string) => void;
   /** Opens the anchored view of one item, growing from its tile. */
   open: (asset: Asset, from: DOMRect) => void;
+  /** Anchors several items to rotate through, growing from the first one's tile. */
+  openSet: (assets: Asset[], from: DOMRect) => void;
+  /** Opens the pile's filter editor (the same filters drive the grid). */
+  editFilters: () => void;
+  /** «Terminar», as in the pile's header. */
+  finish: ReactNode;
+  /** Where the pile's decision bar was, so the dock can grow out of it. */
+  enterFrom?: DOMRect;
   /** The ad letter for the strip on screen; absent when no ad was loaded at opening. */
   ad?: (within: { current: HTMLElement | null }) => ReactNode;
   /** Sends the selection to the album sheet (absent on Android, which has no albums). */
@@ -52,43 +61,65 @@ const GridThumb = memo(function GridThumb({ asset, size }: { asset: Asset; size:
   return <span className={`grid-thumb-wait is-${state}`}>{state === 'cloud' ? <CloudIcon size={18}/> : state === 'error' ? <ImageBrokenIcon size={18}/> : null}</span>;
 });
 
-const Tile = memo(function Tile({ asset, index, x, y, side, size, selecting, selected, current, level, pending, favorite, later }: {
-  asset: Asset; index: number; x: number; y: number; side: number; size: number; selecting: boolean; selected: boolean; current: boolean;
+const Tile = memo(function Tile({ asset, index, x, y, side, size, selected, current, level, pending, favorite, later }: {
+  asset: Asset; index: number; x: number; y: number; side: number; size: number; selected: boolean; current: boolean;
   level: number; pending: boolean; favorite: boolean; later: boolean;
 }) {
   const decision = pending ? t('para eliminar') : favorite ? t('favorita') : level ? t('conservada') : '';
   const label = [asset.kind === 'video' ? t('Vídeo') : t('Foto'), new Date(asset.date).toLocaleDateString(), decision, later ? t('más tarde') : ''].filter(Boolean).join(', ');
   return <button type="button" className={`grid-tile ${selected ? 'is-selected' : ''} ${current ? 'is-current' : ''} ${pending ? 'is-pending' : ''}`}
     data-i={index} style={{ width: side, height: side, transform: `translate(${x}px,${y}px)` }}
-    aria-label={label} aria-pressed={selecting ? selected : undefined} aria-current={current || undefined}>
+    aria-label={label} aria-pressed={selected} aria-current={current || undefined}>
     <GridThumb asset={asset} size={size}/>
     {asset.kind === 'video' && <span className="grid-duration">{clock(asset.duration)}</span>}
     {(pending || favorite || level > 0) && <span className="grid-stamp">{pending ? <Stamp kind="discard"/> : favorite ? <Stamp kind="favorite"/> : <Stamp kind="keep" level={level}/>}</span>}
     {later && <span className="grid-later"><DecisionIcon kind="later" size={14}/></span>}
-    {selecting && <span className="grid-check">{selected && <CheckIcon size={14} weight="bold"/>}</span>}
+    {selected && <span className="grid-check"><CheckIcon size={14} weight="bold"/></span>}
   </button>;
 });
 
-export default function LibraryGrid({ assets, state, filter, narrowed, current, busy, close, decide, undo, notice, open, ad, album, albumDone }: Props) {
-  const scroller = useRef<HTMLDivElement>(null);
+export default function LibraryGrid({ assets, state, filter, narrowed, current, busy, close, decide, undo, notice, open, openSet, editFilters, finish, enterFrom, ad, album, albumDone }: Props) {
+  const scroller = useRef<HTMLDivElement>(null), dock = useRef<HTMLDivElement>(null), bar = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0), [height, setHeight] = useState(0), [offset, setOffset] = useState(0);
   const [columns, setColumns] = useState<3 | 5>(readColumns);
   const [filtered, setFiltered] = useState(narrowed);
-  const [selecting, setSelecting] = useState(false), [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
-  const lastAlbum = useRef(albumDone);
-  useEffect(() => { if (albumDone !== lastAlbum.current) { lastAlbum.current = albumDone; setSelected(new Set()); setSelecting(false); } }, [albumDone]);
-  useAndroidBack(true, () => { if (selecting) { setSelecting(false); setSelected(new Set()); } else close(); });
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  useAndroidBack(true, () => { if (selected.size) setSelected(new Set()); else close(); });
 
   // Real library order (oldest first, like Photos); removed items never return here.
   const items = useMemo(() => {
-    const removed = new Set(state.removed), test = filtered ? gridMatch(state, filter) : () => true;
+    const removed = new Set(state.removed), test = filtered && narrowed ? gridMatch(state, filter) : () => true;
     return assets.filter(a => !removed.has(a.id) && test(a)).sort((a, b) => a.date - b.date);
-  }, [assets, state, filter, filtered]);
+  }, [assets, state, filter, filtered, narrowed]);
   const marks: Marks = useMemo(() => ({ pending: new Set(state.pending), favorites: new Set(state.favorites), later: new Set(state.later ?? []) }), [state]);
+
+  // The decision bar shrinks from the pile into the bottom dock (user, 2026-11-12):
+  // the same bar, scaled, between Deshacer and Álbum. Photos run under the dock;
+  // the canvas ends with the dock's height of plain paper, as in Photos.
+  const [barSize, setBarSize] = useState({ width: Math.min(enterFrom?.width ?? 358, 380), height: 84 });
+  const [entered, setEntered] = useState(reduced || !enterFrom);
+  // Two 52 px side cells and two 6 px gaps around the scaled bar, inside the grid's width.
+  const scale = Math.max(.52, Math.min(.72, (Math.min(width || barSize.width, 420) - 2 * 52 - 2 * 6 - 4) / barSize.width));
+  const dockHeight = barSize.height * scale + 18;
+  useLayoutEffect(() => {
+    const element = bar.current; if (!element) return;
+    const read = () => setBarSize(previous => element.offsetHeight && (previous.height !== element.offsetHeight) ? { ...previous, height: element.offsetHeight } : previous);
+    read(); const observer = new ResizeObserver(read); observer.observe(element); return () => observer.disconnect();
+  }, []);
+  const [entry, setEntry] = useState(0);
+  useLayoutEffect(() => {
+    if (entered || !enterFrom || !bar.current) return;
+    setEntry(enterFrom.bottom - bar.current.getBoundingClientRect().bottom);
+    const id = requestAnimationFrame(() => requestAnimationFrame(() => setEntered(true)));
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   const side = width ? (width - GAP * (columns - 1)) / columns : 0, pitch = side + GAP;
   const rows = Math.ceil(items.length / columns), strips = ad ? Math.max(0, Math.floor((rows - 1) / AD_EVERY)) : 0;
-  const total = Math.max(0, rows * pitch - GAP + strips * AD_H);
+  // The dock's height plus the home indicator's room: the newest row clears the dock.
+  const tail = dockHeight + 64;
+  const total = Math.max(0, rows * pitch - GAP + strips * AD_H) + tail;
   const rowY = (row: number) => row * pitch + (ad ? Math.floor(row / AD_EVERY) * AD_H : 0);
   const rowAt = (y: number) => {
     if (!pitch) return 0; if (!ad) return Math.floor(y / pitch);
@@ -104,9 +135,9 @@ export default function LibraryGrid({ assets, state, filter, narrowed, current, 
     const read = () => { setWidth(el.clientWidth); setHeight(el.clientHeight); };
     read(); const observer = new ResizeObserver(read); observer.observe(el); return () => observer.disconnect();
   }, []);
-  // The photo being worked on (the card in hand) is the fixed point: opening, changing
-  // density and switching filters always centre it, or — when it is gone or filtered
-  // out — the nearest photo in time, so nothing ever jumps around (user, 2026-11-12).
+  // The photo being worked on (the card in hand) is the fixed point: opening, pinching
+  // and switching or editing filters always centre it, or — when it is gone or
+  // filtered out — the nearest photo in time, so nothing ever jumps around.
   const focus = useRef({ id: current, date: assets.find(a => a.id === current)?.date ?? Date.now() });
   const focusIndex = (list: Asset[]) => {
     if (!list.length) return -1;
@@ -120,11 +151,14 @@ export default function LibraryGrid({ assets, state, filter, narrowed, current, 
     const el = scroller.current; if (!el || !side || !refocus.current) return;
     refocus.current = false;
     const index = focusIndex(items); if (index < 0) return;
-    el.scrollTop = Math.max(0, rowY(Math.floor(index / columns)) - (el.clientHeight - pitch) / 2); setOffset(el.scrollTop);
+    const visible = el.clientHeight - dockHeight;
+    el.scrollTop = Math.max(0, rowY(Math.floor(index / columns)) - (visible - pitch) / 2); setOffset(el.scrollTop);
   }, [pitch, columns, items]);
-  const focusId = items[focusIndex(items)]?.id;
-  // Ask Photos to prepare the next screens in the direction of travel (iOS). Debounced:
-  // a fling sends one window when it slows, not one per frame. Stopped on close.
+  // Filters edited from here apply to the grid at once (the same filters as the pile).
+  const filterKey = JSON.stringify(filter);
+  const lastFilter = useRef(filterKey);
+  useEffect(() => { if (lastFilter.current === filterKey) return; lastFilter.current = filterKey; refocus.current = true; setFiltered(true); }, [filterKey]);
+  // Ask Photos to prepare the next screens in the direction of travel (iOS). Debounced.
   const travel = useRef({ offset: 0, down: true });
   useEffect(() => {
     if (!pitch || !items.length) return;
@@ -146,11 +180,13 @@ export default function LibraryGrid({ assets, state, filter, narrowed, current, 
     const next = columns === 3 ? 5 : 3; setColumns(next); haptic('selection');
     try { localStorage.setItem(COLUMNS_KEY, String(next)); } catch { /* per-device convenience only */ }
   };
+  const lastAlbum = useRef(albumDone);
+  useEffect(() => { if (albumDone !== lastAlbum.current) { lastAlbum.current = albumDone; setSelected(new Set()); } }, [albumDone]);
 
-  // Selection: tap toggles; a horizontal drag selects (or clears) the whole range,
-  // as in Photos; a vertical drag scrolls. Outside «Seleccionar», a tap opens the
-  // item and a long press starts selecting from it.
-  const gesture = useRef<{ start: number; x: number; y: number; mode: 'wait' | 'select' | 'scroll'; adding: boolean; base: ReadonlySet<string>; timer: number; id: number } | null>(null);
+  // Gestures: a tap selects or deselects; holding a photo opens it large (as on the
+  // pile); a sideways drag selects the whole range (as in Photos); up/down scrolls;
+  // two fingers pinch between 3 and 5 columns.
+  const gesture = useRef<{ start: number; x: number; y: number; mode: 'wait' | 'select' | 'scroll' | 'held'; adding: boolean; base: ReadonlySet<string>; timer: number; id: number } | null>(null);
   const indexAt = (x: number, y: number) => { const el = document.elementFromPoint(x, y)?.closest<HTMLElement>('[data-i]'); return el ? Number(el.dataset.i) : -1; };
   const selectRange = (to: number) => {
     const g = gesture.current; if (!g || to < 0) return;
@@ -158,29 +194,26 @@ export default function LibraryGrid({ assets, state, filter, narrowed, current, 
     for (let i = Math.min(g.start, to); i <= Math.max(g.start, to); i++) { const id = items[i]?.id; if (!id) continue; if (g.adding) next.add(id); else next.delete(id); }
     setSelected(next);
   };
-  const edge = useRef(0);
+  const edge = useRef(0), lastPoint = useRef({ x: 0, y: 0 });
   const autoScroll = (y: number) => {
     const el = scroller.current; if (!el) return; const box = el.getBoundingClientRect();
-    const speed = y < box.top + 56 ? -14 : y > box.bottom - 56 ? 14 : 0;
+    const speed = y < box.top + 56 ? -14 : y > box.bottom - dockHeight - 40 ? 14 : 0;
     cancelAnimationFrame(edge.current); if (!speed) return;
     const step = () => { el.scrollTop += speed; const g = gesture.current; if (g?.mode === 'select') { selectRange(indexAt(lastPoint.current.x, lastPoint.current.y)); edge.current = requestAnimationFrame(step); } };
     edge.current = requestAnimationFrame(step);
   };
-  const lastPoint = useRef({ x: 0, y: 0 });
-  // Pinch, as in Photos: fingers together → 5 columns, apart → 3.
+  const tileRect = (index: number) => scroller.current?.querySelector<HTMLElement>(`[data-i="${index}"]`)?.getBoundingClientRect();
   const fingers = useRef(new Map<number, { x: number; y: number }>()), pinch = useRef<number | null>(null);
   const spread = () => { const [a, b] = [...fingers.current.values()]; return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 0; };
   const onPointerDown = (e: React.PointerEvent) => {
     fingers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (fingers.current.size === 2) { const g = gesture.current; if (g) clearTimeout(g.timer); gesture.current = null; pinch.current = spread(); return; }
     const index = indexAt(e.clientX, e.clientY); if (index < 0 || !e.isPrimary) return;
-    const id = items[index].id;
-    const g = { start: index, x: e.clientX, y: e.clientY, mode: 'wait' as const, adding: !selected.has(id), base: selected, timer: 0, id: e.pointerId };
-    if (!selecting) g.timer = window.setTimeout(() => { // long press: start selecting from this item
+    const g = { start: index, x: e.clientX, y: e.clientY, mode: 'wait' as 'wait' | 'select' | 'scroll' | 'held', adding: !selected.has(items[index].id), base: selected, timer: 0, id: e.pointerId };
+    g.timer = window.setTimeout(() => { // hold: see it large
       if (gesture.current !== g || g.mode !== 'wait') return;
-      haptic('medium'); setSelecting(true); setSelected(new Set([id])); gesture.current = { ...g, mode: 'select', adding: true, base: new Set() };
-      scroller.current?.setPointerCapture?.(e.pointerId);
-    }, 450);
+      g.mode = 'held'; haptic('rigid'); const rect = tileRect(index); if (rect) open(items[index], rect);
+    }, 420);
     gesture.current = g;
   };
   const onPointerMove = (e: React.PointerEvent) => {
@@ -195,53 +228,38 @@ export default function LibraryGrid({ assets, state, filter, narrowed, current, 
     const dx = e.clientX - g.x, dy = e.clientY - g.y;
     if (g.mode === 'wait' && e.pointerType !== 'touch' && Math.hypot(dx, dy) > 9) {
       clearTimeout(g.timer);
-      if (selecting && Math.abs(dx) > Math.abs(dy)) { g.mode = 'select'; scroller.current?.setPointerCapture?.(e.pointerId); }
-      else g.mode = 'scroll';
+      if (Math.abs(dx) > Math.abs(dy)) { g.mode = 'select'; scroller.current?.setPointerCapture?.(e.pointerId); } else g.mode = 'scroll';
     }
-    if (g.mode === 'wait' && e.pointerType === 'touch' && Math.hypot(dx, dy) > 9 && !selecting) { clearTimeout(g.timer); g.mode = 'scroll'; }
     if (g.mode === 'select') { selectRange(indexAt(e.clientX, e.clientY)); autoScroll(e.clientY); }
   };
+  const toggle = (index: number) => { const id = items[index]?.id; if (!id) return; const next = new Set(selected); if (next.has(id)) next.delete(id); else next.add(id); setSelected(next); haptic('selection'); };
   const onPointerUp = (e: React.PointerEvent) => {
     fingers.current.delete(e.pointerId); if (fingers.current.size < 2) pinch.current = null;
     const g = gesture.current; if (!g || e.pointerId !== g.id) return;
     clearTimeout(g.timer); cancelAnimationFrame(edge.current); gesture.current = null;
-    if (g.mode !== 'wait') return;
-    const asset = items[g.start]; if (!asset) return;
-    if (selecting) { const next = new Set(selected); if (next.has(asset.id)) next.delete(asset.id); else next.add(asset.id); setSelected(next); haptic('selection'); }
-    else { const tile = scroller.current?.querySelector<HTMLElement>(`[data-i="${g.start}"]`); if (tile) open(asset, tile.getBoundingClientRect()); }
+    if (g.mode === 'wait') toggle(g.start);
   };
   const onPointerCancel = (e: React.PointerEvent) => { fingers.current.delete(e.pointerId); pinch.current = null; const g = gesture.current; if (g) clearTimeout(g.timer); cancelAnimationFrame(edge.current); gesture.current = null; };
-  const touchState = useRef({ selecting, hold: 0 });
-  touchState.current.selecting = selecting;
+  // Touch: WebKit only stops a scroll when the FIRST touchmove is cancelled, so the
+  // direction is chosen there: sideways selects, up/down scrolls.
   useEffect(() => {
     const el = scroller.current; if (!el) return;
-    const start = () => {
-      const g = gesture.current; window.clearTimeout(touchState.current.hold);
-      if (!g || !touchState.current.selecting) return;
-      // In «Seleccionar», holding still for a moment also starts a drag selection.
-      touchState.current.hold = window.setTimeout(() => { if (gesture.current === g && g.mode === 'wait') { g.mode = 'select'; haptic('selection'); selectRange(g.start); } }, 220);
-    };
     const move = (e: TouchEvent) => {
       const g = gesture.current; if (!g || e.touches.length !== 1) return;
-      if (g.mode === 'select') { e.preventDefault(); return; }
-      if (g.mode !== 'wait' || !touchState.current.selecting) return;
+      if (g.mode === 'select' || g.mode === 'held') { e.preventDefault(); return; }
+      if (g.mode !== 'wait') return;
       const touch = e.touches[0], dx = touch.clientX - g.x, dy = touch.clientY - g.y;
-      window.clearTimeout(touchState.current.hold);
-      if (Math.abs(dx) >= Math.abs(dy)) { g.mode = 'select'; e.preventDefault(); }
-      else g.mode = 'scroll';
+      if (Math.abs(dx) + Math.abs(dy) < 2) return;
+      clearTimeout(g.timer);
+      if (Math.abs(dx) >= Math.abs(dy)) { g.mode = 'select'; e.preventDefault(); } else g.mode = 'scroll';
     };
-    const end = () => window.clearTimeout(touchState.current.hold);
-    el.addEventListener('touchstart', start, { passive: true });
     el.addEventListener('touchmove', move, { passive: false });
-    el.addEventListener('touchend', end); el.addEventListener('touchcancel', end);
-    return () => { el.removeEventListener('touchstart', start); el.removeEventListener('touchmove', move); el.removeEventListener('touchend', end); el.removeEventListener('touchcancel', end); };
+    return () => el.removeEventListener('touchmove', move);
   });
-  // Keyboard and assistive technology: a real click without a pointer gesture.
+  // Keyboard and assistive technology: Enter/Space on a tile selects it.
   const onClick = (e: React.MouseEvent) => {
     if (e.detail !== 0) return;
-    const el = (e.target as HTMLElement).closest<HTMLElement>('[data-i]'); const asset = el ? items[Number(el.dataset.i)] : undefined; if (!asset) return;
-    if (selecting) { const next = new Set(selected); if (next.has(asset.id)) next.delete(asset.id); else next.add(asset.id); setSelected(next); }
-    else if (el) open(asset, el.getBoundingClientRect());
+    const el = (e.target as HTMLElement).closest<HTMLElement>('[data-i]'); if (el) toggle(Number(el.dataset.i));
   };
 
   const toggleFilters = () => {
@@ -249,22 +267,26 @@ export default function LibraryGrid({ assets, state, filter, narrowed, current, 
     refocus.current = true; setFiltered(v => !v); haptic('selection');
   };
   const decided = useMemo(() => items.reduce((n, a) => n + (state.marks[a.id] || marks.pending.has(a.id) || marks.favorites.has(a.id) ? 1 : 0), 0), [items, state, marks]);
-  const targets = [...selected];
+  const targets = useMemo(() => items.filter(a => selected.has(a.id)), [items, selected]);
   const run = useCallback(async (action: Action) => {
-    let ids = targets;
-    if (action === 'discard') { ids = ids.filter(id => !marks.favorites.has(id)); if (ids.length < targets.length) notice(t('Las favoritas\nno se eliminan')); }
+    let ids = targets.map(a => a.id);
+    if (action === 'discard') { const keep = ids.length; ids = ids.filter(id => !marks.favorites.has(id)); if (ids.length < keep) notice(t('Las favoritas\nno se eliminan')); }
     if (!ids.length) return;
-    if (await decide(action, ids)) { setSelected(new Set()); setSelecting(false); }
+    if (await decide(action, ids)) setSelected(new Set());
   }, [targets, marks, decide, notice]);
+  const anchorSelection = () => {
+    const index = items.findIndex(a => a.id === targets[0]?.id);
+    const rect = tileRect(index) ?? scroller.current?.getBoundingClientRect();
+    if (targets.length && rect) openSet(targets, rect);
+  };
 
   const tiles = [];
   for (let row = first; row <= last; row++) for (let col = 0; col < columns; col++) {
     const index = row * columns + col, asset = items[index]; if (!asset) break;
     tiles.push(<Tile key={asset.id} asset={asset} index={index} x={col * pitch} y={rowY(row)} side={side} size={size}
-      selecting={selecting} selected={selected.has(asset.id)} current={asset.id === current} level={state.marks[asset.id]?.level ?? 0}
+      selected={selected.has(asset.id)} current={asset.id === current} level={state.marks[asset.id]?.level ?? 0}
       pending={marks.pending.has(asset.id)} favorite={marks.favorites.has(asset.id)} later={marks.later.has(asset.id)}/>);
   }
-
   let strip: ReactNode = null;
   if (ad && pitch) {
     let best = -1, distance = Infinity; const middle = offset + height / 2;
@@ -273,35 +295,46 @@ export default function LibraryGrid({ assets, state, filter, narrowed, current, 
     }
     if (best >= 0) strip = <div className="grid-ad" style={{ transform: `translateY(${best}px)`, height: AD_H }}>{ad(scroller)}</div>;
   }
-  return <section className="library-grid on-device" role="dialog" aria-modal="true" aria-label={t('Fototeca')}>
+
+  const count = targets.length;
+  return <section className={`library-grid on-device ${entered ? 'is-entered' : ''}`} role="dialog" aria-modal="true" aria-label={t('Fototeca')}>
     <header className="archive-header is-session grid-header">
-      <button type="button" className={`header-action grid-filter ${filtered && narrowed ? 'is-on' : ''}`} role="switch" aria-checked={filtered && narrowed} aria-disabled={!narrowed || undefined} onClick={toggleFilters}>
-        {filtered && narrowed ? <FunnelSimpleIcon size={18} weight="bold"/> : <FunnelSimpleXIcon size={18} weight="bold"/>}<span>{t('Filtros')}</span>
-      </button>
+      <div className={`header-action grid-filter ${filtered && narrowed ? 'is-on' : ''} ${narrowed ? '' : 'is-idle'}`}>
+        <button type="button" className="grid-filter-toggle" role="switch" aria-checked={filtered && narrowed} aria-label={filtered && narrowed ? t('Quitar los filtros de la fototeca') : t('Aplicar los filtros a la fototeca')} onClick={toggleFilters}>
+          {filtered && narrowed ? <FunnelSimpleIcon size={18} weight="bold"/> : <FunnelSimpleXIcon size={18} weight="bold"/>}
+        </button>
+        <span className="grid-filter-rule" aria-hidden="true"/>
+        <button type="button" className="grid-filter-edit" onClick={editFilters} aria-label={t('Editar filtros')}>{t('Filtros')}</button>
+      </div>
       <h2 className="grid-title">{t('Fototeca')}</h2>
-      <button type="button" className={`header-action grid-select ${selecting ? 'is-on' : ''}`} onClick={() => { setSelecting(v => !v); setSelected(new Set()); haptic('selection'); }}>{selecting ? t('Cancelar') : t('Seleccionar')}</button>
+      <div className="grid-finish" onClickCapture={() => haptic('light')}>{finish}</div>
     </header>
     <div className="archive-progress grid-progress">
       <button type="button" className="grid-open is-back" onClick={close} aria-label={t('Volver a las cartas')}><CardsThreeIcon size={18} weight="bold"/></button>
       <PileProgress reviewed={decided} total={items.length} count={<>{formatNumber(decided)}<span className="pile-slash">/</span>{formatNumber(items.length)}</>}/>
-      <button type="button" className="grid-open" onClick={switchColumns} aria-label={columns === 3 ? t('Ver más pequeñas') : t('Ver más grandes')}>{columns === 3 ? <GridNineIcon size={18} weight="bold"/> : <SquaresFourIcon size={18} weight="bold"/>}</button>
     </div>
     <div className="grid-body">
-    <div ref={scroller} className={`grid-scroller ${selecting ? 'is-selecting' : ''}`} onScroll={onScroll}
-      onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerCancel} onClick={onClick} onContextMenu={e => e.preventDefault()}>
-      {items.length ? <div className="grid-canvas" style={{ height: total }}>{tiles}{strip}</div>
-        : <p className="grid-empty">{t('Nada con estos filtros.')}</p>}
+      <div ref={scroller} className="grid-scroller" onScroll={onScroll}
+        onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerCancel} onClick={onClick} onContextMenu={e => e.preventDefault()}>
+        {items.length ? <div className="grid-canvas" style={{ height: total }}>{tiles}{strip}</div>
+          : <p className="grid-empty">{t('Nada con estos filtros.')}</p>}
+      </div>
+      {count > 0 && <div className="grid-selection" style={{ bottom: `calc(${dockHeight + 18}px + env(safe-area-inset-bottom))` }} aria-live="polite">
+        <button type="button" className="grid-selection-clear" onClick={() => { setSelected(new Set()); haptic('selection'); }} aria-label={t('Quitar la selección')}><XIcon size={16} weight="bold"/></button>
+        <span>{t('{n} seleccionadas', { n: formatNumber(count) })}</span>
+        <button type="button" className="grid-selection-anchor" onClick={anchorSelection}><PushPinIcon size={16} weight="bold"/>{t('Anclar')}</button>
+      </div>}
+      <div ref={dock} className="grid-dock" style={{ height: dockHeight }}>
+        <button type="button" className="grid-dock-side" onClick={undo} disabled={busy || !state.history.length} aria-label={state.history.length ? t('Deshacer la última decisión') : t('Nada que deshacer')}><ArrowUUpLeftIcon size={22} weight="bold" className="flip-rtl"/></button>
+        <div className="grid-dock-bar" style={{ width: barSize.width * scale, height: barSize.height * scale }}>
+          <div ref={bar} className="grid-dock-scale" style={{ width: barSize.width, transform: entered ? `translateX(-50%) scale(${scale})` : `translateX(-50%) translateY(${entry}px)` }}>
+            <DecisionBar count={count} disabled={busy || !count} favoriteOn={false} armed=""
+              onDiscard={() => void run('discard')} onFavorite={() => void run('favorite')} onKeep={() => void run('keep')}/>
+          </div>
+        </div>
+        {album ? <button type="button" className="grid-dock-side" disabled={busy || !count} onClick={() => album(targets.map(a => a.id))} aria-label={count > 1 ? t('Guardar {n} en un álbum', { n: count }) : t('Guardar en un álbum')}><FolderSimplePlusIcon size={22} weight="bold"/></button>
+          : <span className="grid-dock-side" aria-hidden="true"/>}
+      </div>
     </div>
-    </div>
-    {selecting && <div className="grid-actions">
-      <p className="grid-count" aria-live="polite">{selected.size ? t('{n} seleccionadas', { n: formatNumber(selected.size) }) : t('Toca o arrastra para seleccionar')}</p>
-      <DecisionBar count={targets.length} disabled={busy || !targets.length} favoriteOn={false} armed=""
-        onDiscard={() => void run('discard')} onFavorite={() => void run('favorite')} onKeep={() => void run('keep')}/>
-      <footer className="archive-tools grid-tools">
-        <button onClick={undo} disabled={busy || !state.history.length} aria-label={state.history.length ? t('Deshacer la última decisión') : t('Nada que deshacer')}><span className="tool-icon"><ArrowUUpLeftIcon size={24} className="flip-rtl"/></span><span className="tool-label">{t('Deshacer')}</span></button>
-        <button className="later" disabled={busy || !targets.length} onClick={() => void run('later')} aria-label={targets.length > 1 ? t('Dejar {n} para más tarde', { n: targets.length }) : t('Dejar para más tarde')}><span className="tool-icon"><DecisionIcon kind="later" size={24}/></span><span className="tool-label">{t('Más tarde')}</span></button>
-        {album ? <button disabled={busy || !targets.length} onClick={() => album(targets)} aria-label={targets.length > 1 ? t('Guardar {n} en un álbum', { n: targets.length }) : t('Guardar en un álbum')}><span className="tool-icon"><FolderSimplePlusIcon size={24}/></span><span className="tool-label">{t('Álbum')}</span></button> : <span aria-hidden="true"/>}
-      </footer>
-    </div>}
   </section>;
 }
