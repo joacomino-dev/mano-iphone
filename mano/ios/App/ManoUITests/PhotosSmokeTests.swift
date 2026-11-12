@@ -601,6 +601,39 @@ final class PhotosSmokeTests: XCTestCase {
     }
 
     @MainActor
+    func testWVideoVhsEyeWithLettersDisabled() throws {
+        let url=try XCTUnwrap(Bundle(for:Self.self).url(forResource:"native-lab-contract",withExtension:"json"))
+        let contract=try XCTUnwrap(JSONSerialization.jsonObject(with:Data(contentsOf:url)) as? [String:Any])
+        guard contract["enabled"] as? Bool == true && contract["liveOnly"] as? Bool != true else { throw XCTSkip("Full synthetic fixture lab only") }
+        #if !targetEnvironment(simulator)
+        XCTFail("VHS probe refuses physical libraries");return
+        #endif
+        XCTAssertEqual(contract["simulator"] as? String,ProcessInfo.processInfo.environment["SIMULATOR_UDID"])
+        let app=XCUIApplication();app.launchArguments += ["-AppleLanguages","(es)","-AppleLocale","es_ES"]
+        app.terminate();app.launch()
+        let finish=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","Terminar")).firstMatch
+        XCTAssertTrue(finish.waitForExistence(timeout:120))
+        try nativeMediaFilter(app,"Vídeos")
+        app.buttons["Filtros"].firstMatch.tap()
+        let settings=app.descendants(matching:.any).matching(NSPredicate(format:"label == %@","Ajustes")).allElementsBoundByIndex.filter{$0.isHittable}.last
+        try XCTUnwrap(settings).tap()
+        let letters=app.switches["Letras VHS"].firstMatch
+        for _ in 0..<8 { if letters.isHittable { break };app.swipeUp() }
+        XCTAssertTrue(letters.isHittable)
+        if (letters.value as? String) != "0" { letters.tap() }
+        XCTAssertTrue(closeOverlay(app,until:finish))
+        func eye(_ label:String) -> XCUIElement { app.descendants(matching:.any).matching(NSPredicate(format:"label == %@",label)).firstMatch }
+        let show=eye("Mostrar letras VHS"),hide=eye("Ocultar letras VHS")
+        XCTAssertTrue(show.waitForExistence(timeout:30));XCTAssertTrue(show.isHittable)
+        attachScreenshot(app,"VHS disabled eye before tap")
+        show.tap();XCTAssertTrue(hide.waitForExistence(timeout:10));XCTAssertTrue(hide.isHittable)
+        attachScreenshot(app,"VHS enabled eye after tap")
+        hide.tap();XCTAssertTrue(show.waitForExistence(timeout:10));XCTAssertTrue(show.isHittable)
+        try nativeMediaFilter(app,"Todo")
+        print("COCOWASH_UI_VHS_EYE_OFF_ON_OFF_OK")
+    }
+
+    @MainActor
     func testYGeneratedLivePhotoInlineAndAnchored() throws {
         let url=try XCTUnwrap(Bundle(for:Self.self).url(forResource:"native-lab-contract",withExtension:"json"))
         let contract=try XCTUnwrap(JSONSerialization.jsonObject(with:Data(contentsOf:url)) as? [String:Any])
