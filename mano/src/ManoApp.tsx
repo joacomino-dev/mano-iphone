@@ -1,5 +1,5 @@
 import { FinishButton } from './FinishButton';
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type PointerEvent, type MouseEvent } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type PointerEvent, type MouseEvent } from 'react';
 import { AnimatePresence, motion, useReducedMotion, useMotionValue, animate, type MotionValue } from 'motion/react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { ExportIcon, FolderOpenIcon, FolderSimplePlusIcon, CaretRightIcon, CaretDownIcon, ArrowCounterClockwiseIcon, ArrowUUpLeftIcon, StackIcon, TrashIcon, CheckIcon, XIcon, PlayIcon, SlidersHorizontalIcon, ArrowClockwiseIcon, ImageBrokenIcon, PlusIcon, PushPinIcon, InfoIcon, CloudIcon, SparkleIcon } from '@phosphor-icons/react';
@@ -15,14 +15,14 @@ import { prepareReviewAsset, VideoStore, prewarm, sharpPreview, subscribeSharp, 
 import { CloudBadge, CloudPlaceholder, useCloud } from './Cloud';
 import { InlineVideo, type VideoControl } from './InlineVideo';
 import { Filters } from './Filters';
-import { Inspector, type InspectOrigin } from './Inspector';
+import type { InspectOrigin } from './Inspector';
+import { DisplaySettingsPanel, Onboarding, Inspector, preloadScreensWhenIdle } from './LazyScreens';
 import { readSession, SessionWriter, DEMO_SESSION_KEY, LIBRARY_SESSION_KEY, type ActiveSession } from './session';
 import { activeJournal, STORAGE_FAILURE, type NativeIntent } from './durableSession';
 import { readDisplay, saveDisplay, polaroidCaption, formatBytes, ONBOARDING_KEY, type DisplaySettings, type PhotoMeta } from './meta';
 import { usePlace, prefetchPlaces } from './place';
 import { haptic, setHapticsEnabled } from './haptics';
 import { AnimatedNumber, CocoLoader, Deferred } from './Loader';
-import { Onboarding } from './Onboarding';
 import { Splash } from './Splash';
 import { AccessScreen, PreparingScreen, LoadErrorScreen, SessionDone, EMPTY_STATS, readStats, type RoundStats } from './Screens';
 import { AdRoom, AdSlot, PurchaseOptions, useMonetization } from './Monetization';
@@ -32,7 +32,6 @@ import { useAndroidBack } from './androidBack';
 import { setFavorite, flushFavorites, withPendingFavorites } from './favoriteQueue';
 import { onAndroid } from './locales/android';
 import { DEVELOPER } from './channel';
-import { DisplaySettingsPanel } from './DisplaySettings';
 import { formatNumber, locale, parts, t, tn } from './i18n';
 /** Photos' own confirmation answered «No permitir» (PhotoLibrary.swift CANCELLED). */
 const cancelled=(e:unknown)=>(e as {code?:string})?.code==='CANCELLED';
@@ -264,6 +263,7 @@ export function ManoApp() {
   // Holding a card: where the finger is (peek) and how close it is to the dock (0–1). Motion values: no re-render per move.
   const peekX=useMotionValue(0),peekY=useMotionValue(0),anchor=useMotionValue(0);
   const [display,setDisplay]=useState<DisplaySettings>(()=>readDisplay());
+  useEffect(preloadScreensWhenIdle, []);
   // Launch mark (Splash.tsx): shown once per launch while the app loads underneath.
   const [splash,setSplash]=useState(true);
   const [onboarded,setOnboarded]=useState(()=>{try{return localStorage.getItem(ONBOARDING_KEY)==='done';}catch{return false;}});
@@ -711,7 +711,7 @@ export function ManoApp() {
   const doneHeader=<><header ref={noticeRoom} className="archive-header"><span className="header-spacer" aria-hidden="true"/>{brand}<span className="header-spacer" aria-hidden="true"/></header>{alert}</>;
   const pending=state.pending.length;
   let screen:ReactNode;
-  if(!onboarded)screen=<Onboarding requestAccess={requestAccess} finish={finishOnboarding} granted={permission==='authorized'||permission==='limited'}/>;
+  if(!onboarded)screen=<Suspense fallback={<main className="status-screen is-quiet" aria-busy="true"><CocoLoader size={44}/></main>}><Onboarding requestAccess={requestAccess} finish={finishOnboarding} granted={permission==='authorized'||permission==='limited'}/></Suspense>;
   else if(permission==='unknown')screen=loadError?<LoadErrorScreen message={loadError} retry={()=>{initialLibrary.current=null;loadLibrary();}}/>:<PreparingScreen/>;
   else if(!allowed)screen=<AccessScreen status={permission} request={()=>void requestAccess()} openSettings={openSettings}/>;
   else if(loadError)screen=<LoadErrorScreen message={loadError} retry={()=>{initialLibrary.current=null;loadLibrary();}}/>;
@@ -782,8 +782,8 @@ export function ManoApp() {
     {screen}
     <p className="sr-only" role="status" aria-live="polite">{spoken}</p>
     {splash&&<Splash done={()=>setSplash(false)}/>}
-    <AnimatePresence>{inspect&&<InspectorBoundary key={inspect.id} close={closeInspect}><Inspector asset={inspect} src={sharpPreview(inspect)??(preloader.current?.get(inspect)?.poster||undefined)} cloud={!!preloader.current?.peek(inspect)?.value?.cloud} pinned={pinnedInspect} origin={inspectOrigin.current} peek={{x:peekX,y:peekY}} anchor={anchor} armed={overHook} geek={!!filter.geek} close={closeInspect} pin={()=>{setPinnedInspect(true);haptic('rigid');}}
-      video={(inspect.kind==='video'&&inspect.id===active?.id)||(inspect.kind==='live'&&!onAndroid())?{state:inspect.kind==='live'?inspectedLive:frontVideo,request:()=>requestLive(inspect),retry:()=>getVideos().retry(motionAsset(inspect)),download:()=>{requestLive(inspect);getVideos().download(motionAsset(inspect));},fullscreen:()=>{if(inspect.kind==='video')void play(inspect);},openSettings,sound:videoSound,onSound:()=>setVideoSound(v=>!v),freeze:inspect.kind==='video'?heldVideo.current:undefined}:undefined}/></InspectorBoundary>}</AnimatePresence>
+    <AnimatePresence>{inspect&&<InspectorBoundary key={inspect.id} close={closeInspect}><Suspense fallback={<div className="inspection is-pinned" aria-busy="true"><div className="inspection-shade"/><CocoLoader size={44}/></div>}><Inspector asset={inspect} src={sharpPreview(inspect)??(preloader.current?.get(inspect)?.poster||undefined)} cloud={!!preloader.current?.peek(inspect)?.value?.cloud} pinned={pinnedInspect} origin={inspectOrigin.current} peek={{x:peekX,y:peekY}} anchor={anchor} armed={overHook} geek={!!filter.geek} close={closeInspect} pin={()=>{setPinnedInspect(true);haptic('rigid');}}
+      video={(inspect.kind==='video'&&inspect.id===active?.id)||(inspect.kind==='live'&&!onAndroid())?{state:inspect.kind==='live'?inspectedLive:frontVideo,request:()=>requestLive(inspect),retry:()=>getVideos().retry(motionAsset(inspect)),download:()=>{requestLive(inspect);getVideos().download(motionAsset(inspect));},fullscreen:()=>{if(inspect.kind==='video')void play(inspect);},openSettings,sound:videoSound,onSound:()=>setVideoSound(v=>!v),freeze:inspect.kind==='video'?heldVideo.current:undefined}:undefined}/></Suspense></InspectorBoundary>}</AnimatePresence>
     <Sheet open={sheet==='filters'} close={()=>setSheet(null)} title={sheetTab==='filters'?t('Filtros'):sheetTab==='support'?t('Apoyo'):t('Ajustes')} description={sheetTab==='filters'?t('Elige qué fotos entran en la pila.'):sheetTab==='support'?t('Quita los anuncios o invita un café a quien la hace.'):t('Elige cómo se ven tus recuerdos.')} error={visibleError} returnTo="filter-trigger">
       <div className="sheet-tabs" role="group" aria-label={t('Sección')}><button aria-pressed={sheetTab==='filters'} onClick={()=>{haptic('selection');setSheetTab('filters');}}>{t('Filtros')}</button><button aria-pressed={sheetTab==='settings'} onClick={()=>{haptic('selection');setSheetTab('settings');}}>{t('Ajustes')}</button>{money.available&&<button aria-pressed={sheetTab==='support'} onClick={()=>{haptic('selection');setSheetTab('support');}}>{t('Apoyo')}</button>}</div>
       <div hidden={sheetTab!=='filters'}>
@@ -792,7 +792,7 @@ export function ManoApp() {
       </div>
       {/* Mounted only when shown: measured while hidden (display:none), the VHS preview
           laid out at zero size and flashed when the tab opened. */}
-      <div hidden={sheetTab!=='settings'}>{sheetTab==='settings'&&<DisplaySettingsPanel display={display} change={setDisplay} geek={!!filter.geek} setGeek={value=>setFilter(f=>({...f,geek:value}))} library={libraryActions} replayIntro={()=>{setSheet(null);setOnboarded(false);haptic('selection');}} testing={isNative&&DEVELOPER?{on:testMode,set:on=>setTestMode(on),ads:!adsOff,setAds:on=>{saveAdsOff(!on);setAdsOff(!on);haptic('selection');}}:undefined}/>}</div>
+      <div hidden={sheetTab!=='settings'}>{sheetTab==='settings'&&<Suspense fallback={<CocoLoader size={44}/>}><DisplaySettingsPanel display={display} change={setDisplay} geek={!!filter.geek} setGeek={value=>setFilter(f=>({...f,geek:value}))} library={libraryActions} replayIntro={()=>{setSheet(null);setOnboarded(false);haptic('selection');}} testing={isNative&&DEVELOPER?{on:testMode,set:on=>setTestMode(on),ads:!adsOff,setAds:on=>{saveAdsOff(!on);setAdsOff(!on);haptic('selection');}}:undefined}/></Suspense>}</div>
       {money.available&&<div hidden={sheetTab!=='support'}>{sheet==='filters'&&sheetTab==='support'&&<PurchaseOptions money={money}/>}</div>}
     </Sheet>
     <Sheet open={sheet==='albums'} close={()=>setSheet(null)} title={t('Guardar en un álbum')} description={t('Se conserva y pasa a la siguiente. También sigue en tu carrete.')} error={visibleError} returnTo="album-trigger"><p className="sheet-intro">{parts(tn('selected',targets.length),{n:<strong key="n">{formatNumber(targets.length)}</strong>})}</p><button className="album-row album-new" onClick={()=>setCreatingAlbum(v=>!v)} disabled={busy}><span className="row-icon"><PlusIcon size={20} weight="bold"/></span>{t('Crear álbum nuevo')}</button>{creatingAlbum&&<div className="new-album"><label className="field">{t('Nombre del álbum')}<AlbumInput value={newAlbum} change={setNewAlbum}/></label><button className="sheet-action" onClick={createAlbum} disabled={busy||!newAlbum.trim()}>{tn('createAndAdd',targets.length)}</button></div>}{albums.map(a=><button className="album-row" key={a.id} onClick={()=>addAlbum(a)} disabled={busy}><span className="row-icon"><FolderOpenIcon size={20}/></span>{a.title}<CaretRightIcon size={16} weight="bold" className="flip-rtl"/></button>)}</Sheet>
