@@ -383,6 +383,8 @@ export function ManoApp() {
   /** «Favoritas» set: the heart takes items out of Favorites; they cannot be queued for deletion. */
   const favView=filter.smart==='favorites';
   const [gridOpen,setGridOpen]=useState(false);const [gridAds,setGridAds]=useState(false);
+  // The grid's selection can go to an album through the same sheet as the card in hand.
+  const [albumIds,setAlbumIds]=useState<string[]|null>(null);const [gridAlbumDone,setGridAlbumDone]=useState(0);
   // Stamp words help while the four gestures are new; then the stamp says it alone.
   const decidedCount=Object.keys(state.marks).length+state.pending.length+state.favorites.length+state.later.length+state.removed.length;
   const stampWordsAuto=decidedCount<STAMP_WORDS_UNTIL,stampWords=display.stampWords??stampWordsAuto;
@@ -449,7 +451,7 @@ export function ManoApp() {
   const beforeNative=async(kind:NativeIntent['kind'],ids:string[])=>{await journal?.intent({kind,ids:[...ids],started:Date.now()});};
   const nativeFailed=async(e:unknown)=>{if(e instanceof Error&&e.message===STORAGE_FAILURE)return;try{await journal?.intent();}catch{/* journal retries silently */}messageError(e);};
   const openFilters=()=>{money.clear();setError('');setSheet('filters');};
-  const active=hand[0]; const targetIds=selected.filter(id=>hand.some(a=>a.id===id)); const targets=targetIds.length?targetIds:active?[active.id]:[];
+  const active=hand[0]; const targetIds=selected.filter(id=>hand.some(a=>a.id===id)); const targets=targetIds.length?targetIds:active?[active.id]:[];const albumTargets=albumIds??targets;
   // Ads (Monetization.tsx): only while cleaning, never over a sheet, the inspector or the splash.
   const money=useMonetization(isNative,session&&!!active&&!sheet&&!inspect&&!splash,testMode,showDone||sheet==='review',DEVELOPER&&adsOff);
   const deckAd=money.placement==='deck'&&!sheet&&!inspect&&!splash;
@@ -644,18 +646,18 @@ export function ManoApp() {
   /** Album = assign, then keep and advance (undoable like a swipe). If Fotos
    * fails, nothing is kept and the card stays. */
   const saveToAlbum=async(write:()=>Promise<{title:string;added?:number}>)=>{
-    const ids=targets;if(!ids.length||!startOperation())return false;
+    const ids=albumTargets;if(!ids.length||!startOperation())return false;
     try {
       if(!demo)await beforeNative('album',ids);
       const outcome=await assignToAlbum(write,ids);
       if(!outcome.ok){await nativeFailed(outcome.error);haptic('error');return false;}
       await record('keep',ids,s=>afterAlbum(s,ids,outcome,Date.now(),context),undefined,!demo);
-      setSheet(null);haptic('success');setNotice(t('Guardada en\n«{album}»',{album:outcome.title}));return true;
+      if(albumIds)setGridAlbumDone(n=>n+1);setAlbumIds(null);setSheet(null);haptic('success');setNotice(t('Guardada en\n«{album}»',{album:outcome.title}));return true;
     }catch(e){await nativeFailed(e);return false;}finally{endOperation();}
   };
-  const createAlbum=async()=>{const title=newAlbum.trim();if(!title)return;const ok=await saveToAlbum(async()=>{const result=demo?{album:{id:`demo-${Date.now()}`,title},added:targets.length}:await Library.createAlbum({title,ids:targets});setAlbums(a=>[result.album,...a]);return {title:result.album.title,added:result.added};});if(ok){setNewAlbum('');setCreatingAlbum(false);}};
-  const openAlbums=async()=>{if(!targets.length)return;setSheet('albums');setCreatingAlbum(false);setNewAlbum('');setError('');try{setAlbums(demo&&albums.length?albums:demo?[{id:'viajes',title:t('Viajes')},{id:'recuerdos',title:t('Recuerdos')},{id:'familia',title:t('Familia')}]:(await Library.albums()).albums);}catch(e){messageError(e);}};
-  const addAlbum=(album:Album)=>void saveToAlbum(async()=>{if(!demo)await Library.addToAlbum({ids:targets,albumId:album.id});return {title:album.title};});
+  const createAlbum=async()=>{const title=newAlbum.trim();if(!title)return;const ok=await saveToAlbum(async()=>{const result=demo?{album:{id:`demo-${Date.now()}`,title},added:albumTargets.length}:await Library.createAlbum({title,ids:albumTargets});setAlbums(a=>[result.album,...a]);return {title:result.album.title,added:result.added};});if(ok){setNewAlbum('');setCreatingAlbum(false);}};
+  const openAlbums=async(ids?:string[])=>{setAlbumIds(ids??null);if(!(ids??targets).length)return;setSheet('albums');setCreatingAlbum(false);setNewAlbum('');setError('');try{setAlbums(demo&&albums.length?albums:demo?[{id:'viajes',title:t('Viajes')},{id:'recuerdos',title:t('Recuerdos')},{id:'familia',title:t('Familia')}]:(await Library.albums()).albums);}catch(e){messageError(e);}};
+  const addAlbum=(album:Album)=>void saveToAlbum(async()=>{if(!demo)await Library.addToAlbum({ids:albumTargets,albumId:album.id});return {title:album.title};});
   const commitDelete=async()=>{
     const ids=reviewAssets.map(a=>a.id);if(!ids.length||!startOperation())return;
     invalidateLibrary();
@@ -762,7 +764,7 @@ export function ManoApp() {
         toward rises. In «Favoritas» the heart is on and takes items out. */}
     <DecisionBar count={targets.length} disabled={deckAd||!active||busy} favoriteOn={favView} armed={currentColor}
       onDiscard={()=>void act('discard')} onFavorite={()=>void act('favorite')} onKeep={()=>void act('keep')}/>
-    <footer className="archive-tools" inert={deckAd}><button onClick={undoLast} disabled={busy||!state.history.length} aria-label={state.history.length?t('Deshacer la última decisión'):t('Nada que deshacer')}><span className="tool-icon"><ArrowUUpLeftIcon size={24} className="flip-rtl"/></span><span className="tool-label">{t('Deshacer')}</span></button><button className="later" aria-label={targets.length>1?t('Dejar {n} para más tarde',{n:targets.length}):t('Dejar para más tarde')} disabled={!active||busy} onClick={()=>act('later')}><span className="tool-icon"><DecisionIcon kind="later" size={24}/></span><span className="tool-label">{t('Más tarde')}</span></button>{/* Android keeps albums as folders (moving the original): no «Álbum» there; the empty cell keeps «Más tarde» centred. */}{onAndroid()?<span aria-hidden="true"/>:<button id="album-trigger" onClick={openAlbums} disabled={!active||busy}><span className="tool-icon"><FolderSimplePlusIcon size={24}/></span><span className="tool-label">{t('Álbum')}</span></button>}</footer>
+    <footer className="archive-tools" inert={deckAd}><button onClick={undoLast} disabled={busy||!state.history.length} aria-label={state.history.length?t('Deshacer la última decisión'):t('Nada que deshacer')}><span className="tool-icon"><ArrowUUpLeftIcon size={24} className="flip-rtl"/></span><span className="tool-label">{t('Deshacer')}</span></button><button className="later" aria-label={targets.length>1?t('Dejar {n} para más tarde',{n:targets.length}):t('Dejar para más tarde')} disabled={!active||busy} onClick={()=>act('later')}><span className="tool-icon"><DecisionIcon kind="later" size={24}/></span><span className="tool-label">{t('Más tarde')}</span></button>{/* Android keeps albums as folders (moving the original): no «Álbum» there; the empty cell keeps «Más tarde» centred. */}{onAndroid()?<span aria-hidden="true"/>:<button id="album-trigger" onClick={()=>void openAlbums()} disabled={!active||busy}><span className="tool-icon"><FolderSimplePlusIcon size={24}/></span><span className="tool-label">{t('Álbum')}</span></button>}</footer>
     </div>;
   const libraryActions=<>
     <button className="sheet-action secondary" onClick={()=>void analyze(true)} disabled={analyzing}>{analyzing?<><CocoLoader size={22} progress={progress.total?progress.done/progress.total:undefined}/>{t('Buscando parecidas…')}</>:t('Buscar fotos parecidas')}</button>
@@ -792,6 +794,7 @@ export function ManoApp() {
     <p className="sr-only" role="status" aria-live="polite">{spoken}</p>
     {splash&&<Splash done={()=>setSplash(false)}/>}
     {gridOpen&&<Suspense fallback={<div className="library-grid" aria-busy="true"><CocoLoader size={44}/></div>}><LibraryGrid assets={assets} state={state} filter={filter} narrowed={narrowed} current={hand[0]?.id} busy={busy} close={()=>{setGridOpen(false);setGridAds(false);money.release('grid');}} decide={(action,ids)=>act(action,ids)} undo={()=>void undoLast()} notice={setNotice}
+      album={onAndroid()?undefined:ids=>void openAlbums(ids)} albumDone={gridAlbumDone}
       open={(asset,from)=>{heldVideo.current=null;inspectOrigin.current=from;resetPeek();setPinnedInspect(true);setInspect(asset);haptic('rigid');}}
       ad={gridAds&&money.placement==='grid'?within=><AdSlot where="grid" money={money} within={within}/>:undefined}/></Suspense>}
     <AnimatePresence>{inspect&&<InspectorBoundary key={inspect.id} close={closeInspect}><Suspense fallback={<div className="inspection is-pinned" aria-busy="true"><div className="inspection-shade"/><CocoLoader size={44}/></div>}><Inspector asset={inspect} src={sharpPreview(inspect)??(preloader.current?.get(inspect)?.poster||undefined)} cloud={!!preloader.current?.peek(inspect)?.value?.cloud} pinned={pinnedInspect} origin={inspectOrigin.current} peek={{x:peekX,y:peekY}} anchor={anchor} armed={overHook} geek={!!filter.geek} close={closeInspect} pin={()=>{setPinnedInspect(true);haptic('rigid');}}
@@ -807,7 +810,7 @@ export function ManoApp() {
       <div hidden={sheetTab!=='settings'}>{sheetTab==='settings'&&<Suspense fallback={<CocoLoader size={44}/>}><DisplaySettingsPanel display={display} change={setDisplay} stampWordsAuto={stampWordsAuto} geek={!!filter.geek} setGeek={value=>setFilter(f=>({...f,geek:value}))} library={libraryActions} replayIntro={()=>{setSheet(null);setOnboarded(false);haptic('selection');}} testing={isNative&&DEVELOPER?{on:testMode,set:on=>setTestMode(on),ads:!adsOff,setAds:on=>{saveAdsOff(!on);setAdsOff(!on);haptic('selection');}}:undefined}/></Suspense>}</div>
       {money.available&&<div hidden={sheetTab!=='support'}>{sheet==='filters'&&sheetTab==='support'&&<PurchaseOptions money={money}/>}</div>}
     </Sheet>
-    <Sheet open={sheet==='albums'} close={()=>setSheet(null)} title={t('Guardar en un álbum')} description={t('Se conserva y pasa a la siguiente. También sigue en tu carrete.')} error={visibleError} returnTo="album-trigger"><p className="sheet-intro">{parts(tn('selected',targets.length),{n:<strong key="n">{formatNumber(targets.length)}</strong>})}</p><button className="album-row album-new" onClick={()=>setCreatingAlbum(v=>!v)} disabled={busy}><span className="row-icon"><PlusIcon size={20} weight="bold"/></span>{t('Crear álbum nuevo')}</button>{creatingAlbum&&<div className="new-album"><label className="field">{t('Nombre del álbum')}<AlbumInput value={newAlbum} change={setNewAlbum}/></label><button className="sheet-action" onClick={createAlbum} disabled={busy||!newAlbum.trim()}>{tn('createAndAdd',targets.length)}</button></div>}{albums.map(a=><button className="album-row" key={a.id} onClick={()=>addAlbum(a)} disabled={busy}><span className="row-icon"><FolderOpenIcon size={20}/></span>{a.title}<CaretRightIcon size={16} weight="bold" className="flip-rtl"/></button>)}</Sheet>
+    <Sheet open={sheet==='albums'} close={()=>{setSheet(null);setAlbumIds(null);}} title={t('Guardar en un álbum')} description={t('Se conserva y pasa a la siguiente. También sigue en tu carrete.')} error={visibleError} returnTo="album-trigger"><p className="sheet-intro">{parts(tn('selected',albumTargets.length),{n:<strong key="n">{formatNumber(albumTargets.length)}</strong>})}</p><button className="album-row album-new" onClick={()=>setCreatingAlbum(v=>!v)} disabled={busy}><span className="row-icon"><PlusIcon size={20} weight="bold"/></span>{t('Crear álbum nuevo')}</button>{creatingAlbum&&<div className="new-album"><label className="field">{t('Nombre del álbum')}<AlbumInput value={newAlbum} change={setNewAlbum}/></label><button className="sheet-action" onClick={createAlbum} disabled={busy||!newAlbum.trim()}>{tn('createAndAdd',targets.length)}</button></div>}{albums.map(a=><button className="album-row" key={a.id} onClick={()=>addAlbum(a)} disabled={busy}><span className="row-icon"><FolderOpenIcon size={20}/></span>{a.title}<CaretRightIcon size={16} weight="bold" className="flip-rtl"/></button>)}</Sheet>
     <Sheet open={sheet==='review'} close={()=>setSheet(null)} footer={reviewAssets.length>0&&money.available&&(money.placement==='review'||money.awaiting==='review')&&<div className="review-monetization">{money.placement==='review'?<AdSlot where="review" money={money}/>:<AdRoom where="review"/>}</div>} title={t('Una última mirada')} description={t('Recupera lo que quieras conservar antes de eliminar.')} error={visibleError} returnTo={session?'review-trigger':'filter-trigger'}><p className="sheet-intro">{reviewAssets.length?parts(freeLabel?(reviewBytes.partial?t('{count}: liberarías al menos {size}. Aún no se ha borrado nada.'):t('{count}: liberarías {size}. Aún no se ha borrado nada.')):t('{count}. Aún no se ha borrado nada.'),{count:<strong key="count">{t('{n} para eliminar',{n:reviewAssets.length})}</strong>,size:<strong key="size">{freeLabel}</strong>}):t('No hay nada marcado para eliminar.')}</p>
       {/* 9.8.6: every photo first, three across; the decision waits at the end of
           the list, so it is made after seeing all of it. A cue says so until then. */}

@@ -23,6 +23,10 @@ try{
  const mounted=await page.locator('.grid-tile').count();
  assert.ok(mounted<150,`only visible rows mount (${mounted} of 3000)`);
  results.push(`opens on the card in hand; ${mounted}/3000 tiles mounted`);
+ // The photo being worked on stays centred however often the density changes.
+ const centred=async()=>page.evaluate(()=>{const r=document.querySelector('.grid-scroller').getBoundingClientRect(),c=document.querySelector('.grid-tile.is-current');if(!c)return false;const b=c.getBoundingClientRect();return Math.abs((b.top+b.bottom)/2-(r.top+r.bottom)/2)<b.height;});
+ for(let k=0;k<5;k++){await page.getByRole('button',{name:/^Ver más (pequeñas|grandes)$/}).click();await page.waitForTimeout(120);assert.ok(await centred(),`density change ${k+1} keeps the working photo centred`);}
+ results.push('five density changes keep the working photo centred');
  // Pinch in → 5 columns, pinch out → 3 (synthetic pointers, as two fingers).
  const pinch=async(from,to)=>page.evaluate(([from,to])=>{const el=document.querySelector('.grid-scroller'),r=el.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
   const fire=(type,id,dx)=>el.dispatchEvent(new PointerEvent(type,{pointerId:id,isPrimary:id===1,clientX:cx+dx,clientY:cy,bubbles:true,pointerType:'touch'}));
@@ -45,13 +49,23 @@ try{
  await page.locator('.grid-actions').getByRole('button',{name:/^Eliminar/}).click();
  await page.waitForFunction(()=>document.querySelectorAll('.grid-tile.is-pending').length===4);
  assert.equal(await page.getByRole('button',{name:'Cancelar',exact:true}).count(),0,'deciding leaves «Seleccionar»');
- await page.locator('.grid-dock').getByRole('button',{name:'Deshacer la última decisión'}).click();
+ await page.getByRole('button',{name:'Seleccionar',exact:true}).click();
+ await page.locator('.grid-actions').getByRole('button',{name:'Deshacer la última decisión'}).click();
  await page.waitForFunction(()=>document.querySelectorAll('.grid-tile.is-pending').length===0);
  results.push('batch delete queues all four; one undo restores the batch');
+ // Album: the selection goes to the same album sheet as the card in hand.
+ const pick=(await visible())[1];await page.locator(`[data-i="${pick}"]`).click();
+ await page.locator('.grid-actions').getByRole('button',{name:'Guardar en un álbum'}).click();
+ await page.locator('.native-sheet').getByText('Guardar en un álbum').first().waitFor();
+ await page.locator('.native-sheet').getByRole('button',{name:'Fixture'}).click();
+ await page.waitForFunction(()=>!document.querySelector('.grid-actions'));
+ assert.equal(await page.locator('.grid-tile.is-selected').count(),0,'the saved selection is cleared');
+ results.push('album from the selection saves and leaves selection');
  // Browsing: tapping a tile opens the anchored view over the grid; closing returns to it.
  const tap=(await visible())[2];await page.locator(`[data-i="${tap}"]`).click();
  await page.locator('.inspection.is-pinned').waitFor();
  assert.equal(await page.locator('.grid-actions').count(),0,'no decision bar while browsing');
+ assert.equal(await page.locator('.grid-dock').count(),0,'no bottom bar while browsing');
  await page.locator('.inspection').getByRole('button',{name:'Cerrar'}).click();
  await page.waitForFunction(()=>!document.querySelector('.inspection'));
  assert.equal(await page.locator('.library-grid').count(),1,'the grid stays open under the anchored view');
@@ -64,9 +78,10 @@ try{
  await page.locator('.photo-card.front').waitFor();
  await page.getByTestId('open-grid').click();await page.locator('.grid-tile').first().waitFor();
  assert.equal(await page.getByRole('switch',{name:'Filtros'}).getAttribute('aria-checked'),'true','filters start on when the pile is filtered');
- const videos=Number((await page.locator('.grid-title small').innerText()).replace(/\D/g,''));
+ const videos=Number((await page.locator('.grid-progress .pile-count').innerText()).split('/').pop().replace(/\D/g,''));
  await page.getByRole('switch',{name:'Filtros'}).click();
- const all=Number((await page.locator('.grid-title small').innerText()).replace(/\D/g,''));
+ assert.ok(await centred()||await page.locator('.grid-tile.is-current').count()===0,'switching filters keeps the working photo in view');
+ const all=Number((await page.locator('.grid-progress .pile-count').innerText()).split('/').pop().replace(/\D/g,''));
  assert.ok(videos>0&&videos<all&&all===3000,`filters on ${videos}, off ${all}`);
  results.push(`filters on/off: ${videos} → ${all}`);
  await page.getByRole('button',{name:'Volver a las cartas'}).click();
