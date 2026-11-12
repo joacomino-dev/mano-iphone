@@ -14,10 +14,17 @@
     "nativeInfra": 25,
     "startupFlow": 3,
     "durableSessionFlow": 8,
-    "vhsEyeFlow": 2,
+    "vhsEyeFlow": 4,
     "muteFlow": 1,
     "buildWeb": "PASS",
-    "buildNativeWeb": "PASS"
+    "buildNativeWeb": "PASS",
+    "protectedRuntimeBrowser": 8,
+    "appleSafetyBrowser": 9,
+    "appleReadinessBrowser": 19,
+    "accessibilityBrowser": 6,
+    "leakFixtureCycles": 6,
+    "leakConsoleErrors": 0,
+    "productionNativeLazyScreens": "PASS: settings, inspector, first onboarding; chunks200, no /src requests or JS/HTTP errors"
   },
   "bundle": {
     "beforeKB": 1008.28,
@@ -29,7 +36,9 @@
     "full": 43126451617,
     "live": 43126455524,
     "android": 43126422530,
-    "status": "IN_PROGRESS"
+    "status": "IN_PROGRESS",
+    "androidFirst": "PASS 43126422530/db33b1a",
+    "androidSecond": "IN_PROGRESS 43128137830/09da1be"
   },
   "limits": [
     "R68 not reproduced in browser: no speculative application fix; new XCTest probe pending",
@@ -37,5 +46,10 @@
     "Android requires three consecutive green runs before APK delivery",
     "A2 prior afbd2f9 XCTest passed: retained actual test, workflow failed performance budget",
     "Swift cannot be verified on Windows"
-  ]
+  ],
+  "coordination": {
+    "codexSubagents": "A1/A3 and A4 completed and integrated",
+    "openclaw": "gateway restarted with current Codex path; ACP Codex responded but Core tools unavailable; Gemini CLI absent",
+    "geminiDesktop": "reload restored connection; technical review received; composition and ad lifecycle hypotheses remain unverified"
+  }
 }
