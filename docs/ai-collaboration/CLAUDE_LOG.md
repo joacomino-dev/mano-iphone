@@ -918,3 +918,17 @@ Respuestas del usuario: (1) aprueba la franja de anuncios en la cuadrícula; (2)
 - iOS `cacheThumbnails`: precacheo de PhotoKit con las mismas opciones locales que la petición real; Android no-op.
 - XCTest: `revealSwitch()` para «Modo Geek» (la nueva fila de Ajustes lo dejaba bajo las pestañas fijas en 43311711201).
 Validación: 145 unitarias, 14 baterías de navegador, runtime 28, builds web/nativo PASS.
+
+### CW-CL-076 — Segunda pasada de la cuadrícula tras la prueba del usuario
+Fecha: 2026-11-12, America/Bogota
+Agente: Claude
+Observaciones del usuario sobre `aae4dba` en iPhone y respuesta (`d5674a9`):
+- Anuncios demasiado seguidos → una franja cada 50 filas.
+- Arrastre que dudaba entre desplazar y seleccionar → la dirección se decide en el primer `touchmove` (lateral selecciona y cancela el desplazamiento; vertical desplaza); en «Seleccionar», mantener un instante también inicia el arrastre.
+- La densidad saltaba a otros sitios → la foto de trabajo (carta en mano) es el punto fijo al abrir, cambiar densidad y alternar filtros; si ya no está, la más cercana en el tiempo.
+- Filtros «no hacía nada» → sí: solo lo que seleccionan los filtros; no: toda la fototeca en orden; sin filtros activos lo explica.
+- Botón de deshacer abajo a la derecha → eliminado.
+- Interfaz abarrotada → mismo marco que la pantalla principal (`.on-device`, `.archive-header`, `.archive-progress`); salida y densidad en la fila de progreso; abajo solo fotos hasta seleccionar.
+- Falta «Álbum» al seleccionar → añadido (iOS) por la misma hoja de álbum (`albumIds`).
+- XCTest: arrastres lentos con pausa (`2ebf471`) porque «Todo» oscilaba por la inercia.
+Validación: 145 unitarias, 14 baterías de navegador (grid-flow ampliado: 5 cambios de densidad centrados, álbum, filtros), runtime 28, builds PASS.
