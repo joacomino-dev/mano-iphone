@@ -52,10 +52,28 @@ try{
  assert.match(await page.locator('.inspect-set').innerText(),/2 de 5/);
  await page.locator('.inspect-set').getByRole('button',{name:'Anterior'}).click();await page.locator('.inspect-set').getByRole('button',{name:'Anterior'}).click();
  assert.match(await page.locator('.inspect-set').innerText(),/5 de 5/,'rotation wraps around');
+ // A single tap on the photo rotates to the next one.
+ const settled=()=>page.waitForFunction(()=>document.querySelectorAll('.inspection-photo').length===1);
+ await settled();let box=await page.locator('.inspection-photo').boundingBox();
+ await page.mouse.click(box.x+box.width/2,box.y+box.height/2);await page.waitForTimeout(500);
+ assert.match(await page.locator('.inspect-set').innerText(),/1 de 5/,'a tap rotates (wraps from 5 to 1)');
+ // Swiping decides: right keeps, left deletes; the photo leaves the set.
+ const swipe=async(dx,dy)=>{await settled();await page.waitForTimeout(250);box=await page.locator('.inspection-photo').boundingBox();const x=box.x+box.width/2,y=box.y+box.height/2;await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+dx/2,y+dy/2,{steps:4});await page.mouse.move(x+dx,y+dy,{steps:4});await page.mouse.up();};
+ await swipe(180,0);await page.waitForFunction(()=>/1 de 4/.test(document.querySelector('.inspect-set')?.innerText??''));
+ await swipe(-180,0);await page.waitForFunction(()=>/1 de 3/.test(document.querySelector('.inspect-set')?.innerText??''));
+ await page.locator('.inspection.is-pinned').first().waitFor({timeout:3000});
  await page.locator('.inspection').getByRole('button',{name:'Cerrar'}).click();
  await page.waitForFunction(()=>!document.querySelector('.inspection'));
- assert.equal(await page.locator('.grid-tile.is-selected').count(),5,'closing the anchored set keeps the selection');
- results.push('Anclar shows the 5 large with ‹ › rotation; selection kept');
+ assert.equal(await page.locator('.grid-tile.is-selected').count(),3,'the two decided photos leave the selection');
+ assert.equal(await page.locator('.grid-tile.is-pending').count(),1,'the swiped-left photo is queued for deletion');
+ await page.locator('.grid-dock').getByRole('button',{name:'Deshacer la última decisión'}).click();
+ await page.waitForFunction(()=>document.querySelectorAll('.grid-tile.is-pending').length===0);
+ await page.locator('.grid-dock').getByRole('button',{name:'Deshacer la última decisión'}).click();await page.waitForTimeout(300);
+ results.push('Anclar: ‹ › and tap rotate; swipe right keeps, left deletes, photo leaves the set');
+ // Back to five selected for the batch below.
+ await page.locator('.grid-selection').getByRole('button',{name:'Quitar la selección'}).click();
+ await page.mouse.move(a.x+8,a.y+a.height/2);await page.mouse.down();await page.mouse.move(a.x+40,a.y+a.height/2,{steps:3});await page.mouse.move(z.x+z.width/2,z.y+z.height/2,{steps:8});await page.mouse.up();
+ assert.equal(await page.locator('.grid-tile.is-selected').count(),5);
  // Decide with the shrunk bar; one undo restores the batch.
  await page.locator('.grid-dock').getByRole('button',{name:/^Eliminar 5/}).click();
  await page.waitForFunction(()=>document.querySelectorAll('.grid-tile.is-pending').length===5);

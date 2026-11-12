@@ -1256,3 +1256,7 @@ input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;u
 .inspect-set{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 14px);z-index:90;transform:translateX(-50%);display:flex;align-items:center;gap:6px;padding:4px;border-radius:var(--cw-radius-pill);background:rgba(15,38,39,.86);color:var(--cw-paper-light);box-shadow:0 6px 18px rgba(0,0,0,.3);font:600 15px/1 var(--cw-font);font-variant-numeric:tabular-nums}
 .inspect-set button{display:grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-radius:50%;background:rgba(250,246,238,.12);color:inherit;-webkit-tap-highlight-color:transparent}
 .inspect-set span{min-width:64px;text-align:center}
+/* Anchored from the Fototeca: the stamp the swipe will apply, over the photo. */
+.inspection-swipe{position:absolute;inset:0;z-index:3;display:grid;place-items:center;pointer-events:none;animation:cw-fade 120ms var(--cw-ease) both}
+.inspection-swipe .stamp{width:min(62%,220px);filter:drop-shadow(0 4px 10px rgba(6,29,32,.35))}
+.inspection-swipe.is-keep .stamp{transform:rotate(-8deg)}.inspection-swipe.is-discard .stamp{transform:rotate(6deg)}

@@ -387,6 +387,8 @@ export function ManoApp() {
   const [albumIds,setAlbumIds]=useState<string[]|null>(null);const [gridAlbumDone,setGridAlbumDone]=useState(0);
   // Photos anchored together from the grid: shown large one at a time, rotated with ‹ › (user, 2026-11-12).
   const [inspectSet,setInspectSet]=useState<Asset[]|null>(null);const gridEnter=useRef<DOMRect|undefined>(undefined);
+  // Opened from the Fototeca: swiping the anchored photo decides it; a tap rotates the set.
+  const [inspectFromGrid,setInspectFromGrid]=useState(false);
   // Stamp words help while the four gestures are new; then the stamp says it alone.
   const decidedCount=Object.keys(state.marks).length+state.pending.length+state.favorites.length+state.later.length+state.removed.length;
   const stampWordsAuto=decidedCount<STAMP_WORDS_UNTIL,stampWords=display.stampWords??stampWordsAuto;
@@ -554,7 +556,16 @@ export function ManoApp() {
   const select=(id:string)=>setSelected(prev=>prev.includes(id)?prev.filter(x=>x!==id):[...prev,id]);
   const windowOf=(element:Element)=>(element.querySelector('.photo-window')??element).getBoundingClientRect();
   const openPinned=(asset:Asset,element:Element)=>{heldVideo.current=element.querySelector('video');inspectOrigin.current=windowOf(element);resetPeek();setPinnedInspect(true);setInspect(asset);haptic('rigid');};
-  const closeInspect=()=>{setPinnedInspect(false);setInspect(null);setInspectSet(null);haptic('soft');};
+  const closeInspect=()=>{setPinnedInspect(false);setInspect(null);setInspectSet(null);setInspectFromGrid(false);haptic('soft');};
+  const decideAnchored=async(kind:Action):Promise<boolean>=>{
+    const shown=inspect;if(!shown)return false;
+    if(kind==='discard'&&state.favorites.includes(shown.id)){haptic('warning');setNotice(t('Las favoritas\nno se eliminan'));return false;}
+    const list=inspectSet;if(!await act(kind,[shown.id]))return false;
+    const rest=(list??[]).filter(a=>a.id!==shown.id);
+    if(rest.length){const i=Math.max(0,(list??[]).findIndex(a=>a.id===shown.id));inspectOrigin.current=undefined;resetPeek();setInspectSet(rest.length>1?rest:null);setInspectFromGrid(true);setPinnedInspect(true);setInspect(rest[Math.min(i,rest.length-1)]);}
+    else{setInspectSet(null);setInspectFromGrid(false);setPinnedInspect(false);setInspect(null);}
+    return true;
+  };
   const rotateSet=(step:number)=>{if(!inspectSet||!inspect)return;const i=inspectSet.findIndex(a=>a.id===inspect.id);const next=inspectSet[(i+step+inspectSet.length)%inspectSet.length];inspectOrigin.current=undefined;resetPeek();setInspect(next);haptic('selection');};
   useAndroidBack(!!inspect,closeInspect);
   /** Proximity (0–1) to the single bottom dock; armed within 64 px after a
@@ -798,13 +809,13 @@ export function ManoApp() {
     {splash&&<Splash done={()=>setSplash(false)}/>}
     {gridOpen&&<Suspense fallback={<div className="library-grid" aria-busy="true"><CocoLoader size={44}/></div>}><LibraryGrid assets={assets} state={state} filter={filter} narrowed={narrowed} current={hand[0]?.id} busy={busy} close={()=>{setGridOpen(false);setGridAds(false);money.release('grid');}} decide={(action,ids)=>act(action,ids)} undo={()=>void undoLast()} notice={setNotice}
       album={onAndroid()?undefined:ids=>void openAlbums(ids)} albumDone={gridAlbumDone} enterFrom={gridEnter.current}
-      openSet={(list,from)=>{heldVideo.current=null;inspectOrigin.current=from;resetPeek();setInspectSet(list.length>1?list:null);setPinnedInspect(true);setInspect(list[0]);haptic('rigid');}}
+      openSet={(list,from)=>{heldVideo.current=null;inspectOrigin.current=from;resetPeek();setInspectSet(list.length>1?list:null);setInspectFromGrid(true);setPinnedInspect(true);setInspect(list[0]);haptic('rigid');}}
       editFilters={()=>{setSheetTab('filters');openFilters();}}
       finish={<FinishButton pending={pending} busy={busy} announce={setSpoken} finish={()=>{setGridOpen(false);setGridAds(false);money.release('grid');cancel();setError('');setSheet('review');haptic('light');}}/>}
-      open={(asset,from)=>{heldVideo.current=null;inspectOrigin.current=from;resetPeek();setPinnedInspect(true);setInspect(asset);haptic('rigid');}}
+      open={(asset,from)=>{heldVideo.current=null;inspectOrigin.current=from;resetPeek();setInspectFromGrid(true);setPinnedInspect(true);setInspect(asset);haptic('rigid');}}
       ad={gridAds&&money.placement==='grid'?within=><AdSlot where="grid" money={money} within={within}/>:undefined}/></Suspense>}
     {inspect&&inspectSet&&inspectSet.length>1&&<div className="inspect-set" role="group" aria-label={t('Fotos ancladas')}><button type="button" onClick={()=>rotateSet(-1)} aria-label={t('Anterior')}><CaretLeftIcon size={20} weight="bold" className="flip-rtl"/></button><span aria-live="polite">{t('{n} de {total}',{n:formatNumber(inspectSet.findIndex(a=>a.id===inspect.id)+1),total:formatNumber(inspectSet.length)})}</span><button type="button" onClick={()=>rotateSet(1)} aria-label={t('Siguiente')}><CaretRightIcon size={20} weight="bold" className="flip-rtl"/></button></div>}
-    <AnimatePresence>{inspect&&<InspectorBoundary key={inspect.id} close={closeInspect}><Suspense fallback={<div className="inspection is-pinned" aria-busy="true"><div className="inspection-shade"/><CocoLoader size={44}/></div>}><Inspector asset={inspect} src={sharpPreview(inspect)??(preloader.current?.get(inspect)?.poster||undefined)} cloud={!!preloader.current?.peek(inspect)?.value?.cloud} pinned={pinnedInspect} origin={inspectOrigin.current} peek={{x:peekX,y:peekY}} anchor={anchor} armed={overHook} geek={!!filter.geek} close={closeInspect} pin={()=>{setPinnedInspect(true);haptic('rigid');}}
+    <AnimatePresence>{inspect&&<InspectorBoundary key={inspect.id} close={closeInspect}><Suspense fallback={<div className="inspection is-pinned" aria-busy="true"><div className="inspection-shade"/><CocoLoader size={44}/></div>}><Inspector asset={inspect} src={sharpPreview(inspect)??(preloader.current?.get(inspect)?.poster||undefined)} cloud={!!preloader.current?.peek(inspect)?.value?.cloud} pinned={pinnedInspect} origin={inspectOrigin.current} peek={{x:peekX,y:peekY}} anchor={anchor} armed={overHook} geek={!!filter.geek} close={closeInspect} decide={inspectFromGrid&&pinnedInspect?decideAnchored:undefined} next={inspectFromGrid&&inspectSet&&inspectSet.length>1?()=>rotateSet(1):undefined} pin={()=>{setPinnedInspect(true);haptic('rigid');}}
       video={(inspect.kind==='video'&&inspect.id===active?.id)||(inspect.kind==='live'&&!onAndroid())?{state:inspect.kind==='live'?inspectedLive:frontVideo,request:()=>requestLive(inspect),retry:()=>getVideos().retry(motionAsset(inspect)),download:()=>{requestLive(inspect);getVideos().download(motionAsset(inspect));},fullscreen:()=>{if(inspect.kind==='video')void play(inspect);},openSettings,sound:videoSound,onSound:()=>setVideoSound(v=>!v),freeze:inspect.kind==='video'?heldVideo.current:undefined}:undefined}/></Suspense></InspectorBoundary>}</AnimatePresence>
     <Sheet open={sheet==='filters'} close={()=>setSheet(null)} title={sheetTab==='filters'?t('Filtros'):sheetTab==='support'?t('Apoyo'):t('Ajustes')} description={sheetTab==='filters'?t('Elige qué fotos entran en la pila.'):sheetTab==='support'?t('Quita los anuncios o invita un café a quien la hace.'):t('Elige cómo se ven tus recuerdos.')} error={visibleError} returnTo="filter-trigger">
       <div className="sheet-tabs" role="group" aria-label={t('Sección')}><button aria-pressed={sheetTab==='filters'} onClick={()=>{haptic('selection');setSheetTab('filters');}}>{t('Filtros')}</button><button aria-pressed={sheetTab==='settings'} onClick={()=>{haptic('selection');setSheetTab('settings');}}>{t('Ajustes')}</button>{money.available&&<button aria-pressed={sheetTab==='support'} onClick={()=>{haptic('selection');setSheetTab('support');}}>{t('Apoyo')}</button>}</div>

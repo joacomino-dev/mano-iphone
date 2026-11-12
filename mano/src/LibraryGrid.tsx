@@ -180,6 +180,8 @@ export default function LibraryGrid({ assets, state, filter, narrowed, current, 
     const next = columns === 3 ? 5 : 3; setColumns(next); haptic('selection');
     try { localStorage.setItem(COLUMNS_KEY, String(next)); } catch { /* per-device convenience only */ }
   };
+  const lastDecision = state.history.at(-1);
+  useEffect(() => { if (!lastDecision) return; setSelected(previous => lastDecision.ids.some(id => previous.has(id)) ? new Set([...previous].filter(id => !lastDecision.ids.includes(id))) : previous); }, [lastDecision]);
   const lastAlbum = useRef(albumDone);
   useEffect(() => { if (albumDone !== lastAlbum.current) { lastAlbum.current = albumDone; setSelected(new Set()); } }, [albumDone]);
 

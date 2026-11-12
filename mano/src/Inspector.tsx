@@ -9,6 +9,8 @@ import { cardPixels, previewPolicyKey, subscribePreviewPolicy } from './preview'
 import { formatBytes } from './meta';
 import { locale, t } from './i18n';
 import type { Asset } from './domain';
+import { Stamp, type StampKind } from './Stamp';
+import { haptic } from './haptics';
 
 const GEEK_LABELS:Record<string,()=>string>={latitude:()=>t('Latitud'),longitude:()=>t('Longitud'),altitude:()=>t('Altitud'),filename:()=>t('Archivo'),width:()=>t('Ancho'),height:()=>t('Alto'),creationDate:()=>t('Capturada'),modified:()=>t('Modificada'),duration:()=>t('Duración'),kind:()=>t('Tipo'),uniformTypeIdentifier:()=>t('Formato'),cameraMake:()=>t('Fabricante'),cameraModel:()=>t('Cámara'),lensModel:()=>t('Objetivo'),fNumber:()=>t('Apertura'),exposureTime:()=>t('Exposición'),dateTimeOriginal:()=>t('Fecha EXIF'),orientation:()=>t('Orientación'),camera:()=>t('Cámara'),lens:()=>t('Objetivo'),iso:()=>'ISO',aperture:()=>t('Apertura'),shutter:()=>t('Exposición'),focalLength:()=>t('Distancia focal'),isFavorite:()=>t('Favorita'),isHidden:()=>t('Oculta')};
 export type InspectOrigin={x:number;y:number;width:number;height:number};
@@ -22,7 +24,10 @@ const follow={type:'spring',stiffness:900,damping:60,mass:.6} as const;
 /** `freeze`: the card's own <video>, whose current frame is painted under the
  * held view while its element catches up — no flash of the first frame. */
 export type InspectVideo={request?:()=>void;state:VideoState;retry:()=>void;download:()=>void;fullscreen:()=>void;openSettings:()=>void;sound?:boolean;onSound?:()=>void;freeze?:HTMLVideoElement|null};
-export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed,geek,close,pin,video}: {asset:Asset;src?:string;cloud?:boolean;pinned:boolean;origin?:InspectOrigin;peek:{x:MotionValue<number>;y:MotionValue<number>};anchor:MotionValue<number>;armed:boolean;geek:boolean;close:()=>void;pin:()=>void;video?:InspectVideo}) {
+/** `decide` (opened from the Fototeca, user 2026-11-12): dragging the photo away decides
+ * it like a card on the pile — right keeps, left deletes, up favourites, down later —
+ * instead of closing. `next`: a single tap rotates to the next anchored photo. */
+export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed,geek,close,pin,video,decide,next}: {asset:Asset;src?:string;cloud?:boolean;pinned:boolean;origin?:InspectOrigin;peek:{x:MotionValue<number>;y:MotionValue<number>};anchor:MotionValue<number>;armed:boolean;geek:boolean;close:()=>void;pin:()=>void;video?:InspectVideo;decide?:(kind:StampKind)=>Promise<boolean>;next?:()=>void}) {
  const policy=useSyncExternalStore(subscribePreviewPolicy,previewPolicyKey);
  // An iCloud-only photo (no local preview under «Ahorrar iCloud») is not an
  // error: it says so, and anchoring downloads it (loadZoomPreview below).
@@ -67,10 +72,18 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
  const dismiss=useRef<{id:number;x:number;y:number;t:number}|null>(null);
  const onControl=(e:PointerEvent)=>!!(e.target as HTMLElement).closest('button,input,a,.video-controls');
  const startDismiss=(e:PointerEvent)=>{if(!pinned||zoom>1||onControl(e)||dismiss.current)return false;dismiss.current={id:e.pointerId,x:e.clientX,y:e.clientY,t:performance.now()};return true;};
- const resetDismiss=()=>{dismiss.current=null;animate(dismissX,0,settle);animate(dismissY,0,settle);};
- const moveDismiss=(e:PointerEvent)=>{const d=dismiss.current;if(!d||d.id!==e.pointerId)return false;if(points.current.size>1){resetDismiss();return false;}dismissX.set((e.clientX-d.x)/scale.current);dismissY.set((e.clientY-d.y)/scale.current);return true;};
+ const [swipe,setSwipe]=useState<StampKind|null>(null);
+ const swipeNow=useRef<StampKind|null>(null);
+ const kindOf=(x:number,y:number):StampKind|null=>Math.hypot(x,y)<56?null:Math.abs(x)>=Math.abs(y)?(x>0?'keep':'discard'):(y<0?'favorite':'later');
+ const resetDismiss=()=>{dismiss.current=null;swipeNow.current=null;setSwipe(null);animate(dismissX,0,settle);animate(dismissY,0,settle);};
+ const moveDismiss=(e:PointerEvent)=>{const d=dismiss.current;if(!d||d.id!==e.pointerId)return false;if(points.current.size>1){resetDismiss();return false;}dismissX.set((e.clientX-d.x)/scale.current);dismissY.set((e.clientY-d.y)/scale.current);if(decide){const k=kindOf(e.clientX-d.x,e.clientY-d.y);if(k!==swipeNow.current){swipeNow.current=k;setSwipe(k);if(k)haptic('selection');}}return true;};
  const endDismiss=(e:PointerEvent)=>{const d=dismiss.current;if(!d||d.id!==e.pointerId)return 0;const distance=Math.hypot(e.clientX-d.x,e.clientY-d.y),speed=distance/Math.max(1,performance.now()-d.t);dismiss.current=null;
-  if(distance>110||(distance>40&&speed>.6)){animate(dismissX,0,settle);animate(dismissY,0,settle);close();}else{animate(dismissX,0,settle);animate(dismissY,0,settle);}return distance;};
+  const dx=e.clientX-d.x,dy=e.clientY-d.y,kind=decide?kindOf(dx,dy)??(Math.abs(dx)>=Math.abs(dy)?(dx>0?'keep':'discard'):(dy<0?'favorite':'later')):null;
+  if(distance>110||(distance>40&&speed>.6)){
+   if(decide&&kind){const away=reduced?0:520,ux=Math.abs(dx)>=Math.abs(dy)?Math.sign(dx):0,uy=ux?0:Math.sign(dy);
+    void Promise.all([animate(dismissX,ux*away,{duration:.18,ease:'easeIn'}),animate(dismissY,uy*away,{duration:.18,ease:'easeIn'})]).then(()=>decide(kind)).then(done=>{swipeNow.current=null;setSwipe(null);if(!done){animate(dismissX,0,settle);animate(dismissY,0,settle);}});}
+   else{animate(dismissX,0,settle);animate(dismissY,0,settle);close();}}
+  else{swipeNow.current=null;setSwipe(null);animate(dismissX,0,settle);animate(dismissY,0,settle);}return distance;};
  const rebase=()=>{const p=[...points.current.values()];base.current={distance:p.length>1?Math.hypot(p[1].x-p[0].x,p[1].y-p[0].y):0,zoom,x:p[0]?.x??0,y:p[0]?.y??0,panX:pan.x,panY:pan.y};};
  const down=(e:PointerEvent)=>{if(!pinned||onControl(e))return;e.stopPropagation();if(!points.current.size)downAt.current={x:e.clientX,y:e.clientY};e.currentTarget.setPointerCapture(e.pointerId);points.current.set(e.pointerId,{x:e.clientX,y:e.clientY});if(points.current.size===1)startDismiss(e);else resetDismiss();rebase();};
  const move=(e:PointerEvent)=>{if(moveDismiss(e)){e.stopPropagation();if(points.current.has(e.pointerId))points.current.set(e.pointerId,{x:e.clientX,y:e.clientY});return;}if(!points.current.has(e.pointerId))return;e.stopPropagation();points.current.set(e.pointerId,{x:e.clientX,y:e.clientY});const p=[...points.current.values()],b=base.current;
@@ -79,13 +92,14 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
  };
  // Double tap on the anchored media zooms in at that point; another double tap
  // zooms back out (user, 2026-11-09). Single taps keep their meaning.
- const lastTap=useRef<{t:number;x:number;y:number}|null>(null);const downAt=useRef({x:0,y:0});
+ const lastTap=useRef<{t:number;x:number;y:number}|null>(null);const downAt=useRef({x:0,y:0});const tapTimer=useRef(0);
+ useEffect(()=>()=>window.clearTimeout(tapTimer.current),[]);
  const doubleTap=(e:PointerEvent,moved:number)=>{if(!pinned||moved>=10||points.current.size||onControl(e))return;const now=performance.now(),prev=lastTap.current;
-  if(prev&&now-prev.t<320&&Math.hypot(e.clientX-prev.x,e.clientY-prev.y)<30){lastTap.current=null;
+  if(prev&&now-prev.t<320&&Math.hypot(e.clientX-prev.x,e.clientY-prev.y)<30){lastTap.current=null;window.clearTimeout(tapTimer.current);
    if(zoom>1){setZoom(1);setPan({x:0,y:0});}else{const rect=frame.current!.getBoundingClientRect(),k=scale.current||1,z=2.5;
     const px=(e.clientX-(rect.left+rect.width/2))/k,py=(e.clientY-(rect.top+rect.height/2))/k,maxX=rect.width/k*(z-1)/2,maxY=rect.height/k*(z-1)/2;
     setZoom(z);setPan({x:Math.min(maxX,Math.max(-maxX,-px*(z-1))),y:Math.min(maxY,Math.max(-maxY,-py*(z-1)))});}
-  }else lastTap.current={t:now,x:e.clientX,y:e.clientY};};
+  }else{const tap={t:now,x:e.clientX,y:e.clientY};lastTap.current=tap;if(next&&zoom===1){window.clearTimeout(tapTimer.current);tapTimer.current=window.setTimeout(()=>{if(lastTap.current===tap){lastTap.current=null;next();}},330);}}};
  const up=(e:PointerEvent)=>{endDismiss(e);points.current.delete(e.pointerId);rebase();if(e.currentTarget===frame.current)doubleTap(e,Math.hypot(e.clientX-downAt.current.x,e.clientY-downAt.current.y));};
  // Anchored: the area around the photo is part of it. A pinch or a pan there
  // works on the photo; a single tap there closes, like «Cerrar».
@@ -114,6 +128,7 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
    {video?<div className="inspection-media"><InlineVideo asset={asset} state={video.state} request={video.request} mediaStyle={{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}} mode={pinned?'full':'peek'} sound={video.sound} onSound={video.onSound} retry={video.retry} download={video.download} fullscreen={video.fullscreen} openSettings={video.openSettings}>{freeze?<canvas ref={still} className="inspection-still"/>:(poster||sharp||download?.src)?<img src={pinned&&sharp?sharp:poster||download?.src} alt="" draggable={false} style={{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}}/>:null}</InlineVideo></div>
     :poster||(pinned&&sharp)||download?.src?<img src={pinned&&sharp?sharp:poster||download?.src} alt={t('Recuerdo ampliado')} draggable={false} style={{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}}/>:<span>{posterCloud?(pinned?'':t('En iCloud. Ancla para descargarla.')):posterError?t('No se pudo cargar la imagen.'):''}{posterError&&pinned&&<button onClick={()=>setPosterRetry(v=>v+1)}>{t('Reintentar')}</button>}</span>}
    {!sharp&&(cloud||download?.status==='downloading')&&<CloudBadge className="cloud-download" state={download?.status==='ready'?undefined:download} lite={cloud} onRetry={()=>void cloudPreviews.retry(asset,'zoom').then(setSharp).catch(()=>{})}/>}
+   {swipe&&<span className={`inspection-swipe is-${swipe}`} aria-hidden="true"><Stamp kind={swipe} word/></span>}
   </motion.div></motion.div></motion.div>}
   <motion.div layout={!reduced} className={`inspection-dock ${pinned?'is-pinned':''} ${armed?'is-armed':''}`} data-inspection-hook style={{'--anchor':anchor} as CSSProperties}
    initial={reduced?false:{opacity:0,y:16}} animate={{opacity:1,y:0}} exit={reduced?{opacity:0,transition:{duration:0}}:{opacity:0,y:16}} transition={reduced?{duration:0}:{type:'spring',stiffness:420,damping:36}}>
