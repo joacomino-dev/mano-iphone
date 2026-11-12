@@ -37,7 +37,7 @@ import { formatNumber, locale, parts, t, tn } from './i18n';
 const cancelled=(e:unknown)=>(e as {code?:string})?.code==='CANCELLED';
 import { InspectorBoundary } from './Boundary';
 import { installErrorReporting } from './diagnostics';
-import { Stamp, DecisionStamp, DecisionIcon, ROMAN, type StampKind } from './Stamp';
+import { Stamp, DecisionStamp, DecisionIcon, withStars, type StampKind } from './Stamp';
 import { DecisionBar } from './DecisionBar';
 import { Wordmark, PileProgress } from './Chrome';
 import { Character } from './Characters';
@@ -132,7 +132,7 @@ function CardShare({ asset, sharing, share }: { asset: Asset; sharing: boolean; 
 }
 
 function Seal({ level, hide }: { level: number; hide: () => void }) {
-  return <button className="seal" aria-label={t('Conservada, sello {level} de {total}. Ocultar los sellos',{level:ROMAN[level-1],total:LEVELS.length})} onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();hide();}}><Stamp kind="keep" level={level}/></button>;
+  return <button className="seal" aria-label={withStars(stars=>t('Conservada, sello {level} de {total}. Ocultar los sellos',{level:stars,total:'★'.repeat(LEVELS.length-1)}),level)} onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();hide();}}><Stamp kind="keep" level={level}/></button>;
 }
 function Sheet({ open, close, title, description, children, error, returnTo, footer }: { open: boolean; close: () => void; title: string; description: string; children: ReactNode; error?: string; returnTo: string; footer?: ReactNode }) {
   const bodyRef=useRef<HTMLDivElement>(null); const previousDialog=useRef<Element|null>(null);

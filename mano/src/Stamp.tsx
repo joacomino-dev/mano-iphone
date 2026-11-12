@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import type { CSSProperties } from 'react';
 import { motion } from 'motion/react';
 import { DAYS } from './domain';
 import { t } from './i18n';
@@ -13,23 +13,37 @@ import { t } from './i18n';
  *  - favorite: pink heart;
  *  - later: coffee postmark with a clock, «Más tarde» (a letter to open later). */
 export type StampKind = 'keep' | 'discard' | 'favorite' | 'later';
-export const ROMAN = ['I', 'II', 'III', 'IV', 'V'];
+/** Seal levels as stars (user, 2026-11-12): level 1 is the keep stamp alone; each
+ * time it is kept again it earns a star, up to four at level 5 (kept for good). */
+export const levelStars = (level: number) => Math.max(0, Math.min(4, level - 1));
+/** «Sello ★★»-style text for labels and the Mostrar options; level 1 has no stars, and
+ * the placeholder's own space goes with it («Sello: …», French «Tampon : …»). */
+export function withStars(template: (level: string) => string, level: number) {
+  const stars = '★'.repeat(levelStars(level));
+  return stars ? template(stars) : template('\u0000').replace(/ ?\u0000/, '');
+}
 /** What a kept seal level means for the person: when the photo comes back. */
 export function sealRest(level: number) {
   const days = DAYS[Math.min(DAYS.length, Math.max(1, level)) - 1];
   return Number.isFinite(days) ? t('vuelve en {days} días', { days }) : t('se queda guardada hasta que la pidas');
 }
 
-function KeepSeal({ level }: { level?: number }) {
-  const arc = useId();
-  return <svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">
-    <circle cx="50" cy="50" r="46" fill="var(--stamp-fill, none)" stroke="currentColor" strokeWidth="4"/>
-    <circle cx="50" cy="50" r="38" fill="none" stroke="currentColor" strokeWidth="1.5"/>
-    <path id={arc} d="M19 52a31 31 0 0 1 62 0" fill="none"/>
-    <text className="stamp-word"><textPath href={`#${arc}`} startOffset="50%" textAnchor="middle">{level ? 'CONSERVADA' : 'CONSERVAR'}</textPath></text>
-    {level ? <text className="stamp-numeral" x="50" y="70" textAnchor="middle">{ROMAN[level - 1]}</text>
-      : <path d="M35 60l10 10 20-22" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round"/>}
+/** One level star: a chunky marigold sticker with the same dark outline as the Coqui
+ * art and a small gloss, like the heart button. Rounded joins keep it friendly. */
+export function LevelStar({ className = '', style }: { className?: string; style?: CSSProperties }) {
+  return <svg className={`level-star ${className}`} style={style} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M12 2.4 14.8 8.3 21.3 9.1 16.5 13.5 17.8 19.9 12 16.7 6.2 19.9 7.5 13.5 2.7 9.1 9.2 8.3Z" fill="var(--cw-star)" stroke="var(--cw-lettering)" strokeWidth="1.6" strokeLinejoin="round"/>
+    <path d="M9.9 8.9 11.3 6" fill="none" stroke="#FFF6D8" strokeWidth="1.5" strokeLinecap="round" opacity=".9"/>
   </svg>;
+}
+/** The stars over the stamp's top edge, fanned on its rim like a crown. */
+function Stars({ count }: { count: number }) {
+  if (!count) return null;
+  const spread = 34, start = -spread * (count - 1) / 2;
+  return <span className="stamp-stars">{Array.from({ length: count }, (_, k) => {
+    const angle = start + spread * k, rad = angle * Math.PI / 180;
+    return <LevelStar key={k} className="stamp-star" style={{ left: `${50 + 47 * Math.sin(rad)}%`, top: `${50 - 47 * Math.cos(rad)}%`, transform: `translate(-50%,-50%) rotate(${angle}deg)` }}/>;
+  })}</span>;
 }
 /** Mini icons shared by buttons, stamps and the tutorial (24 × 24, stroke 2). */
 const ICON: Record<StampKind, string> = {
@@ -60,7 +74,9 @@ const WORDS: Record<StampKind, () => string> = { keep: () => t('Conservar'), dis
 /** `word`: the large decision stamp (cards, drag, tour). `lettering`: its word
  * underneath, on a cream plate; off, the same stamp at the same size, alone. */
 export function Stamp({ kind, level, word = false, lettering = true, className = '' }: { kind: StampKind; level?: number; word?: boolean; lettering?: boolean; className?: string }) {
-  if (level) return <span className={`stamp stamp-${kind} ${className}`} aria-hidden="true"><KeepSeal level={level}/></span>;
+  if (level) return <span className={`stamp stamp-${kind} is-art is-level ${className}`} aria-hidden="true">
+    <img src={ART.keep} alt="" draggable={false}/><Stars count={levelStars(level)}/>
+  </span>;
   // The illustrated word is lettered in Spanish: other languages set the same
   // seal next to their own word, between the same wavy lines.
   // 9.8.4: with its word, the stamp is large and the word sits underneath,

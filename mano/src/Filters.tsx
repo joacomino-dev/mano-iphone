@@ -3,7 +3,7 @@ import { HeartIcon, CalendarBlankIcon, ImagesIcon, StampIcon, ArrowCounterClockw
 import { initialFilter, pileCount, favoritesTotal, LEVELS, type Asset, type Filter, type Order, type RecordState, type Smart } from './domain';
 import { AnimatedNumber } from './Loader';
 import { haptic } from './haptics';
-import { ROMAN, sealRest, Stamp } from './Stamp';
+import { LevelStar, levelStars, sealRest, Stamp, withStars } from './Stamp';
 import { formatNumber, locale, t, tn } from './i18n';
 import { onAndroid } from './locales/android';
 
@@ -47,6 +47,12 @@ const RANGES = [['all', () => t('Cualquier fecha')], ['24h', () => t('Últimas 2
 /** What enters the pile. Grouped from the quickest decision to the finest:
  * clean-up shortcut → content → dates → order → seals. Changes are a draft
  * until «Aplicar filtros»; every shortcut shows how many files it holds now. */
+/** The legend's level mark: the mini keep stamp and its stars in a row. */
+function Level({ level }: { level: number }) {
+  return <strong className="seal-level" aria-label={withStars(stars => t('Sello {level}: {rest}', { level: stars, rest: '' }), level).replace(/[:：]\s*$/, '')}>
+    <Stamp kind="keep" className="seal-level-stamp"/>{Array.from({ length: levelStars(level) }, (_, k) => <LevelStar key={k}/>)}
+  </strong>;
+}
 export function Filters({filter,assets,state,apply,index,preview}: {filter:Filter;assets:Asset[];state:RecordState;apply:(f:Filter)=>void;index:IndexProgress;preview?:(draft:Filter)=>void}) {
  const [draft,setDraft]=useState<Filter>({...initialFilter,...filter});
  // While choosing, the first cards of the draft warm up in the background, so
@@ -80,10 +86,10 @@ export function Filters({filter,assets,state,apply,index,preview}: {filter:Filte
     <p>{t('Cuando conservas una foto, recibe un sello y descansa: no vuelve a aparecer en un tiempo. Si la conservas otra vez, el sello sube de nivel y descansa más, hasta quedarse para siempre. Así cada ronda trae lo que aún no has decidido.')}</p>
    </div>
    <ul className="seal-levels" aria-label={t('Niveles de sello')}>{LEVELS.map((label, i) => i + 1 === LEVELS.length
-     ? <li key={label} className="is-forever"><strong>{ROMAN[i]}</strong><span>{sealRest(i + 1)}</span><small>{t('Para volver a verlas, elige «Sello {level}» en Mostrar.',{level:ROMAN[i]})}</small></li>
-     : <li key={label}><strong>{ROMAN[i]}</strong>{sealRest(i + 1)}</li>)}</ul></details>
+     ? <li key={label} className="is-forever"><Level level={i + 1}/><span>{sealRest(i + 1)}</span><small>{withStars(stars => t('Para volver a verlas, elige «Sello {level}» en Mostrar.',{level:stars}), i + 1)}</small></li>
+     : <li key={label}><Level level={i + 1}/>{sealRest(i + 1)}</li>)}</ul></details>
    <div className="settings-group">
-   <label className="field">{t('Mostrar')}<select value={draft.seal} onChange={e=>update({seal:['all','none'].includes(e.target.value)?e.target.value as 'all'|'none':Number(e.target.value)})}><option value="all">{t('Todos los niveles')}</option><option value="none">{t('Sin sello: pendientes de descubrir')}</option>{LEVELS.map((l,i)=><option key={l} value={i+1}>{t('Sello {level}: {rest}',{level:ROMAN[i],rest:sealRest(i+1)})}</option>)}</select></label><label className="switch-field"><span>{t('Incluir las que descansan')}<small>{t('Las conservadas vuelven con menor frecuencia.')}</small></span><input type="checkbox" role="switch" checked={draft.includeWaiting} onChange={e=>update({includeWaiting:e.target.checked})}/></label></div></fieldset>
+   <label className="field">{t('Mostrar')}<select value={draft.seal} onChange={e=>update({seal:['all','none'].includes(e.target.value)?e.target.value as 'all'|'none':Number(e.target.value)})}><option value="all">{t('Todos los niveles')}</option><option value="none">{t('Sin sello: pendientes de descubrir')}</option>{LEVELS.map((l,i)=><option key={l} value={i+1}>{withStars(stars=>t('Sello {level}: {rest}',{level:stars,rest:sealRest(i+1)}),i+1)}</option>)}</select></label><label className="switch-field"><span>{t('Incluir las que descansan')}<small>{t('Las conservadas vuelven con menor frecuencia.')}</small></span><input type="checkbox" role="switch" checked={draft.includeWaiting} onChange={e=>update({includeWaiting:e.target.checked})}/></label></div></fieldset>
   {/* 9.8.6: back to the base filters — centred, quiet, after the choices. */}
   <div className="filter-reset"><button type="button" onClick={()=>{haptic('selection');setDraft({...initialFilter});}}><ArrowCounterClockwiseIcon size={16}/>{t('Restablecer')}</button></div>
   <div className="filter-apply"><span>{invalid?(!draft.from||!draft.to?t('Elige desde y hasta para aplicar'):t('La fecha inicial debe ir antes de la final')):<><AnimatedNumber value={count}/> {tn('pileTail',count)}</>}</span><button className="sheet-action" disabled={invalid} onClick={()=>apply({...draft,v:2})}>{t('Aplicar filtros')}</button></div>

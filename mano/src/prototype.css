@@ -336,7 +336,7 @@
 .media-play:after{content:'';position:absolute;inset:-6px}
 
 /* ---------- Stamps (Stamp.tsx): colour + shape + icon + word ---------- */
-.stamp{display:block;line-height:0}.stamp svg{display:block;width:100%;height:100%;overflow:visible}
+.stamp{display:block;line-height:0}.stamp>svg{display:block;width:100%;height:100%;overflow:visible}
 /* 0.9.6 illustrated stamps: the art carries its own colours; on a card the
    stamp with its word sits on a cream plate so it reads over any photo. */
 .stamp.is-art img{display:block;width:100%;height:auto;-webkit-user-drag:none}
@@ -1208,7 +1208,7 @@ input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;u
 .grid-tile.is-selected>img{transform:scale(.9);border-radius:6px;transition:transform 120ms ease-out}
 .grid-tile.is-selected{background:var(--cw-teal-800)}
 .grid-stamp{position:absolute;right:4px;bottom:4px;width:30px;height:30px;pointer-events:none;filter:drop-shadow(0 1px 2px rgba(6,29,32,.45))}
-.grid-stamp .stamp,.grid-stamp .stamp img,.grid-stamp .stamp svg{display:block;width:100%;height:100%}
+.grid-stamp .stamp,.grid-stamp .stamp>img,.grid-stamp .stamp>svg{display:block;width:100%;height:auto}
 .grid-stamp .stamp-keep svg{color:var(--cw-turquoise);--stamp-fill:rgba(250,246,238,.94)}
 .grid-later{position:absolute;left:3px;bottom:3px;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:rgba(250,246,238,.94);color:var(--cw-coconut-deep);box-shadow:0 1px 2px rgba(6,29,32,.35);pointer-events:none}
 .grid-duration{position:absolute;right:4px;top:4px;padding:3px 5px;border-radius:6px;background:rgba(15,38,39,.62);font:600 11px/1 var(--cw-font);color:#fff;font-variant-numeric:tabular-nums;pointer-events:none}
@@ -1260,3 +1260,18 @@ input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;u
 .inspection-swipe{position:absolute;inset:0;z-index:3;display:grid;place-items:center;pointer-events:none;animation:cw-fade 120ms var(--cw-ease) both}
 .inspection-swipe .stamp{width:min(62%,220px);filter:drop-shadow(0 4px 10px rgba(6,29,32,.35))}
 .inspection-swipe.is-keep .stamp{transform:rotate(-8deg)}.inspection-swipe.is-discard .stamp{transform:rotate(6deg)}
+/* Seal levels as stars (user, 2026-11-12): the Coqui keep stamp crowned with 0–4
+   marigold stars on its rim. */
+:root{--cw-star:#F4B63F}
+.stamp.is-level{position:relative;display:block;overflow:visible}
+.stamp.is-level>img{display:block;width:100%;height:auto}
+.stamp-stars{position:absolute;inset:0;pointer-events:none}
+.stamp-star{position:absolute;width:23%;height:auto;filter:drop-shadow(0 1px 1px rgba(59,30,16,.35))}
+.seal{overflow:visible}
+.seal-level{display:inline-flex;align-items:center;gap:1px;flex:none}
+.seal-level .seal-level-stamp{width:22px;margin-inline-end:4px}
+.seal-level .level-star{width:13px;height:13px}
+.seal-levels li{align-items:center}
+/* The grid's mini stamp: a bit larger, with larger stars so the level can be counted. */
+.grid-stamp{width:34px;height:34px}
+.grid-stamp .stamp-star{width:30%}
