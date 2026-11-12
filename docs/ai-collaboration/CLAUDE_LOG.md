@@ -906,3 +906,15 @@ Hecho (navegador PASS, sin confirmar aún en iPhone):
 - R-72 `9d1e9b6`/`ced487c`: «Fototeca» F1+F2 (plan `docs/ai-handoff/GRID_VIEW_PLAN.md`): botón junto a la barra de progreso, orden real centrado en la carta, 3/5 columnas (botón y pellizco), sellos pequeños, Más tarde en otra esquina, Filtros sí/no, vista previa con decisión, Seleccionar con toque/arrastre de rango, lote vía `act()` con un solo deshacer; favoritas nunca se encolan para borrar. Chunk diferido de 12 kB. `tests/grid-flow.mjs`.
 - R-73: web descartada como causa (400 decisiones / 3000 elementos sin crecimiento; 12 min en reposo sin actividad, `tests/long-use-profile.mjs`). Android 43130032595: la «CPU en reposo» eran picos post-ronda alternos; el muestreador ahora espera a que la app se calme y falla si nunca lo hace (`3df87da`, umbrales intactos, +2 pruebas Python). iOS: pendiente del `sample` del gate completo.
 Pendiente: gates nativos 43311706328 (full) y 43311711201 (live) sobre `125f46e`; tres Android verdes seguidos y APK; R-68 sigue sin reproducción; F3 miniaturas nativas y F4 anuncios (requiere aprobación).
+
+### CW-CL-075 — Pasada de diseño, ojo VHS y cierre de la cuadrícula
+Fecha: 2026-11-12, America/Bogota
+Agente: Claude
+Respuestas del usuario: (1) aprueba la franja de anuncios en la cuadrícula; (2) tocar una foto abre la vista anclada con zoom; (3) palabras de sello hasta 20 decisiones.
+- Revisión con `coco-mobile-ui` + `frontend-design` sobre capturas 390×844: cabecera con los botones propios de la app (`header-action`), Filtros con embudo/embudo tachado, Seleccionar en teal al activarse; al navegar, «Volver a las cartas», densidad y deshacer (la barra de decisiones solo al seleccionar); casillas de selección con más contraste; duración en píldora; objetivos de 44 pt (botón de cuadrícula con área ampliada); estado vacío con botones del mismo ancho.
+- Toque → `Inspector` anclado desde el rectángulo de la celda (la cuadrícula queda debajo; Atrás de Android cierra primero la vista anclada).
+- Anuncios: `money.grid()` solo ofrece si ya hay carta cargada al abrir; una franja cada 10 filas y solo la visible aloja la carta nativa; `AdSlot` acepta `within` para no tapar cabecera ni barra; sin anuncios para quien pagó.
+- R-68: sin `backdrop-filter` en controles de carta y capa propia (`aae4dba`). Pendiente confirmación en iPhone.
+- iOS `cacheThumbnails`: precacheo de PhotoKit con las mismas opciones locales que la petición real; Android no-op.
+- XCTest: `revealSwitch()` para «Modo Geek» (la nueva fila de Ajustes lo dejaba bajo las pestañas fijas en 43311711201).
+Validación: 145 unitarias, 14 baterías de navegador, runtime 28, builds web/nativo PASS.
