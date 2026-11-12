@@ -116,11 +116,18 @@ async function processSnapshot(){
  const processes=[];for(const p of candidates){const pid=p[0],info=await adb('shell','dumpsys','meminfo','--local',pid),m=/TOTAL PSS:\s*(\d+)/.exec(info)||/^\s*TOTAL\s+(\d+)/m.exec(info);assert.ok(m,'Missing measured PSS for '+pid);await fs.writeFile(`${OUT}/cycle-${rows.length}-mem-${pid}.txt`,info);let ticks=null;try{const stat=await adb('shell','cat',`/proc/${pid}/stat`);const cols=stat.slice(stat.lastIndexOf(')')+2).trim().split(/\s+/);ticks=Number(cols[11])+Number(cols[12]);}catch{}processes.push({pid,...owned.get(pid),name:p.slice(2,3).join(''),pssKiB:Number(m[1]),cpuTicks:ticks,sampleMonotonicMs:performance.now()});}
  assert.ok(processes.some(p=>p.role==='app'));return processes;
 }
+async function appTicks(){const stat=await adb('shell','cat',`/proc/${lab.pid}/stat`);const cols=stat.slice(stat.lastIndexOf(')')+2).trim().split(/\s+/);return Number(cols[11])+Number(cols[12]);}
 async function sample(cycle){
- await sleep(3000);const before=await processSnapshot(),start=performance.now();await sleep(2000);const after=await processSnapshot(),seconds=(performance.now()-start)/1000;
  const hz=Number(await adb('shell','getconf','CLK_TCK'));assert.ok(hz>0,'CPU clock tick frequency unavailable');
+ // Idle means quiet: after a round the app may still be finishing its work
+ // (MediaStore re-query, previews). Probe 1 s windows until the app is under 10 %
+ // CPU, up to 8 probes; a process that never quiets is recorded as unsettled and
+ // fails the budget (evaluate-native-cycles.py). Thresholds are unchanged.
+ await sleep(3000);let settleProbes=0,quiet=false;
+ for(;settleProbes<8;settleProbes++){const a=await appTicks(),t=performance.now();await sleep(1000);const b=await appTicks();if(100*(b-a)/(hz*(performance.now()-t)/1000)<10){quiet=true;break;}}
+ const before=await processSnapshot(),start=performance.now();await sleep(2000);const after=await processSnapshot(),seconds=(performance.now()-start)/1000;
  const cpu=after.map(p=>{const prior=before.find(b=>b.pid===p.pid),window=prior?(p.sampleMonotonicMs-prior.sampleMonotonicMs)/1000:null;return prior&&prior.cpuTicks!==null&&p.cpuTicks!==null?{pid:p.pid,windowSeconds:window,percent:100*(p.cpuTicks-prior.cpuTicks)/(hz*window)}:{pid:p.pid,percent:null};});
- rows.push({cycle,beforeProcesses:before,processes:after,combinedPssKiB:after.reduce((n,p)=>n+p.pssKiB,0),idleCpuWindowSeconds:seconds,cpu});
+ rows.push({cycle,beforeProcesses:before,processes:after,combinedPssKiB:after.reduce((n,p)=>n+p.pssKiB,0),idleCpuWindowSeconds:seconds,cpu,settleProbes,settled:quiet});
  await fs.writeFile(`${OUT}/native-cycles.json`,JSON.stringify(report,null,2));
 }
 async function round(queuedFavorite,cancelFirst=false){
