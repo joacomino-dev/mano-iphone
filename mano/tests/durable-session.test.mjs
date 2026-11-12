@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { SessionJournal, migrateSession } from '../src/durableSession.ts';
+import { SessionJournal, migrateSession, openIndexedDB } from '../src/durableSession.ts';
 import { initialState, initialFilter, decide, undo } from '../src/domain.ts';
 import { validateSession } from '../src/session.ts';
 import { acknowledgeFavorites, withoutFavorites } from '../src/favoritePending.ts';
@@ -61,4 +61,56 @@ test('legacy migration retains old envelope and rejects unreadable/corrupt data'
  values.set('legacy','broken');assert.throws(()=>migrateSession(key,'legacy',store));
  values.set(key,'{}');assert.throws(()=>migrateSession(key,'legacy',store));
  assert.throws(()=>migrateSession(key,'legacy',{getItem(){throw Error('unavailable');}}));
+});
+
+// R-67 (Claude, 2026-11-09): storage that never answers must not freeze the app.
+test('a write that never settles is bounded: the decision is kept and later writes still commit',async()=>{
+ const db=backend(),j=await SessionJournal.open(key,db,fallback,40),next=session();next.record=decide(next.record,['a'],'discard',100,next.context);
+ db.pause=new Promise(()=>{});const started=Date.now();await j.save(next);assert.ok(Date.now()-started<1000,'bounded');
+ assert.deepEqual(j.session.record,next.record);db.pause=undefined;
+ const later={...next,record:decide(next.record,['b'],'keep',101,next.context)};await j.save(later);
+ assert.deepEqual(JSON.parse(db.data.session).record,later.record);
+});
+test('reopening adopts a newer mirrored copy and never an older one',async()=>{
+ const store=new Map();globalThis.localStorage={getItem:k=>store.has(k)?store.get(k):null,setItem:(k,v)=>store.set(k,String(v)),removeItem:k=>store.delete(k)};
+ try{
+  const db=backend(),j=await SessionJournal.open(key,db,fallback);const saved=session();saved.updatedAt=10;saved.record=decide(saved.record,['a'],'discard',100,saved.context);await j.save(saved);
+  const newer={...saved,updatedAt:20,record:decide(saved.record,['b'],'keep',101,saved.context)};store.set(key,JSON.stringify(newer));
+  const reopened=await SessionJournal.open(key,db,fallback);assert.deepEqual(reopened.session.record,newer.record);assert.deepEqual(JSON.parse(db.data.session).record,newer.record);
+  store.set(key,JSON.stringify({...saved,updatedAt:5,record:initialState()}));
+  const again=await SessionJournal.open(key,db,fallback);assert.deepEqual(again.session.record,newer.record,'an older mirror is ignored');
+  store.set(key,'{corrupt');assert.deepEqual((await SessionJournal.open(key,db,fallback)).session.record,newer.record,'a corrupt mirror is ignored');
+ }finally{delete globalThis.localStorage;}
+});
+test('abandoned read never resumes migration or writes late',async()=>{
+ let release,writes=0,canceled=0;
+ const db={read:()=>new Promise(r=>release=r),write:async()=>{writes++;},cancelPending:()=>{canceled++;}};
+ await assert.rejects(SessionJournal.open(key,db,()=>{throw Error('late migration');},20));
+ release(undefined);await new Promise(r=>setImmediate(r));assert.equal(writes,0);assert.equal(canceled,1);
+});
+test('abandoned reconnect cannot resume with an obsolete overwrite',async()=>{
+ const db=backend(),j=await SessionJournal.open(key,db,fallback,20);let release;
+ db.fail=true;db.reconnect=()=>new Promise(r=>release=r);
+ const first={...session(),record:decide(initialState(),['a'],'discard',100,session().context)};
+ await j.save(first);db.fail=false;db.reconnect=undefined;
+ const latest={...first,record:decide(first.record,['b'],'keep',101,first.context)};await j.save(latest);
+ release();await new Promise(r=>setImmediate(r));assert.deepEqual(JSON.parse(db.data.session).record,latest.record);assert.equal(db.data.revision,j.snapshot.revision);
+});
+test('mirror adoption retains unresolved native intent',async()=>{
+ const store=new Map();globalThis.localStorage={getItem:k=>store.get(k)??null,setItem:(k,v)=>store.set(k,String(v)),removeItem:k=>store.delete(k)};
+ try{
+  const db=backend(),j=await SessionJournal.open(key,db,fallback);const intent={kind:'delete',ids:['a'],started:100};await j.intent(intent);
+  const newer={...j.session,updatedAt:j.session.updatedAt+10};store.set(key,JSON.stringify(newer));
+  const reopened=await SessionJournal.open(key,db,fallback);assert.deepEqual(reopened.snapshot.intent,intent);assert.deepEqual(db.data.intent,intent);
+ }finally{delete globalThis.localStorage;}
+});
+test('a timed-out IndexedDB connection is closed if it succeeds late',async()=>{
+ const request={},db={closed:0,close(){this.closed++;}};
+ await assert.rejects(openIndexedDB({open:()=>request},20));request.result=db;request.onsuccess();assert.equal(db.closed,1);
+});
+test('canceling a pending IndexedDB write aborts its transaction',async()=>{
+ let tx,puts=0;
+ const database={close(){},transaction(){tx={addEventListener(){},objectStore:()=>({get:()=>({}),put(){puts++;}}),abort(){this.onabort();}};return tx;}};
+ const factory={open(){const request={result:database};queueMicrotask(()=>request.onsuccess());return request;}};
+ const db=await openIndexedDB(factory,20);const pending=db.write(key,{revision:2},1);db.cancelPending();await assert.rejects(pending);assert.equal(puts,0);
 });

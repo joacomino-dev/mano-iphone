@@ -72,6 +72,16 @@ try:
         measurement=measure(snapshot,time.sleep,max_attempts=3)
         complete=measurement['complete']
         rows.append({'cycle':cycle,**measurement,'combinedRssKiB':sum(p['rssKiB'] for p in measurement['processes'])})
+        # Run 42682535759: from round 7 the app process idled at ~70 % CPU. Numbers do not
+        # say what was running; when it happens again keep the call stacks (fixture
+        # simulator only, symbol names, no arguments or environment).
+        try:
+            hot=[c for c in measurement.get('cpu',[]) if isinstance(c.get('percent'),(int,float)) and c['percent']>=25]
+            roles={p['pid']:p['role'] for p in measurement['processes']}
+            for entry in hot[:2]:
+                target=out/f"cpu-sample-cycle-{cycle}-{roles.get(entry['pid'],'process')}-{entry['pid']}.txt"
+                subprocess.run(['sample',str(entry['pid']),'3','-mayDie','-file',str(target)],capture_output=True,timeout=40,check=False)
+        except Exception: pass
         save()
         (runner/f'native-cycle-{cycle}.response').write_text('native collection '+('complete' if complete else 'incomplete')+'\n')
     report['status']='PASS' if len(rows)==11 and all(r['complete'] for r in rows) else 'BLOCKED'

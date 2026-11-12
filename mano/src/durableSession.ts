@@ -15,9 +15,32 @@ export interface JournalBackend {
   write(key: string, entry: JournalEntry, expectedRevision: number | null): Promise<void>;
   /** Drop a lost connection (iOS suspends WebView storage in the background). */
   reconnect?(): Promise<void>;
+  /** Synchronously abort outstanding work before a bounded wait is abandoned. */
+  cancelPending?(): void;
 }
 export const STORAGE_FAILURE = 'No se pudo guardar el progreso. Libera espacio antes de continuar.';
 export const INTERRUPTED_OPERATION = 'Una operación de Fotos quedó interrumpida. Comprueba su resultado en Fotos antes de volver a intentarla. Tus decisiones guardadas se conservan.';
+
+/** IndexedDB on iOS can leave a request without any event (after a relaunch or a
+ * suspended network process). Nothing the app shows may wait on it forever: R-67. */
+export const STORAGE_TIMEOUT_MS = 2500;
+function bounded<T>(work: Promise<T>, ms = STORAGE_TIMEOUT_MS, cancel?: () => void): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => { try { cancel?.(); } catch { /* Cancellation must not hide the original timeout. */ } reject(new Error(STORAGE_FAILURE)); }, ms);
+    work.then(value => { clearTimeout(timer); resolve(value); }, error => { clearTimeout(timer); reject(error); });
+  });
+}
+/** The copy every journal write mirrors (and the journal-less fallback writes). */
+function mirrored(key: string): { session: string; updatedAt: number; favorites: PendingFavorites; inFlight: PendingFavorites } | undefined {
+  try {
+    if (typeof localStorage === 'undefined') return undefined;
+    const raw = localStorage.getItem(key); if (!raw) return undefined;
+    const session = validateSession(JSON.parse(raw)); if (!session?.record) return undefined;
+    const queue = (name: string): PendingFavorites => { const value: unknown = JSON.parse(localStorage.getItem(name) ?? '{}'); return validFavorites(value) ? value : {}; };
+    const library = key === 'cocowash-library-session-v1';
+    return { session: raw, updatedAt: session.updatedAt, favorites: library ? queue(FAVORITES_KEY) : {}, inFlight: library ? queue(IN_FLIGHT_KEY) : {} };
+  } catch { return undefined; }
+}
 
 function validFavorites(value: unknown): value is PendingFavorites {
   return !!value && typeof value === 'object' && !Array.isArray(value) && Object.values(value).every(v => typeof v === 'boolean');
@@ -42,15 +65,30 @@ export class SessionJournal {
   readonly key: string;
   private backend: JournalBackend;
   private entry: JournalEntry;
+  private timeoutMs = STORAGE_TIMEOUT_MS;
   private constructor(key: string, backend: JournalBackend, entry: JournalEntry) { this.key=key;this.backend=backend;this.entry=entry; }
-  static async open(key: string, backend: JournalBackend, fallback: () => { session: ActiveSession; favorites: PendingFavorites; inFlight: PendingFavorites }) {
-    const raw = await backend.read(key);
-    if (raw !== undefined) return new SessionJournal(key, backend, validateEntry(raw));
+  static async open(key: string, backend: JournalBackend, fallback: () => { session: ActiveSession; favorites: PendingFavorites; inFlight: PendingFavorites }, timeoutMs = STORAGE_TIMEOUT_MS) {
+    const raw = await bounded(backend.read(key), timeoutMs, () => backend.cancelPending?.());
+    if (raw !== undefined) {
+      const journal = new SessionJournal(key, backend, validateEntry(raw)); journal.timeoutMs = timeoutMs;
+      // A run that could not reach the journal (bounded start, refused writes) kept
+      // saving to the mirror. If that copy is newer, it is the person's latest state.
+      const copy = mirrored(key);
+      if (copy && copy.updatedAt > journal.session.updatedAt) {
+        // A mirror cannot prove a native operation completed. Keep its intent
+        // until the existing fresh-library reconciliation resolves it.
+        const adopted: JournalEntry = { ...journal.entry, revision: journal.entry.revision + 1, session: copy.session, favorites: copy.favorites, inFlight: copy.inFlight };
+        try { await bounded(backend.write(key, adopted, journal.entry.revision), timeoutMs, () => backend.cancelPending?.()); } catch { journal.degraded = true; }
+        journal.entry = adopted;
+      }
+      return journal;
+    }
     const initial = fallback();
     const writer = new SessionWriter();
     const entry: JournalEntry = { version: 1, revision: 1, session: JSON.stringify(writer.prepare(initial.session)), favorites: initial.favorites, inFlight: initial.inFlight };
-    await backend.write(key, entry, 0);
-    return new SessionJournal(key, backend, entry);
+    await bounded(backend.write(key, entry, 0), timeoutMs, () => backend.cancelPending?.());
+    const created = new SessionJournal(key, backend, entry); created.timeoutMs = timeoutMs;
+    return created;
   }
   get session(): ActiveSession { return validateSession(JSON.parse(this.entry.session))!; }
   get snapshot(): Readonly<JournalEntry> { return structuredClone(this.entry); }
@@ -63,9 +101,14 @@ export class SessionJournal {
       // memory and in the localStorage mirror below, and the next write retries
       // with an overwrite. Decisions are never blocked by a storage error.
       const expected = this.degraded ? null : this.entry.revision;
-      try { await this.backend.write(this.key, next, expected); this.degraded = false; }
+      try { await bounded(this.backend.write(this.key, next, expected), this.timeoutMs, () => this.backend.cancelPending?.()); this.degraded = false; }
       catch {
-        try { await this.backend.reconnect?.(); await this.backend.write(this.key, next, null); this.degraded = false; }
+        try {
+          // Await each bounded phase separately: an abandoned reconnect must
+          // never resume later and start an obsolete overwrite.
+          await bounded(Promise.resolve(this.backend.reconnect?.()), this.timeoutMs, () => this.backend.cancelPending?.());
+          await bounded(this.backend.write(this.key, next, null), this.timeoutMs, () => this.backend.cancelPending?.()); this.degraded = false;
+        }
         catch { this.degraded = true; }
       }
       this.entry = next;
@@ -96,25 +139,33 @@ export class SessionJournal {
 
 /** Revision check and write share one transaction. strict is a durability hint;
  * native force-stop tests remain required on each WebView implementation. */
-export async function openIndexedDB(factory: IDBFactory = indexedDB): Promise<JournalBackend> {
+export async function openIndexedDB(factory: IDBFactory = indexedDB, timeoutMs = STORAGE_TIMEOUT_MS): Promise<JournalBackend> {
   const connect = () => new Promise<IDBDatabase>((resolve, reject) => {
+    let abandoned = false;
+    const timer = setTimeout(() => { abandoned = true; reject(new Error(STORAGE_FAILURE)); }, timeoutMs);
     const request = factory.open('cocowash-decisions-v1', 1);
-    request.onupgradeneeded = () => request.result.createObjectStore('sessions');
-    request.onerror = () => reject(new Error(STORAGE_FAILURE));
-    request.onblocked = () => reject(new Error(STORAGE_FAILURE));
-    request.onsuccess = () => { const db = request.result; db.onversionchange = () => db.close(); resolve(db); };
+    request.onupgradeneeded = () => { if(abandoned){request.transaction?.abort();return;} request.result.createObjectStore('sessions'); };
+    const fail = () => { clearTimeout(timer); abandoned = true; reject(new Error(STORAGE_FAILURE)); };
+    request.onerror = fail;
+    request.onblocked = fail;
+    request.onsuccess = () => { clearTimeout(timer); const db = request.result; if(abandoned){db.close();return;} db.onversionchange = () => db.close(); resolve(db); };
   });
   let db = await connect();
+  const transactions = new Set<IDBTransaction>();
+  const track = (tx: IDBTransaction) => { transactions.add(tx); const done = () => transactions.delete(tx); tx.addEventListener('complete',done); tx.addEventListener('abort',done); };
   return {
+    cancelPending: () => { for(const tx of transactions){try{tx.abort();}catch{/* already committed */}} transactions.clear(); },
     reconnect: async () => { try { db.close(); } catch { /* already lost */ } db = await connect(); },
     read: key => new Promise((resolve, reject) => {
       const tx = db.transaction('sessions', 'readonly');
+      track(tx);
       const request = tx.objectStore('sessions').get(key);
       tx.oncomplete = () => resolve(request.result);
       tx.onabort = tx.onerror = () => reject(new Error(STORAGE_FAILURE));
     }),
     write: (key, entry, expected) => new Promise((resolve, reject) => {
       const tx = db.transaction('sessions', 'readwrite', { durability: 'strict' });
+      track(tx);
       const store = tx.objectStore('sessions');
       const previous = store.get(key);
       previous.onsuccess = () => {
@@ -129,8 +180,10 @@ export async function openIndexedDB(factory: IDBFactory = indexedDB): Promise<Jo
 
 let current: SessionJournal | undefined;
 export function activeJournal(key?: string) { return !key || current?.key === key ? current : undefined; }
-export async function initializeJournal(key: string, fallback: Parameters<typeof SessionJournal.open>[2]) {
-  current = await SessionJournal.open(key, await openIndexedDB(), fallback);
+export async function initializeJournal(key: string, fallback: Parameters<typeof SessionJournal.open>[2], timeoutMs = STORAGE_TIMEOUT_MS) {
+  // Every awaited phase is bounded and canceled at its own source. There is no
+  // abandoned initializer left running that can later migrate stale state.
+  current = await SessionJournal.open(key, await openIndexedDB(indexedDB, timeoutMs), fallback, timeoutMs);
   return current;
 }
 export function legacyFavorites(key: string): PendingFavorites {
