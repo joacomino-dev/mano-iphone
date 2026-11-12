@@ -268,6 +268,7 @@ textos con hablantes nativos, 1.0.1 para lo que salga.
 
 Una línea por intervención: fecha · agente · entrada · puntos cerrados/abiertos.
 
+- 2026-11-12 · Claude · CW-CL-077 · Fototeca tercera pasada (91098a9): barra de decisiones encogida en un dock (Deshacer · Eliminar ❤ Conservar · Álbum), fotos hasta abajo, pellizco como único zoom, «Terminar» arriba, Filtros partido (embudo/editar, mismos filtros que la pila), tocar selecciona, mantener abre, «Anclar» con rotación. a5c56ff: deslizar la foto anclada decide; tocar rota. Navegador PASS; iPhone pendiente.
 - 2026-11-12 · Claude · CW-CL-076 · Segunda prueba del usuario en iPhone (aae4dba): anuncios cada 50 filas, arrastre decidido en el primer touchmove, foto de trabajo como punto fijo (o la más cercana), Filtros sí/no real, marco de la pantalla principal, sin deshacer abajo, «Álbum» en la selección. d5674a9; navegador PASS. XCTest con arrastres lentos 2ebf471.
 - 2026-11-12 · Claude · CW-CL-075 · Usuario aprueba anuncios en la cuadrícula, vista anclada al tocar y palabras de sello hasta 20 decisiones. Pasada de diseño de la cuadrícula, R-68 corrección candidata (sin desenfoque en controles de carta), precacheo nativo, prueba XCTest de «Modo Geek» con revealSwitch. Gates aae4dba 43318635400/43318641278.
 - 2026-11-12 · Claude · CW-CL-074 · Relevo de Codex: parche XCTest revisado y subido (4cb9a3f). R-69 reset de filtros, R-70 sellos, R-71 zoom/lupa, R-72 cuadrícula F1+F2, R-73 lentitud (web sin crecimiento; Android medición asentada). Gates nativos full/live 43311706328/43311711201 en curso.

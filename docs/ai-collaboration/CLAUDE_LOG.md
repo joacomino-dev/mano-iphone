@@ -932,3 +932,19 @@ Observaciones del usuario sobre `aae4dba` en iPhone y respuesta (`d5674a9`):
 - Falta «Álbum» al seleccionar → añadido (iOS) por la misma hoja de álbum (`albumIds`).
 - XCTest: arrastres lentos con pausa (`2ebf471`) porque «Todo» oscilaba por la inercia.
 Validación: 145 unitarias, 14 baterías de navegador (grid-flow ampliado: 5 cambios de densidad centrados, álbum, filtros), runtime 28, builds PASS.
+
+### CW-CL-077 — Fototeca: dock encogido, selección directa y decidir deslizando lo anclado
+Fecha: 2026-11-12, America/Bogota
+Agente: Claude
+Diseño del usuario y decisiones tomadas con él (AskUserQuestion): mantener pulsada abre en grande; Filtros partido
+(embudo enciende/apaga, la palabra abre el editor); los mismos filtros que la pila; decisiones desactivadas sin selección.
+- `91098a9`: al abrir, la barra de decisiones de la pila se encoge en un dock inferior entre Deshacer y Álbum (sin «Más
+  tarde»); las fotos pasan bajo el dock y terminan en papel liso como en Fotos; sin botón de densidad (solo pellizco);
+  «Terminar» arriba a la derecha (cierra la Fototeca y abre la revisión); tocar selecciona, arrastre lateral selecciona un
+  rango, mantener abre una foto; «Anclar» muestra la selección en grande con «‹ n de N ›».
+- `a5c56ff` (idea del usuario: veinte fotos en la misma pose): en lo anclado desde la Fototeca, deslizar decide como en la
+  pila (derecha conserva, izquierda elimina, arriba favorita, abajo más tarde) con el sello visible y la foto saliendo
+  hacia ese lado; la decidida sale del conjunto y sigue la siguiente; tocar rota; las favoritas no se eliminan. En la pila,
+  la vista anclada conserva arrastrar-para-cerrar.
+Validación: 145 unitarias, 14 baterías de navegador (grid-flow cubre todo lo anterior), runtime 28, builds PASS.
+Gates nativos: fallo en cascada conocido de testV («A real Photos cancellation button must be offered») sin relación con estos cambios.
