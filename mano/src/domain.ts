@@ -146,6 +146,13 @@ export function smartMatch(asset: Asset, filter: Filter, later: ReadonlySet<stri
     default: return true;
   }
 }
+/** The library grid with «Filtros» on: what the active filters select (kind, capture
+ * date, quick set, seal), decided or not, so stamps stay visible. Never removed items. */
+export function gridMatch(state: RecordState, filter: Filter, now = Date.now()) {
+  const later = new Set(state.later ?? []), favorites = new Set(state.favorites);
+  return (a: Asset) => (filter.media === 'all' || filter.media === a.kind) && matchesDate(a.date, filter, now)
+    && smartMatch(a, filter, later, favorites) && (filter.seal === 'all' || matchesSeal(state.marks[a.id], filter.seal));
+}
 /** The pile's membership test, shared by eligible() and the filter counts.
  * Favourites only ever appear in the «Favoritas» set, which shows nothing else. */
 function matchesSeal(mark: Mark | undefined, seal: Filter['seal']) {

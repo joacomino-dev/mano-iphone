@@ -8,6 +8,10 @@ export class ReviewLoader<T> {
   private waiting: Job<T>[] = [];
   private active = new Set<Job<T>>();
   private cache = new Map<string, T>();
+  /** Review: two at a time, 60 kept. The library grid asks for more of both. */
+  private concurrency: number;
+  private keep: number;
+  constructor(concurrency = 2, keep = 60) { this.concurrency = concurrency; this.keep = keep; }
 
   request(key: string, run: Job<T>['run'], signal: AbortSignal): Promise<T> {
     if (signal.aborted) return Promise.reject(aborted());
@@ -47,7 +51,7 @@ export class ReviewLoader<T> {
     this.jobs.clear();
   }
   private pump() {
-    while (this.active.size < 2 && this.waiting.length) {
+    while (this.active.size < this.concurrency && this.waiting.length) {
       const job = this.waiting.shift()!;
       if (job.controller.signal.aborted) continue;
       this.active.add(job);
@@ -57,7 +61,7 @@ export class ReviewLoader<T> {
       }).then(value => {
         if (job.controller.signal.aborted) return;
         this.cache.set(job.key, value);
-        while (this.cache.size > 60) this.cache.delete(this.cache.keys().next().value!);
+        while (this.cache.size > this.keep) this.cache.delete(this.cache.keys().next().value!);
         if (this.jobs.get(job.key) === job) this.jobs.delete(job.key);
         for (const w of job.waiters) w.resolve(value);
       }).catch(error => { if (this.jobs.get(job.key) === job) this.jobs.delete(job.key); for (const w of job.waiters) w.reject(error); }).finally(() => {

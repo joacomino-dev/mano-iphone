@@ -20,11 +20,12 @@ function preloadable<P extends object>(load: () => Promise<{ default: ComponentT
 
 export const DisplaySettingsPanel = preloadable<ComponentProps<typeof import('./DisplaySettings').DisplaySettingsPanel>>(() => import('./DisplaySettings').then(module => ({ default: module.DisplaySettingsPanel })));
 export const Onboarding = preloadable<ComponentProps<typeof import('./Onboarding').Onboarding>>(() => import('./Onboarding').then(module => ({ default: module.Onboarding })));
+export const LibraryGrid = preloadable<ComponentProps<typeof import('./LibraryGrid').default>>(() => import('./LibraryGrid'));
 export const Inspector = preloadable<ComponentProps<typeof import('./Inspector').Inspector>>(() => import('./Inspector').then(module => ({ default: module.Inspector })));
 
 /** Best effort only: a failed warm-up must not interrupt the current screen. */
 export function preloadScreensWhenIdle() {
-  const warm = () => { void Promise.all([DisplaySettingsPanel.preload(), Onboarding.preload(), Inspector.preload()]).catch(() => {}); };
+  const warm = () => { void Promise.all([DisplaySettingsPanel.preload(), Onboarding.preload(), Inspector.preload(), LibraryGrid.preload()]).catch(() => {}); };
   if ('requestIdleCallback' in window) {
     const id = window.requestIdleCallback(warm, { timeout: 1500 });
     return () => window.cancelIdleCallback(id);
