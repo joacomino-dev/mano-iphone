@@ -638,7 +638,7 @@ final class PhotosSmokeTests: XCTestCase {
             let origin=app.coordinate(withNormalizedOffset:.zero)
             let start=origin.withOffset(CGVector(dx:viewport.width/2,dy:middle+direction*distance-viewport.minY))
             let end=origin.withOffset(CGVector(dx:viewport.width/2,dy:middle-direction*distance-viewport.minY))
-            start.press(forDuration:0.1,thenDragTo:end)
+            start.press(forDuration:0.1,thenDragTo:end,withVelocity:.slow,thenHoldForDuration:0.3)
             Thread.sleep(forTimeInterval:0.3)
         }
         guard lettersReady else {
@@ -834,7 +834,7 @@ final class PhotosSmokeTests: XCTestCase {
             let direction:CGFloat=frame.midY>middle ? 1 : -1
             let origin=app.coordinate(withNormalizedOffset:.zero)
             origin.withOffset(CGVector(dx:viewport.width/2,dy:middle+direction*distance-viewport.minY))
-                .press(forDuration:0.1,thenDragTo:origin.withOffset(CGVector(dx:viewport.width/2,dy:middle-direction*distance-viewport.minY)))
+                .press(forDuration:0.1,thenDragTo:origin.withOffset(CGVector(dx:viewport.width/2,dy:middle-direction*distance-viewport.minY)),withVelocity:.slow,thenHoldForDuration:0.3)
             Thread.sleep(forTimeInterval:0.3)
         }
         attachScreenshot(app,"Switch \(target.label) never cleared the sticky header")
@@ -887,7 +887,7 @@ final class PhotosSmokeTests: XCTestCase {
             let origin=app.coordinate(withNormalizedOffset:.zero)
             let start=origin.withOffset(CGVector(dx:viewport.width/2,dy:middle+direction*distance-viewport.minY))
             let end=origin.withOffset(CGVector(dx:viewport.width/2,dy:middle-direction*distance-viewport.minY))
-            start.press(forDuration:0.1,thenDragTo:end)
+            start.press(forDuration:0.1,thenDragTo:end,withVelocity:.slow,thenHoldForDuration:0.3)
             Thread.sleep(forTimeInterval:0.3)
         }
         guard let choice=target else { throw failure("Media toggle never cleared sticky controls") }
