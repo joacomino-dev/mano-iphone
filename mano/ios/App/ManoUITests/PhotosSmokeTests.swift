@@ -401,12 +401,9 @@ final class PhotosSmokeTests: XCTestCase {
         settingsTab.tap()
         let geek = app.switches.matching(NSPredicate(format: "label CONTAINS %@", "Modo Geek")).firstMatch
         XCTAssertTrue(geek.waitForExistence(timeout: 15))
-        for _ in 0..<10 {
-            if geek.isHittable { break }
-            app.swipeUp()
-        }
-        XCTAssertTrue(geek.isHittable, "Geek switch must be reachable in Ajustes.")
-        geek.tap()
+        XCTAssertTrue(revealSwitch(app, geek, below: settingsTab), "Geek switch must be reachable in Ajustes.")
+        if (geek.value as? String) != "1" { geek.tap() }
+        XCTAssertEqual(XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "1"), object: geek)], timeout: 8), .completed, "Modo Geek must actually turn on")
         guard closeOverlay(app, until: finish) else {
             attachScreenshot(app, "Filtros y ajustes did not close")
             XCTFail("«Cerrar» must close Filtros y ajustes and return to the session.")
@@ -688,9 +685,9 @@ final class PhotosSmokeTests: XCTestCase {
         XCTAssertTrue(settings.waitForExistence(timeout:15));settings.tap()
         let geek=app.switches.matching(NSPredicate(format:"label CONTAINS %@","Modo Geek")).firstMatch
         XCTAssertTrue(geek.waitForExistence(timeout:15))
-        for _ in 0..<10 { if geek.isHittable { break };app.swipeUp() }
-        XCTAssertTrue(geek.isHittable)
+        XCTAssertTrue(revealSwitch(app,geek,below:settings))
         if (geek.value as? String) != "1" { geek.tap() }
+        XCTAssertEqual(XCTWaiter().wait(for:[XCTNSPredicateExpectation(predicate:NSPredicate(format:"value == %@","1"),object:geek)],timeout:8),.completed,"Modo Geek must actually turn on")
         XCTAssertTrue(closeOverlay(app,until:finish))
         try nativeMediaFilter(app,"Live Photos")
         // aria-pressed is exposed by WebKit as a toggle rather than Button.
@@ -819,6 +816,29 @@ final class PhotosSmokeTests: XCTestCase {
         attachScreenshot(app,"Live control missing")
         print("COCOWASH_UI_LIVE_AX \(app.debugDescription)")
         throw NSError(domain:"CocoWashFixtureQA",code:1,userInfo:[NSLocalizedDescriptionKey:"Exact visible Live control missing: \(label)"])
+    }
+
+    /// Ajustes keeps sticky tabs on top: WebKit may report a switch hittable while
+    /// its frame is still under them, so a tap lands elsewhere (run 43311711201:
+    /// a new row above «Modo Geek» moved it there). Scroll inside the clear band,
+    /// in whichever direction, until the whole switch sits in it.
+    @MainActor private func revealSwitch(_ app:XCUIApplication,_ target:XCUIElement,below header:XCUIElement) -> Bool {
+        for attempt in 0..<9 {
+            let viewport=app.frame
+            let top=max(viewport.minY,header.frame.maxY)+12,bottom=viewport.maxY-28
+            let frame=target.frame,safe=CGRect(x:viewport.minX+4,y:top,width:viewport.width-8,height:bottom-top)
+            print("COCOWASH_UI_SWITCH_TARGET label=\(target.label) attempt=\(attempt) frame=\(frame) safe=\(safe)")
+            if safe.contains(frame) && target.isHittable { return true }
+            guard bottom-top>80,attempt<8 else { break }
+            let middle=(top+bottom)/2,distance=min(CGFloat(140),(bottom-top)*0.3)
+            let direction:CGFloat=frame.midY>middle ? 1 : -1
+            let origin=app.coordinate(withNormalizedOffset:.zero)
+            origin.withOffset(CGVector(dx:viewport.width/2,dy:middle+direction*distance-viewport.minY))
+                .press(forDuration:0.1,thenDragTo:origin.withOffset(CGVector(dx:viewport.width/2,dy:middle-direction*distance-viewport.minY)))
+            Thread.sleep(forTimeInterval:0.3)
+        }
+        attachScreenshot(app,"Switch \(target.label) never cleared the sticky header")
+        return false
     }
 
     @MainActor private func nativeMediaFilter(_ app:XCUIApplication,_ media:String) throws {

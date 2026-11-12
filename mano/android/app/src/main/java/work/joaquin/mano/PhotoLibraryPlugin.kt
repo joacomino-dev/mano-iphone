@@ -60,9 +60,11 @@ fun devLog(message: String) {
 @CapacitorPlugin(name = "PhotoLibrary")
 class PhotoLibraryPlugin : Plugin() {
     private val main = Handler(Looper.getMainLooper())
-    private val io = Executors.newFixedThreadPool(2)
-    private val previews = Executors.newFixedThreadPool(3)
-    private val places = Executors.newSingleThreadExecutor()
+    // Named threads: a busy app in the native gate (top -H) shows which work it is.
+    private fun named(name: String) = java.util.concurrent.ThreadFactory { task -> Thread(task, "cw-$name") }
+    private val io = Executors.newFixedThreadPool(2, named("io"))
+    private val previews = Executors.newFixedThreadPool(3, named("previews"))
+    private val places = Executors.newSingleThreadExecutor(named("places"))
     private val thumbnailJobs = ConcurrentHashMap<String, CancellationSignal>()
     @Volatile private var thumbnailBudget = 0L
     @Volatile private var thumbnailWrites = 0
@@ -613,8 +615,8 @@ class PhotoLibraryPlugin : Plugin() {
     // endregion
     // region On-device analysis (no models, nothing leaves the phone)
 
-    private val analysisQueue = Executors.newSingleThreadExecutor()
-    private val classifyQueue = Executors.newSingleThreadExecutor()
+    private val analysisQueue = Executors.newSingleThreadExecutor(named("analysis"))
+    private val classifyQueue = Executors.newSingleThreadExecutor(named("classify"))
     @Volatile private var analysisCancelled = false
     @Volatile private var classifyCancelled = false
     @Volatile private var analyzing = false

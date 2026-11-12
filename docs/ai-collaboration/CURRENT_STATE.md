@@ -1,5 +1,13 @@
 # CocoWash — estado vigente
 
+## Claude CW-CL-074 — relevo tomado (2026-11-12)
+
+Claude trabaja en `main` desde `c81288b`. Subido: parche XCTest de Codex (`4cb9a3f`), mejoras del usuario R-69 reset de
+filtros, R-70 sellos, R-71 zoom/lupa (`125f46e`), cuadrícula «Fototeca» R-72 F1+F2 (`9d1e9b6`, `ced487c`), medición
+asentada de CPU Android (`3df87da`). Navegador y unitarias PASS; iOS release/dev compilan. Pendiente: gates nativos
+full/live sobre `125f46e`, tres Android verdes seguidos y APK, R-68 sin reproducción, R-73 `sample` iOS, F3/F4 de la
+cuadrícula (F4 anuncios necesita aprobación del usuario). Detalle en CLAUDE_LOG CW-CL-074 y ROADMAP.
+
 ## Relevo solicitado por usuario — 2026-11-12
 
 Ver `docs/ai-handoff/HANDOFF_CLAUDE_2026-11-12.md`: HEAD c81288b enviado; parche XCTest local sin commit. iOS tienda/dev PASS; full/live FAIL; Android dos PASS y tercer FAIL. Los estados inferiores "en curso" son históricos. No se lanzó más CI tras solicitar relevo.

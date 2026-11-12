@@ -894,3 +894,15 @@ localizada leyendo el código (`InlineVideo.tsx:207` renderiza el botón siempre
 Instrucciones completas para Codex (A0 R-68, R-67/CPU, R-07b gate, E2E Android, R-06, APK del probador) y Gemini
 (textos sin Memo, publicar R-17 autorizado, ficha R-18, capturas R-21, guía del probador Android) en
 `docs/ai-handoff/PROMPT_CODEX_GEMINI_2026-11-10.md`. Solo documentación; sin cambios de app ni CI.
+
+### CW-CL-074 — Relevo de Codex: mejoras del usuario, cuadrícula y lentitud
+Fecha: 2026-11-12, America/Bogota
+Agente: Claude
+Base `c81288b` (CW-CX-064). Parche XCTest local de Codex revisado y subido sin cambios de app (`4cb9a3f`).
+Hecho (navegador PASS, sin confirmar aún en iPhone):
+- R-69 `125f46e`: pila filtrada vacía → «Prueba con otros filtros o resetéalos.» y «Resetear filtros» bajo «Cambiar filtros»; reparte al instante (`tests/empty-reset-flow.mjs`).
+- R-70 `125f46e`: sellos sin placa; la palabra va en su propia placa redondeada; desaparece tras 20 decisiones; Ajustes › Experiencia › «Palabras en los sellos» (el ajuste explícito manda).
+- R-71 `125f46e`: sin zoom de página por doble toque (viewport + `touch-action:manipulation`); iOS desactiva el reconocedor «tap and a half» de WebKit (lupa), log `COCOWASH_LOUPE_DISABLED`. Compila en CI release.
+- R-72 `9d1e9b6`/`ced487c`: «Fototeca» F1+F2 (plan `docs/ai-handoff/GRID_VIEW_PLAN.md`): botón junto a la barra de progreso, orden real centrado en la carta, 3/5 columnas (botón y pellizco), sellos pequeños, Más tarde en otra esquina, Filtros sí/no, vista previa con decisión, Seleccionar con toque/arrastre de rango, lote vía `act()` con un solo deshacer; favoritas nunca se encolan para borrar. Chunk diferido de 12 kB. `tests/grid-flow.mjs`.
+- R-73: web descartada como causa (400 decisiones / 3000 elementos sin crecimiento; 12 min en reposo sin actividad, `tests/long-use-profile.mjs`). Android 43130032595: la «CPU en reposo» eran picos post-ronda alternos; el muestreador ahora espera a que la app se calme y falla si nunca lo hace (`3df87da`, umbrales intactos, +2 pruebas Python). iOS: pendiente del `sample` del gate completo.
+Pendiente: gates nativos 43311706328 (full) y 43311711201 (live) sobre `125f46e`; tres Android verdes seguidos y APK; R-68 sigue sin reproducción; F3 miniaturas nativas y F4 anuncios (requiere aprobación).
