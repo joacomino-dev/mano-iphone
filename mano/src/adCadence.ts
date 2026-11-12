@@ -37,7 +37,7 @@ export class AdCadence {
     return this.remaining <= 0 && activeMs >= this.rules.introMs && activeMs - this.lastShown >= this.rules.gapMs;
   }
 
-  shown(activeMs: number, placement: 'deck' | 'finish' | 'review') {
+  shown(activeMs: number, placement: 'deck' | 'finish' | 'review' | 'grid') {
     this.lastShown = activeMs;
     if (placement === 'deck') this.remaining = this.interval();
   }

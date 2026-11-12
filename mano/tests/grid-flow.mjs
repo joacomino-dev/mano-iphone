@@ -45,9 +45,17 @@ try{
  await page.locator('.grid-actions').getByRole('button',{name:/^Eliminar/}).click();
  await page.waitForFunction(()=>document.querySelectorAll('.grid-tile.is-pending').length===4);
  assert.equal(await page.getByRole('button',{name:'Cancelar',exact:true}).count(),0,'deciding leaves «Seleccionar»');
- await page.locator('.grid-actions').getByRole('button',{name:'Deshacer la última decisión'}).click();
+ await page.locator('.grid-dock').getByRole('button',{name:'Deshacer la última decisión'}).click();
  await page.waitForFunction(()=>document.querySelectorAll('.grid-tile.is-pending').length===0);
  results.push('batch delete queues all four; one undo restores the batch');
+ // Browsing: tapping a tile opens the anchored view over the grid; closing returns to it.
+ const tap=(await visible())[2];await page.locator(`[data-i="${tap}"]`).click();
+ await page.locator('.inspection.is-pinned').waitFor();
+ assert.equal(await page.locator('.grid-actions').count(),0,'no decision bar while browsing');
+ await page.locator('.inspection').getByRole('button',{name:'Cerrar'}).click();
+ await page.waitForFunction(()=>!document.querySelector('.inspection'));
+ assert.equal(await page.locator('.library-grid').count(),1,'the grid stays open under the anchored view');
+ results.push('tap opens the anchored view and returns to the grid');
  // Filters on: only videos.
  await page.getByRole('button',{name:'Volver a las cartas'}).click();
  await page.getByRole('button',{name:'Filtros',exact:true}).first().click();

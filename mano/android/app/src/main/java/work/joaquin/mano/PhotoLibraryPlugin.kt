@@ -367,6 +367,10 @@ class PhotoLibraryPlugin : Plugin() {
         }
     }
 
+    /** Grid precache is an iOS PhotoKit optimisation; Android's MediaStore thumbnails are already cached by the system. */
+    @PluginMethod
+    fun cacheThumbnails(call: PluginCall) { call.resolve() }
+
     @PluginMethod
     fun cancelThumbnailPreparation(call: PluginCall) {
         val token = call.getString("requestId") ?: run { call.reject("Falta el identificador de preparación.", "INVALID_REQUEST"); return }

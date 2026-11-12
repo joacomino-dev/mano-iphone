@@ -12,7 +12,7 @@ export function installAppleFixture({ onboarded = true, status = 'authorized', l
   window.webkit = { messageHandlers: { bridge: { postMessage() { throw new Error('Real native bridge forbidden'); } } } };
   const methods = ['authorize','permissionStatus','assets','libraryVersion','thumbnail','diagnostic','haptic','place','sizes','classify',
     'cancelClassify','analyze','cancelAnalysis','deleteAssets','albums','createAlbum','addToAlbum','favorite',
-    'cancelThumbnailPreparation','cancelVideoPreparation','releasePreparedVideos','metadata','manageLimitedAccess','preview','share','openSettings','openLink'];
+    'cancelThumbnailPreparation','cacheThumbnails','cancelVideoPreparation','releasePreparedVideos','metadata','manageLimitedAccess','preview','share','openSettings','openLink'];
   const storeMethods = ['status','catalog','buy','restore','prepare','show','hide','privacy'];
   window.Capacitor = {
     PluginHeaders: [ { name: 'PhotoLibrary', methods: [...methods.map(name => ({ name, rtype: 'promise' })), {name:'addListener',rtype:'callback'}, {name:'removeListener',rtype:'promise'}] },

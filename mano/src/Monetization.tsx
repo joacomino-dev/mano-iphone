@@ -8,7 +8,7 @@ import './monetization.css';
 
 /** deck: the full letter in the pile (dismissed by swiping). finish / review:
  * the compact letter fixed in the round summary and in «Una última mirada». */
-type Placement = 'deck' | 'finish' | 'review';
+type Placement = 'deck' | 'finish' | 'review' | 'grid';
 type Product = { id: string; price: string };
 type Status = { adFree: boolean; expires?: number | null; products?: Product[] };
 type Outcome = 'purchased' | 'pending' | 'cancelled';
@@ -136,6 +136,14 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
       if (current.current) return;
       if (!offer('review')) want('review');
     },
+    /** «Fototeca» (user-approved 2026-11-12): a letter strip every few rows, only
+     * when one is already loaded as the grid opens, so no empty room is ever
+     * reserved and nothing jumps while scrolling. True when the grid carries it. */
+    grid() {
+      if (!available || off || !status || status.adFree) return false;
+      if (current.current === 'deck') { current.current = undefined; setPlacement(undefined); }
+      return !current.current && offer('grid');
+    },
     /** Leaving a screen: drop its letter, shown or still awaited. */
     release(where: Placement) {
       if (current.current === where || wanted.current === where) clear();
@@ -166,7 +174,9 @@ const letterLabels = () => ({
  * Every frame it measures itself: while it moves (an entrance, a sheet opening,
  * the page scrolling) or is not fully on screen, the native letter is hidden —
  * never dragged behind late — and it comes back on the same frame once still. */
-export function AdSlot({ where, money }: { where: Placement; money: Monetization }) {
+/** `within`: the scroller the slot lives in; the native letter only shows while the
+ * slot is wholly inside it (never over a sticky header or bar). */
+export function AdSlot({ where, money, within }: { where: Placement; money: Monetization; within?: { current: HTMLElement | null } }) {
   const node = useRef<HTMLDivElement>(null);
   const latest = useRef(money);
   const [covered, setCovered] = useState(false);
@@ -206,7 +216,9 @@ export function AdSlot({ where, money }: { where: Placement; money: Monetization
       const now = performance.now();
       const key = `${Math.round(rect.x)},${Math.round(rect.y)},${Math.round(rect.width)},${Math.round(rect.height)}`;
       if (key !== previous) { previous = key; stillSince = now; idleSince = 0; }
-      const onScreen = !document.hidden && rect.top >= 0 && rect.bottom <= window.innerHeight && rect.left >= 0 && rect.right <= window.innerWidth;
+      const box = within?.current?.getBoundingClientRect();
+      const onScreen = !document.hidden && rect.top >= 0 && rect.bottom <= window.innerHeight && rect.left >= 0 && rect.right <= window.innerWidth
+        && (!box || (rect.top >= box.top && rect.bottom <= box.bottom));
       const visible = onScreen && now - stillSince > 120 && now - started > (deck ? 320 : 380);
       if (!shown && !visible) {
         // The deck letter appears right away or not at all; fixed letters wait.

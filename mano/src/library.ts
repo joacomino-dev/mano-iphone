@@ -32,6 +32,8 @@ type LibraryPlugin = {
   prepareVideo(options: { id: string; requestId: string; network?: boolean }): Promise<{path:string; url?:string; mimeType:string; cached:boolean; bytes:number}>;
   cancelVideoPreparation(options: { requestId: string }): Promise<{cancelled:boolean}>;
   cancelThumbnailPreparation(options: { requestId: string }): Promise<{cancelled:boolean}>;
+  /** Grid only: Photos prepares these local previews ahead of the scroll (iOS); [] stops. */
+  cacheThumbnails(options: { ids: string[]; size: number }): Promise<{ cached?: number }>;
   releasePreparedVideos(options?: {ids?:string[]}): Promise<{released:number}>;
   analyze(options: { ids: string[]; threshold: number }): Promise<{ groups: string[][]; skipped: number; cancelled: boolean }>;
   cancelAnalysis(): Promise<void>;

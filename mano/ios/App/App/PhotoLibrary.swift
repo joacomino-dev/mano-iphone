@@ -171,6 +171,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin, PHPhotoLibraryChan
         CAPPluginMethod(name: "libraryVersion", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "thumbnail", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "cancelThumbnailPreparation", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "cacheThumbnails", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "albums", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "addToAlbum", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "createAlbum", returnType: CAPPluginReturnPromise),
@@ -560,6 +561,42 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin, PHPhotoLibraryChan
         }
         job.timeout = timeout
         thumbnailQueue.asyncAfter(deadline: .now() + seconds, execute: timeout)
+    }
+    /// «Fototeca» grid: Photos prepares the next tiles in the scroll direction
+    /// before they are asked for. Same size, mode and options as the local-only
+    /// review/grid request in thumbnail(), so its requests hit this cache. Only
+    /// what is already on the iPhone; an empty list stops it (grid closed).
+    private let precacheQueue = DispatchQueue(label: "work.joaquin.mano.thumbnail-precache", qos: .utility)
+    private var precached: [String: PHAsset] = [:]
+    private var precacheSize = 0
+    @objc func cacheThumbnails(_ call: CAPPluginCall) {
+        guard allowed(call) else { return }
+        let ids = Array((call.getArray("ids", String.self) ?? []).prefix(240))
+        let size = min(3072, max(200, call.getInt("size") ?? 300))
+        precacheQueue.async {
+            let options = PHImageRequestOptions()
+            options.isNetworkAccessAllowed = false; options.deliveryMode = .highQualityFormat; options.resizeMode = .fast
+            let target = CGSize(width: CGFloat(size), height: CGFloat(size))
+            if size != self.precacheSize, !self.precached.isEmpty {
+                self.imageManager.stopCachingImages(for: Array(self.precached.values), targetSize: CGSize(width: CGFloat(self.precacheSize), height: CGFloat(self.precacheSize)), contentMode: .aspectFit, options: options)
+                self.precached = [:]
+            }
+            self.precacheSize = size
+            let wanted = Set(ids)
+            let gone = self.precached.filter { !wanted.contains($0.key) }
+            if !gone.isEmpty {
+                self.imageManager.stopCachingImages(for: Array(gone.values), targetSize: target, contentMode: .aspectFit, options: options)
+                for key in gone.keys { self.precached.removeValue(forKey: key) }
+            }
+            let fresh = ids.filter { self.precached[$0] == nil }
+            if !fresh.isEmpty {
+                let fetched = PHAsset.fetchAssets(withLocalIdentifiers: fresh, options: nil)
+                var added: [PHAsset] = []
+                fetched.enumerateObjects { asset, _, _ in self.precached[asset.localIdentifier] = asset; added.append(asset) }
+                if !added.isEmpty { self.imageManager.startCachingImages(for: added, targetSize: target, contentMode: .aspectFit, options: options) }
+            }
+            call.resolve(["cached": self.precached.count])
+        }
     }
     @objc func cancelThumbnailPreparation(_ call: CAPPluginCall) {
         guard let token = call.getString("requestId") else { call.reject("Falta el identificador de preparación.", "INVALID_REQUEST"); return }

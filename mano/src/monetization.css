@@ -7,10 +7,10 @@
 .cw-ad-slot { position: relative; width: min(100%, 360px); flex: none; }
 .cw-ad-deck { width: min(100%, 340px); height: min(380px, 100cqh); margin: auto; position: absolute; inset: 0; }
 /* Compact fixed letter (summary, «Una última mirada»): media 120 + 2 × 14 padding + airmail edges. */
-.cw-ad-finish, .cw-ad-review { height: 160px; margin-inline: auto; }
+.cw-ad-finish, .cw-ad-review, .cw-ad-grid { height: 160px; margin-inline: auto; }
 .cw-ad-blank { position: absolute; inset: 0 14px 32px; border-radius: 6px; background: var(--cw-surface);
   box-shadow: 0 1px 0 var(--cw-paper-edge), 0 10px 24px rgba(37, 58, 58, .14); overflow: hidden; }
-.cw-ad-finish .cw-ad-blank, .cw-ad-review .cw-ad-blank { inset: 0; box-shadow: 0 1px 0 var(--cw-paper-edge), 0 5px 14px rgba(37, 58, 58, .12); }
+.cw-ad-finish .cw-ad-blank, .cw-ad-review .cw-ad-blank, .cw-ad-grid .cw-ad-blank { inset: 0; box-shadow: 0 1px 0 var(--cw-paper-edge), 0 5px 14px rgba(37, 58, 58, .12); }
 .cw-ad-blank::before, .cw-ad-blank::after { content: ''; position: absolute; left: 0; right: 0; height: 6px;
   background: repeating-linear-gradient(-45deg, var(--cw-turquoise) 0 9px, var(--cw-surface) 9px 14px, var(--cw-pink) 14px 23px, var(--cw-surface) 23px 28px); }
 .cw-ad-blank::before { top: 0; }

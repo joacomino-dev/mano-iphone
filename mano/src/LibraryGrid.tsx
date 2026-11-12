@@ -1,23 +1,23 @@
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { CheckIcon, XIcon, ArrowUUpLeftIcon, CloudIcon, ImageBrokenIcon, SquaresFourIcon, GridNineIcon } from '@phosphor-icons/react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { CheckIcon, ArrowUUpLeftIcon, CloudIcon, ImageBrokenIcon, SquaresFourIcon, GridNineIcon, FunnelSimpleIcon, FunnelSimpleXIcon, CardsThreeIcon } from '@phosphor-icons/react';
 import type { Action, Asset, Filter, RecordState } from './domain';
 import { gridMatch } from './domain';
 import { ReviewLoader } from './review';
-import { reviewThumbnail, inCloudError, type Thumb } from './library';
+import { Library, reviewThumbnail, inCloudError, type Thumb } from './library';
 import { thumbPixels } from './preview';
 import { DecisionBar } from './DecisionBar';
 import { DecisionIcon, Stamp } from './Stamp';
-import { CocoLoader, Deferred } from './Loader';
 import { useAndroidBack } from './androidBack';
 import { formatNumber, t } from './i18n';
 import { haptic } from './haptics';
 
 /** «Fototeca» (user, 2026-11-12; docs/ai-handoff/GRID_VIEW_PLAN.md): the whole
  * library in its real order, opened on the card in hand, with each decision's
- * small stamp. Tap opens one item to decide it; «Seleccionar» decides many at
+ * small stamp. Tap opens the anchored view (zoom); «Seleccionar» decides many at
  * once (tap or drag across). Only visible rows mount; thumbnails load a few at a
- * time and are cancelled as soon as their row scrolls away. */
-const GAP = 2, OVERSCAN = 4, COLUMNS_KEY = 'cocowash-grid-columns-v1';
+ * time and are cancelled as soon as their row scrolls away. With a loaded ad, a
+ * letter strip sits after every AD_EVERY rows; only the one on screen hosts it. */
+const GAP = 2, OVERSCAN = 4, COLUMNS_KEY = 'cocowash-grid-columns-v1', AD_EVERY = 10, AD_H = 184;
 const loader = new ReviewLoader<Thumb>(4, 240);
 const readColumns = (): 3 | 5 => { try { return localStorage.getItem(COLUMNS_KEY) === '5' ? 5 : 3; } catch { return 3; } };
 const clock = (seconds: number) => { const s = Math.max(0, Math.round(seconds)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
@@ -25,6 +25,10 @@ const clock = (seconds: number) => { const s = Math.max(0, Math.round(seconds));
 type Props = {
   assets: Asset[]; state: RecordState; filter: Filter; narrowed: boolean; current?: string; busy: boolean;
   close: () => void; decide: (action: Action, ids: string[]) => Promise<boolean>; undo: () => void; notice: (text: string) => void;
+  /** Opens the anchored view of one item, growing from its tile. */
+  open: (asset: Asset, from: DOMRect) => void;
+  /** The ad letter for the strip on screen; absent when no ad was loaded at opening. */
+  ad?: (within: { current: HTMLElement | null }) => ReactNode;
 };
 type Marks = { pending: Set<string>; favorites: Set<string>; later: Set<string> };
 
@@ -59,28 +63,13 @@ const Tile = memo(function Tile({ asset, index, x, y, side, size, selecting, sel
   </button>;
 });
 
-/** One item, large, with the same decisions as the pile. */
-function GridPreview({ asset, close }: { asset: Asset; close: () => void }) {
-  const [thumb, setThumb] = useState<Thumb>(), [failed, setFailed] = useState(false);
-  useEffect(() => {
-    const controller = new AbortController();
-    void reviewThumbnail(asset, thumbPixels(Math.max(window.innerWidth, window.innerHeight) * .8), controller.signal)
-      .then(setThumb).catch(() => { if (!controller.signal.aborted) setFailed(true); });
-    return () => controller.abort();
-  }, [asset]);
-  return <div className="grid-preview" onClick={close}>
-    {thumb ? <img src={thumb.src} alt="" draggable={false}/> : failed ? <ImageBrokenIcon size={34}/> : <Deferred><CocoLoader size={44}/></Deferred>}
-  </div>;
-}
-
-export default function LibraryGrid({ assets, state, filter, narrowed, current, busy, close, decide, undo, notice }: Props) {
+export default function LibraryGrid({ assets, state, filter, narrowed, current, busy, close, decide, undo, notice, open, ad }: Props) {
   const scroller = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0), [height, setHeight] = useState(0), [offset, setOffset] = useState(0);
   const [columns, setColumns] = useState<3 | 5>(readColumns);
   const [filtered, setFiltered] = useState(narrowed);
   const [selecting, setSelecting] = useState(false), [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
-  const [preview, setPreview] = useState<Asset | null>(null);
-  useAndroidBack(true, () => { if (preview) setPreview(null); else if (selecting) { setSelecting(false); setSelected(new Set()); } else close(); });
+  useAndroidBack(true, () => { if (selecting) { setSelecting(false); setSelected(new Set()); } else close(); });
 
   // Real library order (oldest first, like Photos); removed items never return here.
   const items = useMemo(() => {
@@ -90,10 +79,17 @@ export default function LibraryGrid({ assets, state, filter, narrowed, current, 
   const marks: Marks = useMemo(() => ({ pending: new Set(state.pending), favorites: new Set(state.favorites), later: new Set(state.later ?? []) }), [state]);
 
   const side = width ? (width - GAP * (columns - 1)) / columns : 0, pitch = side + GAP;
-  const rows = Math.ceil(items.length / columns), total = Math.max(0, rows * pitch - GAP);
+  const rows = Math.ceil(items.length / columns), strips = ad ? Math.max(0, Math.floor((rows - 1) / AD_EVERY)) : 0;
+  const total = Math.max(0, rows * pitch - GAP + strips * AD_H);
+  const rowY = (row: number) => row * pitch + (ad ? Math.floor(row / AD_EVERY) * AD_H : 0);
+  const rowAt = (y: number) => {
+    if (!pitch) return 0; if (!ad) return Math.floor(y / pitch);
+    const block = AD_EVERY * pitch + AD_H, b = Math.floor(Math.max(0, y) / block);
+    return b * AD_EVERY + Math.min(AD_EVERY - 1, Math.floor((y - b * block) / pitch));
+  };
   const size = thumbPixels(side || 120);
-  const first = pitch ? Math.max(0, Math.floor(offset / pitch) - OVERSCAN) : 0;
-  const last = pitch ? Math.min(rows - 1, Math.ceil((offset + height) / pitch) + OVERSCAN) : -1;
+  const first = pitch ? Math.max(0, rowAt(offset) - OVERSCAN) : 0;
+  const last = pitch ? Math.min(rows - 1, rowAt(offset + height) + OVERSCAN) : -1;
 
   useLayoutEffect(() => {
     const el = scroller.current; if (!el) return;
@@ -106,14 +102,29 @@ export default function LibraryGrid({ assets, state, filter, narrowed, current, 
     const el = scroller.current, want = anchor.current; if (!el || !side || !want.id) return;
     const index = items.findIndex(a => a.id === want.id); anchor.current = { top: false };
     if (index < 0) return;
-    const row = Math.floor(index / columns) * pitch;
+    const row = rowY(Math.floor(index / columns));
     el.scrollTop = want.top ? row : Math.max(0, row - (el.clientHeight - pitch) / 2); setOffset(el.scrollTop);
   }, [pitch, columns, items]);
+  // Ask Photos to prepare the next screens in the direction of travel (iOS). Debounced:
+  // a fling sends one window when it slows, not one per frame. Stopped on close.
+  const travel = useRef({ offset: 0, down: true });
+  useEffect(() => {
+    if (!pitch || !items.length) return;
+    const down = offset >= travel.current.offset; travel.current = { offset, down };
+    const timer = window.setTimeout(() => {
+      const screen = Math.max(1, last - first - OVERSCAN * 2);
+      const from = down ? first : Math.max(0, first - screen * 2), to = down ? Math.min(rows - 1, last + screen * 2) : last;
+      const ids = items.slice(from * columns, (to + 1) * columns).filter(a => !a.demo).map(a => a.id).slice(0, 240);
+      if (ids.length) void Library.cacheThumbnails({ ids, size }).catch(() => {});
+    }, 160);
+    return () => window.clearTimeout(timer);
+  }, [first, last, columns, items, size]);
+  useEffect(() => () => { void Library.cacheThumbnails({ ids: [], size: 0 }).catch(() => {}); }, []);
   const frame = useRef(0);
   const onScroll = () => { if (frame.current) return; frame.current = requestAnimationFrame(() => { frame.current = 0; setOffset(scroller.current?.scrollTop ?? 0); }); };
   useEffect(() => () => { cancelAnimationFrame(frame.current); loader.cancelAll(); }, []);
   const switchColumns = () => {
-    const topIndex = pitch ? Math.min(items.length - 1, Math.floor(offset / pitch) * columns) : 0;
+    const topIndex = pitch ? Math.min(items.length - 1, rowAt(offset) * columns) : 0;
     anchor.current = { id: items[topIndex]?.id, top: true };
     const next = columns === 3 ? 5 : 3; setColumns(next); haptic('selection');
     try { localStorage.setItem(COLUMNS_KEY, String(next)); } catch { /* per-device convenience only */ }
@@ -179,7 +190,7 @@ export default function LibraryGrid({ assets, state, filter, narrowed, current, 
     if (g.mode !== 'wait') return;
     const asset = items[g.start]; if (!asset) return;
     if (selecting) { const next = new Set(selected); if (next.has(asset.id)) next.delete(asset.id); else next.add(asset.id); setSelected(next); haptic('selection'); }
-    else setPreview(asset);
+    else { const tile = scroller.current?.querySelector<HTMLElement>(`[data-i="${g.start}"]`); if (tile) open(asset, tile.getBoundingClientRect()); }
   };
   const onPointerCancel = (e: React.PointerEvent) => { fingers.current.delete(e.pointerId); pinch.current = null; const g = gesture.current; if (g) clearTimeout(g.timer); cancelAnimationFrame(edge.current); gesture.current = null; };
   // Keyboard and assistive technology: a real click without a pointer gesture.
@@ -187,45 +198,50 @@ export default function LibraryGrid({ assets, state, filter, narrowed, current, 
     if (e.detail !== 0) return;
     const el = (e.target as HTMLElement).closest<HTMLElement>('[data-i]'); const asset = el ? items[Number(el.dataset.i)] : undefined; if (!asset) return;
     if (selecting) { const next = new Set(selected); if (next.has(asset.id)) next.delete(asset.id); else next.add(asset.id); setSelected(next); }
-    else setPreview(asset);
+    else if (el) open(asset, el.getBoundingClientRect());
   };
 
-  const targets = preview ? [preview.id] : [...selected];
+  const targets = [...selected];
   const run = useCallback(async (action: Action) => {
     let ids = targets;
     if (action === 'discard') { ids = ids.filter(id => !marks.favorites.has(id)); if (ids.length < targets.length) notice(t('Las favoritas\nno se eliminan')); }
     if (!ids.length) return;
-    if (await decide(action, ids)) { setSelected(new Set()); setSelecting(false); setPreview(null); }
+    if (await decide(action, ids)) { setSelected(new Set()); setSelecting(false); }
   }, [targets, marks, decide, notice]);
 
   const tiles = [];
   for (let row = first; row <= last; row++) for (let col = 0; col < columns; col++) {
     const index = row * columns + col, asset = items[index]; if (!asset) break;
-    tiles.push(<Tile key={asset.id} asset={asset} index={index} x={col * pitch} y={row * pitch} side={side} size={size}
+    tiles.push(<Tile key={asset.id} asset={asset} index={index} x={col * pitch} y={rowY(row)} side={side} size={size}
       selecting={selecting} selected={selected.has(asset.id)} current={asset.id === current} level={state.marks[asset.id]?.level ?? 0}
       pending={marks.pending.has(asset.id)} favorite={marks.favorites.has(asset.id)} later={marks.later.has(asset.id)}/>);
   }
 
+  let strip: ReactNode = null;
+  if (ad && pitch) {
+    let best = -1, distance = Infinity; const middle = offset + height / 2;
+    for (let k = Math.max(1, Math.ceil(first / AD_EVERY)); k * AD_EVERY <= last && k * AD_EVERY < rows; k++) {
+      const y = rowY(k * AD_EVERY) - AD_H, d = Math.abs(y + AD_H / 2 - middle); if (d < distance) { distance = d; best = y; }
+    }
+    if (best >= 0) strip = <div className="grid-ad" style={{ transform: `translateY(${best}px)`, height: AD_H }}>{ad(scroller)}</div>;
+  }
   return <section className="library-grid" role="dialog" aria-modal="true" aria-label={t('Fototeca')}>
     <header className="grid-header">
-      <button type="button" className="grid-close" onClick={() => { if (preview) setPreview(null); else close(); }} aria-label={preview ? t('Cerrar') : t('Volver a las cartas')}><XIcon size={20} weight="bold"/></button>
-      <button type="button" className={`grid-filter ${filtered ? 'is-on' : ''}`} role="switch" aria-checked={filtered} onClick={() => { setFiltered(v => !v); haptic('selection'); }}>
-        <span className="grid-filter-dot" aria-hidden="true"/>{t('Filtros')}
+      <button type="button" className={`header-action grid-filter ${filtered ? 'is-on' : ''}`} role="switch" aria-checked={filtered} aria-label={t('Filtros')} onClick={() => { setFiltered(v => !v); haptic('selection'); }}>
+        {filtered ? <FunnelSimpleIcon size={18} weight="bold"/> : <FunnelSimpleXIcon size={18} weight="bold"/>}<span>{t('Filtros')}</span>
       </button>
-      <span className="grid-title"><strong>{t('Fototeca')}</strong><small>{formatNumber(items.length)}</small></span>
-      <button type="button" className="grid-density" onClick={switchColumns} aria-label={columns === 3 ? t('Ver más pequeñas') : t('Ver más grandes')}>{columns === 3 ? <GridNineIcon size={20}/> : <SquaresFourIcon size={20}/>}</button>
-      <button type="button" className="grid-select" onClick={() => { setSelecting(v => !v); setSelected(new Set()); haptic('selection'); }}>{selecting ? t('Cancelar') : t('Seleccionar')}</button>
+      <h2 className="grid-title"><span>{t('Fototeca')}</span><small>{formatNumber(items.length)}</small></h2>
+      <button type="button" className={`header-action grid-select ${selecting ? 'is-on' : ''}`} onClick={() => { setSelecting(v => !v); setSelected(new Set()); haptic('selection'); }}>{selecting ? t('Cancelar') : t('Seleccionar')}</button>
     </header>
     <div className="grid-body">
     <div ref={scroller} className={`grid-scroller ${selecting ? 'is-selecting' : ''}`} onScroll={onScroll}
       onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerCancel} onClick={onClick} onContextMenu={e => e.preventDefault()}>
-      {items.length ? <div className="grid-canvas" style={{ height: total }}>{tiles}</div>
+      {items.length ? <div className="grid-canvas" style={{ height: total }}>{tiles}{strip}</div>
         : <p className="grid-empty">{t('Nada con estos filtros.')}</p>}
     </div>
-    {preview && <GridPreview asset={preview} close={() => setPreview(null)}/>}
     </div>
-    <div className="grid-actions">
-      <p className="grid-count" aria-live="polite">{preview ? t('Decide esta foto') : selecting ? (selected.size ? t('{n} seleccionadas', { n: formatNumber(selected.size) }) : t('Toca o arrastra para seleccionar')) : t('Toca una foto para verla o mantén pulsado para seleccionar')}</p>
+    {selecting ? <div className="grid-actions">
+      <p className="grid-count" aria-live="polite">{selected.size ? t('{n} seleccionadas', { n: formatNumber(selected.size) }) : t('Toca o arrastra para seleccionar')}</p>
       <DecisionBar count={targets.length} disabled={busy || !targets.length} favoriteOn={false} armed=""
         onDiscard={() => void run('discard')} onFavorite={() => void run('favorite')} onKeep={() => void run('keep')}/>
       <footer className="archive-tools grid-tools">
@@ -233,6 +249,13 @@ export default function LibraryGrid({ assets, state, filter, narrowed, current, 
         <button className="later" disabled={busy || !targets.length} onClick={() => void run('later')} aria-label={targets.length > 1 ? t('Dejar {n} para más tarde', { n: targets.length }) : t('Dejar para más tarde')}><span className="tool-icon"><DecisionIcon kind="later" size={24}/></span><span className="tool-label">{t('Más tarde')}</span></button>
         <span aria-hidden="true"/>
       </footer>
-    </div>
+    </div> : <div className="grid-dock">
+      <p className="grid-hint">{t('Mantén pulsada una foto para elegir varias.')}</p>
+      <div className="grid-dock-row">
+        <button type="button" className="grid-density" onClick={switchColumns} aria-label={columns === 3 ? t('Ver más pequeñas') : t('Ver más grandes')}>{columns === 3 ? <GridNineIcon size={22} weight="bold"/> : <SquaresFourIcon size={22} weight="bold"/>}</button>
+        <button type="button" className="grid-back" onClick={close}><CardsThreeIcon size={22} weight="bold"/>{t('Volver a las cartas')}</button>
+        {state.history.length ? <button type="button" className="grid-density" onClick={undo} disabled={busy} aria-label={t('Deshacer la última decisión')}><ArrowUUpLeftIcon size={22} weight="bold" className="flip-rtl"/></button> : <span className="grid-dock-spacer" aria-hidden="true"/>}
+      </div>
+    </div>}
   </section>;
 }
