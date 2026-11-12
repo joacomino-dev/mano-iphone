@@ -81,10 +81,32 @@ async function inlineFullscreen(){
 }
 async function shot(name){await run('adb',['exec-out','screencap','-p'],{encoding:'buffer',timeout:30000,maxBuffer:12<<20}).then(r=>fs.writeFile(`${OUT}/${name}.png`,r.stdout));}
 async function systemAllow(allow=true,completed){
- for(let i=0;i<20;i++){if(completed&&await completed())return 'system-completed-before-observation';await sleep(500);await adb('shell','uiautomator','dump','/sdcard/coco-cycle.xml');const xml=await adb('shell','cat','/sdcard/coco-cycle.xml');
- const node=[...xml.matchAll(/<node [^>]*>/g)].map(m=>m[0]).find(n=>(allow?/text="(?:Allow|ALLOW|Permitir|PERMITIR)"/:/text="(?:Deny|DENY|Cancel|CANCEL|Don.t allow|Denegar|Cancelar)"/).test(n)&&/clickable="true"/.test(n)&&/package="(?:com\.google\.android\.providers\.media\.module|com\.android\.providers\.media(?:\.module)?|com\.google\.android\.permissioncontroller|com\.android\.permissioncontroller)"/.test(n));
- const b=node&&/bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/.exec(node);if(b){await adb('shell','input','tap',String((+b[1]+ +b[3])>>1),String((+b[2]+ +b[4])>>1));return 'system-dialog';}}
- throw Error('Expected real Android confirmation was not offered');
+ const timeout=15000,label=allow?/text="(?:Allow|ALLOW|Permitir|PERMITIR)"/:/text="(?:Deny|DENY|Cancel|CANCEL|Don.t allow|Denegar|Cancelar)"/;
+ const buttons=xml=>[...xml.matchAll(/<node [^>]*>/g)].map(m=>m[0]).filter(n=>label.test(n)&&/package="(?:com\.google\.android\.providers\.media\.module|com\.android\.providers\.media(?:\.module)?|com\.google\.android\.permissioncontroller|com\.android\.permissioncontroller)"/.test(n));
+ // Bound wall time, not the number of dumps: uiautomator can itself be slow.
+ const command=(deadline,...args)=>run('adb',args,{timeout:Math.max(1,Math.ceil(deadline-performance.now())),maxBuffer:16<<20}).then(r=>r.stdout.trim());
+ const dump=async deadline=>{await command(deadline,'shell','uiautomator','dump','/sdcard/coco-cycle.xml');return command(deadline,'shell','cat','/sdcard/coco-cycle.xml');};
+ const offeredBy=performance.now()+timeout;let bounds,lastError;
+ while(performance.now()<offeredBy){
+  if(completed&&await completed())return 'system-completed-before-observation';
+  try{
+   const node=buttons(await dump(offeredBy)).find(n=>/clickable="true"/.test(n)&&!/enabled="false"/.test(n));
+   bounds=node&&/bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/.exec(node);
+   if(bounds&&+bounds[3]>+bounds[1]&&+bounds[4]>+bounds[2])break;
+   bounds=undefined;
+  }catch(error){lastError=error.message;}
+  await sleep(Math.min(250,Math.max(0,offeredBy-performance.now())));
+ }
+ if(!bounds)throw Error(`Android ${allow?'Allow':'Cancel'} confirmation did not appear within ${timeout} ms${lastError?': '+lastError:''}`);
+ const dismissedBy=performance.now()+timeout;
+ await command(dismissedBy,'shell','input','tap',String((+bounds[1]+ +bounds[3])>>1),String((+bounds[2]+ +bounds[4])>>1));
+ while(performance.now()<dismissedBy){
+  // A disabled button still means the dialog is present. Only a successful
+  // fresh dump without that system button proves the tap closed the dialog.
+  try{if(buttons(await dump(dismissedBy)).length===0)return 'system-dialog';}catch(error){lastError=error.message;}
+  await sleep(Math.min(250,Math.max(0,dismissedBy-performance.now())));
+ }
+ throw Error(`Android ${allow?'Allow':'Cancel'} confirmation remained visible after tapping (${timeout} ms)${lastError?': '+lastError:''}`);
 }
 async function processSnapshot(){
  const scope=await adb('shell','dumpsys','activity','processes');await fs.writeFile(`${OUT}/cycle-${rows.length}-scope.txt`,scope);const owned=ownedProcesses(scope,PKG,lab.pid);
