@@ -615,12 +615,42 @@ final class PhotosSmokeTests: XCTestCase {
         XCTAssertTrue(finish.waitForExistence(timeout:120))
         try nativeMediaFilter(app,"Vídeos")
         app.buttons["Filtros"].firstMatch.tap()
-        let settings=app.descendants(matching:.any).matching(NSPredicate(format:"label == %@","Ajustes")).allElementsBoundByIndex.filter{$0.isHittable}.last
-        try XCTUnwrap(settings).tap()
+        let settings=try XCTUnwrap(app.descendants(matching:.any).matching(NSPredicate(format:"label == %@","Ajustes")).allElementsBoundByIndex.filter{$0.isHittable}.last)
+        settings.tap()
         let letters=app.switches["Letras VHS"].firstMatch
-        for _ in 0..<8 { if letters.isHittable { break };app.swipeUp() }
-        XCTAssertTrue(letters.isHittable)
+        guard letters.waitForExistence(timeout:10) else {
+            attachScreenshot(app,"VHS setting missing")
+            throw NSError(domain:"CocoWashFixtureQA",code:4,userInfo:[NSLocalizedDescriptionKey:"VHS switch missing from Settings"])
+        }
+        var lettersReady=false
+        // Settings preserves its previous scroll position. The VHS switch may
+        // be above OR below the clear viewport, under the sticky tabs; a blind
+        // swipeUp can move it farther away while AX still reports hittability.
+        for attempt in 0..<9 {
+            let viewport=app.frame
+            let top=max(viewport.minY,settings.frame.maxY)+12
+            let bottom=viewport.maxY-28
+            let frame=letters.frame
+            let safe=CGRect(x:viewport.minX+4,y:top,width:viewport.width-8,height:bottom-top)
+            print("COCOWASH_UI_VHS_SETTING_TARGET attempt=\(attempt) frame=\(frame) safe=\(safe) value=\(letters.value.map{String(describing:$0)} ?? "missing")")
+            if safe.contains(frame) && letters.isHittable { lettersReady=true;break }
+            guard bottom-top>80,attempt<8 else { break }
+            let middle=(top+bottom)/2
+            let distance=min(CGFloat(140),(bottom-top)*0.3)
+            let direction:CGFloat=frame.midY>middle ? 1 : -1
+            let origin=app.coordinate(withNormalizedOffset:.zero)
+            let start=origin.withOffset(CGVector(dx:viewport.width/2,dy:middle+direction*distance-viewport.minY))
+            let end=origin.withOffset(CGVector(dx:viewport.width/2,dy:middle-direction*distance-viewport.minY))
+            start.press(forDuration:0.1,thenDragTo:end)
+            Thread.sleep(forTimeInterval:0.3)
+        }
+        guard lettersReady else {
+            attachScreenshot(app,"VHS setting never cleared sticky header")
+            throw NSError(domain:"CocoWashFixtureQA",code:4,userInfo:[NSLocalizedDescriptionKey:"VHS switch outside safe Settings viewport"])
+        }
         if (letters.value as? String) != "0" { letters.tap() }
+        let disabled=XCTNSPredicateExpectation(predicate:NSPredicate(format:"value == %@","0"),object:letters)
+        XCTAssertEqual(XCTWaiter().wait(for:[disabled],timeout:8),.completed,"VHS must actually be off before checking the card eye")
         XCTAssertTrue(closeOverlay(app,until:finish))
         func eye(_ label:String) -> XCUIElement { app.descendants(matching:.any).matching(NSPredicate(format:"label == %@",label)).firstMatch }
         let show=eye("Mostrar letras VHS"),hide=eye("Ocultar letras VHS")
@@ -792,16 +822,62 @@ final class PhotosSmokeTests: XCTestCase {
     }
 
     @MainActor private func nativeMediaFilter(_ app:XCUIApplication,_ media:String) throws {
+        let query=app.descendants(matching:.any).matching(NSPredicate(format:"label == %@",media))
+        let apply=app.buttons["Aplicar filtros"].firstMatch
+        func selected(_ element:XCUIElement)->String { element.value.map{String(describing:$0)} ?? "" }
+        func choices()->[XCUIElement] {
+            query.allElementsBoundByIndex.filter { ["0","1"].contains(selected($0)) && $0.frame.height>0 && $0.frame.height<=64 }
+        }
+        func failure(_ reason:String) -> NSError {
+            // Only the relevant controls: a full WebView AX dump can itself hang.
+            let frames=choices().map { "type=\($0.elementType.rawValue) frame=\($0.frame) value=\(selected($0))" }.joined(separator:"; ")
+            print("COCOWASH_UI_MEDIA_FILTER_FAIL media=\(media) reason=\(reason) applyExists=\(apply.exists) choices=[\(frames)]")
+            attachScreenshot(app,"Media filter \(media): \(reason)")
+            return NSError(domain:"CocoWashFixtureQA",code:3,userInfo:[NSLocalizedDescriptionKey:"Media filter \(media): \(reason)"])
+        }
         app.buttons["Filtros"].firstMatch.tap()
         // The sheet remembers Ajustes after the Geek test. Select its filters
         // tab explicitly; never change app behavior just for this test.
         let tab=app.descendants(matching:.any).matching(NSPredicate(format:"label == %@","Filtros")).allElementsBoundByIndex.filter { $0.isHittable }.last
-        try XCTUnwrap(tab).tap()
-        let choice=app.descendants(matching:.any).matching(NSPredicate(format:"label == %@",media)).allElementsBoundByIndex.filter { $0.isHittable }.last
-        try XCTUnwrap(choice).tap()
-        let apply=app.buttons["Aplicar filtros"].firstMatch
-        for _ in 0..<8 { if apply.isHittable { break };app.swipeUp() }
-        XCTAssertTrue(apply.isHittable);apply.tap()
+        guard let tab else { throw failure("Filters tab missing") }
+        tab.tap()
+        guard apply.waitForExistence(timeout:10) else { throw failure("Filters sheet did not open") }
+        var target:XCUIElement?
+        // WebKit may call a switch hittable even while its AX frame is behind
+        // sticky Apply. In run43126455524 the Live tap landed at (211.7,630.5),
+        // pressed Apply and closed the sheet. Require the whole option in the
+        // clear content band; gestures stay inside that band, off both stickies.
+        for attempt in 0..<9 {
+            guard apply.exists else { throw failure("Sheet closed before media selection") }
+            let options=choices()
+            guard options.count==1,let choice=options.first else { throw failure("Expected one exact media toggle") }
+            let viewport=app.frame
+            let top=max(viewport.minY,tab.frame.maxY)+12
+            // The sticky footer also owns a count line and padding above Apply.
+            let bottom=min(viewport.maxY,apply.frame.minY)-44
+            guard bottom-top>80 else { throw failure("No safe scroll area between sticky controls") }
+            let frame=choice.frame
+            let safe=CGRect(x:viewport.minX+4,y:top,width:viewport.width-8,height:bottom-top)
+            print("COCOWASH_UI_MEDIA_FILTER_TARGET media=\(media) attempt=\(attempt) frame=\(frame) safe=\(safe) value=\(selected(choice))")
+            if safe.contains(frame) && choice.isHittable { target=choice;break }
+            if attempt==8 { break }
+            let middle=(top+bottom)/2
+            let distance=min(CGFloat(140),(bottom-top)*0.3)
+            let direction:CGFloat=frame.midY>middle ? 1 : -1
+            let origin=app.coordinate(withNormalizedOffset:.zero)
+            let start=origin.withOffset(CGVector(dx:viewport.width/2,dy:middle+direction*distance-viewport.minY))
+            let end=origin.withOffset(CGVector(dx:viewport.width/2,dy:middle-direction*distance-viewport.minY))
+            start.press(forDuration:0.1,thenDragTo:end)
+            Thread.sleep(forTimeInterval:0.3)
+        }
+        guard let choice=target else { throw failure("Media toggle never cleared sticky controls") }
+        if selected(choice) != "1" { choice.tap() }
+        let deadline=Date().addingTimeInterval(8)
+        while apply.exists && choice.exists && selected(choice) != "1" && Date()<deadline { Thread.sleep(forTimeInterval:0.2) }
+        guard apply.exists && choice.exists && selected(choice)=="1" else { throw failure("Selection not confirmed with sheet still open") }
+        attachScreenshot(app,"Media filter \(media) selected before Apply")
+        guard apply.isHittable && apply.isEnabled else { throw failure("Apply unavailable after confirmed media selection") }
+        apply.tap()
         let gone=XCTNSPredicateExpectation(predicate:NSPredicate(format:"exists == false"),object:apply)
         XCTAssertEqual(XCTWaiter().wait(for:[gone],timeout:20),.completed)
     }

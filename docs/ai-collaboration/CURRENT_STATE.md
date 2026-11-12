@@ -1,5 +1,10 @@
 # CocoWash — estado vigente
 
+## Relevo solicitado por usuario — 2026-11-12
+
+Ver `docs/ai-handoff/HANDOFF_CLAUDE_2026-11-12.md`: HEAD c81288b enviado; parche XCTest local sin commit. iOS tienda/dev PASS; full/live FAIL; Android dos PASS y tercer FAIL. Los estados inferiores "en curso" son históricos. No se lanzó más CI tras solicitar relevo.
+
+
 ## Codex CW-CX-064 — bloque A integrado, validación nativa (2026-11-11)
 
 Usuario pide ejecutar `PROMPT_CODEX_GEMINI_2026-11-10.md`. Base limpia `51bf762`,
