@@ -340,7 +340,8 @@
 /* 0.9.6 illustrated stamps: the art carries its own colours; on a card the
    stamp with its word sits on a cream plate so it reads over any photo. */
 .stamp.is-art img{display:block;width:100%;height:auto;-webkit-user-drag:none}
-.stamp.has-word{padding:6px 12px 6px 8px;border-radius:22px;background:rgba(250,246,238,.94);box-shadow:inset 0 0 0 1.5px rgba(46,24,14,.18)}
+/* 2026-11-12 (user): the stamp art stands on its own, no plate; only the word sits on a rounded cream plate. */
+.stamp.has-word{padding:0;border-radius:0;background:none;box-shadow:none}
 .stamp-keep{color:var(--cw-stamp-keep)}.stamp-discard{color:var(--cw-stamp-discard)}.stamp-favorite{color:var(--cw-stamp-favorite)}.stamp-later{color:var(--cw-stamp-later)}
 .stamp-later .stamp-word{font-size:15px;letter-spacing:.08em}
 .stamp-word{fill:currentColor;font:600 11px/1 var(--cw-font-mono);letter-spacing:.14em}
@@ -937,9 +938,9 @@
 .review-primary .review-monetization{margin:0 0 var(--cw-space-3)}
 /* Decision stamps in other languages: the same seal, the word set beside it
    between two wavy lines, in the decision's colour. */
-.stamp.is-composed{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:fit-content;margin-inline:auto;padding:8px 14px 6px;border-radius:24px}
+.stamp.is-composed{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;width:fit-content;margin-inline:auto;padding:0}
 .stamp.is-composed img{flex:none;width:118px;height:auto}
-.stamp-lettering{--wave:var(--cw-turquoise);padding:2px 4px 8px;font:700 24px/1.25 var(--cw-font-brand);color:var(--cw-lettering);white-space:nowrap;
+.stamp-lettering{--wave:var(--cw-turquoise);padding:6px 14px 9px;border-radius:14px;background:rgba(250,246,238,.94);box-shadow:inset 0 0 0 1.5px rgba(46,24,14,.18);font:700 24px/1.25 var(--cw-font-brand);color:var(--cw-lettering);white-space:nowrap;
   text-decoration-line:underline overline;text-decoration-style:wavy;text-decoration-color:var(--wave);text-decoration-thickness:2px;text-underline-offset:7px}
 .stamp-discard .stamp-lettering{--wave:var(--cw-graphite)}.stamp-favorite .stamp-lettering{--wave:var(--cw-wash)}.stamp-later .stamp-lettering{--wave:var(--cw-coconut-deep)}
 /* Introduction, card 3: the group counter and the two ways to zoom. */
@@ -1062,6 +1063,8 @@
 .best-chip{top:var(--cw-ctl-edge);box-shadow:inset 0 0 0 1px var(--cw-line-on-bg)}
 /* No system loupe, selection or callout anywhere (text fields keep theirs). */
 html,body,body *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+/* No page zoom from a double tap (the viewport also forbids it): the app zooms photos itself. */
+html{touch-action:manipulation}
 input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 
 /* Summary after «Eliminar»: never scrolls; Coqui and Memo, the stamp, the

@@ -59,7 +59,27 @@ class ManoBridgeController: CAPBridgeViewController {
         bridge?.registerPluginInstance(PhotoLibraryPlugin())
         bridge?.registerPluginInstance(CocoMonetizationPlugin())
         webView?.allowsLinkPreview = false
+        disableLoupe()
         devLog("COCOWASH_BRIDGE_READY")
+    }
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        disableLoupe()
+    }
+    /// Tap, then touch and hold opens the text loupe even where CSS disables
+    /// selection (WebKit's "tap and a half" recognizer). CocoWash never needs it:
+    /// fields keep the long press to place the caret. Public API only.
+    private func disableLoupe() {
+        guard let web = webView else { return }
+        var views: [UIView] = [web, web.scrollView]
+        views += web.scrollView.subviews
+        var disabled = 0
+        for view in views {
+            for recognizer in view.gestureRecognizers ?? [] where NSStringFromClass(type(of: recognizer)).contains("TapAndAHalf") {
+                recognizer.isEnabled = false; disabled += 1
+            }
+        }
+        devLog("COCOWASH_LOUPE_DISABLED count=\(disabled)")
     }
     // Coco Cream (0.9): dark status bar text on the light cream frame.
     override var preferredStatusBarStyle: UIStatusBarStyle { .darkContent }

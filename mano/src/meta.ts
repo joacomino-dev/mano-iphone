@@ -15,7 +15,11 @@ export type VideoMeta = { date: boolean; time: boolean; location: boolean; durat
  * the pile and the next ones in line; `save` shows what is already on the iPhone
  * and downloads only on request (anchor, zoom). */
 export type CloudMode = 'save' | 'always';
-export type DisplaySettings = { photo: PhotoMeta; video: VideoMeta; haptics: boolean; quality: PreviewQuality; cloud: CloudMode };
+/** `stampWords`: the word under the decision stamps. Unset means automatic: shown
+ * while someone learns the four gestures (STAMP_WORDS_UNTIL decisions), then the
+ * stamp alone. Set by the person in Ajustes, it always wins. */
+export type DisplaySettings = { photo: PhotoMeta; video: VideoMeta; haptics: boolean; quality: PreviewQuality; cloud: CloudMode; stampWords?: boolean };
+export const STAMP_WORDS_UNTIL = 20;
 export const DISPLAY_KEY = 'cocowash-display-v1';
 /** v2 (0.8): the tour shows once more after updating, so it can be seen with
  * the new main screen; later launches skip it («Ver la introducción» in Ajustes). */
@@ -45,7 +49,8 @@ export function normalizeDisplay(value: unknown): DisplaySettings {
   };
   return { photo: pick(input.photo, defaultDisplay.photo), video: pick(input.video, defaultDisplay.video),
     haptics: typeof input.haptics === 'boolean' ? input.haptics : defaultDisplay.haptics,
-    quality: normalizeQuality(input.quality), cloud: input.cloud === 'save' ? 'save' : 'always' };
+    quality: normalizeQuality(input.quality), cloud: input.cloud === 'save' ? 'save' : 'always',
+    ...(typeof input.stampWords === 'boolean' ? { stampWords: input.stampWords } : {}) };
 }
 export function readDisplay(storage?: Pick<Storage, 'getItem'>): DisplaySettings {
   // 9.8.1 stores the iCloud choice as `icloud`: the old `cloud: 'save'` was the

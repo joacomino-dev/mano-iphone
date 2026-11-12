@@ -57,14 +57,16 @@ const ART: Record<StampKind, string> = {
   favorite: '/assets/stamps/favorite.webp', later: '/assets/stamps/later.webp',
 };
 const WORDS: Record<StampKind, () => string> = { keep: () => t('Conservar'), discard: () => t('Eliminar'), favorite: () => t('Favorita'), later: () => t('Más tarde') };
-export function Stamp({ kind, level, word = false, className = '' }: { kind: StampKind; level?: number; word?: boolean; className?: string }) {
+/** `word`: the large decision stamp (cards, drag, tour). `lettering`: its word
+ * underneath, on a cream plate; off, the same stamp at the same size, alone. */
+export function Stamp({ kind, level, word = false, lettering = true, className = '' }: { kind: StampKind; level?: number; word?: boolean; lettering?: boolean; className?: string }) {
   if (level) return <span className={`stamp stamp-${kind} ${className}`} aria-hidden="true"><KeepSeal level={level}/></span>;
   // The illustrated word is lettered in Spanish: other languages set the same
   // seal next to their own word, between the same wavy lines.
   // 9.8.4: with its word, the stamp is large and the word sits underneath,
   // between two wavy lines, set in the app's language (same for all four).
   if (word) return <span className={`stamp stamp-${kind} is-art has-word is-composed ${className}`} aria-hidden="true">
-    <img src={ART[kind]} alt="" draggable={false}/><span className="stamp-lettering">{WORDS[kind]()}</span>
+    <img src={ART[kind]} alt="" draggable={false}/>{lettering && <span className="stamp-lettering">{WORDS[kind]()}</span>}
   </span>;
   return <span className={`stamp stamp-${kind} is-art ${className}`} aria-hidden="true">
     <img src={ART[kind]} alt="" draggable={false}/>
@@ -74,7 +76,7 @@ export function Stamp({ kind, level, word = false, className = '' }: { kind: Sta
 /** A decision lands: the stamp hits the table, then follows the card out. It is
  * pure decoration over the stack (no pointer events, no state), so it never
  * delays the next gesture. Reduce Motion: the same stamp, no travel or scale. */
-export function DecisionStamp({ kind, reduced, done }: { kind: StampKind; reduced: boolean; done: () => void }) {
+export function DecisionStamp({ kind, reduced, done, lettering = true }: { kind: StampKind; reduced: boolean; done: () => void; lettering?: boolean }) {
   const travel = kind === 'keep' ? { x: [0, 0, 0, 96], y: [0, 0, 0, 0] } : kind === 'discard' ? { x: [0, 0, 0, -96], y: [0, 0, 0, 0] } : kind === 'later' ? { x: [0, 0, 0, 0], y: [0, 0, 0, 96] } : { x: [0, 0, 0, 0], y: [0, 0, 0, -96] };
   const tilt = kind === 'keep' ? -10 : kind === 'discard' ? 8 : kind === 'later' ? -4 : 0;
   return <motion.div className={`decision-stamp is-${kind}`} aria-hidden="true"
@@ -82,6 +84,6 @@ export function DecisionStamp({ kind, reduced, done }: { kind: StampKind; reduce
     animate={reduced ? { opacity: [0, 1, 1, 0] } : { opacity: [0, 1, 1, 0], scale: [1.35, 1, 1, .9], rotate: tilt, ...travel }}
     transition={reduced ? { duration: .6, times: [0, .1, .75, 1] } : { duration: .5, times: [0, .24, .62, 1], ease: 'easeOut' }}
     onAnimationComplete={done}>
-    <Stamp kind={kind} word/>
+    <Stamp kind={kind} word lettering={lettering}/>
   </motion.div>;
 }

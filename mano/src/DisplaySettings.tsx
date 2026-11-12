@@ -46,8 +46,8 @@ const dateOptions = (upper: boolean) => DATE_FORMATS.map(format => [format, form
 /** How information looks on cards. Applied live and saved; it never affects
  * which files the filters put in the pile. 9.8.5: grouped rows, one line of
  * help at most, the Polaroid and VHS previews as the only ornament. */
-export function DisplaySettingsPanel({ display, change, geek, setGeek, library, replayIntro, testing }: {
-  display: DisplaySettings; change: (next: DisplaySettings) => void; geek: boolean; setGeek: (value: boolean) => void;
+export function DisplaySettingsPanel({ display, change, stampWordsAuto = true, geek, setGeek, library, replayIntro, testing }: {
+  display: DisplaySettings; change: (next: DisplaySettings) => void; stampWordsAuto?: boolean; geek: boolean; setGeek: (value: boolean) => void;
   library: ReactNode; replayIntro: () => void;
   /** iPhone only, until 1.0: «Modo de prueba» (testMode.ts). */
   testing?: { on: boolean; set: (on: boolean) => void; ads: boolean; setAds: (on: boolean) => void };
@@ -98,6 +98,7 @@ export function DisplaySettingsPanel({ display, change, geek, setGeek, library, 
     <Section icon={<HandTapIcon size={18}/>} title={t('Experiencia')}>
       <div className="settings-group">
         <Switch label={t('Vibración')} checked={display.haptics} change={haptics => change({ ...display, haptics })}/>
+        <Switch label={t('Palabras en los sellos')} hint={t('Al principio se ven; después queda solo el sello.')} checked={display.stampWords ?? stampWordsAuto} change={stampWords => change({ ...display, stampWords })}/>
         <Switch label={t('Modo Geek')} hint={t('Al anclar una foto, muestra los datos del archivo.')} checked={geek} change={setGeek}/>
       </div>
     </Section>
