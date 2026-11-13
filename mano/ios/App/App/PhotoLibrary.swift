@@ -172,6 +172,7 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin, PHPhotoLibraryChan
         CAPPluginMethod(name: "thumbnail", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "cancelThumbnailPreparation", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "cacheThumbnails", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "shareMany", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "albums", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "addToAlbum", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "createAlbum", returnType: CAPPluginReturnPromise),
@@ -261,14 +262,14 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin, PHPhotoLibraryChan
     private func allowed(_ call: CAPPluginCall) -> Bool {
         guard ["authorized", "limited"].contains(status) else { call.reject("Permite acceso a Fotos en Ajustes."); return false }; return true
     }
-    @MainActor static func presentShare(_ file: URL, from controller: UIViewController?) async throws {
+    @MainActor static func presentShare(_ files: [URL], from controller: UIViewController?) async throws {
         guard let controller, controller.viewIfLoaded?.window != nil,
               controller.presentedViewController == nil,
               UIApplication.shared.applicationState == .active else {
             throw CocoaError(.userCancelled)
         }
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            let sheet = UIActivityViewController(activityItems: [file], applicationActivities: nil)
+            let sheet = UIActivityViewController(activityItems: files, applicationActivities: nil)
             sheet.popoverPresentationController?.sourceView = controller.view
             sheet.popoverPresentationController?.sourceRect = CGRect(x: controller.view.bounds.midX, y: controller.view.bounds.midY, width: 1, height: 1)
             sheet.completionWithItemsHandler = { _, _, _, error in
@@ -300,9 +301,47 @@ public class PhotoLibraryPlugin: CAPPlugin, CAPBridgedPlugin, PHPhotoLibraryChan
                 defer { try? FileManager.default.removeItem(at: folder) }
                 do {
                     if let error { throw error }
-                    try await Self.presentShare(file, from: self.bridge?.viewController)
+                    try await Self.presentShare([file], from: self.bridge?.viewController)
                     call.resolve()
                 } catch { call.reject("No se pudo compartir el archivo. Comprueba la conexión e inténtalo de nuevo.") }
+            }
+        }
+    }
+
+    /// The Fototeca's selection (user, 2026-11-12): each original written to one temporary
+    /// folder, then one share sheet with all of them. Up to 50; the folder is removed after.
+    @objc func shareMany(_ call: CAPPluginCall) {
+        guard allowed(call) else { return }
+        let ids = Array((call.getArray("ids", String.self) ?? []).prefix(50))
+        let fetched = PHAsset.fetchAssets(withLocalIdentifiers: ids, options: nil)
+        var items: [PHAsset] = []; fetched.enumerateObjects { asset, _, _ in items.append(asset) }
+        guard !items.isEmpty else { call.reject("Estos elementos ya no están disponibles en Fotos."); return }
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        do { try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true) }
+        catch { call.reject("No se pudo preparar el archivo."); return }
+        let options = PHAssetResourceRequestOptions(); options.isNetworkAccessAllowed = true
+        let group = DispatchGroup(), lock = NSLock(); var files: [(Int, URL)] = []
+        CocoMediaPressure.change(1)
+        for (index, item) in items.enumerated() {
+            let resources = PHAssetResource.assetResources(for: item)
+            let kinds: [PHAssetResourceType] = item.mediaType == .video ? [.fullSizeVideo, .video] : [.fullSizePhoto, .photo]
+            guard let resource = kinds.lazy.compactMap({ kind in resources.first { $0.type == kind } }).first else { continue }
+            let ext = UTType(resource.uniformTypeIdentifier)?.preferredFilenameExtension ?? (item.mediaType == .video ? "mov" : "jpg")
+            let file = folder.appendingPathComponent("CocoWash-\(index + 1)").appendingPathExtension(ext)
+            group.enter()
+            PHAssetResourceManager.default().writeData(for: resource, toFile: file, options: options) { error in
+                if error == nil { lock.lock(); files.append((index, file)); lock.unlock() }
+                group.leave()
+            }
+        }
+        group.notify(queue: .main) {
+            CocoMediaPressure.change(-1)
+            Task { @MainActor in
+                defer { try? FileManager.default.removeItem(at: folder) }
+                let ordered = files.sorted { $0.0 < $1.0 }.map { $0.1 }
+                guard !ordered.isEmpty else { call.reject("No se pudo compartir el archivo. Comprueba la conexión e inténtalo de nuevo."); return }
+                do { try await Self.presentShare(ordered, from: self.bridge?.viewController); call.resolve() }
+                catch { call.reject("No se pudo compartir el archivo. Comprueba la conexión e inténtalo de nuevo.") }
             }
         }
     }

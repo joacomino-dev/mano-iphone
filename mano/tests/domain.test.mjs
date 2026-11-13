@@ -152,3 +152,15 @@ test('Favoritas counts every favourite (Photos and app), never in the general pi
   s=reconcileLibrary(s,lib.map(a=>a.id==='n2'?{...a,favorite:false}:a.id==='a1'?{...a,favorite:true}:a));
   assert.equal(favoritesTotal(lib,s,fav,1),3);
 });
+
+test('filters off: whole library in time order from startAt, seals ignored; the chosen filters are kept', async () => {
+  const { effectiveFilter, eligible, initialFilter: base, initialState: fresh } = await import('../src/domain.ts');
+  const day = 86400000, assets = [0, 1, 2, 3, 4].map(i => ({ id: `a${i}`, kind: i === 2 ? 'video' : 'photo', date: 1000 + i * day, width: 1, height: 1, duration: 0 }));
+  const chosen = { ...base, media: 'video', order: 'random' };
+  const state = { ...fresh(), marks: { a1: { level: 2, due: 0, keptAt: 0 } } };
+  assert.deepEqual(eligible(assets, state, effectiveFilter(chosen)).map(a => a.id), ['a2'], 'on: the chosen filters');
+  const off = effectiveFilter({ ...chosen, off: true });
+  assert.equal(off.media, 'all'); assert.equal(off.order, 'oldest');
+  assert.deepEqual(eligible(assets, state, off).map(a => a.id), ['a0', 'a1', 'a2', 'a3', 'a4'], 'off: time order, the sealed a1 in its place');
+  assert.deepEqual(eligible(assets, state, effectiveFilter({ ...chosen, off: true, startAt: assets[3].date })).map(a => a.id), ['a3', 'a4', 'a0', 'a1', 'a2'], 'from a photo, then wrapping');
+});

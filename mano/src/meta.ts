@@ -9,7 +9,8 @@ export type DateFormat = 'dmy' | 'mdy' | 'iso' | 'd-mon-y' | 'mon-d-y' | 'mon-y'
 export type OsdSize = 's' | 'm' | 'l';
 export const OSD_SIZES: OsdSize[] = ['s', 'm', 'l'];
 export const OSD_SCALE: Record<OsdSize, number> = { s: .6, m: .8, l: 1 };
-export type PhotoMeta = { date: boolean; time: boolean; location: boolean; seal: boolean; dateFormat: DateFormat; hour12: boolean };
+/** `polaroid` (user, 2026-11-12): the paper frame and its caption; off, the photo alone, larger. */
+export type PhotoMeta = { polaroid: boolean; date: boolean; time: boolean; location: boolean; seal: boolean; dateFormat: DateFormat; hour12: boolean };
 export type VideoMeta = { date: boolean; time: boolean; location: boolean; duration: boolean; size: boolean; osd: boolean; osdSize: OsdSize; dateFormat: DateFormat; hour12: boolean };
 /** iCloud originals: `always` (9.8.1 default) downloads each card as it reaches
  * the pile and the next ones in line; `save` shows what is already on the iPhone
@@ -27,7 +28,7 @@ export const ONBOARDING_KEY = 'cocowash-onboarding-v2';
 /** Two rows of three in Ajustes: numeric first, then with the month's name. */
 export const DATE_FORMATS: DateFormat[] = ['dmy', 'mdy', 'iso', 'd-mon-y', 'mon-d-y', 'mon-y'];
 export const defaultDisplay: DisplaySettings = {
-  photo: { date: true, time: false, location: true, seal: true, dateFormat: 'd-mon-y', hour12: false },
+  photo: { polaroid: true, date: true, time: false, location: true, seal: true, dateFormat: 'd-mon-y', hour12: false },
   video: { date: true, time: true, location: true, duration: true, size: true, osd: true, osdSize: 'm', dateFormat: 'mon-d-y', hour12: true },
   haptics: true,
   quality: 'balanced',

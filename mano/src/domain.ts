@@ -30,7 +30,10 @@ export type Order = 'oldest' | 'newest' | 'largest' | 'smallest' | 'random';
 /** Quick sets, combinable with every other filter. «favorites» is the only
  * one that shows favourites: everywhere else they stay out of the pile. */
 export type Smart = 'all' | 'later' | 'screenshots' | 'lowQuality' | 'text' | 'favorites';
-export type Filter = { seal: number | 'all' | 'none'; order: Order; media: 'all' | MediaKind; includeWaiting: boolean; dateRange?: 'all' | '24h' | '7d' | '30d' | '1y' | 'custom'; from?: string; to?: string; geek?: boolean; smart?: Smart; v?: 2 };
+/** `off` (user, 2026-11-12): the Filtros switch is off — the whole library in time order,
+ * the chosen filters kept for when it is switched back on. `startAt`: with filters off,
+ * the time order starts at this capture date («Revisar en orden desde esta foto»). */
+export type Filter = { seal: number | 'all' | 'none'; order: Order; media: 'all' | MediaKind; includeWaiting: boolean; dateRange?: 'all' | '24h' | '7d' | '30d' | '1y' | 'custom'; from?: string; to?: string; geek?: boolean; smart?: Smart; v?: 2; off?: boolean; startAt?: number };
 export const ORDERS: Order[] = ['oldest', 'newest', 'largest', 'smallest', 'random'];
 export const SMARTS: Smart[] = ['all', 'later', 'screenshots', 'lowQuality', 'text', 'favorites'];
 export const LEVELS = ['Blanco', 'Rojo', 'Verde', 'Negro', 'Azul'];
@@ -56,6 +59,8 @@ export function normalizeFilter(value: unknown): Filter {
     ...(typeof input.from === 'string' ? { from: input.from } : {}),
     ...(typeof input.to === 'string' ? { to: input.to } : {}),
     geek: input.geek === true,
+    ...(input.off === true ? { off: true } : {}),
+    ...(typeof input.startAt === 'number' && Number.isFinite(input.startAt) ? { startAt: input.startAt } : {}),
     smart: SMARTS.includes(input.smart as Smart) ? input.smart as Smart : 'all',
     // 9.8 retired People/Breakup Mode: old person, breakup and censor fields are dropped here.
     v: 2,
@@ -195,7 +200,17 @@ const bySize = (a: Asset, b: Asset, direction: 1 | -1) => {
 /** The canonical sequence: the whole library in the chosen order (stable: ties
  * keep library order). It depends only on the assets, the order and the seed,
  * so it is sorted once and reused while decisions change the record. */
-export function orderAssets(assets: Asset[], order: Order, seed = 1): Asset[] {
+/** What the pile actually uses: the chosen filters, or — with the switch off — every
+ * item in time order (from `startAt` when set, then wrapping to the older ones). */
+export function effectiveFilter(filter: Filter): Filter {
+  if (!filter.off) return filter;
+  return { ...initialFilter, order: 'oldest', geek: filter.geek, off: true, ...(filter.startAt !== undefined ? { startAt: filter.startAt } : {}) };
+}
+export function orderAssets(assets: Asset[], order: Order, seed = 1, startAt?: number): Asset[] {
+  if (order === 'oldest' && startAt !== undefined) {
+    const sorted = [...assets].sort((a, b) => a.date - b.date), from = sorted.findIndex(a => a.date >= startAt);
+    return from <= 0 ? sorted : [...sorted.slice(from), ...sorted.slice(0, from)];
+  }
   if (order === 'random') {
     const keys = new Map(assets.map(a => [a.id, hash(a.id, seed)]));
     return [...assets].sort((a, b) => keys.get(a.id)! - keys.get(b.id)!);
@@ -221,7 +236,8 @@ export function eligibleFrom(ordered: Asset[], state: RecordState, filter: Filte
   for (const a of ordered) {
     if (!test(a)) continue;
     if (rank.has(a.id)) { waiting.push(a); continue; }
-    const level = state.marks[a.id]?.level ?? 0;
+    // Filters off: plain time order, whatever the seal (user, 2026-11-12).
+    const level = filter.off ? 0 : state.marks[a.id]?.level ?? 0;
     (levels[level] ??= []).push(a);
   }
   let head = levels.flatMap(bucket => bucket ?? []);
@@ -230,7 +246,7 @@ export function eligibleFrom(ordered: Asset[], state: RecordState, filter: Filte
   return waiting.length ? [...head, ...waiting.sort((a, b) => rank.get(a.id)! - rank.get(b.id)!)] : head;
 }
 export function eligible(assets: Asset[], state: RecordState, filter: Filter, now = Date.now(), seed = 1) {
-  return eligibleFrom(orderAssets(assets, filter.order, seed), state, filter, now);
+  return eligibleFrom(orderAssets(assets, filter.order, seed, filter.startAt), state, filter, now);
 }
 export function nextHand(queue: Asset[], similar: boolean) {
   if (!queue.length) return []; if (!similar || !queue[0].group) return [queue[0]];

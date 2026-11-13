@@ -1,5 +1,19 @@
 import type { ReactNode } from 'react';
+import { FunnelSimpleIcon, FunnelSimpleXIcon } from '@phosphor-icons/react';
 import { t } from './i18n';
+
+/** «Filtros», the same split button on the pile and in the Fototeca (user, 2026-11-12):
+ * the funnel switches the filters on and off (off: the whole library in time order);
+ * the word opens the editor. */
+export function FilterSwitch({ on, toggle, edit, id }: { on: boolean; toggle: () => void; edit: () => void; id?: string }) {
+  return <div className={`header-action filter-switch ${on ? 'is-on' : ''}`}>
+    <button type="button" className="filter-switch-toggle" role="switch" aria-checked={on} aria-label={on ? t('Desactivar filtros') : t('Activar filtros')} onClick={toggle}>
+      {on ? <FunnelSimpleIcon size={18} weight="bold"/> : <FunnelSimpleXIcon size={18} weight="bold"/>}
+    </button>
+    <span className="filter-switch-rule" aria-hidden="true"/>
+    <button type="button" id={id} className="filter-switch-edit" onClick={edit}>{t('Filtros')}</button>
+  </div>;
+}
 
 /** Main-screen chrome in the decision bar's language (see DecisionBar.tsx):
  * solid colour, cream band, ink contour, an ink base under what can be pressed.

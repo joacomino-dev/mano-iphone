@@ -29,6 +29,8 @@ type LibraryPlugin = {
   deleteAssets(options: { ids: string[] }): Promise<{ deleted: string[] }>;
   preview(options: { id: string }): Promise<void>;
   share(options: { id: string }): Promise<void>;
+  /** Several originals in one share sheet (the Fototeca's selection), up to 50. */
+  shareMany(options: { ids: string[] }): Promise<void>;
   prepareVideo(options: { id: string; requestId: string; network?: boolean }): Promise<{path:string; url?:string; mimeType:string; cached:boolean; bytes:number}>;
   cancelVideoPreparation(options: { requestId: string }): Promise<{cancelled:boolean}>;
   cancelThumbnailPreparation(options: { requestId: string }): Promise<{cancelled:boolean}>;

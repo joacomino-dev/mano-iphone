@@ -25,12 +25,15 @@ const bucket = (px: number, max: number) => Math.min(max, Math.max(256, Math.cei
 /** Card geometry shared by the stack and the preloader: aspect-correct, centred,
  * never cropped. `margin` is the frame below the image (caption or tape foot). */
 export const CARD_SIDE = 8, CAPTION = 32, TAPE_FOOT = 16, STAGE_INSET = 44, STAGE_FOOT = 26;
-export function cardBox(stage: { width: number; height: number }, asset: Pick<Asset, 'width' | 'height' | 'kind'>) {
+/** `plain`: «Modo Polaroid» off — a photo card is the photo alone, so it grows into the
+ * frame's room (videos keep their tape). */
+export function cardBox(stage: { width: number; height: number }, asset: Pick<Asset, 'width' | 'height' | 'kind'>, plain = sizing.plain) {
   const ratio = Math.max(.05, asset.width / Math.max(1, asset.height));
-  const margin = CARD_SIDE + (asset.kind === 'video' ? TAPE_FOOT : CAPTION);
-  const imageWidth = Math.max(20, Math.min(stage.width - STAGE_INSET, (stage.height - margin - STAGE_FOOT) * ratio));
+  const bare = plain && asset.kind !== 'video', side = bare ? 0 : CARD_SIDE;
+  const margin = bare ? 0 : CARD_SIDE + (asset.kind === 'video' ? TAPE_FOOT : CAPTION);
+  const imageWidth = Math.max(20, Math.min(stage.width - STAGE_INSET + (bare ? CARD_SIDE * 2 : 0), (stage.height - margin - STAGE_FOOT) * ratio));
   const imageHeight = imageWidth / ratio;
-  return { ratio, margin, imageWidth, imageHeight, cardWidth: imageWidth + CARD_SIDE * 2, cardHeight: imageHeight + margin };
+  return { ratio, margin, imageWidth, imageHeight, cardWidth: imageWidth + side * 2, cardHeight: imageHeight + margin };
 }
 
 /** Long edge in device pixels, bucketed so nearby sizes share one cached file. */
@@ -48,7 +51,7 @@ export const cacheBytes = (quality: PreviewQuality) => (PREVIEW_PROFILES[quality
 
 /** Where the stack will draw cards, set by the app as soon as it is measured.
  * Before that, a conservative phone-sized stage keeps the first requests sharp. */
-const sizing = { quality: 'balanced' as PreviewQuality, stage: { width: 340, height: 460 }, scale: 3, cloud: 'save' as 'save' | 'always' };
+const sizing = { quality: 'balanced' as PreviewQuality, stage: { width: 340, height: 460 }, scale: 3, cloud: 'save' as 'save' | 'always', plain: false };
 const policyListeners = new Set<() => void>();
 export const previewPolicyKey = () => `${sizing.quality}:${sizing.cloud}`;
 export const subscribePreviewPolicy = (listener: () => void) => { policyListeners.add(listener); return () => { policyListeners.delete(listener); }; };

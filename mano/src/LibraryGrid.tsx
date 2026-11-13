@@ -1,5 +1,6 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { CheckIcon, ArrowUUpLeftIcon, CloudIcon, ImageBrokenIcon, FunnelSimpleIcon, FunnelSimpleXIcon, CardsThreeIcon, FolderSimplePlusIcon, XIcon, PushPinIcon } from '@phosphor-icons/react';
+import { AnimatePresence, motion } from 'motion/react';
+import { CheckIcon, ArrowUUpLeftIcon, CloudIcon, ImageBrokenIcon, CardsThreeIcon, FolderSimplePlusIcon, XIcon, PushPinIcon, ExportIcon, ListNumbersIcon } from '@phosphor-icons/react';
 import type { Action, Asset, Filter, RecordState } from './domain';
 import { gridMatch } from './domain';
 import { ReviewLoader } from './review';
@@ -10,7 +11,7 @@ import { DecisionIcon, Stamp } from './Stamp';
 import { useAndroidBack } from './androidBack';
 import { formatNumber, t } from './i18n';
 import { haptic } from './haptics';
-import { PileProgress } from './Chrome';
+import { PileProgress, FilterSwitch } from './Chrome';
 
 /** «Fototeca» (user, 2026-11-12; docs/ai-handoff/GRID_VIEW_PLAN.md): the whole
  * library in its real order, opened on the card in hand, with each decision's
@@ -26,7 +27,14 @@ const readColumns = (): 3 | 5 => { try { return localStorage.getItem(COLUMNS_KEY
 const clock = (seconds: number) => { const s = Math.max(0, Math.round(seconds)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 
 type Props = {
-  assets: Asset[]; state: RecordState; filter: Filter; narrowed: boolean; current?: string; busy: boolean;
+  /** `filter`: the person's chosen filters; `filtersOn`: the shared Filtros switch. */
+  assets: Asset[]; state: RecordState; filter: Filter; filtersOn: boolean; toggleFilters: () => void; current?: string; busy: boolean;
+  /** Shares the selection (several originals in one sheet). */
+  share: (ids: string[]) => void;
+  /** «Revisar en orden desde esta foto»: back to the cards, filters off, from this photo. */
+  reviewFrom: (asset: Asset) => void;
+  /** The front card's photo, so the working photo can fly between card and tile. */
+  cardFrom?: DOMRect;
   close: () => void; decide: (action: Action, ids: string[]) => Promise<boolean>; undo: () => void; notice: (text: string) => void;
   /** Opens the anchored view of one item, growing from its tile. */
   open: (asset: Asset, from: DOMRect) => void;
@@ -68,7 +76,7 @@ const Tile = memo(function Tile({ asset, index, x, y, side, size, selected, curr
   const decision = pending ? t('para eliminar') : favorite ? t('favorita') : level ? t('conservada') : '';
   const label = [asset.kind === 'video' ? t('Vídeo') : t('Foto'), new Date(asset.date).toLocaleDateString(), decision, later ? t('más tarde') : ''].filter(Boolean).join(', ');
   return <button type="button" className={`grid-tile ${selected ? 'is-selected' : ''} ${current ? 'is-current' : ''} ${pending ? 'is-pending' : ''}`}
-    data-i={index} style={{ width: side, height: side, transform: `translate(${x}px,${y}px)` }}
+    data-i={index} data-id={asset.id} style={{ width: side, height: side, transform: `translate(${x}px,${y}px)` }}
     aria-label={label} aria-pressed={selected} aria-current={current || undefined}>
     <GridThumb asset={asset} size={size}/>
     {asset.kind === 'video' && <span className="grid-duration">{clock(asset.duration)}</span>}
@@ -78,20 +86,25 @@ const Tile = memo(function Tile({ asset, index, x, y, side, size, selected, curr
   </button>;
 });
 
-export default function LibraryGrid({ assets, state, filter, narrowed, current, busy, close, decide, undo, notice, open, openSet, editFilters, finish, enterFrom, ad, album, albumDone }: Props) {
+export default function LibraryGrid({ assets, state, filter, filtersOn, toggleFilters, current, busy, close: leave, decide, undo, notice, open, openSet, editFilters, finish, enterFrom, cardFrom, ad, album, albumDone, share, reviewFrom }: Props) {
   const scroller = useRef<HTMLDivElement>(null), dock = useRef<HTMLDivElement>(null), bar = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0), [height, setHeight] = useState(0), [offset, setOffset] = useState(0);
   const [columns, setColumns] = useState<3 | 5>(readColumns);
-  const [filtered, setFiltered] = useState(narrowed);
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  // Notices show where the pile shows them — in place of the title — since the pile's own
+  // notice sits under this overlay. Also spoken through the app's live region (notice).
+  const [toast, setToast] = useState<{ id: number; text: string } | null>(null);
+  const say = (text: string) => { setToast({ id: Date.now(), text }); notice(text); };
+  useEffect(() => { if (!toast) return; const timer = window.setTimeout(() => setToast(null), 2200); return () => window.clearTimeout(timer); }, [toast]);
   const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  useAndroidBack(true, () => { if (selected.size) setSelected(new Set()); else close(); });
+  useAndroidBack(true, () => { if (selected.size) setSelected(new Set()); else closeRef.current(); });
+  const closeRef = useRef(() => leave());
 
   // Real library order (oldest first, like Photos); removed items never return here.
   const items = useMemo(() => {
-    const removed = new Set(state.removed), test = filtered && narrowed ? gridMatch(state, filter) : () => true;
+    const removed = new Set(state.removed), test = filtersOn ? gridMatch(state, filter) : () => true;
     return assets.filter(a => !removed.has(a.id) && test(a)).sort((a, b) => a.date - b.date);
-  }, [assets, state, filter, filtered, narrowed]);
+  }, [assets, state, filter, filtersOn]);
   const marks: Marks = useMemo(() => ({ pending: new Set(state.pending), favorites: new Set(state.favorites), later: new Set(state.later ?? []) }), [state]);
 
   // The decision bar shrinks from the pile into the bottom dock (user, 2026-11-12):
@@ -154,10 +167,42 @@ export default function LibraryGrid({ assets, state, filter, narrowed, current, 
     const visible = el.clientHeight - dockHeight;
     el.scrollTop = Math.max(0, rowY(Math.floor(index / columns)) - (visible - pitch) / 2); setOffset(el.scrollTop);
   }, [pitch, columns, items]);
+  useLayoutEffect(() => {
+    const before = flip.current, canvas = scroller.current?.querySelector('.grid-canvas'); flip.current = null;
+    if (!before || !canvas) return;
+    const box = canvas.getBoundingClientRect();
+    scroller.current!.querySelectorAll<HTMLElement>('.grid-tile').forEach(el => {
+      const was = before.get(el.dataset.id ?? ''), now = el.getBoundingClientRect();
+      if (!was) { el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220, easing: 'ease-out' }); return; }
+      const k = was.width / Math.max(1, now.width), dx = was.left - box.left - k * (now.left - box.left), dy = was.top - box.top - k * (now.top - box.top);
+      el.animate([{ transformOrigin: '0 0', transform: `translate(${dx}px,${dy}px) scale(${k}) ${el.style.transform}` }, { transformOrigin: '0 0', transform: `translate(0px,0px) scale(1) ${el.style.transform}` }], { duration: 340, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    });
+  }, [columns]);
+  // Way in: the working photo flies from its card to its tile while the grid fades in.
+  // Way out runs it backwards, then leaves.
+  const flyIn = useRef(!!cardFrom && !reduced), [leaving, setLeaving] = useState(false);
+  const flyTile = (to: 'in' | 'out') => {
+    const id = items[focusIndex(items)]?.id ?? '';
+    const el = scroller.current?.querySelector<HTMLElement>(`.grid-tile[data-id="${CSS.escape(id)}"]`), canvas = scroller.current?.querySelector('.grid-canvas');
+    if (!el || !canvas || !cardFrom) return;
+    const box = canvas.getBoundingClientRect(), now = el.getBoundingClientRect();
+    const k = Math.max(cardFrom.width / now.width, cardFrom.height / now.height);
+    const dx = cardFrom.left + cardFrom.width / 2 - box.left - k * (now.left + now.width / 2 - box.left), dy = cardFrom.top + cardFrom.height / 2 - box.top - k * (now.top + now.height / 2 - box.top);
+    const card = { transformOrigin: '0 0', transform: `translate(${dx}px,${dy}px) scale(${k}) ${el.style.transform}`, borderRadius: '8px', zIndex: 3 };
+    const tile = { transformOrigin: '0 0', transform: `translate(0px,0px) scale(1) ${el.style.transform}`, borderRadius: '0px', zIndex: 3 };
+    if (to === 'out') el.classList.add('is-flying');
+    el.animate(to === 'in' ? [card, tile] : [tile, card], { duration: to === 'in' ? 420 : 300, easing: to === 'in' ? 'cubic-bezier(.2,.8,.2,1)' : 'cubic-bezier(.4,0,.2,1)', fill: to === 'in' ? 'none' : 'forwards' });
+  };
+  useLayoutEffect(() => { if (flyIn.current && side) { flyIn.current = false; flyTile('in'); } }, [side]);
+  const close = () => {
+    if (leaving) return;
+    if (reduced || !cardFrom) { leave(); return; }
+    setLeaving(true); flyTile('out'); window.setTimeout(leave, 300);
+  };
   // Filters edited from here apply to the grid at once (the same filters as the pile).
-  const filterKey = JSON.stringify(filter);
+  const filterKey = JSON.stringify(filter) + filtersOn;
   const lastFilter = useRef(filterKey);
-  useEffect(() => { if (lastFilter.current === filterKey) return; lastFilter.current = filterKey; refocus.current = true; setFiltered(true); }, [filterKey]);
+  if (lastFilter.current !== filterKey) { lastFilter.current = filterKey; refocus.current = true; }
   // Ask Photos to prepare the next screens in the direction of travel (iOS). Debounced.
   const travel = useRef({ offset: 0, down: true });
   useEffect(() => {
@@ -175,7 +220,11 @@ export default function LibraryGrid({ assets, state, filter, narrowed, current, 
   const frame = useRef(0);
   const onScroll = () => { if (frame.current) return; frame.current = requestAnimationFrame(() => { frame.current = 0; setOffset(scroller.current?.scrollTop ?? 0); }); };
   useEffect(() => () => { cancelAnimationFrame(frame.current); loader.cancelAll(); }, []);
+  // Density: every visible photo glides and scales from where it was to where it goes.
+  const flip = useRef<Map<string, DOMRect> | null>(null);
+  const snapshot = () => { const map = new Map<string, DOMRect>(); scroller.current?.querySelectorAll<HTMLElement>('.grid-tile').forEach(el => { if (el.dataset.id) map.set(el.dataset.id, el.getBoundingClientRect()); }); return map; };
   const switchColumns = () => {
+    if (!reduced) flip.current = snapshot();
     refocus.current = true;
     const next = columns === 3 ? 5 : 3; setColumns(next); haptic('selection');
     try { localStorage.setItem(COLUMNS_KEY, String(next)); } catch { /* per-device convenience only */ }
@@ -208,6 +257,7 @@ export default function LibraryGrid({ assets, state, filter, narrowed, current, 
   const fingers = useRef(new Map<number, { x: number; y: number }>()), pinch = useRef<number | null>(null);
   const spread = () => { const [a, b] = [...fingers.current.values()]; return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 0; };
   const onPointerDown = (e: React.PointerEvent) => {
+    if (e.isPrimary) { fingers.current.clear(); pinch.current = null; }
     fingers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (fingers.current.size === 2) { const g = gesture.current; if (g) clearTimeout(g.timer); gesture.current = null; pinch.current = spread(); return; }
     const index = indexAt(e.clientX, e.clientY); if (index < 0 || !e.isPrimary) return;
@@ -264,18 +314,17 @@ export default function LibraryGrid({ assets, state, filter, narrowed, current, 
     const el = (e.target as HTMLElement).closest<HTMLElement>('[data-i]'); if (el) toggle(Number(el.dataset.i));
   };
 
-  const toggleFilters = () => {
-    if (!narrowed) { notice(t('No hay filtros activos.\nVes toda tu fototeca')); haptic('warning'); return; }
-    refocus.current = true; setFiltered(v => !v); haptic('selection');
-  };
   const decided = useMemo(() => items.reduce((n, a) => n + (state.marks[a.id] || marks.pending.has(a.id) || marks.favorites.has(a.id) ? 1 : 0), 0), [items, state, marks]);
   const targets = useMemo(() => items.filter(a => selected.has(a.id)), [items, selected]);
+  const nothing = () => { haptic('warning'); say(t('No hay fotos seleccionadas')); };
   const run = useCallback(async (action: Action) => {
     let ids = targets.map(a => a.id);
-    if (action === 'discard') { const keep = ids.length; ids = ids.filter(id => !marks.favorites.has(id)); if (ids.length < keep) notice(t('Las favoritas\nno se eliminan')); }
+    if (!ids.length) { nothing(); return; }
+    if (action === 'discard') { const keep = ids.length; ids = ids.filter(id => !marks.favorites.has(id)); if (ids.length < keep) say(t('Las favoritas\nno se eliminan')); }
     if (!ids.length) return;
     if (await decide(action, ids)) setSelected(new Set());
-  }, [targets, marks, decide, notice]);
+  }, [targets, marks, decide]);
+  const shareSelection = () => { if (!targets.length) { nothing(); return; } haptic('light'); share(targets.map(a => a.id)); };
   const anchorSelection = () => {
     const index = items.findIndex(a => a.id === targets[0]?.id);
     const rect = tileRect(index) ?? scroller.current?.getBoundingClientRect();
@@ -299,16 +348,15 @@ export default function LibraryGrid({ assets, state, filter, narrowed, current, 
   }
 
   const count = targets.length;
-  return <section className={`library-grid on-device ${entered ? 'is-entered' : ''}`} role="dialog" aria-modal="true" aria-label={t('Fototeca')}>
+  closeRef.current = close;
+  return <section className={`library-grid on-device ${entered ? 'is-entered' : ''} ${leaving ? 'is-leaving' : ''}`} role="dialog" aria-modal="true" aria-label={t('Fototeca')}>
     <header className="archive-header is-session grid-header">
-      <div className={`header-action grid-filter ${filtered && narrowed ? 'is-on' : ''} ${narrowed ? '' : 'is-idle'}`}>
-        <button type="button" className="grid-filter-toggle" role="switch" aria-checked={filtered && narrowed} aria-label={filtered && narrowed ? t('Quitar los filtros de la fototeca') : t('Aplicar los filtros a la fototeca')} onClick={toggleFilters}>
-          {filtered && narrowed ? <FunnelSimpleIcon size={18} weight="bold"/> : <FunnelSimpleXIcon size={18} weight="bold"/>}
-        </button>
-        <span className="grid-filter-rule" aria-hidden="true"/>
-        <button type="button" className="grid-filter-edit" onClick={editFilters} aria-label={t('Editar filtros')}>{t('Filtros')}</button>
+      <FilterSwitch on={filtersOn} toggle={() => { refocus.current = true; say(filtersOn ? t('Filtros desactivados\nTodo en orden cronológico') : t('Filtros activados')); toggleFilters(); }} edit={editFilters}/>
+      <div className="grid-title-room">
+        <AnimatePresence initial={false} mode="popLayout">{toast
+          ? <motion.span key={toast.id} className="grid-toast" role="status" initial={{ opacity: 0, scale: reduced ? 1 : .96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: reduced ? 1 : .98 }} transition={{ duration: .18 }}><span>{toast.text}</span></motion.span>
+          : <motion.h2 key="title" className="grid-title" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .18 }}>{t('Fototeca')}</motion.h2>}</AnimatePresence>
       </div>
-      <h2 className="grid-title">{t('Fototeca')}</h2>
       <div className="grid-finish" onClickCapture={() => haptic('light')}>{finish}</div>
     </header>
     <div className="archive-progress grid-progress">
@@ -323,18 +371,20 @@ export default function LibraryGrid({ assets, state, filter, narrowed, current, 
       </div>
       {count > 0 && <div className="grid-selection" style={{ bottom: `calc(${dockHeight + 18}px + env(safe-area-inset-bottom))` }} aria-live="polite">
         <button type="button" className="grid-selection-clear" onClick={() => { setSelected(new Set()); haptic('selection'); }} aria-label={t('Quitar la selección')}><XIcon size={16} weight="bold"/></button>
-        <span>{t('{n} seleccionadas', { n: formatNumber(count) })}</span>
+        <span>{count === 1 ? t('1 seleccionada') : t('{n} seleccionadas', { n: formatNumber(count) })}</span>
         <button type="button" className="grid-selection-anchor" onClick={anchorSelection}><PushPinIcon size={16} weight="bold"/>{t('Anclar')}</button>
+        <button type="button" className="grid-selection-share" onClick={shareSelection} aria-label={count > 1 ? t('Compartir {n}', { n: formatNumber(count) }) : t('Compartir')}><ExportIcon size={18} weight="bold"/></button>
       </div>}
+      {count === 1 && <button type="button" className="grid-review-from" style={{ bottom: `calc(${dockHeight + 76}px + env(safe-area-inset-bottom))` }} onClick={() => { haptic('light'); reviewFrom(targets[0]); }}><ListNumbersIcon size={16} weight="bold"/>{t('Revisar en orden desde aquí')}</button>}
       <div ref={dock} className="grid-dock" style={{ height: dockHeight }}>
-        <button type="button" className="grid-dock-side" onClick={undo} disabled={busy || !state.history.length} aria-label={state.history.length ? t('Deshacer la última decisión') : t('Nada que deshacer')}><ArrowUUpLeftIcon size={22} weight="bold" className="flip-rtl"/></button>
+        <button type="button" className="grid-dock-side" onClick={() => { if (!state.history.length) { haptic('warning'); say(t('Nada que deshacer')); } else undo(); }} disabled={busy} aria-label={state.history.length ? t('Deshacer la última decisión') : t('Nada que deshacer')}><ArrowUUpLeftIcon size={22} weight="bold" className="flip-rtl"/></button>
         <div className="grid-dock-bar" style={{ width: barSize.width * scale, height: barSize.height * scale }}>
-          <div ref={bar} className="grid-dock-scale" style={{ width: barSize.width, transform: entered ? `translateX(-50%) scale(${scale})` : `translateX(-50%) translateY(${entry}px)` }}>
-            <DecisionBar count={count} disabled={busy || !count} favoriteOn={false} armed=""
+          <div ref={bar} className="grid-dock-scale" style={{ width: barSize.width, transform: entered && !leaving ? `translateX(-50%) scale(${scale})` : `translateX(-50%) translateY(${entry}px)` }}>
+            <DecisionBar count={count} disabled={busy} favoriteOn={false} armed=""
               onDiscard={() => void run('discard')} onFavorite={() => void run('favorite')} onKeep={() => void run('keep')}/>
           </div>
         </div>
-        {album ? <button type="button" className="grid-dock-side" disabled={busy || !count} onClick={() => album(targets.map(a => a.id))} aria-label={count > 1 ? t('Guardar {n} en un álbum', { n: count }) : t('Guardar en un álbum')}><FolderSimplePlusIcon size={22} weight="bold"/></button>
+        {album ? <button type="button" className="grid-dock-side" disabled={busy} onClick={() => { if (!count) nothing(); else album(targets.map(a => a.id)); }} aria-label={count > 1 ? t('Guardar {n} en un álbum', { n: count }) : t('Guardar en un álbum')}><FolderSimplePlusIcon size={22} weight="bold"/></button>
           : <span className="grid-dock-side" aria-hidden="true"/>}
       </div>
     </div>

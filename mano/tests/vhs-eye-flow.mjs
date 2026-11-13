@@ -44,10 +44,13 @@ for(const reducedMotion of ['no-preference','reduce']){
   const settings=page.locator('.settings-section').filter({has:page.getByRole('heading',{name:'Vídeos',exact:true})});
   const toggle=settings.getByRole('switch',{name:'Letras VHS',exact:true});
   assert.equal(await toggle.isChecked(),false);
-  for(const name of ['Fecha','Hora','Ubicación','Duración'])assert.equal(await settings.getByRole('switch',{name,exact:true}).count(),1);
-  assert.equal(await settings.getByRole('switch',{name:/^Peso/}).count(),1);
+  // User, 2026-11-12: with «Letras VHS» off its other options disappear; on, they return.
+  for(const name of ['Fecha','Hora','Ubicación','Duración'])assert.equal(await settings.getByRole('switch',{name,exact:true}).count(),0);
+  assert.equal(await settings.getByRole('switch',{name:/^Peso/}).count(),0);
   assert.equal(await settings.getByRole('group',{name:'Tamaño de las letras',exact:true}).count(),0);
   await toggle.check();
+  for(const name of ['Fecha','Hora','Ubicación','Duración'])assert.equal(await settings.getByRole('switch',{name,exact:true}).count(),1);
+  assert.equal(await settings.getByRole('switch',{name:/^Peso/}).count(),1);
   await page.getByRole('button',{name:'Cerrar',exact:true}).click();await checkEye(true);
   await page.reload();await page.waitForFunction(()=>!document.querySelector('.splash-lockup')&&!!document.querySelector('.photo-card.front video'));
   await checkEye(true);

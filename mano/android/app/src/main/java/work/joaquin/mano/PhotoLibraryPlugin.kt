@@ -580,6 +580,25 @@ class PhotoLibraryPlugin : Plugin() {
         }
     }
 
+    /** The Fototeca's selection: one ACTION_SEND_MULTIPLE with every item (up to 50). */
+    @PluginMethod
+    fun shareMany(call: PluginCall) {
+        if (!allowed(call)) return
+        val ids = (call.getArray("ids")?.toList<Any>() ?: emptyList()).mapNotNull { it.toString().toLongOrNull() }.take(50)
+        if (ids.isEmpty()) { call.reject("Estos elementos ya no están disponibles en Fotos."); return }
+        io.execute {
+            val rows = query(ids)
+            if (rows.isEmpty()) { call.reject("Estos elementos ya no están disponibles en Fotos."); return@execute }
+            val uris = ArrayList(rows.map { itemUri(it.id, it.video) })
+            val type = when { rows.all { it.video } -> "video/*"; rows.none { it.video } -> "image/*"; else -> "*/*" }
+            val send = Intent(Intent.ACTION_SEND_MULTIPLE).setType(type).putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            main.post {
+                try { activity.startActivity(Intent.createChooser(send, null)); call.resolve() }
+                catch (e: Exception) { call.reject("No se pudo compartir el archivo. Comprueba la conexión e inténtalo de nuevo.") }
+            }
+        }
+    }
+
     /** Fullscreen fallback: a video opens in the phone's own player; photos stay in the app. */
     @PluginMethod
     fun preview(call: PluginCall) {

@@ -33,6 +33,13 @@ try{
  const cols=async()=>page.evaluate(()=>{const t=[...document.querySelectorAll('.grid-tile')];const y=t[0]?.style.transform.split(',')[1];return t.filter(x=>x.style.transform.split(',')[1]===y).length;});
  for(let k=0;k<4;k++){await pinch(k%2?40:120,k%2?120:40);await page.waitForTimeout(150);assert.equal(await cols(),k%2?3:5);assert.ok(await centred(),`pinch ${k+1} keeps the working photo in view`);}
  results.push('pinch 3 ↔ 5 four times, working photo always in view');
+ // A finger lifted over the dock never reaches the grid; the next pinch must still work.
+ await page.evaluate(()=>{const el=document.querySelector('.grid-scroller'),dock=document.querySelector('.grid-dock'),r=el.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/3;
+  const fire=(t,type,id,dx)=>t.dispatchEvent(new PointerEvent(type,{pointerId:id,isPrimary:id===11,clientX:cx+dx,clientY:cy,bubbles:true,pointerType:'touch'}));
+  fire(el,'pointerdown',11,-120);fire(el,'pointerdown',12,120);fire(el,'pointermove',11,-60);fire(el,'pointermove',12,60);fire(el,'pointerup',11,-60);fire(dock,'pointerup',12,60);});
+ const before=await cols();await pinch(before===3?120:40,before===3?40:120);await page.waitForTimeout(150);
+ assert.equal(await cols(),before===3?5:3,'a pinch after a finger lifted outside the grid still switches density');
+ results.push('pinch keeps working after a finger lifts over the dock');
  // Tap selects; a sideways drag selects a range.
  let vis=await visible();
  await page.locator(`[data-i="${vis[0]}"]`).click();
@@ -78,10 +85,12 @@ try{
  await page.locator('.grid-dock').getByRole('button',{name:/^Eliminar 5/}).click();
  await page.waitForFunction(()=>document.querySelectorAll('.grid-tile.is-pending').length===5);
  assert.equal(await page.locator('.grid-selection').count(),0,'deciding clears the selection');
- assert.ok(await page.locator('.grid-dock').getByRole('button',{name:/^Eliminar/}).isDisabled(),'no selection: decisions are off');
+ await page.locator('.grid-dock').getByRole('button',{name:/^Eliminar/}).click();
+ assert.match(await page.locator('.grid-toast').innerText(),/No hay fotos seleccionadas/,'no selection: a press explains, nothing is decided');
+ assert.equal(await page.locator('.grid-tile.is-pending').count(),5);
  await page.locator('.grid-dock').getByRole('button',{name:'Deshacer la última decisión'}).click();
  await page.waitForFunction(()=>document.querySelectorAll('.grid-tile.is-pending').length===0);
- results.push('dock bar deletes the five; Deshacer restores them; bar off without selection');
+ results.push('dock bar deletes the five; Deshacer restores them; without selection a press says so');
  // Holding a photo opens it large.
  vis=await visible();const hold=await page.locator(`[data-i="${vis[2]}"]`).boundingBox();
  await page.mouse.move(hold.x+hold.width/2,hold.y+hold.height/2);await page.mouse.down();await page.waitForTimeout(600);await page.mouse.up();
@@ -99,19 +108,28 @@ try{
  // Filtros: editing from the grid (shared with the pile), then the funnel toggles.
  const total=async()=>Number((await page.locator('.grid-progress .pile-count').innerText()).split('/').pop().replace(/\D/g,''));
  assert.equal(await total(),3000);
- await page.getByRole('button',{name:'Editar filtros'}).click();
+ await page.locator('.library-grid').getByRole('button',{name:'Filtros',exact:true}).click();
  await page.locator('.native-sheet').getByText('Vídeos',{exact:true}).first().click();
  await page.getByRole('button',{name:/^Aplicar filtros/}).click();
  await page.waitForFunction(()=>!document.querySelector('.native-sheet'));
  const videos=await total();
  assert.ok(videos>0&&videos<3000,`edited filters apply to the grid at once (${videos})`);
- await page.getByRole('switch',{name:'Quitar los filtros de la fototeca'}).click();
+ await page.locator('.library-grid').getByRole('switch',{name:'Desactivar filtros'}).click();
  assert.equal(await total(),3000,'the funnel turns the filters off: whole library');
- await page.getByRole('switch',{name:'Aplicar los filtros a la fototeca'}).click();
+ await page.locator('.library-grid').getByRole('switch',{name:'Activar filtros'}).click();
  assert.equal(await total(),videos,'and back on');
  results.push(`Filtros edits (${videos} videos) and toggles (3000 ↔ ${videos})`);
- await page.getByRole('button',{name:'Volver a las cartas'}).click();
- assert.equal(await page.locator('.library-grid').count(),0);await page.locator('.photo-card.front').waitFor();
+ // One photo selected: share sits by Anclar, and «Revisar en orden desde aquí» deals the pile from it, filters off.
+ await page.locator('.library-grid').getByRole('switch',{name:'Desactivar filtros'}).click();
+ const one=(await visible())[3];await page.locator(`[data-i="${one}"]`).click();
+ assert.equal(await page.locator('.grid-selection').getByRole('button',{name:'Compartir'}).count(),1,'share next to Anclar');
+ const pickId=await page.locator(`[data-i="${one}"]`).getAttribute('data-id');
+ await page.getByRole('button',{name:'Revisar en orden desde aquí'}).click();
+ await page.waitForFunction(()=>!document.querySelector('.library-grid'));
+ await page.waitForFunction(id=>document.querySelector('.photo-card.front')?.getAttribute('data-testid')===`card-${id}`,pickId);
+ assert.equal(await page.getByRole('switch',{name:'Activar filtros'}).count(),1,'the pile now runs with filters off');
+ results.push('one selected: share by Anclar; «Revisar en orden desde aquí» deals the pile from that photo, filters off');
+ await page.locator('.photo-card.front').waitFor();
  assert.deepEqual(errors,[]);
  console.log('PASS',results.join('; '));
 }catch(e){console.log('FAIL grid flow',e.message);process.exitCode=1;}finally{await browser.close();}

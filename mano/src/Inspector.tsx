@@ -27,7 +27,7 @@ export type InspectVideo={request?:()=>void;state:VideoState;retry:()=>void;down
 /** `decide` (opened from the Fototeca, user 2026-11-12): dragging the photo away decides
  * it like a card on the pile — right keeps, left deletes, up favourites, down later —
  * instead of closing. `next`: a single tap rotates to the next anchored photo. */
-export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed,geek,close,pin,video,decide,next}: {asset:Asset;src?:string;cloud?:boolean;pinned:boolean;origin?:InspectOrigin;peek:{x:MotionValue<number>;y:MotionValue<number>};anchor:MotionValue<number>;armed:boolean;geek:boolean;close:()=>void;pin:()=>void;video?:InspectVideo;decide?:(kind:StampKind)=>Promise<boolean>;next?:()=>void}) {
+export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed,geek,close,pin,video,decide,next,polaroid}: {asset:Asset;src?:string;cloud?:boolean;pinned:boolean;origin?:InspectOrigin;peek:{x:MotionValue<number>;y:MotionValue<number>};anchor:MotionValue<number>;armed:boolean;geek:boolean;close:()=>void;pin:()=>void;video?:InspectVideo;decide?:(kind:StampKind)=>Promise<boolean>;next?:()=>void;polaroid?:{where?:string;when?:string;behind:number}}) {
  const policy=useSyncExternalStore(subscribePreviewPolicy,previewPolicyKey);
  // An iCloud-only photo (no local preview under «Ahorrar iCloud») is not an
  // error: it says so, and anchoring downloads it (loadZoomPreview below).
@@ -51,11 +51,11 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
  // Measure in the overlay's own CSS pixels (the preview device frame may be scaled).
  useLayoutEffect(()=>{const element=outer.current;if(!element)return;const measure=()=>{
   const bounds=element.getBoundingClientRect(),k=bounds.width/Math.max(1,element.offsetWidth)||1,W=element.offsetWidth,H=element.offsetHeight,ratio=asset.width/Math.max(1,asset.height);
-  const top=geek?64:84,bottom=geek?96:132,availH=(H-top-bottom)*(geek?.6:1),availW=W-24;
+  const top=geek?64:polaroid?96:84,bottom=geek?96:polaroid?176:132,availH=(H-top-bottom)*(geek?.6:1),availW=W-(polaroid?48:24);
   const width=Math.min(availW,availH*ratio),height=width/ratio;
   const target={x:(W-width)/2,y:top+(availH-height)/2,width,height};
   const from=origin?{x:(origin.x-bounds.left)/k,y:(origin.y-bounds.top)/k,width:origin.width/k,height:origin.height/k}:{...target,x:target.x+target.width*.04,y:target.y+target.height*.04,width:target.width*.92,height:target.height*.92};
-  setSpace({target,origin:from,scale:k});};measure();const observer=new ResizeObserver(measure);observer.observe(element);return()=>observer.disconnect();},[asset.id,geek,origin?.x,origin?.y]);
+  setSpace({target,origin:from,scale:k});};measure();const observer=new ResizeObserver(measure);observer.observe(element);return()=>observer.disconnect();},[asset.id,geek,!!polaroid,origin?.x,origin?.y]);
  useEffect(()=>{if(!pinned)return;const prior=document.activeElement as HTMLElement|null;// preventScroll: focusing the still-animating frame made iOS scroll the web view a few
  // pixels, showing the page's cream background as a strip under the anchored view
  // (user report, 2026-11-08). The document never scrolls while anchored.
@@ -122,7 +122,9 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
  const pose=!space?undefined:pinned?{x:0,y:0,scale:1}:toBox(space.origin,reduced?1:1.03);
  return <div ref={outer} className={`inspection ${pinned?'is-pinned':''} ${geek?'is-geek':''}`} role={pinned?'dialog':undefined} aria-modal={pinned?true:undefined} aria-label={t('Inspeccionar recuerdo')}>
   <motion.div className="inspection-shade" onPointerDown={shadeDown} onPointerMove={move} onPointerUp={shadeUp} onPointerCancel={shadeCancel} initial={{opacity:0}} animate={{opacity:pinned?.94:.84}} exit={{opacity:0}} transition={{duration:reduced?0:.2,ease:[.2,.8,.2,1]}}/>
-  {space&&<motion.div className="inspection-follow" style={{x:reduced?fingerX:smoothX,y:reduced?fingerY:smoothY}}><motion.div className="inspection-dismiss" style={{x:dismissX,y:dismissY,opacity:dismissFade}}><motion.div ref={frame} className="inspection-photo" tabIndex={pinned?0:-1} style={{left:space.target.x,top:space.target.y,width:space.target.width,height:space.target.height,'--inspect-ratio':asset.width/asset.height} as CSSProperties}
+  {polaroid&&space&&pinned&&Array.from({length:Math.min(2,polaroid.behind)},(_,k)=><motion.div key={`back-${k}`} className="inspection-mount is-back" aria-hidden="true" initial={reduced?false:{opacity:0}} animate={{opacity:1}} transition={{duration:.2,delay:.08}}
+   style={{left:space.target.x-10,top:space.target.y-10,width:space.target.width+20,height:space.target.height+58,rotate:k?3.2:-2.6,y:k?8:4,zIndex:0}}/>)}
+  {space&&<motion.div className="inspection-follow" style={{x:reduced?fingerX:smoothX,y:reduced?fingerY:smoothY}}><motion.div className="inspection-dismiss" style={{x:dismissX,y:dismissY,opacity:dismissFade}}>{polaroid&&pinned&&<motion.div className="inspection-mount" aria-hidden="true" initial={reduced?false:{opacity:0}} animate={{opacity:1}} transition={{duration:.22,delay:.1}} style={{left:space.target.x-10,top:space.target.y-10,width:space.target.width+20,height:space.target.height+58}}><span className="mount-caption">{polaroid.where&&<span className="caption-where">{polaroid.where}</span>}{polaroid.when&&<span className="caption-when">{polaroid.when}</span>}</span></motion.div>}<motion.div ref={frame} className="inspection-photo" tabIndex={pinned?0:-1} style={{left:space.target.x,top:space.target.y,width:space.target.width,height:space.target.height,'--inspect-ratio':asset.width/asset.height} as CSSProperties}
    initial={reduced?false:atOrigin} animate={pose} exit={reduced?{opacity:0,transition:{duration:0}}:{...atOrigin,transition:settle}}
    transition={reduced?{duration:0}:settle} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={e=>{resetDismiss();up(e);}} onClick={e=>e.stopPropagation()}>
    {video?<div className="inspection-media"><InlineVideo asset={asset} state={video.state} request={video.request} mediaStyle={{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}} mode={pinned?'full':'peek'} sound={video.sound} onSound={video.onSound} retry={video.retry} download={video.download} fullscreen={video.fullscreen} openSettings={video.openSettings}>{freeze?<canvas ref={still} className="inspection-still"/>:(poster||sharp||download?.src)?<img src={pinned&&sharp?sharp:poster||download?.src} alt="" draggable={false} style={{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}}/>:null}</InlineVideo></div>

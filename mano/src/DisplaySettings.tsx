@@ -59,14 +59,17 @@ export function DisplaySettingsPanel({ display, change, stampWordsAuto = true, g
   const language = languageChoice();
   return <div className="settings-panel">
     <Section icon={<CameraIcon size={18}/>} title={t('Fotos')}>
-      <div className="setting-preview" aria-hidden="true"><div className="mini-polaroid paper"><img src={SAMPLE_PHOTO} alt="" draggable={false}/>
-        <span className="polaroid-caption"><span className="caption-where">{caption.where}</span>{caption.when && <span className="caption-when">{caption.when}</span>}</span></div></div>
+      <div className="setting-preview" aria-hidden="true"><div className={`mini-polaroid paper ${photo.polaroid ? '' : 'is-plain'}`}><img src={SAMPLE_PHOTO} alt="" draggable={false}/>
+        {photo.polaroid && <span className="polaroid-caption"><span className="caption-where">{caption.where}</span>{caption.when && <span className="caption-when">{caption.when}</span>}</span>}</div></div>
       <div className="settings-group">
+        <Switch label={t('Modo Polaroid')} hint={t('Marco de papel con lugar y fecha. Sin él, la foto se ve más grande.')} checked={photo.polaroid} change={polaroid => setPhoto({ polaroid })}/>
+        {photo.polaroid && <>
         <Switch label={t('Ubicación')} checked={photo.location} change={location => setPhoto({ location })}/>
         <Switch label={t('Fecha')} checked={photo.date} change={date => setPhoto({ date })}/>
         {photo.date && <div className="group-sub"><Choice label={t('Formato de fecha')} value={photo.dateFormat} options={dateOptions(false)} change={dateFormat => setPhoto({ dateFormat })}/></div>}
         <Switch label={t('Hora')} checked={photo.time} change={time => setPhoto({ time })}/>
         {photo.time && <div className="group-sub"><Choice label={t('Formato de hora')} value={photo.hour12} options={[[false, formatTime(SAMPLE_DATE, false)!], [true, formatTime(SAMPLE_DATE, true)!]]} change={hour12 => setPhoto({ hour12 })}/></div>}
+        </>}
         <Switch label={t('Mostrar el sello en las fotos')} checked={photo.seal} change={seal => setPhoto({ seal })}/>
       </div>
     </Section>
@@ -76,7 +79,8 @@ export function DisplaySettingsPanel({ display, change, stampWordsAuto = true, g
       <div className="setting-preview" aria-hidden="true"><div className="mini-vhs-frame"><div className="mini-vhs"><img src={SAMPLE_PHOTO} alt="" draggable={false}/><VhsOverlay asset={SAMPLE} place={SAMPLE_PLACE} settings={video} label={false}/></div></div></div>
       <div className="settings-group">
         <Switch label={t('Letras VHS')} checked={video.osd} change={osd => setVideo({ osd })}/>
-        {video.osd && <div className="group-sub"><Choice label={t('Tamaño de las letras')} value={video.osdSize} options={OSD_SIZE.map(([size, text]) => [size, text()])} change={osdSize => setVideo({ osdSize })}/></div>}
+        {video.osd && <>
+        <div className="group-sub"><Choice label={t('Tamaño de las letras')} value={video.osdSize} options={OSD_SIZE.map(([size, text]) => [size, text()])} change={osdSize => setVideo({ osdSize })}/></div>
         <Switch label={t('Fecha')} checked={video.date} change={date => setVideo({ date })}/>
         {video.date && <div className="group-sub"><Choice label={t('Formato de fecha')} value={video.dateFormat} options={dateOptions(true)} change={dateFormat => setVideo({ dateFormat })}/></div>}
         <Switch label={t('Hora')} checked={video.time} change={time => setVideo({ time })}/>
@@ -84,6 +88,7 @@ export function DisplaySettingsPanel({ display, change, stampWordsAuto = true, g
         <Switch label={t('Ubicación')} checked={video.location} change={location => setVideo({ location })}/>
         <Switch label={t('Duración')} checked={video.duration} change={duration => setVideo({ duration })}/>
         <Switch label={t('Peso')} hint={t('Lo que liberas si lo eliminas.')} checked={video.size} change={size => setVideo({ size })}/>
+        </>}
       </div>
     </Section>
     <Section icon={<ImageSquareIcon size={18}/>} title={t('Nitidez de las cartas')} note={QUALITY_COPY[display.quality][1]()}>

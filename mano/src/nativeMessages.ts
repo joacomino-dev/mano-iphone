@@ -27,6 +27,7 @@ export const NATIVE_MESSAGES = [
   'Identificador de vista previa no válido.',
   'Hay otros vídeos preparándose. Reinténtalo en un momento.',
   'Este elemento ya no está disponible en Fotos.',
+  'Estos elementos ya no están disponibles en Fotos.',
   'Este elemento no es un vídeo.',
   'Ese vídeo ya se está preparando.',
   'Escribe un nombre y selecciona las fotos del álbum.',
