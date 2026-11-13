@@ -27,6 +27,12 @@ const clock = (seconds: number) => { const s = Math.max(0, Math.round(seconds));
 
 /** The front card's photo: where it is and what it shows. */
 export type CardShot = { rect: DOMRect; src: string };
+/** Two fingers on the photo (user, 2026-11-13: «que la foto se quede entre mis dedos hasta
+ * que la suelte»): where they started, where they are and how far apart, relative. */
+export type Hold = { x0: number; y0: number; x: number; y: number; ratio: number };
+/** The pile's own Deshacer and Álbum (icon centres): the dock's buttons start there. */
+export type ToolSpots = { undo?: DOMRect; album?: DOMRect };
+type Rect = { left: number; top: number; width: number; height: number };
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 const mix = (a: number, b: number, k: number) => a + (b - a) * k;
 
@@ -43,6 +49,9 @@ type Props = {
    * ways (a pinch on the card, or spreading two fingers here at 3 columns); letting go
    * springs to the nearer end (`release`). Everything here is painted from it. */
   progress: MotionValue<number>; scrub: (value: number) => void; release: () => void;
+  /** The fingers while they hold the photo; null once they let go. */
+  fingers: MotionValue<Hold | null>;
+  tools?: ToolSpots;
   /** The front card's photo now, for the flight back. */
   cardTarget: () => CardShot | undefined;
   /** Shares the selection (several originals in one sheet). */
@@ -54,9 +63,9 @@ type Props = {
   /** The animated way back to the cards (the red ✕, Android Back). */
   close: () => void; decide: (action: Action, ids: string[]) => Promise<boolean>; undo: () => void; notice: (text: string) => void;
   /** Opens the anchored view of one item, growing from its tile. */
-  open: (asset: Asset, from: DOMRect) => void;
+  open: (asset: Asset, from: DOMRect, src?: string) => void;
   /** Anchors several items to rotate through, growing from the first one's tile. */
-  openSet: (assets: Asset[], from: DOMRect) => void;
+  openSet: (assets: Asset[], from: DOMRect, src?: string) => void;
   /** Where the pile's decision bar was, so the dock can grow out of it. */
   enterFrom?: DOMRect;
   /** The ad letter for the strip on screen; absent when no ad was loaded at opening. */
@@ -99,7 +108,7 @@ const Tile = memo(function Tile({ asset, index, x, y, side, size, selected, curr
   </button>;
 });
 
-export default function LibraryGrid({ assets, state, filter, filtersOn, current, busy, close, decide, undo, notice, open, openSet, enterFrom, cardFrom, ad, album, albumDone, share, reviewFrom, top, selected, setSelected, progress, scrub, release, cardTarget }: Props) {
+export default function LibraryGrid({ assets, state, filter, filtersOn, current, busy, close, decide, undo, notice, open, openSet, enterFrom, cardFrom, ad, album, albumDone, share, reviewFrom, top, selected, setSelected, progress, scrub, release, cardTarget, fingers: grasp, tools }: Props) {
   const scroller = useRef<HTMLDivElement>(null), dock = useRef<HTMLDivElement>(null), bar = useRef<HTMLDivElement>(null);
   const section = useRef<HTMLElement>(null), body = useRef<HTMLDivElement>(null), paper = useRef<HTMLDivElement>(null), shade = useRef<HTMLDivElement>(null), ghost = useRef<HTMLDivElement>(null), ghostImg = useRef<HTMLImageElement>(null);
   const [width, setWidth] = useState(0), [height, setHeight] = useState(0), [offset, setOffset] = useState(0);
@@ -135,6 +144,15 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
     const element = bar.current; if (!element || !enterFrom) { entry.current = 0; return; }
     element.style.transform = 'translateX(-50%)';
     entry.current = enterFrom.bottom - element.getBoundingClientRect().bottom;
+  }, []);
+  // Deshacer and Álbum travel from the pile's tool row to the dock: offsets from rest.
+  const toolShift = useRef<Record<string, { x: number; y: number }>>({});
+  useLayoutEffect(() => {
+    dock.current?.querySelectorAll<HTMLElement>('[data-tool]').forEach(el => {
+      const from = tools?.[el.dataset.tool as keyof ToolSpots]; if (!from) return;
+      el.style.translate = ''; const r = el.getBoundingClientRect();
+      toolShift.current[el.dataset.tool!] = { x: from.left + from.width / 2 - (r.left + r.width / 2), y: from.top + from.height / 2 - (r.top + r.height / 2) };
+    });
   }, []);
 
   const side = width ? (width - GAP * (columns - 1)) / columns : 0, pitch = side + GAP;
@@ -199,9 +217,14 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
     if (img) img.src = from?.src || scroller.current?.querySelector<HTMLImageElement>(`.grid-tile[data-id="${CSS.escape(id ?? '')}"] img`)?.src || '';
     setFlyingId(from ? id : undefined);
   };
+  // While held, the photo stays between the fingers: scaled by their spread around where they
+  // started, moved with them, turning from the card's shape to the tile's with the progress.
+  // Let go and it flies from wherever it is to its tile, or back to its card.
+  const lastRect = useRef<Rect | null>(null), landing = useRef<{ rect: Rect; from: number } | null>(null), heldBase = useRef<Rect | null>(null);
   const paint = (v: number) => {
     const sc = scroller.current, frame = body.current, root = section.current; if (!sc || !frame || !root || !side) return;
-    if (v >= 1) { if (flight.current) { flight.current = null; setFlyingId(undefined); } reached.current = true; }
+    const hold = grasp.get();
+    if (v >= 1 && !hold) { if (flight.current) { flight.current = null; setFlyingId(undefined); } reached.current = true; landing.current = null; heldBase.current = null; }
     else if (!flight.current) {
       if (reached.current) { const date = assets.find(a => a.id === current)?.date; if (current && date !== undefined) focus.current = { id: current, date }; startFlight(cardTarget()); }
       else startFlight(cardFrom);
@@ -214,25 +237,51 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
       cx = box.left + (index % columns) * pitch + side / 2;
       cy = Math.max(box.top + side / 2, Math.min(box.bottom - dockHeight - side / 2, box.top + rowY(Math.floor(index / columns)) - sc.scrollTop + side / 2));
     }
-    if (paper.current) paper.current.style.opacity = String(clamp01(v / .5));
-    if (shade.current) shade.current.style.opacity = String(clamp01(v / .5));
+    const done = v >= 1 && !hold;
+    if (paper.current) paper.current.style.opacity = String(clamp01(v / .55));
+    if (shade.current) shade.current.style.opacity = String(clamp01((v - .2) / .5));
     sc.style.opacity = String(clamp01((v - .04) / .56));
     sc.style.transformOrigin = `${cx - box.left}px ${cy - box.top}px`;
-    sc.style.transform = v >= 1 ? '' : `scale(${zoom})`;
+    sc.style.transform = done ? '' : `scale(${zoom})`;
     const chrome = clamp01((v - .35) / .5);
-    root.querySelectorAll<HTMLElement>('.grid-dock-side,.grid-selection,.grid-review-from').forEach(el => { el.style.opacity = v >= 1 ? '' : String(chrome); el.style.translate = v >= 1 ? '' : `0 ${(1 - chrome) * 8}px`; });
+    root.querySelectorAll<HTMLElement>('.grid-selection,.grid-review-from').forEach(el => { el.style.opacity = done ? '' : String(chrome); el.style.translate = done ? '' : `0 ${(1 - chrome) * 8}px`; });
+    // The same tools, moving: icon + label in the pile's row, a disc in the dock.
+    root.querySelectorAll<HTMLElement>('[data-tool]').forEach(el => {
+      const d = toolShift.current[el.dataset.tool!] ?? { x: 0, y: 0 }, disc = el.querySelector<HTMLElement>('.grid-dock-disc'), label = el.querySelector<HTMLElement>('.grid-dock-label');
+      el.style.translate = done ? '' : `${(1 - v) * d.x}px ${(1 - v) * d.y}px`;
+      if (disc) disc.style.opacity = done ? '' : String(clamp01((v - .15) / .6));
+      if (label) label.style.opacity = done ? '0' : String(1 - clamp01(v / .4));
+    });
     if (bar.current && entry.current !== null) bar.current.style.transform = `translateX(-50%) translateY(${(1 - v) * entry.current}px) scale(${mix(1, scale, v)})`;
     const g = ghost.current; if (!g) return;
-    if (!f?.from || v >= 1) { g.style.display = 'none'; return; }
-    const size = side * zoom, from = f.from.rect;
-    const left = mix(from.left, cx - size / 2, v), top = mix(from.top, cy - size / 2, v);
+    if (!f?.from || done) { g.style.display = 'none'; lastRect.current = null; return; }
+    const size = side * zoom, card = f.from.rect, tile: Rect = { left: cx - size / 2, top: cy - size / 2, width: size, height: size };
+    let r: Rect;
+    if (hold) {
+      landing.current = null;
+      // Where the fingers took it: the card (way in) or the tile (way back).
+      const base = heldBase.current ??= reached.current ? tile : { left: card.left, top: card.top, width: card.width, height: card.height };
+      const aspect = mix(card.width / Math.max(1, card.height), 1, v), m = Math.max(side * .8, Math.max(base.width, base.height) * hold.ratio);
+      const w = aspect < 1 ? m * aspect : m, h = aspect < 1 ? m : m / aspect;
+      const mx = hold.x + (base.left + base.width / 2 - hold.x0) * hold.ratio, my = hold.y + (base.top + base.height / 2 - hold.y0) * hold.ratio;
+      r = { left: mx - w / 2, top: my - h / 2, width: w, height: h };
+    } else if (landing.current) {
+      // Let go: from where it was to the tile (progress rising) or to the card (falling).
+      const L = landing.current, up = v >= L.from, k = up ? clamp01((v - L.from) / Math.max(.001, 1 - L.from)) : clamp01((L.from - v) / Math.max(.001, L.from)), to = up ? tile : { left: card.left, top: card.top, width: card.width, height: card.height };
+      r = { left: mix(L.rect.left, to.left, k), top: mix(L.rect.top, to.top, k), width: mix(L.rect.width, to.width, k), height: mix(L.rect.height, to.height, k) };
+    } else {
+      r = { left: mix(card.left, tile.left, v), top: mix(card.top, tile.top, v), width: mix(card.width, size, v), height: mix(card.height, size, v) };
+    }
+    lastRect.current = r;
     g.style.display = 'block';
-    g.style.width = `${mix(from.width, size, v)}px`; g.style.height = `${mix(from.height, size, v)}px`;
-    g.style.transform = `translate(${left}px,${top - top0}px)`;
+    g.style.width = `${r.width}px`; g.style.height = `${r.height}px`;
+    g.style.transform = `translate(${r.left}px,${r.top - top0}px)`;
     g.style.borderRadius = `${mix(2, 0, v)}px`;
   };
   const painter = useRef(paint); painter.current = paint;
   useEffect(() => progress.on('change', v => painter.current(v)), [progress]);
+  // Fingers move: repaint; fingers lift: the flight lands from where the photo was.
+  useEffect(() => grasp.on('change', hold => { if (!hold && lastRect.current) { landing.current = { rect: lastRect.current, from: progress.get() }; heldBase.current = null; } painter.current(progress.get()); }), [grasp, progress]);
   // Filters edited from here apply to the grid at once (the same filters as the pile).
   const filterKey = JSON.stringify(filter) + filtersOn;
   const lastFilter = useRef(filterKey);
@@ -288,13 +337,15 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
     edge.current = requestAnimationFrame(step);
   };
   const tileRect = (index: number) => scroller.current?.querySelector<HTMLElement>(`[data-i="${index}"]`)?.getBoundingClientRect();
+  // The tile's thumbnail goes with it, so the opened photo shows from its first frame.
+  const tileSrc = (index: number) => scroller.current?.querySelector<HTMLImageElement>(`[data-i="${index}"] img`)?.src;
   const fingers = useRef(new Map<number, { x: number; y: number }>()), pinch = useRef<{ spread: number; ratio: number; ox: number; oy: number } | null>(null);
   const canvasOf = () => scroller.current?.querySelector<HTMLElement>('.grid-canvas') ?? null;
   // Density follows the fingers too: the canvas scales around them, then settles.
   const settleCanvas = () => { const c = canvasOf(); if (!c || !c.style.transform) return; const from = c.style.transform, origin = c.style.transformOrigin; c.style.transform = ''; if (!reduced) c.animate([{ transform: from, transformOrigin: origin }, { transform: 'none', transformOrigin: origin }], { duration: 320, easing: 'cubic-bezier(.2,.8,.2,1)' }); };
   const endPinch = () => {
     const p = pinch.current; pinch.current = null; if (!p) return;
-    if (progress.get() < 1) { settleCanvas(); release(); return; }
+    if (progress.get() < 1) { settleCanvas(); grasp.set(null); release(); return; }
     if ((columns === 3 && p.ratio < .86) || (columns === 5 && p.ratio > 1.16)) { switchColumns(); const c = canvasOf(); if (c) c.style.transform = ''; }
     else settleCanvas();
   };
@@ -311,7 +362,7 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
     const g = { start: index, x: e.clientX, y: e.clientY, mode: 'wait' as 'wait' | 'select' | 'scroll' | 'held', adding: !selected.has(items[index].id), base: selected, timer: 0, id: e.pointerId };
     g.timer = window.setTimeout(() => { // hold: see it large
       if (gesture.current !== g || g.mode !== 'wait') return;
-      g.mode = 'held'; haptic('rigid'); const rect = tileRect(index); if (rect) open(items[index], rect);
+      g.mode = 'held'; haptic('rigid'); const rect = tileRect(index); if (rect) open(items[index], rect, tileSrc(index));
     }, 420);
     gesture.current = g;
   };
@@ -321,7 +372,12 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
     if (p && fingers.current.size === 2) {
       const ratio = spread() / Math.max(1, p.spread), c = canvasOf(); p.ratio = ratio;
       // 3 columns, fingers apart: the photo in hand grows back into its card (user, 2026-11-13).
-      if (columns === 3 && ratio > 1) { if (c) c.style.transform = ''; scrub(clamp01(1 - (ratio - 1) / .7)); return; }
+      if (columns === 3 && ratio > 1) {
+        if (c) c.style.transform = '';
+        const [a, b] = [...fingers.current.values()], m = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+        const h = grasp.get(); grasp.set(h ? { ...h, x: m.x, y: m.y, ratio } : { x0: m.x, y0: m.y, x: m.x, y: m.y, ratio });
+        scrub(Math.min(.98, clamp01(1 - (ratio - 1) / .7))); return;
+      }
       if (progress.get() < 1) scrub(1);
       const k = columns === 3 ? Math.max(.7, ratio) : Math.min(1.45, Math.max(.95, ratio));
       if (c) { c.style.transformOrigin = `${p.ox}px ${p.oy}px`; c.style.transform = `scale(${k})`; }
@@ -389,7 +445,7 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
   const anchorSelection = () => {
     const index = items.findIndex(a => a.id === targets[0]?.id);
     const rect = tileRect(index) ?? scroller.current?.getBoundingClientRect();
-    if (targets.length && rect) openSet(targets, rect);
+    if (targets.length && rect) openSet(targets, rect, tileSrc(index));
   };
 
   const tiles = [];
@@ -419,6 +475,7 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
         {items.length ? <div className="grid-canvas" style={{ height: total }}>{tiles}{strip}</div>
           : <p className="grid-empty">{t('Nada con estos filtros.')}</p>}
       </div>
+    </div>
       {count > 0 && <div className="grid-selection" style={{ bottom: `calc(${dockHeight + 18}px + env(safe-area-inset-bottom))` }} aria-live="polite">
         <button type="button" className="grid-selection-clear" onClick={() => { setSelected(new Set()); haptic('selection'); }} aria-label={t('Quitar la selección')}><XIcon size={16} weight="bold"/></button>
         <span>{count === 1 ? t('1 seleccionada') : t('{n} seleccionadas', { n: formatNumber(count) })}</span>
@@ -428,17 +485,16 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
       {count === 1 && <button type="button" className="grid-review-from" style={{ bottom: `calc(${dockHeight + 76}px + env(safe-area-inset-bottom))` }} onClick={() => { haptic('light'); reviewFrom(targets[0]); }}><ListNumbersIcon size={16} weight="bold"/>{t('Revisar en orden desde aquí')}</button>}
       <div ref={dock} className="grid-dock" style={{ height: dockHeight }}>
         <div ref={shade} className="grid-dock-shade" style={{ opacity: 0 }}/>
-        <button type="button" className="grid-dock-side" onClick={() => { if (!state.history.length) { haptic('warning'); say(t('Nada que deshacer')); } else undo(); }} disabled={busy} aria-label={state.history.length ? t('Deshacer la última decisión') : t('Nada que deshacer')}><ArrowUUpLeftIcon size={22} weight="bold" className="flip-rtl"/></button>
+        <button type="button" className="grid-dock-side" data-tool="undo" onClick={() => { if (!state.history.length) { haptic('warning'); say(t('Nada que deshacer')); } else undo(); }} disabled={busy} aria-label={state.history.length ? t('Deshacer la última decisión') : t('Nada que deshacer')}><span className="grid-dock-disc" aria-hidden="true"/><ArrowUUpLeftIcon size={24} className="flip-rtl"/><span className="grid-dock-label" aria-hidden="true">{t('Deshacer')}</span></button>
         <div className="grid-dock-bar" style={{ width: barSize.width * scale, height: barSize.height * scale }}>
           <div ref={bar} className="grid-dock-scale" style={{ width: barSize.width }}>
             <DecisionBar count={count} disabled={busy} favoriteOn={false} armed=""
               onDiscard={() => void run('discard')} onFavorite={() => void run('favorite')} onKeep={() => void run('keep')}/>
           </div>
         </div>
-        {album ? <button type="button" className="grid-dock-side" disabled={busy} onClick={() => { if (!count) nothing(); else album(targets.map(a => a.id)); }} aria-label={count > 1 ? t('Guardar {n} en un álbum', { n: count }) : t('Guardar en un álbum')}><FolderSimplePlusIcon size={22} weight="bold"/></button>
+        {album ? <button type="button" className="grid-dock-side" disabled={busy} onClick={() => { if (!count) nothing(); else album(targets.map(a => a.id)); }} aria-label={count > 1 ? t('Guardar {n} en un álbum', { n: count }) : t('Guardar en un álbum')} data-tool="album"><span className="grid-dock-disc" aria-hidden="true"/><FolderSimplePlusIcon size={24}/><span className="grid-dock-label" aria-hidden="true">{t('Álbum')}</span></button>
           : <span className="grid-dock-side" aria-hidden="true"/>}
       </div>
-    </div>
     <div ref={ghost} className="grid-ghost" aria-hidden="true"><img ref={ghostImg} alt="" draggable={false}/></div>
   </section>;
 }

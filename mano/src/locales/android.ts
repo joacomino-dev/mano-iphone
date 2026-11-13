@@ -147,7 +147,7 @@ export const ANDROID_TEXT: Record<string, Text> = {
     ja: '一部はギャラリーに\nもうありません',
   },
   // Android: hearts reach the gallery together when the round ends (one dialog).
-  'Se queda y es favorita en Fotos.': {
+  'Se queda y se marca como favorita en Fotos.': {
     es: 'Se queda y, al terminar, pasa a favoritas de tu galería.', en: 'It stays and joins your gallery’s favorites when you finish.',
     fr: 'Elle reste et rejoint les favoris de ta galerie à la fin.', de: 'Es bleibt und wird am Ende ein Favorit in deiner Galerie.',
     it: 'Resta e, alla fine, passa tra i preferiti della galleria.', ar: 'يبقى، وعند الانتهاء ينضم إلى مفضّلات معرضك.',

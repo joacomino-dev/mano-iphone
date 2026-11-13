@@ -17,7 +17,7 @@ import { InlineVideo, type VideoControl } from './InlineVideo';
 import { Filters } from './Filters';
 import type { InspectOrigin } from './Inspector';
 import { DisplaySettingsPanel, Onboarding, Inspector, LibraryGrid, preloadScreensWhenIdle } from './LazyScreens';
-import type { CardShot } from './LibraryGrid';
+import type { CardShot, Hold, ToolSpots } from './LibraryGrid';
 import { readSession, SessionWriter, DEMO_SESSION_KEY, LIBRARY_SESSION_KEY, type ActiveSession } from './session';
 import { activeJournal, STORAGE_FAILURE, type NativeIntent } from './durableSession';
 import { readDisplay, saveDisplay, polaroidCaption, formatBytes, ONBOARDING_KEY, STAMP_WORDS_UNTIL, type DisplaySettings, type PhotoMeta } from './meta';
@@ -393,18 +393,23 @@ export function ManoApp() {
   // scrubs it both ways without lifting; letting go springs to the nearer end, carried by
   // the fingers' speed. One spring for every way in and out.
   const gridProgress=useMotionValue(0),gridDetent=useRef(false),gridCard=useRef<CardShot|undefined>(undefined);
+  const gridFingers=useMotionValue<Hold|null>(null),gridTools=useRef<ToolSpots>({});
+  // «Más tarde» (and the hand's group controls) fade early: they have no place in the grid.
+  const laterFade=useTransform(gridProgress,[0,.3],[1,0]);
   // Fully in: the pile underneath leaves the accessibility tree and the tab order.
   const [gridIn,setGridIn]=useState(false);
+  // The tile's thumbnail for a photo opened from the grid: its image from the first frame.
+  const gridPoster=useRef<{id?:string;src:string}|null>(null);
   const handFade=useTransform(gridProgress,[0,.5],[1,0]),exitRoom=useTransform(gridProgress,[0,1],[0,44]),exitShow=useTransform(gridProgress,[.2,.75],[0,1]),exitScale=useTransform(gridProgress,[.2,.75],[.5,1]);
   // Selected in the grid, kept while moving between modes; a decision on the cards ends it.
   const [gridSelection,setGridSelection]=useState<ReadonlySet<string>>(new Set());const gridOpenNow=useRef(false);gridOpenNow.current=gridOpen;
   const reducedMotionNow=()=>typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;
   const cardTarget=():CardShot|undefined=>{const w=document.querySelector('.photo-card.front .photo-window');if(!w)return undefined;const img=w.querySelector('img'),video=w.querySelector('video');return {rect:w.getBoundingClientRect(),src:img?.currentSrc||img?.src||video?.poster||''};};
-  const gridUnmount=()=>{gridProgress.stop();gridProgress.set(0);gridDetent.current=false;setGridIn(false);setGridOpen(false);setGridAds(false);money.release('grid');};
+  const gridUnmount=()=>{gridProgress.stop();gridProgress.set(0);gridFingers.set(null);gridDetent.current=false;setGridIn(false);setGridOpen(false);setGridAds(false);money.release('grid');};
   const gridScrub=(value:number)=>{gridProgress.stop();gridProgress.set(value);if(value<1)setGridIn(false);const over=value>.5;if(over!==gridDetent.current){gridDetent.current=over;haptic('selection');}};
   const gridSettle=(to:0|1,velocity=0)=>{gridDetent.current=to===1;if(!to)setGridIn(false);
     if(reducedMotionNow()){gridProgress.set(to);if(to)setGridIn(true);else gridUnmount();return;}
-    void animate(gridProgress,to,{type:'spring',stiffness:320,damping:36,mass:1,velocity,restDelta:.001,restSpeed:.01}).then(()=>{if(!to&&gridOpenNow.current&&gridProgress.get()<.001)gridUnmount();if(to&&gridProgress.get()>.999)setGridIn(true);});};
+    void animate(gridProgress,to,{type:'spring',stiffness:260,damping:30,mass:1,velocity,restDelta:.001,restSpeed:.01}).then(()=>{if(!to&&gridOpenNow.current&&gridProgress.get()<.001)gridUnmount();if(to&&gridProgress.get()>.999)setGridIn(true);});};
   // Let go: the nearer end, unless the fingers were clearly moving one way.
   const gridRelease=()=>{const value=gridProgress.get(),speed=gridProgress.getVelocity();gridSettle(speed>.8?1:speed<-.8?0:value>.5?1:0,speed);};
   const gridExit=()=>{haptic('light');gridSettle(0);};
@@ -638,8 +643,8 @@ export function ManoApp() {
     if(g.pinch){const [a,b]=[...pointers.current.values()];const ratio=a&&b?Math.hypot(b.x-a.x,b.y-a.y)/g.pinch:1;
       if(!g.grid&&ratio>1.25){const asset=hand.find(h=>h.id===g.id);gesture.current=null;if(asset)openPinned(asset,e.currentTarget);return;}
       // Fingers together: the grid comes in under them, step by step; apart again, the card returns.
-      if(!g.grid&&ratio<.97&&!gridOpenNow.current&&!deckAd&&assets.length){g.grid=true;void LibraryGrid.preload();setGridTop((document.querySelector('.archive-progress')?.getBoundingClientRect().bottom??0)+4);gridEnter.current=document.querySelector('.decision-bar')?.getBoundingClientRect();gridCard.current=cardTarget();gridProgress.set(0);setGridAds(money.grid());setGridOpen(true);}
-      if(g.grid)gridScrub(Math.max(0,Math.min(1,(1-ratio)/.45)));return;}
+      if(!g.grid&&ratio<.97&&!gridOpenNow.current&&!deckAd&&assets.length){g.grid=true;void LibraryGrid.preload();setGridTop((document.querySelector('.archive-progress')?.getBoundingClientRect().bottom??0)+4);gridEnter.current=document.querySelector('.decision-bar')?.getBoundingClientRect();gridCard.current=cardTarget();gridTools.current={undo:document.querySelector('.archive-tools>button:first-child .tool-icon')?.getBoundingClientRect(),album:document.querySelector('#album-trigger .tool-icon')?.getBoundingClientRect()};gridProgress.set(0);setGridAds(money.grid());setGridOpen(true);}
+      if(g.grid){const mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2},held=gridFingers.get();gridFingers.set(held?{...held,x:mid.x,y:mid.y,ratio}:{x0:mid.x,y0:mid.y,x:mid.x,y:mid.y,ratio});gridScrub(Math.max(0,Math.min(.98,(1-ratio)/.45)));}return;}
     const x=e.clientX-g.x,y=e.clientY-g.y;
     if(!g.held&&Math.hypot(x,y)>10&&g.timer){
       // The finger stayed within slop for the whole hold time: it is a hold, even
@@ -654,7 +659,7 @@ export function ManoApp() {
     }else if(g.review&&g.held){(g.element as HTMLElement).style.transform=`translateX(${Math.max(0,x)}px)`;}
     else if(!g.review&&!g.held){for(const id of g.followers){const o=offsets.current.get(id);o?.x.set(x);o?.y.set(y);}stampOpacity.set(Math.min(1,.4+Math.max(Math.abs(x),Math.abs(y))/120));
       const next=zoneOf(x,y);if(next!==(g.zone??'')){g.zone=next;setZone(next);if(next)haptic('selection');}}};
-  const end=(e:PointerEvent)=>{pointers.current.delete(e.pointerId);const g=gesture.current;if(!g)return;if(g.pinch){if(g.grid&&pointers.current.size<2){g.grid=false;gridRelease();}if(!pointers.current.size){gesture.current=null;}return;}if(g.timer)clearTimeout(g.timer);const x=e.clientX-g.x,y=e.clientY-g.y;
+  const end=(e:PointerEvent)=>{pointers.current.delete(e.pointerId);const g=gesture.current;if(!g)return;if(g.pinch){if(g.grid&&pointers.current.size<2){g.grid=false;gridFingers.set(null);gridRelease();}if(!pointers.current.size){gesture.current=null;}return;}if(g.timer)clearTimeout(g.timer);const x=e.clientX-g.x,y=e.clientY-g.y;
     if(g.held&&!g.review&&!hookHover.current)hookHover.current=anchorAt(e.clientX,e.clientY,y);
     // Only touch state that changed: a plain tap must not re-render the whole app.
     // Only touch state that changed: a plain tap must not re-render the whole app.
@@ -820,13 +825,13 @@ export function ManoApp() {
         {flash&&<DecisionStamp key={flash.key} kind={flash.kind} lettering={stampWords} reduced={!!reduced} done={()=>setFlash(f=>f?.key===flash.key?null:f)}/>}
       </div>}
     </motion.section>
-    <div className="bundle-controls" inert={deckAd||gridIn}>{hand.length>1&&!deckAd?<div className="segmented"><button onClick={()=>{haptic('selection');setSelected(allPicked?[]:others);}}>{allPicked?t('Quitar selección'):best?t('Elegir las demás'):t('Elegir todas')}</button><button onClick={cycle} aria-label={t('Ver la siguiente foto del grupo')}><ArrowClockwiseIcon size={16}/>{t('Siguiente')}</button></div>:null}</div>
+    <motion.div className="bundle-controls" style={{opacity:laterFade}} inert={deckAd||gridIn}>{hand.length>1&&!deckAd?<div className="segmented"><button onClick={()=>{haptic('selection');setSelected(allPicked?[]:others);}}>{allPicked?t('Quitar selección'):best?t('Elegir las demás'):t('Elegir todas')}</button><button onClick={cycle} aria-label={t('Ver la siguiente foto del grupo')}><ArrowClockwiseIcon size={16}/>{t('Siguiente')}</button></div>:null}</motion.div>
     {/* Eliminar (←) · the heart, protagonist · Conservar (→): three buttons drawn
         as one set (DecisionBar). The piece on the side the card is dragged
         toward rises. In «Favoritas» the heart is on and takes items out. */}
     <DecisionBar count={targets.length} disabled={deckAd||!active||busy} favoriteOn={favView} armed={currentColor}
       onDiscard={()=>void act('discard')} onFavorite={()=>void act('favorite')} onKeep={()=>void act('keep')}/>
-    <footer className="archive-tools" inert={deckAd||gridIn}><button onClick={undoLast} disabled={busy||!state.history.length} aria-label={state.history.length?t('Deshacer la última decisión'):t('Nada que deshacer')}><span className="tool-icon"><ArrowUUpLeftIcon size={24} className="flip-rtl"/></span><span className="tool-label">{t('Deshacer')}</span></button><button className="later" aria-label={targets.length>1?t('Dejar {n} para más tarde',{n:targets.length}):t('Dejar para más tarde')} disabled={!active||busy} onClick={()=>act('later')}><span className="tool-icon"><DecisionIcon kind="later" size={24}/></span><span className="tool-label">{t('Más tarde')}</span></button>{/* Android keeps albums as folders (moving the original): no «Álbum» there; the empty cell keeps «Más tarde» centred. */}{onAndroid()?<span aria-hidden="true"/>:<button id="album-trigger" onClick={()=>void openAlbums()} disabled={!active||busy}><span className="tool-icon"><FolderSimplePlusIcon size={24}/></span><span className="tool-label">{t('Álbum')}</span></button>}</footer>
+    <footer className="archive-tools" inert={deckAd||gridIn}><button onClick={undoLast} disabled={busy||!state.history.length} aria-label={state.history.length?t('Deshacer la última decisión'):t('Nada que deshacer')}><span className="tool-icon"><ArrowUUpLeftIcon size={24} className="flip-rtl"/></span><span className="tool-label">{t('Deshacer')}</span></button><motion.button className="later" style={{opacity:laterFade}} aria-label={targets.length>1?t('Dejar {n} para más tarde',{n:targets.length}):t('Dejar para más tarde')} disabled={!active||busy} onClick={()=>act('later')}><span className="tool-icon"><DecisionIcon kind="later" size={24}/></span><span className="tool-label">{t('Más tarde')}</span></motion.button>{/* Android keeps albums as folders (moving the original): no «Álbum» there; the empty cell keeps «Más tarde» centred. */}{onAndroid()?<span aria-hidden="true"/>:<button id="album-trigger" onClick={()=>void openAlbums()} disabled={!active||busy}><span className="tool-icon"><FolderSimplePlusIcon size={24}/></span><span className="tool-label">{t('Álbum')}</span></button>}</footer>
     </div>;
   const libraryActions=<>
     <button className="sheet-action secondary" onClick={()=>void analyze(true)} disabled={analyzing}>{analyzing?<><CocoLoader size={22} progress={progress.total?progress.done/progress.total:undefined}/>{t('Buscando parecidas…')}</>:t('Buscar fotos parecidas')}</button>
@@ -855,15 +860,17 @@ export function ManoApp() {
     {screen}
     <p className="sr-only" role="status" aria-live="polite">{spoken}</p>
     {splash&&<Splash done={()=>setSplash(false)}/>}
-    {gridOpen&&<Suspense fallback={null}><LibraryGrid assets={assets} state={state} filter={filterSetting} filtersOn={!filterSetting.off} cardFrom={gridCard.current} top={gridTop} selected={gridSelection} setSelected={setGridSelection} progress={gridProgress} scrub={gridScrub} release={gridRelease} cardTarget={cardTarget}
+    {gridOpen&&<Suspense fallback={null}><LibraryGrid assets={assets} state={state} filter={filterSetting} filtersOn={!filterSetting.off} cardFrom={gridCard.current} top={gridTop} selected={gridSelection} setSelected={setGridSelection} progress={gridProgress} scrub={gridScrub} release={gridRelease} cardTarget={cardTarget} fingers={gridFingers} tools={gridTools.current}
       share={ids=>void shareMany(ids)} reviewFrom={asset=>{resumeContext.current=undefined;setFilter(f=>({...f,off:true,startAt:asset.date}));setSelected([]);setLock(NO_HAND);gridUnmount();setNotice(t('En orden desde esta foto'));}} current={hand[0]?.id} busy={busy} close={gridExit} decide={(action,ids)=>act(action,ids)} undo={()=>void undoLast()} notice={setNotice}
       album={onAndroid()?undefined:ids=>void openAlbums(ids)} albumDone={gridAlbumDone} enterFrom={gridEnter.current}
-      openSet={(list,from)=>{rotating.current=false;heldVideo.current=null;inspectOrigin.current=from;resetPeek();setInspectSet(list.length>1?list:null);setInspectFromGrid(true);setPinnedInspect(true);setInspect(list[0]);haptic('rigid');}}
-      open={(asset,from)=>{rotating.current=false;heldVideo.current=null;inspectOrigin.current=from;resetPeek();setInspectFromGrid(true);setPinnedInspect(true);setInspect(asset);haptic('rigid');}}
+      openSet={(list,from,src)=>{gridPoster.current=src?{id:list[0]?.id,src}:null;rotating.current=false;heldVideo.current=null;inspectOrigin.current=from;resetPeek();setInspectSet(list.length>1?list:null);setInspectFromGrid(true);setPinnedInspect(true);setInspect(list[0]);haptic('rigid');}}
+      open={(asset,from,src)=>{gridPoster.current=src?{id:asset.id,src}:null;rotating.current=false;heldVideo.current=null;inspectOrigin.current=from;resetPeek();setInspectFromGrid(true);setPinnedInspect(true);setInspect(asset);haptic('rigid');}}
       ad={gridAds&&money.placement==='grid'?within=><AdSlot where="grid" money={money} within={within}/>:undefined}/></Suspense>}
-    {inspect&&inspectSet&&inspectSet.length>1&&<div className="inspect-set" role="group" aria-label={t('Fotos ancladas')}><button type="button" onClick={()=>rotateSet(-1)} aria-label={t('Anterior')}><CaretLeftIcon size={20} weight="bold" className="flip-rtl"/></button><span aria-live="polite">{t('{n} de {total}',{n:formatNumber(inspectSet.findIndex(a=>a.id===inspect.id)+1),total:formatNumber(inspectSet.length)})}</span><button type="button" onClick={()=>rotateSet(1)} aria-label={t('Siguiente')}><CaretRightIcon size={20} weight="bold" className="flip-rtl"/></button></div>}
+    {/* Anchored set: tapping the photo moves on (user, 2026-11-13: the arrows were not needed);
+        the counter stays, and is itself a button for keyboard and screen readers. */}
+    {inspect&&inspectSet&&inspectSet.length>1&&<button type="button" className="inspect-set" onClick={()=>rotateSet(1)} aria-label={t('Siguiente')}><span aria-live="polite">{t('{n} de {total}',{n:formatNumber(inspectSet.findIndex(a=>a.id===inspect.id)+1),total:formatNumber(inspectSet.length)})}</span></button>}
     <CenterNotice notice={notice}/>
-    <AnimatePresence custom={rotating.current}>{inspect&&<InspectorBoundary key={inspect.id} close={closeInspect}><Suspense fallback={<div className="inspection is-pinned" aria-busy="true"><div className="inspection-shade"/><CocoLoader size={44}/></div>}><Inspector asset={inspect} src={sharpPreview(inspect)??(preloader.current?.get(inspect)?.poster||undefined)} cloud={!!preloader.current?.peek(inspect)?.value?.cloud} pinned={pinnedInspect} origin={inspectOrigin.current} peek={{x:peekX,y:peekY}} anchor={anchor} armed={overHook} geek={!!filter.geek} polaroid={anchoredCaption&&inspect?.kind!=='video'?{where:anchoredCaption.where,when:anchoredCaption.when,stack:stackOrder.length>1?{behind:stackOrder.slice(1,3),was:stackWas}:undefined}:undefined} close={closeInspect} decide={inspectFromGrid&&pinnedInspect?decideAnchored:undefined} next={inspectFromGrid&&inspectSet&&inspectSet.length>1?()=>rotateSet(1):undefined} pin={()=>{setPinnedInspect(true);haptic('rigid');}}
+    <AnimatePresence custom={rotating.current}>{inspect&&<InspectorBoundary key={inspect.id} close={closeInspect}><Suspense fallback={<div className="inspection is-pinned" aria-busy="true"><div className="inspection-shade"/><CocoLoader size={44}/></div>}><Inspector asset={inspect} src={sharpPreview(inspect)??(preloader.current?.get(inspect)?.poster||(gridPoster.current?.id===inspect.id?gridPoster.current.src:undefined))} cloud={!!preloader.current?.peek(inspect)?.value?.cloud} pinned={pinnedInspect} origin={inspectOrigin.current} peek={{x:peekX,y:peekY}} anchor={anchor} armed={overHook} geek={!!filter.geek} polaroid={anchoredCaption&&inspect?.kind!=='video'?{where:anchoredCaption.where,when:anchoredCaption.when,stack:stackOrder.length>1?{behind:stackOrder.slice(1,3),was:stackWas}:undefined}:undefined} close={closeInspect} decide={inspectFromGrid&&pinnedInspect?decideAnchored:undefined} next={inspectFromGrid&&inspectSet&&inspectSet.length>1?()=>rotateSet(1):undefined} pin={()=>{setPinnedInspect(true);haptic('rigid');}}
       video={(inspect.kind==='video'&&inspect.id===active?.id)||(inspect.kind==='live'&&!onAndroid())?{state:inspect.kind==='live'?inspectedLive:frontVideo,request:()=>requestLive(inspect),retry:()=>getVideos().retry(motionAsset(inspect)),download:()=>{requestLive(inspect);getVideos().download(motionAsset(inspect));},fullscreen:()=>{if(inspect.kind==='video')void play(inspect);},openSettings,sound:videoSound,onSound:()=>setVideoSound(v=>!v),freeze:inspect.kind==='video'?heldVideo.current:undefined}:undefined}/></Suspense></InspectorBoundary>}</AnimatePresence>
     <Sheet open={sheet==='filters'} close={()=>setSheet(null)} title={sheetTab==='filters'?t('Filtros'):sheetTab==='support'?t('Apoyo'):t('Ajustes')} description={sheetTab==='filters'?t('Elige qué fotos entran en la pila.'):sheetTab==='support'?t('Quita los anuncios o invita un café a quien la hace.'):t('Elige cómo se ven tus recuerdos.')} error={visibleError} returnTo="filter-trigger">
       <div className="sheet-tabs" role="group" aria-label={t('Sección')}><button aria-pressed={sheetTab==='filters'} onClick={()=>{haptic('selection');setSheetTab('filters');}}>{t('Filtros')}</button><button aria-pressed={sheetTab==='settings'} onClick={()=>{haptic('selection');setSheetTab('settings');}}>{t('Ajustes')}</button>{money.available&&<button aria-pressed={sheetTab==='support'} onClick={()=>{haptic('selection');setSheetTab('support');}}>{t('Apoyo')}</button>}</div>

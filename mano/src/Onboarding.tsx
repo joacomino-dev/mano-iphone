@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { CaretRightIcon, LockSimpleIcon, PushPinIcon, SlidersHorizontalIcon, HandTapIcon, MagnifyingGlassPlusIcon } from '@phosphor-icons/react';
+import { CaretRightIcon, LockSimpleIcon, PushPinIcon, HandTapIcon, MagnifyingGlassPlusIcon, SquaresFourIcon } from '@phosphor-icons/react';
 import type { PhotoPermission } from './library';
 import { CocoLoader } from './Loader';
 import { haptic } from './haptics';
 import { Stamp } from './Stamp';
 import { Character } from './Characters';
-import { Wordmark } from './Chrome';
+import { FilterSwitch, Wordmark } from './Chrome';
 import { ONBOARDING_KEY } from './meta';
 import { t } from './i18n';
 
@@ -22,8 +22,10 @@ const FAN = ['/assets/demo/postcard-2.svg', PHOTO, '/assets/demo/postcard-5.svg'
 /** The empty main screen behind the tour: header and an empty pile, inert. */
 function Ghost() {
   return <div className="ob-ghost" aria-hidden="true" inert>
-    <div className="archive-header">
-      <span className="header-action header-filters"><SlidersHorizontalIcon size={18}/>{t('Filtros')}</span>
+    {/* The real header (same classes, the real Filtros switch): nothing changes size or
+        shape when the tour ends (user, 2026-11-13). */}
+    <div className="archive-header is-session">
+      <FilterSwitch on toggle={() => {}} edit={() => {}}/>
       <span className="header-brand"><span className="brand-wordmark"><Wordmark/></span></span>
       <span className="header-action finish">{t('Terminar')}</span>
     </div>
@@ -136,8 +138,8 @@ function Row({ art, title, children, on }: { art: ReactNode; title: ReactNode; c
 
 const cards = () => [
   { key: 'meet', title: t('Lo que importa, se queda.'), text: t('Coqui te ayuda a ordenar tu carrete con decisiones rápidas. Tú eliges qué se queda.') },
-  { key: 'how', title: t('Desliza y sella.'), text: t('Al soltar, el sello confirma tu decisión.') },
-  { key: 'group', title: t('Toca y haz zoom.'), text: '' },
+  { key: 'how', title: t('Desliza para decidir.'), text: t('Cada dirección es una decisión. Al soltar, el sello la confirma.') },
+  { key: 'group', title: t('Toca para cambiar. Separa los dedos para ampliar.'), text: '' },
   { key: 'privacy', title: t('Tus fotos no salen de tu iPhone.'), text: t('CocoWash necesita acceso a Fotos para mostrarte tu carrete. No sube ni comparte nada, y solo se borra lo que confirmes en Fotos.') },
 ];
 
@@ -215,16 +217,18 @@ export function Onboarding({ requestAccess, finish, granted = false }: { request
             <h1 ref={heading} tabIndex={-1}>{card.title}</h1>
             {card.text && <p>{card.text}</p>}
             {card.key === 'how' && <ul className="ob-rows">
-              <Row on={gesture === 'keep'} art={<Stamp kind="keep"/>} title={<>{t('Conservar')} <small><bdi>→</bdi> {t('derecha')}</small></>}>{t('Se queda; vuelve luego con más sello.')}</Row>
-              <Row on={gesture === 'discard'} art={<Stamp kind="discard"/>} title={<>{t('Eliminar')} <small><bdi>←</bdi> {t('izquierda')}</small></>}>{t('Se borra al final, solo si confirmas.')}</Row>
-              <Row on={gesture === 'favorite'} art={<Stamp kind="favorite"/>} title={<>{t('Favorita')} <small>↑ {t('arriba')}</small></>}>{t('Se queda y es favorita en Fotos.')}</Row>
-              <Row on={gesture === 'later'} art={<Stamp kind="later"/>} title={<>{t('Más tarde')} <small>↓ {t('abajo')}</small></>}>{t('¿Dudas? Vuelve al final de la pila.')}</Row>
+              <Row on={gesture === 'keep'} art={<Stamp kind="keep"/>} title={<>{t('Conservar')} <small>{t('a la derecha')} <bdi>→</bdi></small></>}>{t('Se queda en tu carrete.')}</Row>
+              <Row on={gesture === 'discard'} art={<Stamp kind="discard"/>} title={<>{t('Eliminar')} <small>{t('a la izquierda')} <bdi>←</bdi></small></>}>{t('Se aparta. Solo se borra si lo confirmas al terminar.')}</Row>
+              <Row on={gesture === 'favorite'} art={<Stamp kind="favorite"/>} title={<>{t('Favorita')} <small>{t('hacia arriba')} ↑</small></>}>{t('Se queda y se marca como favorita en Fotos.')}</Row>
+              <Row on={gesture === 'later'} art={<Stamp kind="later"/>} title={<>{t('Más tarde')} <small>{t('hacia abajo')} ↓</small></>}>{t('¿Dudas? Vuelve al final de la pila.')}</Row>
             </ul>}
             {card.key === 'group' && <ul className="ob-rows">
-              <Row on={phase === 'tap'} art={<HandTapIcon size={26} weight="bold"/>} title={t('Toca la foto')}>{t('En un grupo de parecidas, cada toque trae la siguiente al frente.')}</Row>
-              <Row on={phase !== 'tap'} art={<MagnifyingGlassPlusIcon size={26} weight="bold"/>} title={t('Zoom')}>
-                <span className="ob-ways"><span className={phase === 'hold' ? 'is-on' : ''}><PushPinIcon size={14} weight="bold"/>{t('Mantén y arrastra hasta Anclar')}</span><span className={phase === 'pinch' ? 'is-on' : ''}><MagnifyingGlassPlusIcon size={14} weight="bold"/>{t('O pellizca la foto')}</span></span>
-                {t('Se queda abierta en grande y puedes ampliar los detalles.')}</Row>
+              <Row on={phase === 'tap'} art={<HandTapIcon size={26} weight="bold"/>} title={t('Toca la foto')}>{t('En un grupo de parecidas, cada toque trae la siguiente.')}</Row>
+              <Row on={phase !== 'tap'} art={<MagnifyingGlassPlusIcon size={26} weight="bold"/>} title={t('Ampliar')}>
+                <span className="ob-ways"><span className={phase === 'hold' ? 'is-on' : ''}><PushPinIcon size={14} weight="bold"/>{t('Mantén y arrastra hasta Anclar')}</span><span className={phase === 'pinch' ? 'is-on' : ''}><MagnifyingGlassPlusIcon size={14} weight="bold"/>{t('O separa dos dedos')}</span></span>
+                {t('Se abre en grande. Junta los dedos para cerrarla.')}</Row>
+              {/* Subtle: the way into the grid, the opposite gesture. */}
+              <Row art={<SquaresFourIcon size={24} weight="bold"/>} title={t('Ver todas')}>{t('Junta dos dedos sobre la foto y verás todas en cuadrícula.')}</Row>
             </ul>}
           </motion.section>
         </AnimatePresence>

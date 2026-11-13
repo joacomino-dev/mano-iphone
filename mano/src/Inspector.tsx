@@ -23,10 +23,13 @@ const follow={type:'spring',stiffness:900,damping:60,mass:.6} as const;
  * one sat in the stack before this photo came to the front (-1 front, 0/1 behind, absent
  * = not shown), so the deck rotates instead of popping. */
 export type AnchoredStack={behind:Asset[];was:Record<string,number>};
+const stackSpring={type:'spring',stiffness:520,damping:42,mass:1} as const;
+/** Thumbnails the stack already showed, so a photo coming to the front has its image at once. */
+const stackSrc=new Map<string,string>();
 const slotPose=(k:number)=>k<=0?{rotate:-2.8,y:10,scale:.965}:{rotate:3.4,y:20,scale:.935};
 function StackPhoto({asset}:{asset:Asset}){
  const [src,setSrc]=useState<string>();const policy=useSyncExternalStore(subscribePreviewPolicy,previewPolicyKey);
- useEffect(()=>{const controller=new AbortController();thumbnail(asset,cardPixels(asset),false,false,controller.signal).then(value=>{if(!controller.signal.aborted)setSrc(value);}).catch(()=>{});return()=>controller.abort();},[asset.id,asset.modified,policy]);
+ useEffect(()=>{const controller=new AbortController();thumbnail(asset,cardPixels(asset),false,false,controller.signal).then(value=>{if(!controller.signal.aborted){stackSrc.set(asset.id,value);setSrc(value);}}).catch(()=>{});return()=>controller.abort();},[asset.id,asset.modified,policy]);
  return src?<img className="stack-photo" src={src} alt="" draggable={false}/>:<span className="stack-photo"/>;
 }
 
@@ -42,7 +45,7 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
  const policy=useSyncExternalStore(subscribePreviewPolicy,previewPolicyKey);
  // An iCloud-only photo (no local preview under «Ahorrar iCloud») is not an
  // error: it says so, and anchoring downloads it (loadZoomPreview below).
- const [posterError,setPosterError]=useState(false);const [posterCloud,setPosterCloud]=useState(false);const [posterRetry,setPosterRetry]=useState(0);const [poster,setPoster]=useState(src);useEffect(()=>{let alive=true;const controller=new AbortController();if(src){setPoster(src);return;}setPosterError(false);setPosterCloud(false);thumbnail(asset,cardPixels(asset),posterRetry>0,false,controller.signal).then(value=>{if(alive)setPoster(value);}).catch(e=>{if(!alive)return;if(inCloudError(e))setPosterCloud(true);else setPosterError(true);});return()=>{alive=false;controller.abort();};},[asset.id,asset.modified,src,posterRetry,policy]);
+ const [posterError,setPosterError]=useState(false);const [posterCloud,setPosterCloud]=useState(false);const [posterRetry,setPosterRetry]=useState(0);const [poster,setPoster]=useState(src??stackSrc.get(asset.id));useEffect(()=>{let alive=true;const controller=new AbortController();if(src){setPoster(src);return;}const known=stackSrc.get(asset.id);if(known)setPoster(known);setPosterError(false);setPosterCloud(false);thumbnail(asset,cardPixels(asset),posterRetry>0,false,controller.signal).then(value=>{if(alive)setPoster(value);}).catch(e=>{if(!alive)return;if(inCloudError(e))setPosterCloud(true);else setPosterError(true);});return()=>{alive=false;controller.abort();};},[asset.id,asset.modified,src,posterRetry,policy]);
  const outer=useRef<HTMLDivElement>(null);const reduced=useReducedMotion();const frame=useRef<HTMLDivElement>(null);
  // A held video continues from the card's frame: paint that frame once, under the
  // video element, until the element shows the same moment (drawing a video into a
@@ -55,9 +58,12 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
  // from iCloud — joining the download that holding the card already started —
  // and the card's own iCloud indicator follows it here, with real progress.
  const [sharp,setSharp]=useState('');const download=useCloud(asset.kind==='video'?undefined:asset);
- useEffect(()=>{if(!pinned||asset.kind==='video')return;const controller=new AbortController();loadZoomPreview(asset,controller.signal).then(value=>{if(!controller.signal.aborted)setSharp(value);}).catch(()=>{});return()=>controller.abort();},[pinned,asset.id,asset.modified,policy]);
+ useEffect(()=>{if(!pinned||asset.kind==='video')return;const controller=new AbortController();const timer=window.setTimeout(()=>{loadZoomPreview(asset,controller.signal).then(value=>{if(!controller.signal.aborted)setSharp(value);}).catch(()=>{});},polaroid?.stack?380:0);return()=>{window.clearTimeout(timer);controller.abort();};},[pinned,asset.id,asset.modified,policy]);
  const [space,setSpace]=useState<{target:Box;origin:Box;scale:number;fit:(ratio:number)=>Box}|null>(null);
  const [meta,setMeta]=useState<AssetMetadata|null>(null);const [metaError,setMetaError]=useState('');const [zoom,setZoom]=useState(1);const [pan,setPan]=useState({x:0,y:0});
+ // Pinching in past the fitted size shrinks the view with the fingers; let go small and it
+ // closes — the opposite of the pinch out that opened it (user, 2026-11-13).
+ const shrink=useMotionValue(1);
  const points=useRef(new Map<number,{x:number;y:number}>());const base=useRef({distance:0,zoom:1,x:0,y:0,panX:0,panY:0});
  // Measure in the overlay's own CSS pixels (the preview device frame may be scaled).
  useLayoutEffect(()=>{const element=outer.current;if(!element)return;const measure=()=>{
@@ -99,20 +105,20 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
  const rebase=()=>{const p=[...points.current.values()];base.current={distance:p.length>1?Math.hypot(p[1].x-p[0].x,p[1].y-p[0].y):0,zoom,x:p[0]?.x??0,y:p[0]?.y??0,panX:pan.x,panY:pan.y};};
  const down=(e:PointerEvent)=>{if(!pinned||onControl(e))return;e.stopPropagation();if(!points.current.size)downAt.current={x:e.clientX,y:e.clientY};e.currentTarget.setPointerCapture(e.pointerId);points.current.set(e.pointerId,{x:e.clientX,y:e.clientY});if(points.current.size===1)startDismiss(e);else resetDismiss();rebase();};
  const move=(e:PointerEvent)=>{if(moveDismiss(e)){e.stopPropagation();if(points.current.has(e.pointerId))points.current.set(e.pointerId,{x:e.clientX,y:e.clientY});return;}if(!points.current.has(e.pointerId))return;e.stopPropagation();points.current.set(e.pointerId,{x:e.clientX,y:e.clientY});const p=[...points.current.values()],b=base.current;
-  if(p.length>1&&b.distance){setZoom(Math.min(5,Math.max(1,b.zoom*Math.hypot(p[1].x-p[0].x,p[1].y-p[0].y)/b.distance)));}
+  if(p.length>1&&b.distance){const z=b.zoom*Math.hypot(p[1].x-p[0].x,p[1].y-p[0].y)/b.distance;if(z<1){if(zoom!==1)setZoom(1);shrink.set(Math.max(.45,z));}else{shrink.set(1);setZoom(Math.min(5,z));}}
   else if(zoom>1){const rect=frame.current!.getBoundingClientRect();const maxX=rect.width*(zoom-1)/2,maxY=rect.height*(zoom-1)/2;setPan({x:Math.min(maxX,Math.max(-maxX,b.panX+e.clientX-b.x)),y:Math.min(maxY,Math.max(-maxY,b.panY+e.clientY-b.y))});}
  };
  // Double tap on the anchored media zooms in at that point; another double tap
  // zooms back out (user, 2026-11-09). Single taps keep their meaning.
  const lastTap=useRef<{t:number;x:number;y:number}|null>(null);const downAt=useRef({x:0,y:0});const tapTimer=useRef(0);
  useEffect(()=>()=>window.clearTimeout(tapTimer.current),[]);
- const doubleTap=(e:PointerEvent,moved:number)=>{if(!pinned||moved>=10||points.current.size||onControl(e))return;const now=performance.now(),prev=lastTap.current;
+ const doubleTap=(e:PointerEvent,moved:number)=>{if(!pinned||moved>=10||points.current.size||onControl(e))return;if(next){if(zoom===1&&shrink.get()===1)next();return;}const now=performance.now(),prev=lastTap.current;
   if(prev&&now-prev.t<320&&Math.hypot(e.clientX-prev.x,e.clientY-prev.y)<30){lastTap.current=null;window.clearTimeout(tapTimer.current);
    if(zoom>1){setZoom(1);setPan({x:0,y:0});}else{const rect=frame.current!.getBoundingClientRect(),k=scale.current||1,z=2.5;
     const px=(e.clientX-(rect.left+rect.width/2))/k,py=(e.clientY-(rect.top+rect.height/2))/k,maxX=rect.width/k*(z-1)/2,maxY=rect.height/k*(z-1)/2;
     setZoom(z);setPan({x:Math.min(maxX,Math.max(-maxX,-px*(z-1))),y:Math.min(maxY,Math.max(-maxY,-py*(z-1)))});}
-  }else{const tap={t:now,x:e.clientX,y:e.clientY};lastTap.current=tap;if(next&&zoom===1){window.clearTimeout(tapTimer.current);tapTimer.current=window.setTimeout(()=>{if(lastTap.current===tap){lastTap.current=null;next();}},330);}}};
- const up=(e:PointerEvent)=>{endDismiss(e);points.current.delete(e.pointerId);rebase();if(e.currentTarget===frame.current)doubleTap(e,Math.hypot(e.clientX-downAt.current.x,e.clientY-downAt.current.y));};
+  }else{const tap={t:now,x:e.clientX,y:e.clientY};lastTap.current=tap;}};
+ const up=(e:PointerEvent)=>{endDismiss(e);points.current.delete(e.pointerId);rebase();if(points.current.size<2&&shrink.get()<1){if(shrink.get()<.82){haptic('soft');close();return;}animate(shrink,1,settle);}if(e.currentTarget===frame.current)doubleTap(e,Math.hypot(e.clientX-downAt.current.x,e.clientY-downAt.current.y));};
  // Anchored: the area around the photo is part of it. A pinch or a pan there
  // works on the photo; a single tap there closes, like «Cerrar».
  const tap=useRef<{x:number;y:number;multi:boolean}|null>(null);
@@ -141,9 +147,13 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
   <motion.div className="inspection-shade" onPointerDown={shadeDown} onPointerMove={move} onPointerUp={shadeUp} onPointerCancel={shadeCancel} initial={chained?false:{opacity:0}} animate={{opacity:pinned?.94:.84}} exit={rotatingOut?gone:{opacity:0}} transition={{duration:reduced?0:.2,ease:[.2,.8,.2,1]}}/>
   {polaroid&&space&&pinned&&stack&&stack.behind.slice(0,2).map((b,k)=>[b,k] as const).reverse().map(([b,k])=>{const box=space.fit(b.width/Math.max(1,b.height)),was=stack.was[b.id];
    const from=was===undefined||was>1?{...slotPose(k),opacity:0}:was<0?{rotate:0,y:0,scale:1,opacity:1}:{...slotPose(was),opacity:1};
-   return <motion.div key={b.id} className="inspection-mount is-back" aria-hidden="true" initial={reduced?false:from} animate={{...slotPose(k),opacity:1}} transition={settle}
+   return <motion.div key={b.id} className="inspection-mount is-back" aria-hidden="true" initial={reduced?false:from} animate={{...slotPose(k),opacity:1}} transition={stackSpring}
     style={{left:`calc(${box.x}px - var(--cw-card-side))`,top:`calc(${box.y}px - var(--cw-card-side))`,width:`calc(${box.width}px + 2 * var(--cw-card-side))`,height:`calc(${box.height}px + var(--cw-card-side) + var(--cw-caption))`,zIndex:0}}><StackPhoto asset={b}/></motion.div>;})}
-  {space&&<motion.div className="inspection-follow" style={{x:reduced?fingerX:smoothX,y:reduced?fingerY:smoothY}}><motion.div className="inspection-arrive" initial={chained&&!reduced?{...slotPose(arrivedFrom),opacity:arrivedFrom>1?0:1}:false} animate={{rotate:0,y:0,scale:1,opacity:1}} transition={settle}><motion.div className="inspection-dismiss" style={{x:dismissX,y:dismissY,rotate:dismissTurn,opacity:decide?1:dismissFade}}>{polaroid&&pinned&&<motion.div className="inspection-mount" aria-hidden="true" initial={reduced||chained?false:{opacity:0}} animate={{opacity:1}} transition={{duration:.22,delay:.1}} style={{left:`calc(${space.target.x}px - var(--cw-card-side))`,top:`calc(${space.target.y}px - var(--cw-card-side))`,width:`calc(${space.target.width}px + 2 * var(--cw-card-side))`,height:`calc(${space.target.height}px + var(--cw-card-side) + var(--cw-caption))`}}><span className="polaroid-caption mount-caption">{polaroid.where&&<span className="caption-where">{polaroid.where}</span>}{polaroid.when&&<span className="caption-when">{polaroid.when}</span>}</span></motion.div>}<motion.div ref={frame} className="inspection-photo" tabIndex={pinned?0:-1} style={{left:space.target.x,top:space.target.y,width:space.target.width,height:space.target.height,'--inspect-ratio':asset.width/asset.height} as CSSProperties}
+  {space&&<motion.div className="inspection-follow" style={{x:reduced?fingerX:smoothX,y:reduced?fingerY:smoothY}}><motion.div className="inspection-arrive" initial={chained&&!reduced?{...slotPose(arrivedFrom),opacity:arrivedFrom>1?0:1}:false} animate={{rotate:0,y:0,scale:1,opacity:1}} transition={stackSpring}><motion.div className="inspection-dismiss" style={{x:dismissX,y:dismissY,rotate:dismissTurn,scale:shrink,opacity:decide?1:dismissFade}}>{polaroid&&pinned&&<motion.div className="inspection-mount" aria-hidden="true"
+   // The paper is part of the photo (user, 2026-11-13): it grows out of the tile with it and
+   // shrinks back with it, scaled around the photo's centre; only its edge fades.
+   initial={reduced||chained?false:{...atOrigin,opacity:0}} animate={{...pose,opacity:1}} exit={reduced||rotatingOut?gone:{...atOrigin,opacity:0,transition:{...settle,opacity:{duration:.18,delay:.12}}}}
+   transition={{...settle,opacity:{duration:.16}}} style={{transformOrigin:`50% calc(var(--cw-card-side) + ${space.target.height/2}px)`,left:`calc(${space.target.x}px - var(--cw-card-side))`,top:`calc(${space.target.y}px - var(--cw-card-side))`,width:`calc(${space.target.width}px + 2 * var(--cw-card-side))`,height:`calc(${space.target.height}px + var(--cw-card-side) + var(--cw-caption))`}}><span className="polaroid-caption mount-caption">{polaroid.where&&<span className="caption-where">{polaroid.where}</span>}{polaroid.when&&<span className="caption-when">{polaroid.when}</span>}</span></motion.div>}<motion.div ref={frame} className="inspection-photo" tabIndex={pinned?0:-1} style={{left:space.target.x,top:space.target.y,width:space.target.width,height:space.target.height,'--inspect-ratio':asset.width/asset.height} as CSSProperties}
    initial={reduced||chained?false:atOrigin} animate={pose} exit={reduced||rotatingOut?gone:{...atOrigin,transition:settle}}
    transition={reduced?{duration:0}:settle} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={e=>{resetDismiss();up(e);}} onClick={e=>e.stopPropagation()}>
    {video?<div className="inspection-media"><InlineVideo asset={asset} state={video.state} request={video.request} mediaStyle={{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}} mode={pinned?'full':'peek'} sound={video.sound} onSound={video.onSound} retry={video.retry} download={video.download} fullscreen={video.fullscreen} openSettings={video.openSettings}>{freeze?<canvas ref={still} className="inspection-still"/>:(poster||sharp||download?.src)?<img src={pinned&&sharp?sharp:poster||download?.src} alt="" draggable={false} style={{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}}/>:null}</InlineVideo></div>

@@ -35,6 +35,14 @@ try{
   await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
   assert.ok(scale>1.2,`video zoom scale ${scale}`);assert.equal(await page.locator('.inspection.is-pinned').count(),1,'a pinch never closes the view');
  },{video:true});
+ await run('pinching in closes the anchored view: the opposite of opening it (user, 2026-11-13)',async page=>{
+  const box=await page.locator('.inspection.is-pinned .inspection-photo').boundingBox(),cdp=await page.context().newCDPSession(page);
+  const x=box.x+box.width/2,y=box.y+box.height/2;
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:x-120,y,id:1},{x:x+120,y,id:2}]});
+  for(const d of [100,80,60,45])await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x-d,y,id:1},{x:x+d,y,id:2}]});
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  await page.waitForFunction(()=>!document.querySelector('.inspection.is-pinned'));
+ });
  await run('double tap zooms in at that point and a second double tap zooms out (user, 2026-11-09)',async page=>{
   const box=await page.locator('.inspection-photo').boundingBox(),x=box.x+box.width*.3,y=box.y+box.height*.3;
   const scale=()=>page.evaluate(()=>Number(/scale\(([^)]+)/.exec(document.querySelector('.inspection-photo img')?.getAttribute('style')||'')?.[1]||1));

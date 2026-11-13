@@ -992,3 +992,23 @@ Pedido del usuario sobre 0.9.9.3:
   - Al rotar o decidir, la siguiente sube desde su sitio y el resto se recoloca con el mismo muelle; la vista saliente desaparece al instante (`usePresenceData`).
 - Skills: ninguna instalada ni del catálogo cubre transiciones guiadas por gestos en web; se ofrecieron «Skills For Real React Engineers» y «Design».
 Validación: 146 unitarias, 14 baterías de navegador (grid-flow: pellizco que vuelve, ✕ roja, sin botón de modo; 3 de 3 seguidas), runtime 28, builds PASS. Sondas táctiles CDP con capturas intermedias (p≈0,25/0,5/0,75 y vuelta).
+
+### CW-CL-081 — Segunda pasada de movimiento: foto entre los dedos, dock que se transforma, pila ágil
+Fecha: 2026-11-13, America/Bogota
+Agente: Claude
+Observaciones del usuario sobre `72f94ee` y respuesta:
+- Carta → cuadrícula como en Fotos de Apple: mientras los dedos sostienen, la foto sigue su centro y su separación y pasa de la forma de la carta al cuadrado; al soltar vuela desde ahí a su casilla o vuelve a la carta (muelle 260/30, más sereno). Lo mismo al abrirla desde la cuadrícula separando los dedos.
+- El menú se transforma, no se sustituye: Deshacer y Álbum viajan desde la fila de herramientas hasta el dock (el texto se apaga y aparece su disco); «Más tarde» y los controles de grupo se desvanecen. El dock sale del cuerpo recortado de la cuadrícula: sin bandas ni recortes en los bordes.
+- Avisos centrados: el saliente y el entrante comparten la misma celda (antes el nuevo aparecía debajo y saltaba al centro).
+- Pila anclada desde la cuadrícula:
+  - Sin flechas (el contador «n de N» pasa a la siguiente, accesible por teclado).
+  - Un toque pasa de foto al instante (sin doble toque: el zoom es solo con pellizco).
+  - Muelle de pila 520/42; la foto que sube trae la miniatura que ya se veía detrás; la preview nítida se pide 380 ms después.
+- Vista anclada: juntar los dedos por debajo del tamaño ajustado la encoge y al soltar pequeña se cierra (lo opuesto a abrirla).
+- Abrir manteniendo pulsado en la cuadrícula: la Polaroid crece y se encoge con la foto (misma animación, centrada en la foto) y la foto muestra la miniatura de la casilla desde el primer fotograma.
+- Introducción:
+  - Fondo con la cabecera real (`is-session` y el interruptor de Filtros nuevo): nada crece al terminar.
+  - Tarjeta 2: «Desliza para decidir.», con cada dirección explicada.
+  - Tarjeta 3: «Toca para cambiar. Separa los dedos para ampliar.», cómo cerrar juntando los dedos y una fila discreta «Ver todas» (juntar dos dedos abre la cuadrícula). Traducido a seis idiomas y a la variante Android.
+- Orden: confirmado sin cambios (con filtros, aleatorio; sin filtros, de las más antiguas).
+Validación: 146 unitarias, 14 baterías de navegador (anchored-flow añade «juntar los dedos cierra»; grid-flow sin flechas), runtime 28, builds PASS. Sondas táctiles CDP con capturas de cada fase.

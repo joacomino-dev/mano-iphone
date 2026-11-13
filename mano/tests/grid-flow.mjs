@@ -72,10 +72,12 @@ try{
  await page.locator('.grid-selection').getByRole('button',{name:'Anclar'}).click();
  await page.locator('.inspection.is-pinned').waitFor();
  assert.match(await page.locator('.inspect-set').innerText(),/1 de 5/);
- await page.locator('.inspect-set').getByRole('button',{name:'Siguiente'}).click();
+ // No arrows (user, 2026-11-13): the counter itself moves on, for keyboard and screen readers.
+ assert.equal(await page.locator('.inspect-set').count(),1);assert.equal(await page.getByRole('button',{name:'Anterior'}).count(),0,'no arrows');
+ await page.getByRole('button',{name:'Siguiente'}).click();
  assert.match(await page.locator('.inspect-set').innerText(),/2 de 5/);
- await page.locator('.inspect-set').getByRole('button',{name:'Anterior'}).click();await page.locator('.inspect-set').getByRole('button',{name:'Anterior'}).click();
- assert.match(await page.locator('.inspect-set').innerText(),/5 de 5/,'rotation wraps around');
+ for(let k=0;k<3;k++)await page.getByRole('button',{name:'Siguiente'}).click();
+ assert.match(await page.locator('.inspect-set').innerText(),/5 de 5/,'rotation reaches the last one');
  // A single tap on the photo rotates to the next one.
  const settled=()=>page.waitForFunction(()=>document.querySelectorAll('.inspection-photo').length===1);
  await settled();let box=await page.locator('.inspection-photo').boundingBox();

@@ -268,6 +268,7 @@ textos con hablantes nativos, 1.0.1 para lo que salga.
 
 Una línea por intervención: fecha · agente · entrada · puntos cerrados/abiertos.
 
+- 2026-11-13 · Claude · CW-CL-081 · Foto entre los dedos hasta soltar, Deshacer/Álbum se transforman en el dock, avisos sin salto, pila anclada sin flechas ni doble toque y con muelle ágil, juntar los dedos cierra lo anclado, Polaroid ligada a la foto, introducción más clara con la cabecera real. Abierto: prueba en teléfono físico
 - 2026-11-13 · Claude · CW-CL-080 · Cuadrícula solo por pellizco, progresiva y reversible (fantasma de la foto, dock pintado, muelle único), ✕ roja para volver, densidad guiada, Filtros 32 px turquesa, pila anclada de Polaroids reales sin sombra ni saltos. Abierto: prueba en iPhone/Android físico
 - 2026-11-13 · Claude · CW-CL-079 · R-73 Android: «fuga» = caché descartable del renderer que `send-trim-memory` no volvía a vaciar; purga por DevTools (ee4bcf4) → Android 43486731821 tres PASS seguidos. Abierto: `sample` iOS
 - 2026-11-13 · Claude · CW-CL-078 · 0.9.9.3 (f456868): Fototeca como modo bajo cabecera/progreso, pellizco hacia dentro, Filtros visto/X, avisos centrados, Polaroid ancladas igual que la pila, sellos sin ondas, selección entre modos, sin lupa. IPA 45/APK 5 entregados. Abierto: prueba en iPhone físico
