@@ -123,13 +123,16 @@ async function sample(cycle){
  // (MediaStore re-query, previews). Probe 1 s windows until the app is under 10 %
  // CPU, up to 8 probes; a process that never quiets is recorded as unsettled and
  // fails the budget (evaluate-native-cycles.py). Thresholds are unchanged.
+ // A card video playing in its loop is work the person sees, not idle: such rounds are
+ // recorded (mediaPlaying) and left out of the idle-CPU budget, never hidden.
+ const playing=async()=>!!(await lab.page(`return [...document.querySelectorAll('video')].some(v=>!v.paused&&!v.ended&&v.readyState>2);`).catch(()=>false));
  await sleep(3000);let settleProbes=0,quiet=false;
  for(;settleProbes<8;settleProbes++){const a=await appTicks(),t=performance.now();await sleep(1000);const b=await appTicks();if(100*(b-a)/(hz*(performance.now()-t)/1000)<10){quiet=true;break;}}
  // Busy after the probes: keep which threads hold the CPU (names only, no media data).
  let busyThreads=null;if(!quiet){try{const top=await adb('shell','top','-H','-b','-n','1','-p',String(lab.pid));await fs.writeFile(`${OUT}/cycle-${cycle}-busy-threads.txt`,top);busyThreads=top.split(/\r?\n/).filter(l=>/^\s*\d+/.test(l)).slice(0,8).map(l=>l.trim().split(/\s+/).slice(8).join(' '));}catch(e){busyThreads=[String(e.message).slice(0,120)];}}
- const before=await processSnapshot(),start=performance.now();await sleep(2000);const after=await processSnapshot(),seconds=(performance.now()-start)/1000;
+ const playingBefore=await playing();const before=await processSnapshot(),start=performance.now();await sleep(2000);const after=await processSnapshot(),seconds=(performance.now()-start)/1000;const mediaPlaying=playingBefore||await playing();
  const cpu=after.map(p=>{const prior=before.find(b=>b.pid===p.pid),window=prior?(p.sampleMonotonicMs-prior.sampleMonotonicMs)/1000:null;return prior&&prior.cpuTicks!==null&&p.cpuTicks!==null?{pid:p.pid,windowSeconds:window,percent:100*(p.cpuTicks-prior.cpuTicks)/(hz*window)}:{pid:p.pid,percent:null};});
- rows.push({cycle,beforeProcesses:before,processes:after,combinedPssKiB:after.reduce((n,p)=>n+p.pssKiB,0),idleCpuWindowSeconds:seconds,cpu,settleProbes,settled:quiet,...(busyThreads?{busyThreads}:{})});
+ rows.push({cycle,beforeProcesses:before,processes:after,combinedPssKiB:after.reduce((n,p)=>n+p.pssKiB,0),idleCpuWindowSeconds:seconds,cpu,settleProbes,settled:quiet,mediaPlaying,...(busyThreads?{busyThreads}:{})});
  await fs.writeFile(`${OUT}/native-cycles.json`,JSON.stringify(report,null,2));
 }
 async function round(queuedFavorite,cancelFirst=false){

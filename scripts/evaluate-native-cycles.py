@@ -49,10 +49,15 @@ def evaluate(report):
     role_trends={role:memory_trend([sum(p['memory'] for p in s.values() if p['role']==role) for s in snapshots]) for role in set(p['role'] for s in snapshots for p in s.values())}
     stable_pids=set.intersection(*(set(s) for s in snapshots))
     process_trends={pid:dict(memory_trend([s[pid]['memory'] for s in snapshots]),role=snapshots[0][pid]['role']) for pid in sorted(stable_pids)}
-    baseline_cpu=statistics.median(cpu[:3]);late_cpu=statistics.median(cpu[-3:])
+    # Rounds with a card video playing (Android records mediaPlaying) measure playback,
+    # not idle: they are left out of the CPU budget, and enough idle rounds must remain.
+    idle=[(i,c) for i,(c,row) in enumerate(zip(cpu,rows)) if not row.get('mediaPlaying')]
+    if len(idle)<6: return dict(result,reason='Too few idle rounds without media playing')
+    idle_cpu=[c for _,c in idle]
+    baseline_cpu=statistics.median(idle_cpu[:3]);late_cpu=statistics.median(idle_cpu[-3:])
     checks={**combined['checks'],'rolesWithinMemoryBudget':all(all(t['checks'].values()) for t in role_trends.values()),'stableProcessesWithinMemoryBudget':all(all(t['checks'].values()) for t in process_trends.values()),'lateIdleCpu':late_cpu<=BUDGETS['maxLateIdleCpuPercent'],'idleCpuGrowth':late_cpu-baseline_cpu<=BUDGETS['maxIdleCpuGrowthPercentagePoints'],
             # Android probes for quiet before measuring; a row that never settled is a real busy loop.
-            'appSettlesAfterEveryRound':all(r.get('settled',True) for r in rows)}
+            'appSettlesAfterEveryRound':all(r.get('settled',True) or r.get('mediaPlaying') for r in rows)}
     return dict(result,**{k:v for k,v in combined.items() if k!='checks'},status='PASS' if all(checks.values()) else 'FAIL',checks=checks,roleTrends=role_trends,stableProcessTrends=process_trends,baselineIdleCpuPercent=baseline_cpu,lateIdleCpuPercent=late_cpu)
 
 if __name__=='__main__':

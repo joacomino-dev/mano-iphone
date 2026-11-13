@@ -33,6 +33,12 @@ class NativeBudgetTests(unittest.TestCase):
         r=self.report()
         for row in r['rows']: row['settled']=True;row['settleProbes']=2
         self.assertEqual(budget.evaluate(r)['status'],'PASS')
+    def test_playing_video_round_is_not_idle(self):
+        r=self.report();r['rows'][9]['settled']=False;r['rows'][9]['mediaPlaying']=True;r['rows'][9]['cpu'][0]['percent']=50
+        self.assertEqual(budget.evaluate(r)['status'],'PASS')
+    def test_busy_without_media_still_fails(self):
+        r=self.report();r['rows'][9]['settled']=False;r['rows'][9]['mediaPlaying']=False
+        self.assertEqual(budget.evaluate(r)['status'],'FAIL')
     def test_negative_counter(self):
         r=self.report();r['rows'][1]['cpu'][0]['percent']=-2;self.assertEqual(budget.evaluate(r)['status'],'BLOCKED')
     def test_app_growth_cannot_hide_under_webcontent_cleanup(self):
