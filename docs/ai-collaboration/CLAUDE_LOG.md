@@ -948,3 +948,28 @@ Diseño del usuario y decisiones tomadas con él (AskUserQuestion): mantener pul
   la vista anclada conserva arrastrar-para-cerrar.
 Validación: 145 unitarias, 14 baterías de navegador (grid-flow cubre todo lo anterior), runtime 28, builds PASS.
 Gates nativos: fallo en cascada conocido de testV («A real Photos cancellation button must be offered») sin relación con estos cambios.
+
+### CW-CL-078 — 0.9.9.3: la Fototeca como modo de la pantalla principal
+Fecha: 2026-11-13, America/Bogota
+Agente: Claude
+Observaciones del usuario sobre 0.9.9.3 y respuesta (`f456868`):
+- Las Polaroid ancladas usan el mismo papel, pie y salida que las cartas de la pila (desplazamiento, giro, 0,34 s, misma curva).
+- La cuadrícula es un modo bajo la cabecera y la fila de progreso, que no se mueven; entrada y salida animadas sin saltos.
+- Pellizcar hacia dentro en la carta abre la cuadrícula; separar los dedos sobre la cuadrícula ancla.
+- Filtros: una sola píldora; el círculo lleno con visto (activos) o vacío con X (desactivados) alterna, la palabra abre el editor.
+- La barra de progreso solo cambia al alternar filtros, no al cambiar de modo.
+- Palabras de sello sin líneas onduladas, centradas en la placa.
+- El nombre CocoWash se mantiene (sin título «Fototeca»); los avisos nunca van en la cabecera: un único aviso centrado en pantalla para todo.
+- La selección sobrevive al cambio de modo hasta clasificar una foto en las cartas.
+- Sin lupa al tocar y al tocar-mantener en la cuadrícula.
+Validación: 146 unitarias, 14 baterías de navegador (grid-flow con pellizco táctil real por CDP), runtime 28, builds PASS. IPA build 45 y APK build 5 en Descargas.
+
+### CW-CL-079 — Android: la «fuga» del presupuesto de ciclos era caché descartable
+Fecha: 2026-11-13, America/Bogota
+Agente: Claude
+`f456868` falló el presupuesto de ciclos nativos (pendiente 1320 KiB/ronda en el renderer). Diagnóstico:
+- `am send-trim-memory` solo funcionó en la ronda 0: ActivityManager solo entrega un nivel mayor que el ya recibido, así que desde la ronda 1 se rechazaba (`trimmed:false`).
+- En la ronda 0, recortada, la Ashmem del renderer era 0,28 MB; después alternaba 1,6/12/16 MB (memoria descartable de imágenes y composición), y eso arrastraba la pendiente.
+- Capa web sin fuga: `long-use-profile` con 400 decisiones deja heap 41,3→43,2 MB tras GC (crece el registro guardado), nodos 398 y listeners 202 estables.
+Corrección (`ee4bcf4`, solo el muestreador): antes de cada muestra, GC + `Memory.simulatePressureNotification` crítica vía DevTools del WebView (repetible), y heap JS retenido por ronda (`jsHeapUsedKiB`). Presupuestos sin cambios.
+Resultado: Android 43486731821 tres intentos PASS seguidos; renderer plano (82–91 MB), pendiente total 295/391/180 KiB/ronda; heap JS 5,8→6,7 MB en 10 rondas, aplanándose. La app es la misma de `f456868`: el APK entregado vale.

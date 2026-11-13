@@ -1,5 +1,11 @@
 # CocoWash — estado vigente
 
+## Claude CW-CL-079 — 0.9.9.3 entregada, Android estable (2026-11-13)
+
+`main` en `ee4bcf4`. App 0.9.9.3 (`f456868`): IPA build 45 y APK build 5 entregados al usuario. Android 43486731821:
+tres PASS seguidos con la purga de memoria por DevTools (no había fuga). Pendiente: prueba del usuario en iPhone de la
+Fototeca como modo, R-68 en iPhone físico, `sample` iOS de R-73, cascada testV del gate nativo, tienda y arte.
+
 ## Claude CW-CL-074 — relevo tomado (2026-11-12)
 
 Claude trabaja en `main` desde `c81288b`. Subido: parche XCTest de Codex (`4cb9a3f`), mejoras del usuario R-69 reset de
