@@ -32,8 +32,10 @@ export type Order = 'oldest' | 'newest' | 'largest' | 'smallest' | 'random';
 export type Smart = 'all' | 'later' | 'screenshots' | 'lowQuality' | 'text' | 'favorites';
 /** `off` (user, 2026-11-12): the Filtros switch is off — the whole library in time order,
  * the chosen filters kept for when it is switched back on. `startAt`: with filters off,
- * the time order starts at this capture date («Revisar en orden desde esta foto»). */
-export type Filter = { seal: number | 'all' | 'none'; order: Order; media: 'all' | MediaKind; includeWaiting: boolean; dateRange?: 'all' | '24h' | '7d' | '30d' | '1y' | 'custom'; from?: string; to?: string; geek?: boolean; smart?: Smart; v?: 2; off?: boolean; startAt?: number };
+ * the time order starts at this capture date («Revisar en orden desde esta foto»). `startId`:
+ * that photo leads the pile whatever its seal, wait or mark — opening it from the grid is the
+ * point (user, 2026-11-13); it stops leading once it gets a decision. */
+export type Filter = { seal: number | 'all' | 'none'; order: Order; media: 'all' | MediaKind; includeWaiting: boolean; dateRange?: 'all' | '24h' | '7d' | '30d' | '1y' | 'custom'; from?: string; to?: string; geek?: boolean; smart?: Smart; v?: 2; off?: boolean; startId?: string; startAt?: number };
 export const ORDERS: Order[] = ['oldest', 'newest', 'largest', 'smallest', 'random'];
 export const SMARTS: Smart[] = ['all', 'later', 'screenshots', 'lowQuality', 'text', 'favorites'];
 export const LEVELS = ['Blanco', 'Rojo', 'Verde', 'Negro', 'Azul'];
@@ -61,6 +63,7 @@ export function normalizeFilter(value: unknown): Filter {
     geek: input.geek === true,
     ...(input.off === true ? { off: true } : {}),
     ...(typeof input.startAt === 'number' && Number.isFinite(input.startAt) ? { startAt: input.startAt } : {}),
+    ...(typeof input.startId === 'string' && input.startId ? { startId: input.startId } : {}),
     smart: SMARTS.includes(input.smart as Smart) ? input.smart as Smart : 'all',
     // 9.8 retired People/Breakup Mode: old person, breakup and censor fields are dropped here.
     v: 2,
@@ -204,7 +207,7 @@ const bySize = (a: Asset, b: Asset, direction: 1 | -1) => {
  * item in time order (from `startAt` when set, then wrapping to the older ones). */
 export function effectiveFilter(filter: Filter): Filter {
   if (!filter.off) return filter;
-  return { ...initialFilter, order: 'oldest', geek: filter.geek, off: true, ...(filter.startAt !== undefined ? { startAt: filter.startAt } : {}) };
+  return { ...initialFilter, order: 'oldest', geek: filter.geek, off: true, ...(filter.startAt !== undefined ? { startAt: filter.startAt } : {}), ...(filter.startId ? { startId: filter.startId } : {}) };
 }
 export function orderAssets(assets: Asset[], order: Order, seed = 1, startAt?: number): Asset[] {
   if (order === 'oldest' && startAt !== undefined) {
@@ -243,7 +246,10 @@ export function eligibleFrom(ordered: Asset[], state: RecordState, filter: Filte
   let head = levels.flatMap(bucket => bucket ?? []);
   // Stable: within the same text score, the seal-then-sequence order stands.
   if (filter.smart === 'text') head = head.sort((a, b) => (b.text ?? 0) - (a.text ?? 0));
-  return waiting.length ? [...head, ...waiting.sort((a, b) => rank.get(a.id)! - rank.get(b.id)!)] : head;
+  const result = waiting.length ? [...head, ...waiting.sort((a, b) => rank.get(a.id)! - rank.get(b.id)!)] : head;
+  // «Revisar en orden desde aquí»: that photo first, sealed or not (never a deleted one).
+  const lead = filter.startId && !state.removed.includes(filter.startId) ? ordered.find(a => a.id === filter.startId) : undefined;
+  return lead ? [lead, ...result.filter(a => a.id !== lead.id)] : result;
 }
 export function eligible(assets: Asset[], state: RecordState, filter: Filter, now = Date.now(), seed = 1) {
   return eligibleFrom(orderAssets(assets, filter.order, seed, filter.startAt), state, filter, now);

@@ -10,6 +10,7 @@ import { DecisionIcon, Stamp } from './Stamp';
 import { useAndroidBack } from './androidBack';
 import { formatNumber, t } from './i18n';
 import { haptic } from './haptics';
+import { flushSync } from 'react-dom';
 import type { MotionValue } from 'motion/react';
 
 /** «Fototeca» (user, 2026-11-12; docs/ai-handoff/GRID_VIEW_PLAN.md): the whole
@@ -26,7 +27,7 @@ const readColumns = (): 3 | 5 => { try { return localStorage.getItem(COLUMNS_KEY
 const clock = (seconds: number) => { const s = Math.max(0, Math.round(seconds)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 
 /** The front card's photo: where it is and what it shows. */
-export type CardShot = { rect: DOMRect; src: string };
+export type CardShot = { rect: DOMRect; src: string; frame?: DOMRect; paper?: string; caption?: { html: string; className: string } };
 /** Two fingers on the photo (user, 2026-11-13: «que la foto se quede entre mis dedos hasta
  * que la suelte»): where they started, where they are and how far apart, relative. */
 export type Hold = { x0: number; y0: number; x: number; y: number; ratio: number };
@@ -110,7 +111,7 @@ const Tile = memo(function Tile({ asset, index, x, y, side, size, selected, curr
 
 export default function LibraryGrid({ assets, state, filter, filtersOn, current, busy, close, decide, undo, notice, open, openSet, enterFrom, cardFrom, ad, album, albumDone, share, reviewFrom, top, selected, setSelected, progress, scrub, release, cardTarget, fingers: grasp, tools }: Props) {
   const scroller = useRef<HTMLDivElement>(null), dock = useRef<HTMLDivElement>(null), bar = useRef<HTMLDivElement>(null);
-  const section = useRef<HTMLElement>(null), body = useRef<HTMLDivElement>(null), paper = useRef<HTMLDivElement>(null), shade = useRef<HTMLDivElement>(null), ghost = useRef<HTMLDivElement>(null), ghostImg = useRef<HTMLImageElement>(null);
+  const section = useRef<HTMLElement>(null), body = useRef<HTMLDivElement>(null), paper = useRef<HTMLDivElement>(null), shade = useRef<HTMLDivElement>(null), ghost = useRef<HTMLDivElement>(null), ghostImg = useRef<HTMLImageElement>(null), ghostPaper = useRef<HTMLDivElement>(null), ghostCaption = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0), [height, setHeight] = useState(0), [offset, setOffset] = useState(0);
   const [columns, setColumns] = useState<3 | 5>(readColumns);
   // Notices use the app's one centred notice (it shows above this mode).
@@ -186,10 +187,13 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
     while (lo < hi) { const mid = (lo + hi) >> 1; if (list[mid].date < date) lo = mid + 1; else hi = mid; }
     return lo > 0 && Math.abs(list[lo - 1].date - date) <= Math.abs(list[lo].date - date) ? lo - 1 : lo;
   };
-  const refocus = useRef(true);
+  const refocus = useRef(true), pinchAnchor = useRef<{ id: string; y: number } | null>(null);
   useLayoutEffect(() => {
     const el = scroller.current; if (!el || !side || !refocus.current) return;
     refocus.current = false;
+    // A density pinch keeps the photo under the fingers where it was (no recentring jump).
+    const held = pinchAnchor.current; pinchAnchor.current = null;
+    if (held) { const i = items.findIndex(a => a.id === held.id); if (i >= 0) { const top = el.getBoundingClientRect().top; el.scrollTop = Math.max(0, rowY(Math.floor(i / columns)) + side / 2 - (held.y - top)); setOffset(el.scrollTop); return; } }
     const index = focusIndex(items); if (index < 0) return;
     const visible = el.clientHeight - dockHeight;
     el.scrollTop = Math.max(0, rowY(Math.floor(index / columns)) - (visible - pitch) / 2); setOffset(el.scrollTop);
@@ -200,10 +204,16 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
     const box = canvas.getBoundingClientRect();
     scroller.current!.querySelectorAll<HTMLElement>('.grid-tile').forEach(el => {
       const was = before.get(el.dataset.id ?? ''), now = el.getBoundingClientRect();
-      if (!was) { el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 320, easing: 'cubic-bezier(.2,.8,.2,1)' }); return; }
+      if (!was) { el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: 60, easing: 'ease-out', fill: 'backwards' }); return; }
       const k = was.width / Math.max(1, now.width), dx = was.left - box.left - k * (now.left - box.left), dy = was.top - box.top - k * (now.top - box.top);
-      el.animate([{ transformOrigin: '0 0', transform: `translate(${dx}px,${dy}px) scale(${k}) ${el.style.transform}` }, { transformOrigin: '0 0', transform: `translate(0px,0px) scale(1) ${el.style.transform}` }], { duration: 320, easing: 'cubic-bezier(.2,.8,.2,1)' });
+      el.animate([{ transformOrigin: '0 0', transform: `translate(${dx}px,${dy}px) scale(${k}) ${el.style.transform}` }, { transformOrigin: '0 0', transform: `translate(0px,0px) scale(1) ${el.style.transform}` }], { duration: 420, easing: 'cubic-bezier(.22,1,.36,1)' });
     });
+    // Tiles of the old layout with no place in the new one: their copies fade where they were.
+    const room = body.current, shown = new Set([...scroller.current!.querySelectorAll<HTMLElement>('.grid-tile')].map(el => el.dataset.id));
+    if (room) { const at = room.getBoundingClientRect(); leaving.current.forEach((copy, id) => { const was = before.get(id); if (shown.has(id) || !was) return;
+      copy.style.cssText = `position:absolute;left:${was.left - at.left}px;top:${was.top - at.top}px;width:${was.width}px;height:${was.height}px;transform:none;pointer-events:none;z-index:2`;
+      room.appendChild(copy); copy.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, easing: 'ease-out', fill: 'forwards' }).finished.then(() => copy.remove(), () => copy.remove()); }); }
+    leaving.current.clear();
   }, [columns]);
   // The working photo between its card and its tile, painted from `progress`: the
   // grid's paper, tiles and dock come in around it while it shrinks onto its tile,
@@ -215,6 +225,9 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
     const index = focusIndex(items); flight.current = { from, index };
     const img = ghostImg.current, id = items[index]?.id;
     if (img) img.src = from?.src || scroller.current?.querySelector<HTMLImageElement>(`.grid-tile[data-id="${CSS.escape(id ?? '')}"] img`)?.src || '';
+    if (ghostPaper.current) { ghostPaper.current.style.background = from?.paper ?? ''; ghostPaper.current.style.opacity = '0'; }
+    if (ghostCaption.current) { ghostCaption.current.className = `grid-ghost-caption ${from?.caption?.className ?? ''}`; ghostCaption.current.innerHTML = from?.caption?.html ?? ''; }
+    const tile = id ? scroller.current?.querySelector<HTMLElement>(`.grid-tile[data-id="${CSS.escape(id)}"]`) : null; if (tile && from) tile.style.visibility = 'hidden';
     setFlyingId(from ? id : undefined);
   };
   // While held, the photo stays between the fingers: scaled by their spread around where they
@@ -224,7 +237,10 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
   const paint = (v: number) => {
     const sc = scroller.current, frame = body.current, root = section.current; if (!sc || !frame || !root || !side) return;
     const hold = grasp.get();
-    if (v >= 1 && !hold) { if (flight.current) { flight.current = null; setFlyingId(undefined); } reached.current = true; landing.current = null; heldBase.current = null; }
+    if (v >= 1 && !hold) {
+      if (flight.current) { const id = items[flight.current.index]?.id; const tile = id ? sc.querySelector<HTMLElement>(`.grid-tile[data-id="${CSS.escape(id)}"]`) : null; if (tile) tile.style.visibility = ''; flight.current = null; setFlyingId(undefined); }
+      reached.current = true; landing.current = null; heldBase.current = null;
+    }
     else if (!flight.current) {
       if (reached.current) { const date = assets.find(a => a.id === current)?.date; if (current && date !== undefined) focus.current = { id: current, date }; startFlight(cardTarget()); }
       else startFlight(cardFrom);
@@ -273,6 +289,13 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
       r = { left: mix(card.left, tile.left, v), top: mix(card.top, tile.top, v), width: mix(card.width, size, v), height: mix(card.height, size, v) };
     }
     lastRect.current = r;
+    // The card's paper around the photo, shrinking to nothing at the tile; its caption fades.
+    const pf = f.from.frame, frameSize = pf ? r.width / Math.max(1, card.width) * (1 - v) : 0, paperEl = ghostPaper.current, cap = ghostCaption.current;
+    if (paperEl && pf) {
+      paperEl.style.inset = `${-(card.top - pf.top) * frameSize}px ${-(pf.right - card.right) * frameSize}px ${-(pf.bottom - card.bottom) * frameSize}px ${-(card.left - pf.left) * frameSize}px`;
+      paperEl.style.opacity = frameSize > .02 ? '1' : '0';
+    }
+    if (cap && pf) { const k = r.width / Math.max(1, card.width); cap.style.opacity = String(clamp01(1 - v * 2.2)); cap.style.transform = `scale(${k})`; cap.style.width = `${card.width}px`; }
     g.style.display = 'block';
     g.style.width = `${r.width}px`; g.style.height = `${r.height}px`;
     g.style.transform = `translate(${r.left}px,${r.top - top0}px)`;
@@ -306,8 +329,11 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
   // Density: every visible photo glides and scales from where it was to where it goes.
   const flip = useRef<Map<string, DOMRect> | null>(null);
   const snapshot = () => { const map = new Map<string, DOMRect>(); scroller.current?.querySelectorAll<HTMLElement>('.grid-tile').forEach(el => { if (el.dataset.id) map.set(el.dataset.id, el.getBoundingClientRect()); }); return map; };
-  const switchColumns = () => {
-    if (!reduced) flip.current = snapshot();
+  const leaving = useRef(new Map<string, HTMLElement>());
+  const switchColumns = (anchor?: { x: number; y: number }) => {
+    if (!reduced) { flip.current = snapshot(); scroller.current?.querySelectorAll<HTMLElement>('.grid-tile').forEach(el => { if (el.dataset.id) leaving.current.set(el.dataset.id, el.cloneNode(true) as HTMLElement); }); }
+    const under = anchor && document.elementFromPoint(anchor.x, anchor.y)?.closest<HTMLElement>('.grid-tile')?.dataset.id;
+    pinchAnchor.current = under && anchor ? { id: under, y: anchor.y } : null;
     refocus.current = true;
     const next = columns === 3 ? 5 : 3; setColumns(next); haptic('selection');
     try { localStorage.setItem(COLUMNS_KEY, String(next)); } catch { /* per-device convenience only */ }
@@ -339,15 +365,56 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
   const tileRect = (index: number) => scroller.current?.querySelector<HTMLElement>(`[data-i="${index}"]`)?.getBoundingClientRect();
   // The tile's thumbnail goes with it, so the opened photo shows from its first frame.
   const tileSrc = (index: number) => scroller.current?.querySelector<HTMLImageElement>(`[data-i="${index}"] img`)?.src;
-  const fingers = useRef(new Map<number, { x: number; y: number }>()), pinch = useRef<{ spread: number; ratio: number; ox: number; oy: number } | null>(null);
+  const fingers = useRef(new Map<number, { x: number; y: number }>()), pinch = useRef<{ spread: number; ratio: number; ox: number; oy: number; mx: number; my: number; x: number; y: number } | null>(null);
   const canvasOf = () => scroller.current?.querySelector<HTMLElement>('.grid-canvas') ?? null;
   // Density follows the fingers too: the canvas scales around them, then settles.
-  const settleCanvas = () => { const c = canvasOf(); if (!c || !c.style.transform) return; const from = c.style.transform, origin = c.style.transformOrigin; c.style.transform = ''; if (!reduced) c.animate([{ transform: from, transformOrigin: origin }, { transform: 'none', transformOrigin: origin }], { duration: 320, easing: 'cubic-bezier(.2,.8,.2,1)' }); };
+  const settleCanvas = () => { const c = canvasOf(); if (!c || !c.style.transform) return; const from = c.style.transform, origin = c.style.transformOrigin; c.style.transform = ''; if (!reduced) c.animate([{ transform: from, transformOrigin: origin }, { transform: 'none', transformOrigin: origin }], { duration: 380, easing: 'cubic-bezier(.22,1,.36,1)' }); };
+  // Density follows the fingers (user, 2026-11-13: «super burda»): each photo on screen moves
+  // from its place at this density to its place at the other, in step with the pinch, the photo
+  // under the fingers staying under them. Letting go finishes the trip (or undoes it) and only
+  // then the layout switches, to exactly what is already on screen.
+  type Morph = { to: 3 | 5; t: number; k: number; anchor: { id: string; y: number }; tiles: { el: HTMLElement; from: string; ox: number; oy: number; tx: number; ty: number }[] };
+  const morph = useRef<Morph | null>(null);
+  const beginMorph = (to: 3 | 5, mx: number, my: number): Morph | null => {
+    const sc = scroller.current; if (!sc || !side || !width) return null;
+    const box = sc.getBoundingClientRect();
+    const under = document.elementFromPoint(mx, my)?.closest<HTMLElement>('.grid-tile');
+    const ai = under ? Number(under.dataset.i) : Math.max(0, focusIndex(items)); const id = items[ai]?.id; if (!id) return null;
+    const side2 = (width - GAP * (to - 1)) / to, pitch2 = side2 + GAP;
+    const rowY2 = (row: number) => row * pitch2 + (ad ? Math.floor(row / AD_EVERY) * AD_H : 0);
+    const rows2 = Math.ceil(items.length / to), strips2 = ad ? Math.max(0, Math.floor((rows2 - 1) / AD_EVERY)) : 0;
+    const total2 = Math.max(0, rows2 * pitch2 - GAP + strips2 * AD_H) + tail, S = sc.scrollTop;
+    const S2 = Math.max(0, Math.min(Math.max(0, total2 - sc.clientHeight), rowY2(Math.floor(ai / to)) + side2 / 2 - (my - box.top)));
+    const tiles = [...sc.querySelectorAll<HTMLElement>('.grid-tile')].map(el => {
+      const i = Number(el.dataset.i);
+      return { el, from: el.style.transform, ox: (i % columns) * pitch, oy: rowY(Math.floor(i / columns)), tx: (i % to) * pitch2, ty: rowY2(Math.floor(i / to)) - S2 + S };
+    });
+    return { to, t: 0, k: side2 / side, anchor: { id, y: my }, tiles };
+  };
+  const paintMorph = (m: Morph, t: number) => {
+    m.t = t; const k = mix(1, m.k, t);
+    for (const x of m.tiles) { x.el.style.transformOrigin = '0 0'; x.el.style.transform = `translate(${mix(x.ox, x.tx, t)}px,${mix(x.oy, x.ty, t)}px) scale(${k})`; }
+  };
+  const finishMorph = (commit: boolean) => {
+    const m = morph.current; if (!m) return; morph.current = null;
+    const from = m.t, to = commit ? 1 : 0, start = performance.now(), duration = reduced ? 0 : 140 + 220 * Math.abs(to - from);
+    const done = () => {
+      const seen = snapshot();
+      for (const x of m.tiles) { x.el.style.transform = x.from; x.el.style.transformOrigin = ''; }
+      if (!commit) return;
+      flip.current = seen; pinchAnchor.current = m.anchor; refocus.current = true;
+      flushSync(() => setColumns(m.to)); haptic('selection');
+      try { localStorage.setItem(COLUMNS_KEY, String(m.to)); } catch { /* per-device convenience only */ }
+    };
+    if (!duration) { paintMorph(m, to); done(); return; }
+    const step = (now: number) => { const q = Math.min(1, (now - start) / duration), e = 1 - Math.pow(1 - q, 3); paintMorph(m, mix(from, to, e)); if (q < 1) requestAnimationFrame(step); else done(); };
+    requestAnimationFrame(step);
+  };
   const endPinch = () => {
     const p = pinch.current; pinch.current = null; if (!p) return;
-    if (progress.get() < 1) { settleCanvas(); grasp.set(null); release(); return; }
-    if ((columns === 3 && p.ratio < .86) || (columns === 5 && p.ratio > 1.16)) { switchColumns(); const c = canvasOf(); if (c) c.style.transform = ''; }
-    else settleCanvas();
+    if (progress.get() < 1) { settleCanvas(); finishMorph(false); grasp.set(null); release(); return; }
+    // Past 40 % of the way, the other density; otherwise back to this one.
+    if (morph.current) finishMorph(morph.current.t > .4); else settleCanvas();
   };
   const spread = () => { const [a, b] = [...fingers.current.values()]; return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 0; };
   const onPointerDown = (e: React.PointerEvent) => {
@@ -356,7 +423,7 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
     if (fingers.current.size === 2) {
       const g = gesture.current; if (g) clearTimeout(g.timer); gesture.current = null;
       const [a, b] = [...fingers.current.values()], c = canvasOf()?.getBoundingClientRect();
-      pinch.current = { spread: spread(), ratio: 1, ox: (a.x + b.x) / 2 - (c?.left ?? 0), oy: (a.y + b.y) / 2 - (c?.top ?? 0) }; return;
+      pinch.current = { spread: spread(), ratio: 1, ox: (a.x + b.x) / 2 - (c?.left ?? 0), oy: (a.y + b.y) / 2 - (c?.top ?? 0), mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; return;
     }
     const index = indexAt(e.clientX, e.clientY); if (index < 0 || !e.isPrimary || progress.get() < 1) return;
     const g = { start: index, x: e.clientX, y: e.clientY, mode: 'wait' as 'wait' | 'select' | 'scroll' | 'held', adding: !selected.has(items[index].id), base: selected, timer: 0, id: e.pointerId };
@@ -374,13 +441,16 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
       // 3 columns, fingers apart: the photo in hand grows back into its card (user, 2026-11-13).
       if (columns === 3 && ratio > 1) {
         if (c) c.style.transform = '';
+        if (morph.current) { paintMorph(morph.current, 0); for (const x of morph.current.tiles) { x.el.style.transform = x.from; x.el.style.transformOrigin = ''; } morph.current = null; }
         const [a, b] = [...fingers.current.values()], m = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
         const h = grasp.get(); grasp.set(h ? { ...h, x: m.x, y: m.y, ratio } : { x0: m.x, y0: m.y, x: m.x, y: m.y, ratio });
         scrub(Math.min(.98, clamp01(1 - (ratio - 1) / .7))); return;
       }
       if (progress.get() < 1) scrub(1);
-      const k = columns === 3 ? Math.max(.7, ratio) : Math.min(1.45, Math.max(.95, ratio));
-      if (c) { c.style.transformOrigin = `${p.ox}px ${p.oy}px`; c.style.transform = `scale(${k})`; }
+      const [fa, fb] = [...fingers.current.values()]; p.x = (fa.x + fb.x) / 2; p.y = (fa.y + fb.y) / 2;
+      // 3 → 5 as the fingers close to 0.6 of their spread; 5 → 3 as they open to 1.6.
+      if (!morph.current && (columns === 3 ? ratio < .98 : ratio > 1.02)) morph.current = beginMorph(columns === 3 ? 5 : 3, p.mx, p.my);
+      if (morph.current) paintMorph(morph.current, columns === 3 ? clamp01((1 - ratio) / .4) : clamp01((ratio - 1) / .6));
       return;
     }
     const g = gesture.current; if (!g || e.pointerId !== g.id) return;
@@ -467,7 +537,7 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
   const count = targets.length;
   // Paint after every render too (first frame, scroll to the working photo, density).
   useLayoutEffect(() => { painter.current(progress.get()); });
-  return <section ref={section} className={`library-grid ${flyingId ? 'is-flying' : ''}`} style={{ top }} data-count={items.length} role="region" aria-label={t('Fototeca')}>
+  return <section ref={section} className={`library-grid cols-${columns} ${flyingId ? 'is-flying' : ''}`} style={{ top }} data-count={items.length} role="region" aria-label={t('Fototeca')}>
     <div ref={paper} className="grid-paper" style={{ opacity: 0 }}/>
     <div ref={body} className="grid-body">
       <div ref={scroller} className="grid-scroller" onScroll={onScroll}
@@ -495,6 +565,6 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
         {album ? <button type="button" className="grid-dock-side" disabled={busy} onClick={() => { if (!count) nothing(); else album(targets.map(a => a.id)); }} aria-label={count > 1 ? t('Guardar {n} en un álbum', { n: count }) : t('Guardar en un álbum')} data-tool="album"><span className="grid-dock-disc" aria-hidden="true"/><FolderSimplePlusIcon size={24}/><span className="grid-dock-label" aria-hidden="true">{t('Álbum')}</span></button>
           : <span className="grid-dock-side" aria-hidden="true"/>}
       </div>
-    <div ref={ghost} className="grid-ghost" aria-hidden="true"><img ref={ghostImg} alt="" draggable={false}/></div>
+    <div ref={ghost} className="grid-ghost" aria-hidden="true"><div ref={ghostPaper} className="grid-ghost-paper"/><span className="grid-ghost-photo"><img ref={ghostImg} alt="" draggable={false}/></span><div ref={ghostCaption} className="grid-ghost-caption"/></div>
   </section>;
 }

@@ -63,7 +63,7 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
  const [meta,setMeta]=useState<AssetMetadata|null>(null);const [metaError,setMetaError]=useState('');const [zoom,setZoom]=useState(1);const [pan,setPan]=useState({x:0,y:0});
  // Pinching in past the fitted size shrinks the view with the fingers; let go small and it
  // closes — the opposite of the pinch out that opened it (user, 2026-11-13).
- const shrink=useMotionValue(1);
+ const shrink=useMotionValue(1),shadeFade=useTransform(shrink,[.45,1],[.3,1]);
  const points=useRef(new Map<number,{x:number;y:number}>());const base=useRef({distance:0,zoom:1,x:0,y:0,panX:0,panY:0});
  // Measure in the overlay's own CSS pixels (the preview device frame may be scaled).
  useLayoutEffect(()=>{const element=outer.current;if(!element)return;const measure=()=>{
@@ -144,11 +144,12 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
  const pose=!space?undefined:pinned?{x:0,y:0,scale:1}:toBox(space.origin,reduced?1:1.03);
  return <motion.div ref={outer} className={`inspection ${pinned?'is-pinned':''} ${geek?'is-geek':''}`} role={pinned?'dialog':undefined} aria-modal={pinned?true:undefined} aria-label={t('Inspeccionar recuerdo')}
   variants={{gone:(rotating?:boolean)=>rotating?{opacity:0,pointerEvents:'none',transition:{duration:0}}:{}}} exit="gone">
-  <motion.div className="inspection-shade" onPointerDown={shadeDown} onPointerMove={move} onPointerUp={shadeUp} onPointerCancel={shadeCancel} initial={chained?false:{opacity:0}} animate={{opacity:pinned?.94:.84}} exit={rotatingOut?gone:{opacity:0}} transition={{duration:reduced?0:.2,ease:[.2,.8,.2,1]}}/>
-  {polaroid&&space&&pinned&&stack&&stack.behind.slice(0,2).map((b,k)=>[b,k] as const).reverse().map(([b,k])=>{const box=space.fit(b.width/Math.max(1,b.height)),was=stack.was[b.id];
+  <motion.div className="inspection-shade-fade" style={{opacity:shadeFade}}><motion.div className="inspection-shade" onPointerDown={shadeDown} onPointerMove={move} onPointerUp={shadeUp} onPointerCancel={shadeCancel} initial={chained?false:{opacity:0}} animate={{opacity:pinned?.94:.84}} exit={rotatingOut?gone:{opacity:0}} transition={{duration:reduced?0:.2,ease:[.2,.8,.2,1]}}/></motion.div>
+  {/* The whole stack shrinks with the fingers when pinching it closed (user, 2026-11-13). */}
+  {polaroid&&space&&pinned&&stack&&<motion.div className="inspection-stack" style={{scale:shrink}} exit={rotatingOut?gone:{opacity:0,transition:{duration:.16}}}>{stack.behind.slice(0,2).map((b,k)=>[b,k] as const).reverse().map(([b,k])=>{const box=space.fit(b.width/Math.max(1,b.height)),was=stack.was[b.id];
    const from=was===undefined||was>1?{...slotPose(k),opacity:0}:was<0?{rotate:0,y:0,scale:1,opacity:1}:{...slotPose(was),opacity:1};
    return <motion.div key={b.id} className="inspection-mount is-back" aria-hidden="true" initial={reduced?false:from} animate={{...slotPose(k),opacity:1}} transition={stackSpring}
-    style={{left:`calc(${box.x}px - var(--cw-card-side))`,top:`calc(${box.y}px - var(--cw-card-side))`,width:`calc(${box.width}px + 2 * var(--cw-card-side))`,height:`calc(${box.height}px + var(--cw-card-side) + var(--cw-caption))`,zIndex:0}}><StackPhoto asset={b}/></motion.div>;})}
+    style={{left:`calc(${box.x}px - var(--cw-card-side))`,top:`calc(${box.y}px - var(--cw-card-side))`,width:`calc(${box.width}px + 2 * var(--cw-card-side))`,height:`calc(${box.height}px + var(--cw-card-side) + var(--cw-caption))`,zIndex:0}}><StackPhoto asset={b}/></motion.div>;})}</motion.div>}
   {space&&<motion.div className="inspection-follow" style={{x:reduced?fingerX:smoothX,y:reduced?fingerY:smoothY}}><motion.div className="inspection-arrive" initial={chained&&!reduced?{...slotPose(arrivedFrom),opacity:arrivedFrom>1?0:1}:false} animate={{rotate:0,y:0,scale:1,opacity:1}} transition={stackSpring}><motion.div className="inspection-dismiss" style={{x:dismissX,y:dismissY,rotate:dismissTurn,scale:shrink,opacity:decide?1:dismissFade}}>{polaroid&&pinned&&<motion.div className="inspection-mount" aria-hidden="true"
    // The paper is part of the photo (user, 2026-11-13): it grows out of the tile with it and
    // shrinks back with it, scaled around the photo's centre; only its edge fades.

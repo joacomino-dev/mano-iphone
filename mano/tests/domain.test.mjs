@@ -164,3 +164,15 @@ test('filters off: whole library in time order from startAt, seals ignored; the 
   assert.deepEqual(eligible(assets, state, off).map(a => a.id), ['a0', 'a1', 'a2', 'a3', 'a4'], 'off: time order, the sealed a1 in its place');
   assert.deepEqual(eligible(assets, state, effectiveFilter({ ...chosen, off: true, startAt: assets[3].date })).map(a => a.id), ['a3', 'a4', 'a0', 'a1', 'a2'], 'from a photo, then wrapping');
 });
+test('«Revisar en orden desde aquí» leads with that photo even sealed, waiting, favourite or marked; never a deleted one', async () => {
+  const { effectiveFilter, eligible, initialFilter: base, initialState: fresh, decide: choose } = await import('../src/domain.ts');
+  const day = 86400000, assets = [0, 1, 2, 3].map(i => ({ id: `a${i}`, kind: 'photo', date: 1000 + i * day, width: 1, height: 1, duration: 0 }));
+  let state = choose(fresh(), ['a1'], 'keep', 0);for (let i = 0; i < 6; i++) state = choose(state, ['a1'], 'keep', i + 1);
+  state = choose(state, ['a2'], 'favorite', 9); state = choose(state, ['a3'], 'discard', 10);
+  for (const id of ['a1', 'a2', 'a3']) {
+    const pile = eligible(assets, state, effectiveFilter({ ...base, off: true, startAt: assets[Number(id[1])].date, startId: id }), 20).map(a => a.id);
+    assert.equal(pile[0], id, `${id} leads`);
+  }
+  const gone = { ...state, removed: ['a1'] };
+  assert.notEqual(eligible(assets, gone, effectiveFilter({ ...base, off: true, startId: 'a1' }), 20)[0]?.id, 'a1', 'a deleted photo never comes back');
+});

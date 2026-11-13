@@ -393,7 +393,7 @@ export function ManoApp() {
   // scrubs it both ways without lifting; letting go springs to the nearer end, carried by
   // the fingers' speed. One spring for every way in and out.
   const gridProgress=useMotionValue(0),gridDetent=useRef(false),gridCard=useRef<CardShot|undefined>(undefined);
-  const gridFingers=useMotionValue<Hold|null>(null),gridTools=useRef<ToolSpots>({});
+  const gridFingers=useMotionValue<Hold|null>(null),gridTools=useRef<ToolSpots>({}),gridAnim=useRef<ReturnType<typeof animate>|null>(null);
   // «Más tarde» (and the hand's group controls) fade early: they have no place in the grid.
   const laterFade=useTransform(gridProgress,[0,.3],[1,0]);
   // Fully in: the pile underneath leaves the accessibility tree and the tab order.
@@ -404,12 +404,16 @@ export function ManoApp() {
   // Selected in the grid, kept while moving between modes; a decision on the cards ends it.
   const [gridSelection,setGridSelection]=useState<ReadonlySet<string>>(new Set());const gridOpenNow=useRef(false);gridOpenNow.current=gridOpen;
   const reducedMotionNow=()=>typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const cardTarget=():CardShot|undefined=>{const w=document.querySelector('.photo-card.front .photo-window');if(!w)return undefined;const img=w.querySelector('img'),video=w.querySelector('video');return {rect:w.getBoundingClientRect(),src:img?.currentSrc||img?.src||video?.poster||''};};
-  const gridUnmount=()=>{gridProgress.stop();gridProgress.set(0);gridFingers.set(null);gridDetent.current=false;setGridIn(false);setGridOpen(false);setGridAds(false);money.release('grid');};
-  const gridScrub=(value:number)=>{gridProgress.stop();gridProgress.set(value);if(value<1)setGridIn(false);const over=value>.5;if(over!==gridDetent.current){gridDetent.current=over;haptic('selection');}};
+  const cardTarget=():CardShot|undefined=>{const w=document.querySelector('.photo-card.front .photo-window');if(!w)return undefined;const img=w.querySelector('img'),video=w.querySelector('video'),card=w.closest('.photo-card'),cap=card?.querySelector('.polaroid-caption');
+    // The card's paper and caption go with the photo: the Polaroid travels as one (user, 2026-11-13).
+    return {rect:w.getBoundingClientRect(),src:img?.currentSrc||img?.src||video?.poster||'',frame:card?.getBoundingClientRect(),paper:card?getComputedStyle(card).backgroundColor:undefined,caption:cap?{html:cap.innerHTML,className:cap.className}:undefined};};
+  const gridUnmount=()=>{gridAnim.current?.stop();gridProgress.stop();gridProgress.set(0);gridFingers.set(null);gridDetent.current=false;setGridIn(false);setGridOpen(false);setGridAds(false);money.release('grid');};
+  const gridScrub=(value:number)=>{gridAnim.current?.stop();gridProgress.stop();gridProgress.set(value);if(value<1)setGridIn(false);const over=value>.5;if(over!==gridDetent.current){gridDetent.current=over;haptic('selection');}};
   const gridSettle=(to:0|1,velocity=0)=>{gridDetent.current=to===1;if(!to)setGridIn(false);
     if(reducedMotionNow()){gridProgress.set(to);if(to)setGridIn(true);else gridUnmount();return;}
-    void animate(gridProgress,to,{type:'spring',stiffness:260,damping:30,mass:1,velocity,restDelta:.001,restSpeed:.01}).then(()=>{if(!to&&gridOpenNow.current&&gridProgress.get()<.001)gridUnmount();if(to&&gridProgress.get()>.999)setGridIn(true);});};
+    const from=gridProgress.get();gridAnim.current?.stop();gridAnim.current=animate(from,to,{type:'spring',stiffness:260,damping:30,mass:1,velocity:Math.max(-4,Math.min(4,velocity)),restDelta:.001,restSpeed:.01,
+      onUpdate:value=>{const now=gridProgress.get(),next=to?Math.max(now,Math.min(1,value)):Math.min(now,Math.max(0,value));if(next!==now)gridProgress.set(next);}});
+    void gridAnim.current.then(()=>{if(!to&&gridOpenNow.current&&gridProgress.get()<.001)gridUnmount();if(to&&gridProgress.get()>.999)setGridIn(true);});};
   // Let go: the nearer end, unless the fingers were clearly moving one way.
   const gridRelease=()=>{const value=gridProgress.get(),speed=gridProgress.getVelocity();gridSettle(speed>.8?1:speed<-.8?0:value>.5?1:0,speed);};
   const gridExit=()=>{haptic('light');gridSettle(0);};
@@ -553,6 +557,8 @@ export function ManoApp() {
     await persistRecord(apply(recordNow.current),{context:{...context,handIds:nextLock.ids,selected:[],best:nextLock.best}},favorite,clearIntent);
     setLock(nextLock);setPinnedInspect(false);setInspect(null);setSelected([]);
     if(!gridOpenNow.current)setGridSelection(previous=>previous.size?new Set():previous);
+    // The photo opened with «Revisar en orden desde aquí» leads only until it is decided.
+    if(filterSetting.startId&&ids.includes(filterSetting.startId))setFilter(f=>({...f,startId:undefined}));
     if(action!=='unfavorite'){setStats(previous=>({...previous,[action]:previous[action]+ids.length}));setFlash({kind:action,key:Date.now()});}setDecidedHere(previous=>new Set([...previous,...ids]));money.review(ids);
     setSpoken(`${SPOKEN[action]()}${ids.length>1?`: ${formatNumber(ids.length)}`:''}`);
   };
@@ -780,7 +786,7 @@ export function ManoApp() {
   const currentColor=zone;
   const lastDecision=state.history.at(-1);
   const noticeRoom=useNoticeRoom();
-  const toggleFilters=()=>{const on=!!filterSetting.off;resumeContext.current=undefined;setFilter(f=>({...f,off:on?undefined:true,startAt:undefined}));setSelected([]);setLock(NO_HAND);haptic('selection');setNotice(on?t('Filtros activados'):t('Filtros desactivados\nTodo en orden cronológico'));};
+  const toggleFilters=()=>{const on=!!filterSetting.off;resumeContext.current=undefined;setFilter(f=>({...f,off:on?undefined:true,startAt:undefined,startId:undefined}));setSelected([]);setLock(NO_HAND);haptic('selection');setNotice(on?t('Filtros activados'):t('Filtros desactivados\nTodo en orden cronológico'));};
   const filtersButton=<FilterSwitch id="filter-trigger" on={!filterSetting.off} toggle={toggleFilters} edit={()=>{setSheetTab('filters');openFilters();}}/>;
   const brand=<h1 id="session-heading" tabIndex={-1} className="header-brand"><BrandStatus notice={notice}/></h1>;
   const visibleError=error;
@@ -861,7 +867,7 @@ export function ManoApp() {
     <p className="sr-only" role="status" aria-live="polite">{spoken}</p>
     {splash&&<Splash done={()=>setSplash(false)}/>}
     {gridOpen&&<Suspense fallback={null}><LibraryGrid assets={assets} state={state} filter={filterSetting} filtersOn={!filterSetting.off} cardFrom={gridCard.current} top={gridTop} selected={gridSelection} setSelected={setGridSelection} progress={gridProgress} scrub={gridScrub} release={gridRelease} cardTarget={cardTarget} fingers={gridFingers} tools={gridTools.current}
-      share={ids=>void shareMany(ids)} reviewFrom={asset=>{resumeContext.current=undefined;setFilter(f=>({...f,off:true,startAt:asset.date}));setSelected([]);setLock(NO_HAND);gridUnmount();setNotice(t('En orden desde esta foto'));}} current={hand[0]?.id} busy={busy} close={gridExit} decide={(action,ids)=>act(action,ids)} undo={()=>void undoLast()} notice={setNotice}
+      share={ids=>void shareMany(ids)} reviewFrom={asset=>{resumeContext.current=undefined;setFilter(f=>({...f,off:true,startAt:asset.date,startId:asset.id}));setSelected([]);setLock(NO_HAND);gridUnmount();setNotice(t('En orden desde esta foto'));}} current={hand[0]?.id} busy={busy} close={gridExit} decide={(action,ids)=>act(action,ids)} undo={()=>void undoLast()} notice={setNotice}
       album={onAndroid()?undefined:ids=>void openAlbums(ids)} albumDone={gridAlbumDone} enterFrom={gridEnter.current}
       openSet={(list,from,src)=>{gridPoster.current=src?{id:list[0]?.id,src}:null;rotating.current=false;heldVideo.current=null;inspectOrigin.current=from;resetPeek();setInspectSet(list.length>1?list:null);setInspectFromGrid(true);setPinnedInspect(true);setInspect(list[0]);haptic('rigid');}}
       open={(asset,from,src)=>{gridPoster.current=src?{id:asset.id,src}:null;rotating.current=false;heldVideo.current=null;inspectOrigin.current=from;resetPeek();setInspectFromGrid(true);setPinnedInspect(true);setInspect(asset);haptic('rigid');}}

@@ -1012,3 +1012,21 @@ Observaciones del usuario sobre `72f94ee` y respuesta:
   - Tarjeta 3: «Toca para cambiar. Separa los dedos para ampliar.», cómo cerrar juntando los dedos y una fila discreta «Ver todas» (juntar dos dedos abre la cuadrícula). Traducido a seis idiomas y a la variante Android.
 - Orden: confirmado sin cambios (con filtros, aleatorio; sin filtros, de las más antiguas).
 Validación: 146 unitarias, 14 baterías de navegador (anchored-flow añade «juntar los dedos cierra»; grid-flow sin flechas), runtime 28, builds PASS. Sondas táctiles CDP con capturas de cada fase.
+
+### CW-CL-082 — Cuadrícula sin saltos, densidad guiada por los dedos y Polaroid que viaja entera
+Fecha: 2026-11-13, America/Bogota
+Agente: Claude
+Observaciones del usuario sobre `6c117eb` y respuesta:
+- Fotos «en espejo» con salto al posicionarse:
+  - El muelle se pasaba del final y, al volver, el progreso bajaba de 1 y se lanzaba un segundo vuelo (la foto duplicada).
+  - El progreso ahora es monótono hacia su destino (velocidad acotada).
+  - La casilla aparece en el mismo fotograma en que se oculta el fantasma (sin fotograma vacío).
+- «Revisar en orden desde aquí»: `filter.startId` encabeza la pila con esa foto aunque esté sellada, en espera, favorita o marcada (nunca una borrada); deja de encabezar al decidirla. Prueba unitaria nueva.
+- Sellos, marca de «más tarde», check y duración más pequeños a 5 columnas (`cols-5`).
+- 3↔5: cada foto en pantalla viaja de su sitio en una densidad a su sitio en la otra al ritmo del pellizco, con la foto bajo los dedos fija; al soltar termina o deshace el trayecto (más del 40 % confirma) y entonces cambia la maqueta, idéntica a lo que ya se ve; las casillas nuevas aparecen con un fundido.
+- Cuadrícula → carta (y al revés): el fantasma lleva el papel de la Polaroid (márgenes que crecen o se encogen con el progreso) y su pie de foto; la carta real queda oculta mientras tanto.
+- Pila anclada: al encoger para cerrarla se encoge entera (Polaroids de atrás incluidas) y el fondo se aclara a la vez.
+- Introducción, tarjeta 3:
+  - Desbordaba en teléfonos reales (zonas seguras). Textos más cortos, columna de iconos más estrecha, filas más compactas y el contador libre de la barra de progreso.
+  - Medido: sin desbordamiento a 375×667, 390×760 y 430×860.
+Validación: 147 unitarias, 14 baterías de navegador, runtime 28, builds PASS. Sondas táctiles CDP (traza de aterrizaje sin fotograma vacío ni segundo vuelo).

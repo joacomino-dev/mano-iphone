@@ -139,7 +139,7 @@ function Row({ art, title, children, on }: { art: ReactNode; title: ReactNode; c
 const cards = () => [
   { key: 'meet', title: t('Lo que importa, se queda.'), text: t('Coqui te ayuda a ordenar tu carrete con decisiones rápidas. Tú eliges qué se queda.') },
   { key: 'how', title: t('Desliza para decidir.'), text: t('Cada dirección es una decisión. Al soltar, el sello la confirma.') },
-  { key: 'group', title: t('Toca para cambiar. Separa los dedos para ampliar.'), text: '' },
+  { key: 'group', title: t('Toca para cambiar. Separa para ampliar.'), text: '' },
   { key: 'privacy', title: t('Tus fotos no salen de tu iPhone.'), text: t('CocoWash necesita acceso a Fotos para mostrarte tu carrete. No sube ni comparte nada, y solo se borra lo que confirmes en Fotos.') },
 ];
 
@@ -211,7 +211,7 @@ export function Onboarding({ requestAccess, finish, granted = false }: { request
         {/* popLayout: the leaving copy steps out of the layout at once, so the photo
             above is already where it will stay (no drift into place). */}
         <AnimatePresence mode="popLayout" initial={false} custom={direction}>
-          <motion.section key={card.key} custom={direction}
+          <motion.section key={card.key} className={`is-${card.key}`} custom={direction}
             initial={reduced ? { opacity: 0 } : { opacity: 0, x: 24 * direction }} animate={{ opacity: 1, x: 0 }} exit={reduced ? { opacity: 0 } : { opacity: 0, x: -24 * direction }}
             transition={reduced ? { duration: .12 } : { type: 'spring', stiffness: 380, damping: 36 }}>
             <h1 ref={heading} tabIndex={-1}>{card.title}</h1>
@@ -223,12 +223,12 @@ export function Onboarding({ requestAccess, finish, granted = false }: { request
               <Row on={gesture === 'later'} art={<Stamp kind="later"/>} title={<>{t('Más tarde')} <small>{t('hacia abajo')} ↓</small></>}>{t('¿Dudas? Vuelve al final de la pila.')}</Row>
             </ul>}
             {card.key === 'group' && <ul className="ob-rows">
-              <Row on={phase === 'tap'} art={<HandTapIcon size={26} weight="bold"/>} title={t('Toca la foto')}>{t('En un grupo de parecidas, cada toque trae la siguiente.')}</Row>
+              <Row on={phase === 'tap'} art={<HandTapIcon size={26} weight="bold"/>} title={t('Toca la foto')}>{t('En un grupo, cada toque trae la siguiente.')}</Row>
               <Row on={phase !== 'tap'} art={<MagnifyingGlassPlusIcon size={26} weight="bold"/>} title={t('Ampliar')}>
                 <span className="ob-ways"><span className={phase === 'hold' ? 'is-on' : ''}><PushPinIcon size={14} weight="bold"/>{t('Mantén y arrastra hasta Anclar')}</span><span className={phase === 'pinch' ? 'is-on' : ''}><MagnifyingGlassPlusIcon size={14} weight="bold"/>{t('O separa dos dedos')}</span></span>
-                {t('Se abre en grande. Junta los dedos para cerrarla.')}</Row>
+                {t('Junta los dedos para cerrarla.')}</Row>
               {/* Subtle: the way into the grid, the opposite gesture. */}
-              <Row art={<SquaresFourIcon size={24} weight="bold"/>} title={t('Ver todas')}>{t('Junta dos dedos sobre la foto y verás todas en cuadrícula.')}</Row>
+              <Row art={<SquaresFourIcon size={24} weight="bold"/>} title={t('Ver todas en cuadrícula')}>{t('Junta dos dedos sobre la foto.')}</Row>
             </ul>}
           </motion.section>
         </AnimatePresence>
