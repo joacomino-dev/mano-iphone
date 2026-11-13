@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type PointerEvent } from 'react';
-import { animate, motion, useMotionValue, useReducedMotion, useSpring, useTransform, type MotionValue } from 'motion/react';
+import { animate, motion, useMotionValue, usePresenceData, useReducedMotion, useSpring, useTransform, type MotionValue } from 'motion/react';
 import { PushPinIcon, XIcon } from '@phosphor-icons/react';
 import { Library, thumbnail, inCloudError, type AssetMetadata } from './library';
 import { InlineVideo } from './InlineVideo';
@@ -18,6 +18,17 @@ type Box={x:number;y:number;width:number;height:number};
 // Critically damped: settles without overshoot (ζ≈1). Entry/exit stay continuous with the card.
 const settle={type:'spring',stiffness:320,damping:36,mass:1} as const;
 const follow={type:'spring',stiffness:900,damping:60,mass:.6} as const;
+/** An anchored set as a real stack of Polaroids (user, 2026-11-13): `behind` are the next
+ * photos, each in its own proportions, peeking out slightly turned; `was` says where each
+ * one sat in the stack before this photo came to the front (-1 front, 0/1 behind, absent
+ * = not shown), so the deck rotates instead of popping. */
+export type AnchoredStack={behind:Asset[];was:Record<string,number>};
+const slotPose=(k:number)=>k<=0?{rotate:-2.8,y:10,scale:.965}:{rotate:3.4,y:20,scale:.935};
+function StackPhoto({asset}:{asset:Asset}){
+ const [src,setSrc]=useState<string>();const policy=useSyncExternalStore(subscribePreviewPolicy,previewPolicyKey);
+ useEffect(()=>{const controller=new AbortController();thumbnail(asset,cardPixels(asset),false,false,controller.signal).then(value=>{if(!controller.signal.aborted)setSrc(value);}).catch(()=>{});return()=>controller.abort();},[asset.id,asset.modified,policy]);
+ return src?<img className="stack-photo" src={src} alt="" draggable={false}/>:<span className="stack-photo"/>;
+}
 
 /** Hold = isolate in place (a 3 % lift, no zoom jump); drag down to the single
  * dock to anchor; anchored = fit to screen with pinch/pan and controls. */
@@ -27,7 +38,7 @@ export type InspectVideo={request?:()=>void;state:VideoState;retry:()=>void;down
 /** `decide` (opened from the Fototeca, user 2026-11-12): dragging the photo away decides
  * it like a card on the pile — right keeps, left deletes, up favourites, down later —
  * instead of closing. `next`: a single tap rotates to the next anchored photo. */
-export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed,geek,close,pin,video,decide,next,polaroid}: {asset:Asset;src?:string;cloud?:boolean;pinned:boolean;origin?:InspectOrigin;peek:{x:MotionValue<number>;y:MotionValue<number>};anchor:MotionValue<number>;armed:boolean;geek:boolean;close:()=>void;pin:()=>void;video?:InspectVideo;decide?:(kind:StampKind)=>Promise<boolean>;next?:()=>void;polaroid?:{where?:string;when?:string;behind:number}}) {
+export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed,geek,close,pin,video,decide,next,polaroid}: {asset:Asset;src?:string;cloud?:boolean;pinned:boolean;origin?:InspectOrigin;peek:{x:MotionValue<number>;y:MotionValue<number>};anchor:MotionValue<number>;armed:boolean;geek:boolean;close:()=>void;pin:()=>void;video?:InspectVideo;decide?:(kind:StampKind)=>Promise<boolean>;next?:()=>void;polaroid?:{where?:string;when?:string;stack?:AnchoredStack}}) {
  const policy=useSyncExternalStore(subscribePreviewPolicy,previewPolicyKey);
  // An iCloud-only photo (no local preview under «Ahorrar iCloud») is not an
  // error: it says so, and anchoring downloads it (loadZoomPreview below).
@@ -45,17 +56,17 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
  // and the card's own iCloud indicator follows it here, with real progress.
  const [sharp,setSharp]=useState('');const download=useCloud(asset.kind==='video'?undefined:asset);
  useEffect(()=>{if(!pinned||asset.kind==='video')return;const controller=new AbortController();loadZoomPreview(asset,controller.signal).then(value=>{if(!controller.signal.aborted)setSharp(value);}).catch(()=>{});return()=>controller.abort();},[pinned,asset.id,asset.modified,policy]);
- const [space,setSpace]=useState<{target:Box;origin:Box;scale:number}|null>(null);
+ const [space,setSpace]=useState<{target:Box;origin:Box;scale:number;fit:(ratio:number)=>Box}|null>(null);
  const [meta,setMeta]=useState<AssetMetadata|null>(null);const [metaError,setMetaError]=useState('');const [zoom,setZoom]=useState(1);const [pan,setPan]=useState({x:0,y:0});
  const points=useRef(new Map<number,{x:number;y:number}>());const base=useRef({distance:0,zoom:1,x:0,y:0,panX:0,panY:0});
  // Measure in the overlay's own CSS pixels (the preview device frame may be scaled).
  useLayoutEffect(()=>{const element=outer.current;if(!element)return;const measure=()=>{
   const bounds=element.getBoundingClientRect(),k=bounds.width/Math.max(1,element.offsetWidth)||1,W=element.offsetWidth,H=element.offsetHeight,ratio=asset.width/Math.max(1,asset.height);
   const top=geek?64:polaroid?96:84,bottom=geek?96:polaroid?176:132,availH=(H-top-bottom)*(geek?.6:1),availW=W-(polaroid?48:24);
-  const width=Math.min(availW,availH*ratio),height=width/ratio;
-  const target={x:(W-width)/2,y:top+(availH-height)/2,width,height};
+  const fit=(r:number)=>{const width=Math.min(availW,availH*r),height=width/r;return {x:(W-width)/2,y:top+(availH-height)/2,width,height};};
+  const target=fit(ratio);
   const from=origin?{x:(origin.x-bounds.left)/k,y:(origin.y-bounds.top)/k,width:origin.width/k,height:origin.height/k}:{...target,x:target.x+target.width*.04,y:target.y+target.height*.04,width:target.width*.92,height:target.height*.92};
-  setSpace({target,origin:from,scale:k});};measure();const observer=new ResizeObserver(measure);observer.observe(element);return()=>observer.disconnect();},[asset.id,geek,!!polaroid,origin?.x,origin?.y]);
+  setSpace({target,origin:from,scale:k,fit});};measure();const observer=new ResizeObserver(measure);observer.observe(element);return()=>observer.disconnect();},[asset.id,geek,!!polaroid,origin?.x,origin?.y]);
  useEffect(()=>{if(!pinned)return;const prior=document.activeElement as HTMLElement|null;// preventScroll: focusing the still-animating frame made iOS scroll the web view a few
  // pixels, showing the page's cream background as a strip under the anchored view
  // (user report, 2026-11-08). The document never scrolls while anchored.
@@ -119,28 +130,35 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
  const scale=useRef(1);scale.current=space?.scale??1;
  const fingerX=useTransform(()=>peek.x.get()/scale.current),fingerY=useTransform(()=>peek.y.get()/scale.current);
  const smoothX=useSpring(fingerX,follow),smoothY=useSpring(fingerY,follow);
+ // Leaving because the set moved on: gone at once, every part (the next view shows the stack moving).
+ const rotatingOut=usePresenceData()===true,gone={opacity:0,transition:{duration:0}};
+ // Read once, at mount: where this photo sat in the stack before it came to the front.
+ const stack=polaroid?.stack,[arrivedFrom]=useState(()=>stack?.was[asset.id]),chained=arrivedFrom!==undefined&&arrivedFrom>=0;
  const atOrigin=space?toBox(space.origin):undefined;
  const pose=!space?undefined:pinned?{x:0,y:0,scale:1}:toBox(space.origin,reduced?1:1.03);
- return <div ref={outer} className={`inspection ${pinned?'is-pinned':''} ${geek?'is-geek':''}`} role={pinned?'dialog':undefined} aria-modal={pinned?true:undefined} aria-label={t('Inspeccionar recuerdo')}>
-  <motion.div className="inspection-shade" onPointerDown={shadeDown} onPointerMove={move} onPointerUp={shadeUp} onPointerCancel={shadeCancel} initial={{opacity:0}} animate={{opacity:pinned?.94:.84}} exit={{opacity:0}} transition={{duration:reduced?0:.2,ease:[.2,.8,.2,1]}}/>
-  {polaroid&&space&&pinned&&Array.from({length:Math.min(2,polaroid.behind)},(_,k)=><motion.div key={`back-${k}`} className="inspection-mount is-back" aria-hidden="true" initial={reduced?false:{opacity:0}} animate={{opacity:1}} transition={{duration:.2,delay:.08}}
-   style={{left:`calc(${space.target.x}px - var(--cw-card-side))`,top:`calc(${space.target.y}px - var(--cw-card-side))`,width:`calc(${space.target.width}px + 2 * var(--cw-card-side))`,height:`calc(${space.target.height}px + var(--cw-card-side) + var(--cw-caption))`,rotate:k?3.2:-2.6,y:k?8:4,zIndex:0}}/>)}
-  {space&&<motion.div className="inspection-follow" style={{x:reduced?fingerX:smoothX,y:reduced?fingerY:smoothY}}><motion.div className="inspection-dismiss" style={{x:dismissX,y:dismissY,rotate:dismissTurn,opacity:decide?1:dismissFade}}>{polaroid&&pinned&&<motion.div className="inspection-mount" aria-hidden="true" initial={reduced?false:{opacity:0}} animate={{opacity:1}} transition={{duration:.22,delay:.1}} style={{left:`calc(${space.target.x}px - var(--cw-card-side))`,top:`calc(${space.target.y}px - var(--cw-card-side))`,width:`calc(${space.target.width}px + 2 * var(--cw-card-side))`,height:`calc(${space.target.height}px + var(--cw-card-side) + var(--cw-caption))`}}><span className="polaroid-caption mount-caption">{polaroid.where&&<span className="caption-where">{polaroid.where}</span>}{polaroid.when&&<span className="caption-when">{polaroid.when}</span>}</span></motion.div>}<motion.div ref={frame} className="inspection-photo" tabIndex={pinned?0:-1} style={{left:space.target.x,top:space.target.y,width:space.target.width,height:space.target.height,'--inspect-ratio':asset.width/asset.height} as CSSProperties}
-   initial={reduced?false:atOrigin} animate={pose} exit={reduced?{opacity:0,transition:{duration:0}}:{...atOrigin,transition:settle}}
+ return <motion.div ref={outer} className={`inspection ${pinned?'is-pinned':''} ${geek?'is-geek':''}`} role={pinned?'dialog':undefined} aria-modal={pinned?true:undefined} aria-label={t('Inspeccionar recuerdo')}
+  variants={{gone:(rotating?:boolean)=>rotating?{opacity:0,pointerEvents:'none',transition:{duration:0}}:{}}} exit="gone">
+  <motion.div className="inspection-shade" onPointerDown={shadeDown} onPointerMove={move} onPointerUp={shadeUp} onPointerCancel={shadeCancel} initial={chained?false:{opacity:0}} animate={{opacity:pinned?.94:.84}} exit={rotatingOut?gone:{opacity:0}} transition={{duration:reduced?0:.2,ease:[.2,.8,.2,1]}}/>
+  {polaroid&&space&&pinned&&stack&&stack.behind.slice(0,2).map((b,k)=>[b,k] as const).reverse().map(([b,k])=>{const box=space.fit(b.width/Math.max(1,b.height)),was=stack.was[b.id];
+   const from=was===undefined||was>1?{...slotPose(k),opacity:0}:was<0?{rotate:0,y:0,scale:1,opacity:1}:{...slotPose(was),opacity:1};
+   return <motion.div key={b.id} className="inspection-mount is-back" aria-hidden="true" initial={reduced?false:from} animate={{...slotPose(k),opacity:1}} transition={settle}
+    style={{left:`calc(${box.x}px - var(--cw-card-side))`,top:`calc(${box.y}px - var(--cw-card-side))`,width:`calc(${box.width}px + 2 * var(--cw-card-side))`,height:`calc(${box.height}px + var(--cw-card-side) + var(--cw-caption))`,zIndex:0}}><StackPhoto asset={b}/></motion.div>;})}
+  {space&&<motion.div className="inspection-follow" style={{x:reduced?fingerX:smoothX,y:reduced?fingerY:smoothY}}><motion.div className="inspection-arrive" initial={chained&&!reduced?{...slotPose(arrivedFrom),opacity:arrivedFrom>1?0:1}:false} animate={{rotate:0,y:0,scale:1,opacity:1}} transition={settle}><motion.div className="inspection-dismiss" style={{x:dismissX,y:dismissY,rotate:dismissTurn,opacity:decide?1:dismissFade}}>{polaroid&&pinned&&<motion.div className="inspection-mount" aria-hidden="true" initial={reduced||chained?false:{opacity:0}} animate={{opacity:1}} transition={{duration:.22,delay:.1}} style={{left:`calc(${space.target.x}px - var(--cw-card-side))`,top:`calc(${space.target.y}px - var(--cw-card-side))`,width:`calc(${space.target.width}px + 2 * var(--cw-card-side))`,height:`calc(${space.target.height}px + var(--cw-card-side) + var(--cw-caption))`}}><span className="polaroid-caption mount-caption">{polaroid.where&&<span className="caption-where">{polaroid.where}</span>}{polaroid.when&&<span className="caption-when">{polaroid.when}</span>}</span></motion.div>}<motion.div ref={frame} className="inspection-photo" tabIndex={pinned?0:-1} style={{left:space.target.x,top:space.target.y,width:space.target.width,height:space.target.height,'--inspect-ratio':asset.width/asset.height} as CSSProperties}
+   initial={reduced||chained?false:atOrigin} animate={pose} exit={reduced||rotatingOut?gone:{...atOrigin,transition:settle}}
    transition={reduced?{duration:0}:settle} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={e=>{resetDismiss();up(e);}} onClick={e=>e.stopPropagation()}>
    {video?<div className="inspection-media"><InlineVideo asset={asset} state={video.state} request={video.request} mediaStyle={{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}} mode={pinned?'full':'peek'} sound={video.sound} onSound={video.onSound} retry={video.retry} download={video.download} fullscreen={video.fullscreen} openSettings={video.openSettings}>{freeze?<canvas ref={still} className="inspection-still"/>:(poster||sharp||download?.src)?<img src={pinned&&sharp?sharp:poster||download?.src} alt="" draggable={false} style={{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}}/>:null}</InlineVideo></div>
     :poster||(pinned&&sharp)||download?.src?<img src={pinned&&sharp?sharp:poster||download?.src} alt={t('Recuerdo ampliado')} draggable={false} style={{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}}/>:<span>{posterCloud?(pinned?'':t('En iCloud. Ancla para descargarla.')):posterError?t('No se pudo cargar la imagen.'):''}{posterError&&pinned&&<button onClick={()=>setPosterRetry(v=>v+1)}>{t('Reintentar')}</button>}</span>}
    {!sharp&&(cloud||download?.status==='downloading')&&<CloudBadge className="cloud-download" state={download?.status==='ready'?undefined:download} lite={cloud} onRetry={()=>void cloudPreviews.retry(asset,'zoom').then(setSharp).catch(()=>{})}/>}
    {swipe&&<span className={`inspection-swipe is-${swipe}`} aria-hidden="true"><Stamp kind={swipe} word/></span>}
-  </motion.div></motion.div></motion.div>}
+  </motion.div></motion.div></motion.div></motion.div>}
   <motion.div layout={!reduced} className={`inspection-dock ${pinned?'is-pinned':''} ${armed?'is-armed':''}`} data-inspection-hook style={{'--anchor':anchor} as CSSProperties}
-   initial={reduced?false:{opacity:0,y:16}} animate={{opacity:1,y:0}} exit={reduced?{opacity:0,transition:{duration:0}}:{opacity:0,y:16}} transition={reduced?{duration:0}:{type:'spring',stiffness:420,damping:36}}>
+   initial={reduced?false:{opacity:0,y:16}} animate={{opacity:1,y:0}} exit={reduced||rotatingOut?gone:{opacity:0,y:16}} transition={reduced?{duration:0}:{type:'spring',stiffness:420,damping:36}}>
    {pinned?<>
     {/* Only «Cerrar» (user, 2026-11-08: «Anclada» was redundant). Tapping outside
         the photo or dragging it away also closes; zoom is a pinch. */}
     <button className="inspection-close" onClick={close}><XIcon size={18} weight="bold"/>{t('Cerrar')}</button>
    </>:<button className="dock-target" tabIndex={-1} onClick={pin}><PushPinIcon weight={armed?'fill':'regular'} size={20}/><span>{armed?t('Suelta para anclar'):t('Arrastra aquí para anclar')}</span></button>}
   </motion.div>
-  {geek&&pinned&&space&&<motion.aside className="geek-panel" style={{top:space.target.y+space.target.height+12}} aria-label={t('Datos del archivo')} exit={{opacity:0,transition:{duration:.12}}} initial={reduced?false:{opacity:0,y:12}} animate={{opacity:1,y:0}} transition={{duration:.2}}><strong>{t('Modo Geek')}</strong>{meta?<dl>{values.map(([key,value])=><div key={key}><dt>{key}</dt><dd>{value}</dd></div>)}</dl>:<p role="status">{t('Consultando datos locales…')}</p>}{metaError&&<p>{metaError}</p>}{meta&&<small>{t('Solo datos disponibles localmente. Sin descargar originales.')}</small>}</motion.aside>}
- </div>;
+  {geek&&pinned&&space&&<motion.aside className="geek-panel" style={{top:space.target.y+space.target.height+12}} aria-label={t('Datos del archivo')} exit={rotatingOut?gone:{opacity:0,transition:{duration:.12}}} initial={reduced?false:{opacity:0,y:12}} animate={{opacity:1,y:0}} transition={{duration:.2}}><strong>{t('Modo Geek')}</strong>{meta?<dl>{values.map(([key,value])=><div key={key}><dt>{key}</dt><dd>{value}</dd></div>)}</dl>:<p role="status">{t('Consultando datos locales…')}</p>}{metaError&&<p>{metaError}</p>}{meta&&<small>{t('Solo datos disponibles localmente. Sin descargar originales.')}</small>}</motion.aside>}
+ </motion.div>;
 }

@@ -973,3 +973,22 @@ Agente: Claude
 - Capa web sin fuga: `long-use-profile` con 400 decisiones deja heap 41,3→43,2 MB tras GC (crece el registro guardado), nodos 398 y listeners 202 estables.
 Corrección (`ee4bcf4`, solo el muestreador): antes de cada muestra, GC + `Memory.simulatePressureNotification` crítica vía DevTools del WebView (repetible), y heap JS retenido por ronda (`jsHeapUsedKiB`). Presupuestos sin cambios.
 Resultado: Android 43486731821 tres intentos PASS seguidos; renderer plano (82–91 MB), pendiente total 295/391/180 KiB/ronda; heap JS 5,8→6,7 MB en 10 rondas, aplanándose. La app es la misma de `f456868`: el APK entregado vale.
+
+### CW-CL-080 — Cuadrícula guiada por los dedos y pila anclada de Polaroids reales
+Fecha: 2026-11-13, America/Bogota
+Agente: Claude
+Pedido del usuario sobre 0.9.9.3:
+- Entrar a la cuadrícula solo pellizcando. Fuera el botón de modo; la barra de progreso ocupa la fila.
+- En la cuadrícula, una ✕ roja en ese sitio para volver; crece con el pellizco.
+- Pellizco progresivo y reversible: un valor 0–1 sigue a los dedos y pinta papel, casillas, dock y la foto de trabajo (un fantasma que cambia su caja de carta a cuadrado, sin estirarse).
+  - Al soltar, un muelle (320/36, el mismo del Inspector) va al extremo cercano o al que marca la velocidad. Detente háptico al cruzar la mitad.
+  - En 3 columnas, separar los dedos agranda la foto en revisión hasta la carta.
+  - La densidad 3↔5 también sigue a los dedos (escala del lienzo) y termina con FLIP de 320 ms.
+  - La pila de debajo queda inert al terminar de entrar.
+- Filtros: un botón de 32 px; activo, turquesa con contorno y base de tinta y ✓ blanca; inactivo, aro punteado y ✕ suave; «pop» al cambiar.
+- Pila anclada:
+  - Sin la sombra de la foto sobre su papel.
+  - Detrás, Polaroids reales con su foto y su proporción (la vertical asoma tras la horizontal).
+  - Al rotar o decidir, la siguiente sube desde su sitio y el resto se recoloca con el mismo muelle; la vista saliente desaparece al instante (`usePresenceData`).
+- Skills: ninguna instalada ni del catálogo cubre transiciones guiadas por gestos en web; se ofrecieron «Skills For Real React Engineers» y «Design».
+Validación: 146 unitarias, 14 baterías de navegador (grid-flow: pellizco que vuelve, ✕ roja, sin botón de modo; 3 de 3 seguidas), runtime 28, builds PASS. Sondas táctiles CDP con capturas intermedias (p≈0,25/0,5/0,75 y vuelta).

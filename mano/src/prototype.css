@@ -1186,17 +1186,22 @@ input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;u
 .inline-media.is-live .media-play{bottom:var(--cw-ctl-inset);left:var(--cw-ctl-edge);z-index:3}
 /* «Fototeca» (user, 2026-11-12): the library grid over the pile. Cells are plain
    images on one transformed layer; no shadows or filters, so scrolling stays cheap. */
-.grid-open{position:relative;flex:none;display:grid;place-items:center;width:34px;height:28px;margin-inline-end:-2px;padding:0;border:0;border-radius:var(--cw-radius-pill);background:var(--cw-paper-light);box-shadow:inset 0 0 0 1.5px var(--cw-line-strong);color:var(--cw-ink);-webkit-tap-highlight-color:transparent;transition:transform 120ms ease-out}
-/* 44 pt target around the small chip (the progress row stays 28 px tall). */
-.grid-open::after{content:'';position:absolute;inset:-8px -5px}
-.grid-open:active{transform:scale(.92)}
 .library-grid{position:fixed;left:0;right:0;bottom:0;z-index:70;display:flex;flex-direction:column;color:var(--cw-ink);padding:0 calc(env(safe-area-inset-right) + var(--cw-gutter)) 0 calc(env(safe-area-inset-left) + var(--cw-gutter))}
-/* The paper behind the grid fades in and out on its own layer, so the pile underneath
-   dissolves instead of popping; the working photo flies above it. */
-.library-grid::before{content:'';position:absolute;inset:0;z-index:-1;background:var(--cw-paper-base,var(--cw-bg));animation:cw-fade 220ms cubic-bezier(.2,.8,.2,1) both}
-.library-grid.is-leaving::before{animation:cw-fade-out 260ms cubic-bezier(.4,0,.2,1) both}
-.library-grid .grid-body{animation:cw-fade 220ms cubic-bezier(.2,.8,.2,1) both}
-.library-grid[aria-busy=true]{display:grid;place-items:center}
+/* Card ↔ grid follows the fingers (user, 2026-11-13): the paper, the tiles, the dock and
+   the working photo (.grid-ghost) are painted from one progress value (LibraryGrid paint). */
+.grid-paper{position:absolute;inset:0;z-index:-1;background:var(--cw-paper-base,var(--cw-bg));pointer-events:none}
+.grid-ghost{position:absolute;left:0;top:0;z-index:4;display:none;overflow:hidden;background:var(--cw-paper-dim);pointer-events:none;will-change:transform,width,height;box-shadow:0 10px 24px rgba(8,32,33,.18)}
+.grid-ghost img{display:block;width:100%;height:100%;object-fit:cover}
+.grid-scroller{will-change:transform,opacity}
+.library-grid.is-flying .grid-dock,.library-grid.is-flying .grid-selection,.library-grid.is-flying .grid-review-from{pointer-events:none}
+/* While the grid is in, the pile's photo travels as the ghost and its bar as the dock's. */
+.session-content.is-gridding .photo-card.front .photo-window,.session-content.is-gridding>.decision-bar{visibility:hidden}
+/* The way back, only in the grid: a red ✕ where the mode button was; the progress bar
+   makes room for it as it grows in. */
+.grid-exit-room{flex:none;display:flex;align-items:center;margin-inline-end:-10px;overflow:visible}
+.grid-exit{position:relative;flex:none;display:grid;place-items:center;width:28px;height:28px;padding:0;border:0;border-radius:50%;background:var(--cw-action-danger);color:var(--cw-on-action-danger);box-shadow:inset 0 0 0 1.75px var(--cw-outline),0 2px 0 var(--cw-outline);-webkit-tap-highlight-color:transparent}
+.grid-exit::after{content:"";position:absolute;inset:-8px}
+.mano-app .grid-exit:not(:disabled):active{transform:translateY(2px);box-shadow:inset 0 0 0 1.75px var(--cw-outline),0 0 0 var(--cw-outline)}
 .grid-select{justify-self:end}
 .grid-scroller{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y}
 .grid-canvas{position:relative;contain:strict;width:100%}
@@ -1230,14 +1235,13 @@ input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;u
    floating dock; the pile's decision bar shrinks into it between Deshacer and Álbum. */
 .grid-body{position:relative;flex:1;min-height:0;margin-top:var(--cw-space-3);border-radius:var(--cw-radius-md) var(--cw-radius-md) 0 0;overflow:hidden}
 .grid-dock{position:absolute;left:0;right:0;bottom:0;z-index:5;display:grid;grid-template-columns:52px 1fr 52px;align-items:end;gap:6px;
-  padding:0 0 calc(env(safe-area-inset-bottom) + var(--cw-space-2));box-sizing:content-box;
+  padding:0 0 calc(env(safe-area-inset-bottom) + var(--cw-space-2));box-sizing:content-box}
+.grid-dock-shade{position:absolute;inset:0;z-index:-1;pointer-events:none;
   background:linear-gradient(to bottom,color-mix(in srgb,var(--cw-bg) 0%,transparent) 0,color-mix(in srgb,var(--cw-bg) 92%,transparent) 22px,var(--cw-bg) 100%)}
-.grid-dock-side{justify-self:center;display:grid;place-items:center;width:46px;height:46px;margin-bottom:2px;padding:0;border:0;border-radius:50%;background:var(--cw-paper-light);box-shadow:inset 0 0 0 1.5px var(--cw-line-strong);color:var(--cw-ink);-webkit-tap-highlight-color:transparent;transition:opacity 220ms var(--cw-ease) 120ms,transform 220ms var(--cw-ease) 120ms}
+.grid-dock-side{justify-self:center;display:grid;place-items:center;width:46px;height:46px;margin-bottom:2px;padding:0;border:0;border-radius:50%;background:var(--cw-paper-light);box-shadow:inset 0 0 0 1.5px var(--cw-line-strong);color:var(--cw-ink);-webkit-tap-highlight-color:transparent}
 .grid-dock-side:disabled{opacity:.4}
 .grid-dock-bar{position:relative;justify-self:center}
-.grid-dock-scale{position:absolute;left:50%;bottom:0;transform-origin:center bottom}
-.library-grid.is-entered .grid-dock-scale{transition:transform 420ms cubic-bezier(.2,.8,.2,1)}
-.library-grid:not(.is-entered) .grid-dock-side{opacity:0;transform:translateY(10px)}
+.grid-dock-scale{position:absolute;left:50%;bottom:0;transform-origin:center bottom;will-change:transform}
 .grid-selection{position:absolute;left:0;right:0;margin-inline:auto;width:fit-content;z-index:6;display:flex;align-items:center;gap:8px;padding:4px 4px 4px 6px;border-radius:var(--cw-radius-pill);background:var(--cw-teal-900,#122D2E);color:var(--cw-paper-light);box-shadow:0 6px 18px rgba(8,32,33,.28);font:600 14px/1 var(--cw-font);white-space:nowrap;animation:cw-rise 180ms var(--cw-ease) both}
 .grid-selection button{display:inline-flex;align-items:center;gap:6px;min-height:36px;border:0;border-radius:var(--cw-radius-pill);-webkit-tap-highlight-color:transparent}
 .grid-selection-clear{width:36px;justify-content:center;padding:0;background:rgba(250,246,238,.14);color:inherit}
@@ -1270,10 +1274,6 @@ input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;u
 .filter-switch{justify-self:start;display:inline-flex;align-items:stretch;padding:0;gap:0;overflow:hidden}
 .grid-selection-share{width:36px;justify-content:center;padding:0;background:rgba(250,246,238,.14);color:inherit}
 .grid-review-from{position:absolute;left:0;right:0;margin-inline:auto;width:fit-content;z-index:6;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 14px;border:0;border-radius:var(--cw-radius-pill);background:var(--cw-paper-light);color:var(--cw-ink);box-shadow:inset 0 0 0 1.5px var(--cw-line-strong),0 4px 12px rgba(8,32,33,.16);font:600 14px/1 var(--cw-font);animation:cw-rise 180ms var(--cw-ease) both;-webkit-tap-highlight-color:transparent}
-/* Leaving: everything fades to the pile underneath except the working photo, which flies back to its card. */
-.library-grid.is-leaving{pointer-events:none}
-.library-grid.is-leaving :is(.grid-header,.grid-progress,.grid-dock,.grid-selection,.grid-review-from,.grid-ad,.grid-tile:not(.is-flying)){animation:cw-fade-out 240ms cubic-bezier(.4,0,.2,1) both}
-.library-grid.is-leaving .grid-dock-scale{transition:transform 300ms cubic-bezier(.4,0,.2,1)}
 @keyframes cw-fade-out{to{opacity:0}}
 .grid-tile{transform-origin:0 0}
 /* «Modo Polaroid» off (user, 2026-11-12): the photo alone, in the frame's room. */
@@ -1284,23 +1284,37 @@ input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;u
 .mini-polaroid.is-plain img{border-radius:inherit}
 /* Anchored from the Fototeca (user, 2026-11-12): a stack of Polaroids — the top one's
    paper frame moves with the photo, the next ones peek out behind, slightly turned. */
-.inspection-mount~.inspection-photo{border-radius:1px}
+.inspection-mount~.inspection-photo{border-radius:1px;box-shadow:none}
+/* The photo lies on its paper: the shadow belongs to the Polaroid, not over it (user, 2026-11-13). */
+.inspection-arrive{position:absolute;inset:0;transform-origin:50% 50%;pointer-events:none}
+/* The rest of the set: real Polaroids with their own photos, in their own proportions. */
+.inspection-mount.is-back{background:var(--cw-paper-light);box-shadow:var(--cw-shadow-card-back),0 0 0 1px rgba(59,30,16,.06);transform-origin:50% 60%}
+.inspection-mount.is-back .stack-photo{position:absolute;left:var(--cw-card-side);top:var(--cw-card-side);display:block;width:calc(100% - 2 * var(--cw-card-side));height:calc(100% - var(--cw-card-side) - var(--cw-caption));object-fit:cover;background:var(--cw-paper-dim);border-radius:1px}
 
 /* One notice style for every screen (user, 2026-11-13): centred, paper card, never in the header. */
 .center-notice-layer{position:fixed;inset:0;z-index:95;display:grid;place-items:center;pointer-events:none;padding:0 32px}
 .center-notice{max-width:280px;padding:14px 20px;border-radius:var(--cw-radius-lg,18px);background:var(--cw-paper-light);color:var(--cw-ink);box-shadow:inset 0 0 0 1.5px var(--cw-line),0 12px 32px rgba(8,32,33,.22);text-align:center}
 .center-notice>span{display:block;white-space:pre-line;font:600 1rem/1.3 var(--cw-font-brand,var(--cw-font));text-wrap:balance}
-.grid-open[aria-pressed=true]{background:var(--cw-action-primary);box-shadow:none;color:var(--cw-on-action-primary)}
 
 /* Filtros: one pill, the state in its icon (filled ✓ on, empty ✕ off). */
 .filter-switch button{display:grid;place-items:center;min-height:var(--cw-touch);padding:0;border:0;background:transparent;color:inherit;font:inherit;-webkit-tap-highlight-color:transparent}
-.filter-switch .filter-switch-toggle{padding:0 4px 0 10px}
-.filter-switch .filter-switch-edit{padding:0 14px 0 4px}
-.filter-switch .filter-switch-toggle svg{color:var(--cw-ink-faint);transition:color 180ms var(--cw-ease),transform 220ms cubic-bezier(.2,.8,.2,1)}
-.filter-switch.is-on .filter-switch-toggle svg{color:var(--cw-action-primary)}
+.filter-switch .filter-switch-toggle{position:relative;padding:0 3px 0 6px}
+.filter-switch .filter-switch-edit{padding:0 14px 0 5px}
+/* The knob (user, 2026-11-13: «ligeramente más grande… que dé la sensación de que está
+   haciendo algo»): on = turquoise, the decision bar's ink contour and base, a white ✓;
+   off = an empty dashed ring with a soft ✕. Each switch pops and sinks like a key. */
+.filter-switch-knob{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;box-sizing:border-box;
+  border:1.75px dashed var(--cw-line-strong);background:transparent;color:var(--cw-ink-faint);
+  transition:background-color 200ms var(--cw-ease),border-color 200ms var(--cw-ease),color 200ms var(--cw-ease),box-shadow 200ms var(--cw-ease),transform 120ms var(--cw-ease)}
+.filter-switch.is-on .filter-switch-knob{border:1.75px solid var(--cw-outline);background:var(--pal-turquoise,#1E7470);color:#fff;box-shadow:0 2px 0 var(--cw-outline)}
+.filter-switch-knob svg{color:inherit!important;animation:cw-knob-pop 320ms cubic-bezier(.3,1.5,.5,1) both}
+.filter-switch .filter-switch-toggle:active .filter-switch-knob{transform:translateY(2px) scale(.94);box-shadow:0 0 0 var(--cw-outline)}
+.filter-switch .filter-switch-edit{transition:color 200ms var(--cw-ease)}
+.filter-switch:not(.is-on) .filter-switch-edit{color:var(--cw-ink-soft)!important}
+@keyframes cw-knob-pop{from{transform:scale(.4) rotate(-40deg);opacity:0}}
+@media (prefers-reduced-motion:reduce){.filter-switch-knob svg{animation:none}}
 .filter-switch .filter-switch-toggle:active svg{transform:scale(.86)}
 
 /* Anchored stack = the pile's own Polaroid: same paper, padding, caption and shadows. */
 .inspection-mount{position:absolute;box-sizing:border-box;border-radius:var(--cw-radius-xs);background:var(--cw-paper-light);box-shadow:var(--cw-shadow-card);pointer-events:none}
-.inspection-mount.is-back{background:var(--cw-paper);box-shadow:var(--cw-shadow-card-back)}
 .inspection-mount .polaroid-caption{left:var(--cw-space-3);right:var(--cw-space-3)}

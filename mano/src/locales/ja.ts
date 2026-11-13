@@ -282,7 +282,6 @@ const table: Record<string, string> = {
   'Fotos ancladas': '固定した写真',
   'Anterior': '前へ',
   'Guardar {n} en un álbum': '{n}件をアルバムに保存',
-  'Ver la fototeca': 'ライブラリを見る',
   'Fototeca': 'ライブラリ',
   'Volver a las cartas': 'カードに戻る',
   '{n} seleccionadas': '{n}件を選択中',

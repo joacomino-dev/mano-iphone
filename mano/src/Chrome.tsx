@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { CheckCircleIcon, XCircleIcon } from '@phosphor-icons/react';
+import { CheckIcon, XIcon } from '@phosphor-icons/react';
 import { t } from './i18n';
 
 /** «Filtros», the same button on the pile and in the Fototeca (user, 2026-11-13): one
@@ -9,7 +9,7 @@ import { t } from './i18n';
 export function FilterSwitch({ on, toggle, edit, id }: { on: boolean; toggle: () => void; edit: () => void; id?: string }) {
   return <div className={`header-action filter-switch ${on ? 'is-on' : ''}`}>
     <button type="button" className="filter-switch-toggle" role="switch" aria-checked={on} aria-label={on ? t('Desactivar filtros') : t('Activar filtros')} onClick={toggle}>
-      {on ? <CheckCircleIcon size={22} weight="fill"/> : <XCircleIcon size={22} weight="regular"/>}
+      <span className="filter-switch-knob" aria-hidden="true">{on ? <CheckIcon key="on" size={18} weight="bold"/> : <XIcon key="off" size={15} weight="bold"/>}</span>
     </button>
     <button type="button" id={id} className="filter-switch-edit" onClick={edit}>{t('Filtros')}</button>
   </div>;

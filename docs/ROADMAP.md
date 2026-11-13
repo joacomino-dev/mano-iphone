@@ -268,6 +268,7 @@ textos con hablantes nativos, 1.0.1 para lo que salga.
 
 Una línea por intervención: fecha · agente · entrada · puntos cerrados/abiertos.
 
+- 2026-11-13 · Claude · CW-CL-080 · Cuadrícula solo por pellizco, progresiva y reversible (fantasma de la foto, dock pintado, muelle único), ✕ roja para volver, densidad guiada, Filtros 32 px turquesa, pila anclada de Polaroids reales sin sombra ni saltos. Abierto: prueba en iPhone/Android físico
 - 2026-11-13 · Claude · CW-CL-079 · R-73 Android: «fuga» = caché descartable del renderer que `send-trim-memory` no volvía a vaciar; purga por DevTools (ee4bcf4) → Android 43486731821 tres PASS seguidos. Abierto: `sample` iOS
 - 2026-11-13 · Claude · CW-CL-078 · 0.9.9.3 (f456868): Fototeca como modo bajo cabecera/progreso, pellizco hacia dentro, Filtros visto/X, avisos centrados, Polaroid ancladas igual que la pila, sellos sin ondas, selección entre modos, sin lupa. IPA 45/APK 5 entregados. Abierto: prueba en iPhone físico
 - 2026-11-12 · Claude · CW-CL-077 · Fototeca tercera pasada (91098a9): barra de decisiones encogida en un dock (Deshacer · Eliminar ❤ Conservar · Álbum), fotos hasta abajo, pellizco como único zoom, «Terminar» arriba, Filtros partido (embudo/editar, mismos filtros que la pila), tocar selecciona, mantener abre, «Anclar» con rotación. a5c56ff: deslizar la foto anclada decide; tocar rota. Navegador PASS; iPhone pendiente.

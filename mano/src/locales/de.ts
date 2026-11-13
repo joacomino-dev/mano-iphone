@@ -282,7 +282,6 @@ const table: Record<string, string> = {
   'Fotos ancladas': 'Angeheftete Fotos',
   'Anterior': 'Zurück',
   'Guardar {n} en un álbum': '{n} in einem Album sichern',
-  'Ver la fototeca': 'Mediathek ansehen',
   'Fototeca': 'Mediathek',
   'Volver a las cartas': 'Zurück zu den Karten',
   '{n} seleccionadas': '{n} ausgewählt',

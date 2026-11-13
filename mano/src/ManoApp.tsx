@@ -1,8 +1,8 @@
 import { FinishButton } from './FinishButton';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type PointerEvent, type MouseEvent } from 'react';
-import { AnimatePresence, motion, useReducedMotion, useMotionValue, animate, type MotionValue } from 'motion/react';
+import { AnimatePresence, motion, useReducedMotion, useMotionValue, useTransform, animate, type MotionValue } from 'motion/react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { ExportIcon, SquaresFourIcon, CardsThreeIcon, CaretLeftIcon, FolderOpenIcon, FolderSimplePlusIcon, CaretRightIcon, CaretDownIcon, ArrowCounterClockwiseIcon, ArrowUUpLeftIcon, StackIcon, TrashIcon, CheckIcon, XIcon, PlayIcon, SlidersHorizontalIcon, ArrowClockwiseIcon, ImageBrokenIcon, PlusIcon, PushPinIcon, InfoIcon, CloudIcon, SparkleIcon } from '@phosphor-icons/react';
+import { ExportIcon, CaretLeftIcon, FolderOpenIcon, FolderSimplePlusIcon, CaretRightIcon, CaretDownIcon, ArrowCounterClockwiseIcon, ArrowUUpLeftIcon, StackIcon, TrashIcon, CheckIcon, XIcon, PlayIcon, SlidersHorizontalIcon, ArrowClockwiseIcon, ImageBrokenIcon, PlusIcon, PushPinIcon, InfoIcon, CloudIcon, SparkleIcon } from '@phosphor-icons/react';
 import { BottomSheet, KeyboardInput, useKeyboard } from './mobile';
 import { ReviewGrid } from './ReviewGrid';
 import { decide, undo, restore, eligible, eligibleFrom, orderAssets, readState, reconcileLibrary, libraryFingerprint, filterScope, LEVELS, initialFilter, initialState, effectiveFilter, type Action, type Asset, type Decision, type Filter, type RecordState } from './domain';
@@ -17,6 +17,7 @@ import { InlineVideo, type VideoControl } from './InlineVideo';
 import { Filters } from './Filters';
 import type { InspectOrigin } from './Inspector';
 import { DisplaySettingsPanel, Onboarding, Inspector, LibraryGrid, preloadScreensWhenIdle } from './LazyScreens';
+import type { CardShot } from './LibraryGrid';
 import { readSession, SessionWriter, DEMO_SESSION_KEY, LIBRARY_SESSION_KEY, type ActiveSession } from './session';
 import { activeJournal, STORAGE_FAILURE, type NativeIntent } from './durableSession';
 import { readDisplay, saveDisplay, polaroidCaption, formatBytes, ONBOARDING_KEY, STAMP_WORDS_UNTIL, type DisplaySettings, type PhotoMeta } from './meta';
@@ -299,7 +300,7 @@ export function ManoApp() {
   const setNotice=useCallback((text:string)=>{if(!text){setNoticeState(null);return;}setNoticeState(previous=>previous?.text===text?{...previous}:{id:++noticeId.current,text});setSpoken(text.replace(/\n/g,' '));},[]); const [inspect,setInspect] = useState<Asset|null>(null);
   const [analyzing,setAnalyzing] = useState(false); const [progress,setProgress] = useState({done:0,total:0});
   const reduced = useReducedMotion(); const seed = useRef(saved?.seed??Math.floor(Math.random()*100000)); const [seedVersion,setSeedVersion]=useState(0);
-  const gesture = useRef<{x:number;y:number;t0:number;held:boolean;timer:ReturnType<typeof setTimeout>|null;id:string;review:boolean;element?:Element;asset?:Asset;pinch?:number;zone?:StampKind|'';followers:string[]}|null>(null);
+  const gesture = useRef<{x:number;y:number;t0:number;held:boolean;timer:ReturnType<typeof setTimeout>|null;id:string;review:boolean;element?:Element;asset?:Asset;pinch?:number;grid?:boolean;zone?:StampKind|'';followers:string[]}|null>(null);
   const pointers = useRef(new Map<number,{x:number;y:number}>());
   // Decision feedback without interruptions: a stamp over the stack and a
   // VoiceOver-only announcement (no visible notice after each swipe).
@@ -387,13 +388,30 @@ export function ManoApp() {
   const favView=filter.smart==='favorites';
   const [gridOpen,setGridOpen]=useState(false);const [gridAds,setGridAds]=useState(false);
   // The grid is a mode below the header and progress row (user, 2026-11-13): those never move.
-  const [gridTop,setGridTop]=useState(0);const gridClose=useRef<()=>void>(()=>{});
+  const [gridTop,setGridTop]=useState(0);
+  // Card ↔ grid follows the fingers (user, 2026-11-13): 0 is the card, 1 the grid. A pinch
+  // scrubs it both ways without lifting; letting go springs to the nearer end, carried by
+  // the fingers' speed. One spring for every way in and out.
+  const gridProgress=useMotionValue(0),gridDetent=useRef(false),gridCard=useRef<CardShot|undefined>(undefined);
+  // Fully in: the pile underneath leaves the accessibility tree and the tab order.
+  const [gridIn,setGridIn]=useState(false);
+  const handFade=useTransform(gridProgress,[0,.5],[1,0]),exitRoom=useTransform(gridProgress,[0,1],[0,44]),exitShow=useTransform(gridProgress,[.2,.75],[0,1]),exitScale=useTransform(gridProgress,[.2,.75],[.5,1]);
   // Selected in the grid, kept while moving between modes; a decision on the cards ends it.
   const [gridSelection,setGridSelection]=useState<ReadonlySet<string>>(new Set());const gridOpenNow=useRef(false);gridOpenNow.current=gridOpen;
+  const reducedMotionNow=()=>typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const cardTarget=():CardShot|undefined=>{const w=document.querySelector('.photo-card.front .photo-window');if(!w)return undefined;const img=w.querySelector('img'),video=w.querySelector('video');return {rect:w.getBoundingClientRect(),src:img?.currentSrc||img?.src||video?.poster||''};};
+  const gridUnmount=()=>{gridProgress.stop();gridProgress.set(0);gridDetent.current=false;setGridIn(false);setGridOpen(false);setGridAds(false);money.release('grid');};
+  const gridScrub=(value:number)=>{gridProgress.stop();gridProgress.set(value);if(value<1)setGridIn(false);const over=value>.5;if(over!==gridDetent.current){gridDetent.current=over;haptic('selection');}};
+  const gridSettle=(to:0|1,velocity=0)=>{gridDetent.current=to===1;if(!to)setGridIn(false);
+    if(reducedMotionNow()){gridProgress.set(to);if(to)setGridIn(true);else gridUnmount();return;}
+    void animate(gridProgress,to,{type:'spring',stiffness:320,damping:36,mass:1,velocity,restDelta:.001,restSpeed:.01}).then(()=>{if(!to&&gridOpenNow.current&&gridProgress.get()<.001)gridUnmount();if(to&&gridProgress.get()>.999)setGridIn(true);});};
+  // Let go: the nearer end, unless the fingers were clearly moving one way.
+  const gridRelease=()=>{const value=gridProgress.get(),speed=gridProgress.getVelocity();gridSettle(speed>.8?1:speed<-.8?0:value>.5?1:0,speed);};
+  const gridExit=()=>{haptic('light');gridSettle(0);};
   // The grid's selection can go to an album through the same sheet as the card in hand.
   const [albumIds,setAlbumIds]=useState<string[]|null>(null);const [gridAlbumDone,setGridAlbumDone]=useState(0);
   // Photos anchored together from the grid: shown large one at a time, rotated with ‹ › (user, 2026-11-12).
-  const [inspectSet,setInspectSet]=useState<Asset[]|null>(null);const gridEnter=useRef<DOMRect|undefined>(undefined);const gridCard=useRef<DOMRect|undefined>(undefined);
+  const [inspectSet,setInspectSet]=useState<Asset[]|null>(null);const gridEnter=useRef<DOMRect|undefined>(undefined);
   // Opened from the Fototeca: swiping the anchored photo decides it; a tap rotates the set.
   const [inspectFromGrid,setInspectFromGrid]=useState(false);
   // Stamp words help while the four gestures are new; then the stamp says it alone.
@@ -568,18 +586,18 @@ export function ManoApp() {
   const cycle=()=>{if(active&&hand.length>1){const refocus=document.activeElement?.classList.contains('photo-card');setLock(cycleHand(hand,best));if(refocus)requestAnimationFrame(()=>document.querySelector<HTMLElement>('.photo-card.front')?.focus({preventScroll:true}));}};
   const select=(id:string)=>setSelected(prev=>prev.includes(id)?prev.filter(x=>x!==id):[...prev,id]);
   const windowOf=(element:Element)=>(element.querySelector('.photo-window')??element).getBoundingClientRect();
-  const openPinned=(asset:Asset,element:Element)=>{heldVideo.current=element.querySelector('video');inspectOrigin.current=windowOf(element);resetPeek();setPinnedInspect(true);setInspect(asset);haptic('rigid');};
-  const closeInspect=()=>{setPinnedInspect(false);setInspect(null);setInspectSet(null);setInspectFromGrid(false);haptic('soft');};
+  const openPinned=(asset:Asset,element:Element)=>{rotating.current=false;heldVideo.current=element.querySelector('video');inspectOrigin.current=windowOf(element);resetPeek();setPinnedInspect(true);setInspect(asset);haptic('rigid');};
+  const closeInspect=()=>{rotating.current=false;setPinnedInspect(false);setInspect(null);setInspectSet(null);setInspectFromGrid(false);haptic('soft');};
   const decideAnchored=async(kind:Action):Promise<boolean>=>{
     const shown=inspect;if(!shown)return false;
     if(kind==='discard'&&state.favorites.includes(shown.id)){haptic('warning');setNotice(t('Las favoritas\nno se eliminan'));return false;}
     const list=inspectSet;if(!await act(kind,[shown.id]))return false;
     const rest=(list??[]).filter(a=>a.id!==shown.id);
-    if(rest.length){const i=Math.max(0,(list??[]).findIndex(a=>a.id===shown.id));inspectOrigin.current=undefined;resetPeek();setInspectSet(rest.length>1?rest:null);setInspectFromGrid(true);setPinnedInspect(true);setInspect(rest[Math.min(i,rest.length-1)]);}
+    if(rest.length){rotating.current=true;const i=Math.max(0,(list??[]).findIndex(a=>a.id===shown.id));inspectOrigin.current=undefined;resetPeek();setInspectSet(rest.length>1?rest:null);setInspectFromGrid(true);setPinnedInspect(true);rememberStack(rest[Math.min(i,rest.length-1)].id);setInspect(rest[Math.min(i,rest.length-1)]);}
     else{setInspectSet(null);setInspectFromGrid(false);setPinnedInspect(false);setInspect(null);}
     return true;
   };
-  const rotateSet=(step:number)=>{if(!inspectSet||!inspect)return;const i=inspectSet.findIndex(a=>a.id===inspect.id);const next=inspectSet[(i+step+inspectSet.length)%inspectSet.length];inspectOrigin.current=undefined;resetPeek();setInspect(next);haptic('selection');};
+  const rotateSet=(step:number)=>{if(!inspectSet||!inspect)return;rotating.current=true;const i=inspectSet.findIndex(a=>a.id===inspect.id);const next=inspectSet[(i+step+inspectSet.length)%inspectSet.length];rememberStack(next.id);inspectOrigin.current=undefined;resetPeek();setInspect(next);haptic('selection');};
   useAndroidBack(!!inspect,closeInspect);
   /** Proximity (0–1) to the single bottom dock; armed within 64 px after a
    * deliberate downward drag. Also checked on release, where the last move may
@@ -617,7 +635,11 @@ export function ManoApp() {
     g.timer=setTimeout(()=>{g.timer=null;hold(g);},HOLD_MS);gesture.current=g;};
   const move=(e:PointerEvent)=>{const g=gesture.current;if(!g)return;if(pointers.current.has(e.pointerId))pointers.current.set(e.pointerId,{x:e.clientX,y:e.clientY});
     // Pinch out: the anchored view. Pinch in — zooming out, as in Photos — opens the Fototeca (user, 2026-11-13).
-    if(g.pinch){const [a,b]=[...pointers.current.values()];const ratio=a&&b?Math.hypot(b.x-a.x,b.y-a.y)/g.pinch:1;if(ratio>1.25){const asset=hand.find(h=>h.id===g.id);gesture.current=null;if(asset)openPinned(asset,e.currentTarget);}else if(ratio<.78&&!gridOpen&&!deckAd){gesture.current=null;pointers.current.clear();(document.querySelector('[data-testid="open-grid"]') as HTMLButtonElement|null)?.click();}return;}
+    if(g.pinch){const [a,b]=[...pointers.current.values()];const ratio=a&&b?Math.hypot(b.x-a.x,b.y-a.y)/g.pinch:1;
+      if(!g.grid&&ratio>1.25){const asset=hand.find(h=>h.id===g.id);gesture.current=null;if(asset)openPinned(asset,e.currentTarget);return;}
+      // Fingers together: the grid comes in under them, step by step; apart again, the card returns.
+      if(!g.grid&&ratio<.97&&!gridOpenNow.current&&!deckAd&&assets.length){g.grid=true;void LibraryGrid.preload();setGridTop((document.querySelector('.archive-progress')?.getBoundingClientRect().bottom??0)+4);gridEnter.current=document.querySelector('.decision-bar')?.getBoundingClientRect();gridCard.current=cardTarget();gridProgress.set(0);setGridAds(money.grid());setGridOpen(true);}
+      if(g.grid)gridScrub(Math.max(0,Math.min(1,(1-ratio)/.45)));return;}
     const x=e.clientX-g.x,y=e.clientY-g.y;
     if(!g.held&&Math.hypot(x,y)>10&&g.timer){
       // The finger stayed within slop for the whole hold time: it is a hold, even
@@ -632,7 +654,7 @@ export function ManoApp() {
     }else if(g.review&&g.held){(g.element as HTMLElement).style.transform=`translateX(${Math.max(0,x)}px)`;}
     else if(!g.review&&!g.held){for(const id of g.followers){const o=offsets.current.get(id);o?.x.set(x);o?.y.set(y);}stampOpacity.set(Math.min(1,.4+Math.max(Math.abs(x),Math.abs(y))/120));
       const next=zoneOf(x,y);if(next!==(g.zone??'')){g.zone=next;setZone(next);if(next)haptic('selection');}}};
-  const end=(e:PointerEvent)=>{pointers.current.delete(e.pointerId);const g=gesture.current;if(!g)return;if(g.pinch){if(!pointers.current.size){gesture.current=null;}return;}if(g.timer)clearTimeout(g.timer);const x=e.clientX-g.x,y=e.clientY-g.y;
+  const end=(e:PointerEvent)=>{pointers.current.delete(e.pointerId);const g=gesture.current;if(!g)return;if(g.pinch){if(g.grid&&pointers.current.size<2){g.grid=false;gridRelease();}if(!pointers.current.size){gesture.current=null;}return;}if(g.timer)clearTimeout(g.timer);const x=e.clientX-g.x,y=e.clientY-g.y;
     if(g.held&&!g.review&&!hookHover.current)hookHover.current=anchorAt(e.clientX,e.clientY,y);
     // Only touch state that changed: a plain tap must not re-render the whole app.
     // Only touch state that changed: a plain tap must not re-render the whole app.
@@ -737,6 +759,14 @@ export function ManoApp() {
   const frontPlace=usePlace(active,!!active&&placeWanted(active));
   // Anchored from the Fototeca: a stack of Polaroids, each with its place and date.
   const anchoredPlace=usePlace(inspectFromGrid&&inspect?inspect:undefined,!!inspect&&inspectFromGrid&&inspect.hasLocation===true);
+  const stackOrder=inspect&&inspectSet&&inspectSet.length>1?(()=>{const i=Math.max(0,inspectSet.findIndex(a=>a.id===inspect.id));return [...inspectSet.slice(i),...inspectSet.slice(0,i)];})():[];
+  // Taken when the set moves on (Siguiente, Anterior, a decision): where each photo sat.
+  const stackFrom=useRef<{id:string;was:Record<string,number>}|null>(null);
+  const rememberStack=(nextId:string)=>{stackFrom.current={id:nextId,was:Object.fromEntries(stackOrder.map((a,k)=>[a.id,k-1]))};};
+  const stackWas=inspect&&stackFrom.current?.id===inspect.id?stackFrom.current.was:{};
+  // While the set rotates (or moves on after a decision) the outgoing view leaves at once:
+  // the incoming one already shows the whole stack moving (Inspector, AnchoredStack).
+  const rotating=useRef(false);
   const anchoredCaption=inspect&&inspectFromGrid?polaroidCaption(inspect,anchoredPlace,{...display.photo,location:true,date:true},locale):undefined;
   // Resolve the next places in the window ahead of time, one request at a time
   // behind the card on screen (native pacing and per-id cache unchanged).
@@ -759,12 +789,12 @@ export function ManoApp() {
   else if(!allowed)screen=<AccessScreen status={permission} request={()=>void requestAccess()} openSettings={openSettings}/>;
   else if(loadError)screen=<LoadErrorScreen message={loadError} retry={()=>{initialLibrary.current=null;loadLibrary();}}/>;
   else if(!session)screen=showDone&&sheet==='review'?<div className="session-content">{doneHeader}<main className="status-screen is-quiet"><Character pose="coqui-review" height={120} motion="still"/><p className="status-line">{t('Una última mirada antes de terminar.')}</p></main></div>:showDone?<div className="session-content">{doneHeader}<SessionDone stats={stats} pending={pending} pendingBytes={reviewBytes.bytes} pendingPartial={reviewBytes.partial} again={()=>{money.clear();setShowDone(false);setNotice('');}} review={()=>{money.clear();setError('');setSheet('review');}} monetization={money.available&&(money.placement==='finish'||money.awaiting==='finish')&&<div className="finish-monetization">{money.placement==='finish'?<AdSlot where="finish" money={money}/>:<AdRoom where="finish"/>}</div>}/></div>:<PreparingScreen cancel={()=>{cancelWarmup();setShowDone(true);}}/>;
-  else screen=<div className="session-content" inert={pinnedInspect}>
+  else screen=<div className={`session-content ${gridOpen?'is-gridding':''}`} inert={pinnedInspect}>
     {/* «Terminar» ends the round: the summary keeps pending discards and offers the review. */}
-    <header ref={noticeRoom} className="archive-header is-session">{filtersButton}{brand}<FinishButton pending={pending} busy={busy} announce={setSpoken} finish={()=>{if(gridOpen){setGridOpen(false);setGridAds(false);money.release('grid');}cancel();setError('');setSheet('review');haptic('light');}}/></header>
+    <header ref={noticeRoom} className="archive-header is-session">{filtersButton}{brand}<FinishButton pending={pending} busy={busy} announce={setSpoken} finish={()=>{if(gridOpen)gridUnmount();cancel();setError('');setSheet('review');haptic('light');}}/></header>
     {/* Second row: how far through the filtered pile (same calculation as before). */}
-    <div className="archive-progress">{testMode&&<button className="access-indicator test-mode" onClick={()=>{setSheetTab('settings');setSheet('filters');}}>{t('Modo de prueba')}</button>}{limited&&<button className="access-indicator" onClick={()=>void manageLimited()}><InfoIcon size={14} weight="bold"/>{t('Acceso limitado')}</button>}{assets.length>0&&<button type="button" className="grid-open" data-testid="open-grid" onClick={()=>{if(gridOpen){gridClose.current();return;}haptic('light');setGridTop(document.querySelector('.archive-progress')?.getBoundingClientRect().bottom??0);gridEnter.current=document.querySelector('.archive-session .decision-bar, .decision-bar')?.getBoundingClientRect();gridCard.current=document.querySelector('.photo-card.front .photo-window')?.getBoundingClientRect();setGridAds(money.grid());setGridOpen(true);}} aria-label={gridOpen?t('Volver a las cartas'):t('Ver la fototeca')} aria-pressed={gridOpen} disabled={deckAd}>{gridOpen?<CardsThreeIcon size={18} weight="bold"/>:<SquaresFourIcon size={18} weight="bold"/>}</button>}<PileProgress reviewed={scope.reviewed} total={scope.total} count={<><AnimatedNumber value={scope.reviewed}/><span className="pile-slash">/</span><AnimatedNumber value={scope.total} className="is-total"/></>}/></div>
-    <section ref={stage} className={`hand-space ${currentColor}`} aria-label={t('Pila de recuerdos')}>{alert}
+    <div className="archive-progress">{testMode&&<button className="access-indicator test-mode" onClick={()=>{setSheetTab('settings');setSheet('filters');}}>{t('Modo de prueba')}</button>}{limited&&<button className="access-indicator" onClick={()=>void manageLimited()}><InfoIcon size={14} weight="bold"/>{t('Acceso limitado')}</button>}{gridOpen&&<motion.span className="grid-exit-room" style={{width:exitRoom}}><motion.button type="button" className="grid-exit" data-testid="grid-exit" style={{opacity:exitShow,scale:exitScale}} onClick={gridExit} aria-label={t('Volver a las cartas')}><XIcon size={17} weight="bold"/></motion.button></motion.span>}<PileProgress reviewed={scope.reviewed} total={scope.total} count={<><AnimatedNumber value={scope.reviewed}/><span className="pile-slash">/</span><AnimatedNumber value={scope.total} className="is-total"/></>}/></div>
+    <motion.section ref={stage} style={{opacity:handFade}} inert={gridIn} className={`hand-space ${currentColor}`} aria-label={t('Pila de recuerdos')}>{alert}
       {deckAd?<motion.div key="deck-ad" className="ad-stage" initial={reduced?false:{opacity:0,y:16,scale:.96}} animate={{opacity:1,y:0,scale:1}} transition={{duration:.3,ease:[.2,.8,.2,1]}}><AdSlot where="deck" money={money}/></motion.div>:!connected?<div className="empty-state"><Character pose="coqui-wave" height={140} className="empty-character"/><h2>{t('Tu carrete, en tus manos.')}</h2><p>{t('Revisa, conserva y ordena tus recuerdos. Nada se borra sin tu confirmación.')}</p><button className="primary-empty" onClick={connect} disabled={loading}>{loading?t('Abriendo Fotos…'):t('Abrir mi biblioteca')}</button><small>{t('Todo se analiza en tu iPhone.')}</small></div>:!active?<div className="empty-state"><Character pose={scope.total?'coqui-calm':'coqui-wonder'} height={120} className="empty-character" motion="sway"/><h2>{favView&&!scope.total?t('Aún no hay favoritas.'):scope.total?t('Todo en su sitio.'):t('Nada con estos filtros.')}</h2><p>{favView&&!scope.total?t('Toca el corazón o desliza hacia arriba para guardar una.'):narrowed?t('Prueba con otros filtros o resetéalos.'):pending?t('Lo marcado para eliminar te espera al pulsar Terminar.'):scope.total?t('No quedan fotos pendientes con estos filtros.'):t('Prueba con otras fechas o con todo el contenido.')}</p><button className="primary-empty" onClick={()=>{setSheetTab('filters');setSheet('filters');}}>{t('Cambiar filtros')}</button>{narrowed&&<button className="secondary-empty" data-testid="reset-filters" onClick={resetFilters}><ArrowCounterClockwiseIcon size={18} weight="bold"/>{t('Resetear filtros')}</button>}{!demo&&<button className="text-button" onClick={connect}>{t('Actualizar biblioteca')}</button>}</div>:<div className="polaroid-stack" data-testid="photo-hand">
         <AnimatePresence>{bundleKey&&<motion.div className="bundle-arrival" key={bundleKey} initial={reduced?false:{opacity:0,scale:.94,y:-6}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{duration:.24,ease:[.2,.8,.2,1]}} role="status"><StackIcon size={15} weight="bold"/><span aria-hidden="true">{targetIds.length ? t('{n} de {total}',{n:targetIds.length,total:hand.length}) : tn('photos',hand.length)}</span><span className="sr-only">{targetIds.length ? t('{n} de {total} fotos seleccionadas',{n:targetIds.length,total:hand.length}) : tn('photos',hand.length)}</span></motion.div>}</AnimatePresence>
         {bundleKey&&!reduced&&<motion.div key={`flash-${bundleKey}`} className="bundle-flash" initial={{opacity:0}} animate={{opacity:[0,.14,0]}} transition={{duration:.5}}/>}
@@ -789,14 +819,14 @@ export function ManoApp() {
         {currentColor&&!(favView&&currentColor==='favorite')&&<motion.span className={`drag-stamp ${currentColor}`} style={{opacity:stampOpacity}}><Stamp kind={currentColor} word lettering={stampWords}/></motion.span>}
         {flash&&<DecisionStamp key={flash.key} kind={flash.kind} lettering={stampWords} reduced={!!reduced} done={()=>setFlash(f=>f?.key===flash.key?null:f)}/>}
       </div>}
-    </section>
-    <div className="bundle-controls" inert={deckAd}>{hand.length>1&&!deckAd?<div className="segmented"><button onClick={()=>{haptic('selection');setSelected(allPicked?[]:others);}}>{allPicked?t('Quitar selección'):best?t('Elegir las demás'):t('Elegir todas')}</button><button onClick={cycle} aria-label={t('Ver la siguiente foto del grupo')}><ArrowClockwiseIcon size={16}/>{t('Siguiente')}</button></div>:null}</div>
+    </motion.section>
+    <div className="bundle-controls" inert={deckAd||gridIn}>{hand.length>1&&!deckAd?<div className="segmented"><button onClick={()=>{haptic('selection');setSelected(allPicked?[]:others);}}>{allPicked?t('Quitar selección'):best?t('Elegir las demás'):t('Elegir todas')}</button><button onClick={cycle} aria-label={t('Ver la siguiente foto del grupo')}><ArrowClockwiseIcon size={16}/>{t('Siguiente')}</button></div>:null}</div>
     {/* Eliminar (←) · the heart, protagonist · Conservar (→): three buttons drawn
         as one set (DecisionBar). The piece on the side the card is dragged
         toward rises. In «Favoritas» the heart is on and takes items out. */}
     <DecisionBar count={targets.length} disabled={deckAd||!active||busy} favoriteOn={favView} armed={currentColor}
       onDiscard={()=>void act('discard')} onFavorite={()=>void act('favorite')} onKeep={()=>void act('keep')}/>
-    <footer className="archive-tools" inert={deckAd}><button onClick={undoLast} disabled={busy||!state.history.length} aria-label={state.history.length?t('Deshacer la última decisión'):t('Nada que deshacer')}><span className="tool-icon"><ArrowUUpLeftIcon size={24} className="flip-rtl"/></span><span className="tool-label">{t('Deshacer')}</span></button><button className="later" aria-label={targets.length>1?t('Dejar {n} para más tarde',{n:targets.length}):t('Dejar para más tarde')} disabled={!active||busy} onClick={()=>act('later')}><span className="tool-icon"><DecisionIcon kind="later" size={24}/></span><span className="tool-label">{t('Más tarde')}</span></button>{/* Android keeps albums as folders (moving the original): no «Álbum» there; the empty cell keeps «Más tarde» centred. */}{onAndroid()?<span aria-hidden="true"/>:<button id="album-trigger" onClick={()=>void openAlbums()} disabled={!active||busy}><span className="tool-icon"><FolderSimplePlusIcon size={24}/></span><span className="tool-label">{t('Álbum')}</span></button>}</footer>
+    <footer className="archive-tools" inert={deckAd||gridIn}><button onClick={undoLast} disabled={busy||!state.history.length} aria-label={state.history.length?t('Deshacer la última decisión'):t('Nada que deshacer')}><span className="tool-icon"><ArrowUUpLeftIcon size={24} className="flip-rtl"/></span><span className="tool-label">{t('Deshacer')}</span></button><button className="later" aria-label={targets.length>1?t('Dejar {n} para más tarde',{n:targets.length}):t('Dejar para más tarde')} disabled={!active||busy} onClick={()=>act('later')}><span className="tool-icon"><DecisionIcon kind="later" size={24}/></span><span className="tool-label">{t('Más tarde')}</span></button>{/* Android keeps albums as folders (moving the original): no «Álbum» there; the empty cell keeps «Más tarde» centred. */}{onAndroid()?<span aria-hidden="true"/>:<button id="album-trigger" onClick={()=>void openAlbums()} disabled={!active||busy}><span className="tool-icon"><FolderSimplePlusIcon size={24}/></span><span className="tool-label">{t('Álbum')}</span></button>}</footer>
     </div>;
   const libraryActions=<>
     <button className="sheet-action secondary" onClick={()=>void analyze(true)} disabled={analyzing}>{analyzing?<><CocoLoader size={22} progress={progress.total?progress.done/progress.total:undefined}/>{t('Buscando parecidas…')}</>:t('Buscar fotos parecidas')}</button>
@@ -825,15 +855,15 @@ export function ManoApp() {
     {screen}
     <p className="sr-only" role="status" aria-live="polite">{spoken}</p>
     {splash&&<Splash done={()=>setSplash(false)}/>}
-    {gridOpen&&<Suspense fallback={<div className="library-grid" aria-busy="true"><CocoLoader size={44}/></div>}><LibraryGrid assets={assets} state={state} filter={filterSetting} filtersOn={!filterSetting.off} cardFrom={gridCard.current} top={gridTop} selected={gridSelection} setSelected={setGridSelection} closeRef={gridClose}
-      share={ids=>void shareMany(ids)} reviewFrom={asset=>{resumeContext.current=undefined;setFilter(f=>({...f,off:true,startAt:asset.date}));setSelected([]);setLock(NO_HAND);setGridOpen(false);setGridAds(false);money.release('grid');setNotice(t('En orden desde esta foto'));}} current={hand[0]?.id} busy={busy} close={()=>{setGridOpen(false);setGridAds(false);money.release('grid');}} decide={(action,ids)=>act(action,ids)} undo={()=>void undoLast()} notice={setNotice}
+    {gridOpen&&<Suspense fallback={null}><LibraryGrid assets={assets} state={state} filter={filterSetting} filtersOn={!filterSetting.off} cardFrom={gridCard.current} top={gridTop} selected={gridSelection} setSelected={setGridSelection} progress={gridProgress} scrub={gridScrub} release={gridRelease} cardTarget={cardTarget}
+      share={ids=>void shareMany(ids)} reviewFrom={asset=>{resumeContext.current=undefined;setFilter(f=>({...f,off:true,startAt:asset.date}));setSelected([]);setLock(NO_HAND);gridUnmount();setNotice(t('En orden desde esta foto'));}} current={hand[0]?.id} busy={busy} close={gridExit} decide={(action,ids)=>act(action,ids)} undo={()=>void undoLast()} notice={setNotice}
       album={onAndroid()?undefined:ids=>void openAlbums(ids)} albumDone={gridAlbumDone} enterFrom={gridEnter.current}
-      openSet={(list,from)=>{heldVideo.current=null;inspectOrigin.current=from;resetPeek();setInspectSet(list.length>1?list:null);setInspectFromGrid(true);setPinnedInspect(true);setInspect(list[0]);haptic('rigid');}}
-      open={(asset,from)=>{heldVideo.current=null;inspectOrigin.current=from;resetPeek();setInspectFromGrid(true);setPinnedInspect(true);setInspect(asset);haptic('rigid');}}
+      openSet={(list,from)=>{rotating.current=false;heldVideo.current=null;inspectOrigin.current=from;resetPeek();setInspectSet(list.length>1?list:null);setInspectFromGrid(true);setPinnedInspect(true);setInspect(list[0]);haptic('rigid');}}
+      open={(asset,from)=>{rotating.current=false;heldVideo.current=null;inspectOrigin.current=from;resetPeek();setInspectFromGrid(true);setPinnedInspect(true);setInspect(asset);haptic('rigid');}}
       ad={gridAds&&money.placement==='grid'?within=><AdSlot where="grid" money={money} within={within}/>:undefined}/></Suspense>}
     {inspect&&inspectSet&&inspectSet.length>1&&<div className="inspect-set" role="group" aria-label={t('Fotos ancladas')}><button type="button" onClick={()=>rotateSet(-1)} aria-label={t('Anterior')}><CaretLeftIcon size={20} weight="bold" className="flip-rtl"/></button><span aria-live="polite">{t('{n} de {total}',{n:formatNumber(inspectSet.findIndex(a=>a.id===inspect.id)+1),total:formatNumber(inspectSet.length)})}</span><button type="button" onClick={()=>rotateSet(1)} aria-label={t('Siguiente')}><CaretRightIcon size={20} weight="bold" className="flip-rtl"/></button></div>}
     <CenterNotice notice={notice}/>
-    <AnimatePresence>{inspect&&<InspectorBoundary key={inspect.id} close={closeInspect}><Suspense fallback={<div className="inspection is-pinned" aria-busy="true"><div className="inspection-shade"/><CocoLoader size={44}/></div>}><Inspector asset={inspect} src={sharpPreview(inspect)??(preloader.current?.get(inspect)?.poster||undefined)} cloud={!!preloader.current?.peek(inspect)?.value?.cloud} pinned={pinnedInspect} origin={inspectOrigin.current} peek={{x:peekX,y:peekY}} anchor={anchor} armed={overHook} geek={!!filter.geek} polaroid={anchoredCaption&&inspect?.kind!=='video'?{where:anchoredCaption.where,when:anchoredCaption.when,behind:Math.max(0,(inspectSet?.length??1)-1)}:undefined} close={closeInspect} decide={inspectFromGrid&&pinnedInspect?decideAnchored:undefined} next={inspectFromGrid&&inspectSet&&inspectSet.length>1?()=>rotateSet(1):undefined} pin={()=>{setPinnedInspect(true);haptic('rigid');}}
+    <AnimatePresence custom={rotating.current}>{inspect&&<InspectorBoundary key={inspect.id} close={closeInspect}><Suspense fallback={<div className="inspection is-pinned" aria-busy="true"><div className="inspection-shade"/><CocoLoader size={44}/></div>}><Inspector asset={inspect} src={sharpPreview(inspect)??(preloader.current?.get(inspect)?.poster||undefined)} cloud={!!preloader.current?.peek(inspect)?.value?.cloud} pinned={pinnedInspect} origin={inspectOrigin.current} peek={{x:peekX,y:peekY}} anchor={anchor} armed={overHook} geek={!!filter.geek} polaroid={anchoredCaption&&inspect?.kind!=='video'?{where:anchoredCaption.where,when:anchoredCaption.when,stack:stackOrder.length>1?{behind:stackOrder.slice(1,3),was:stackWas}:undefined}:undefined} close={closeInspect} decide={inspectFromGrid&&pinnedInspect?decideAnchored:undefined} next={inspectFromGrid&&inspectSet&&inspectSet.length>1?()=>rotateSet(1):undefined} pin={()=>{setPinnedInspect(true);haptic('rigid');}}
       video={(inspect.kind==='video'&&inspect.id===active?.id)||(inspect.kind==='live'&&!onAndroid())?{state:inspect.kind==='live'?inspectedLive:frontVideo,request:()=>requestLive(inspect),retry:()=>getVideos().retry(motionAsset(inspect)),download:()=>{requestLive(inspect);getVideos().download(motionAsset(inspect));},fullscreen:()=>{if(inspect.kind==='video')void play(inspect);},openSettings,sound:videoSound,onSound:()=>setVideoSound(v=>!v),freeze:inspect.kind==='video'?heldVideo.current:undefined}:undefined}/></Suspense></InspectorBoundary>}</AnimatePresence>
     <Sheet open={sheet==='filters'} close={()=>setSheet(null)} title={sheetTab==='filters'?t('Filtros'):sheetTab==='support'?t('Apoyo'):t('Ajustes')} description={sheetTab==='filters'?t('Elige qué fotos entran en la pila.'):sheetTab==='support'?t('Quita los anuncios o invita un café a quien la hace.'):t('Elige cómo se ven tus recuerdos.')} error={visibleError} returnTo="filter-trigger">
       <div className="sheet-tabs" role="group" aria-label={t('Sección')}><button aria-pressed={sheetTab==='filters'} onClick={()=>{haptic('selection');setSheetTab('filters');}}>{t('Filtros')}</button><button aria-pressed={sheetTab==='settings'} onClick={()=>{haptic('selection');setSheetTab('settings');}}>{t('Ajustes')}</button>{money.available&&<button aria-pressed={sheetTab==='support'} onClick={()=>{haptic('selection');setSheetTab('support');}}>{t('Apoyo')}</button>}</div>

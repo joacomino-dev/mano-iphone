@@ -20,9 +20,18 @@ try{
  const progressBefore=await page.locator('.archive-progress .pile-count').innerText();
  // A real two-finger touch pinch (CDP), as on the phone.
  const card=await page.locator('.photo-card.front').boundingBox(),cx=card.x+card.width/2,cy=card.y+card.height/2;
- const cdp=await context.newCDPSession(page);const touch=(type,d)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:type==='touchEnd'?[]:[{x:cx-d,y:cy,id:1},{x:cx+d,y:cy,id:2}]});
- await touch('touchStart',110);for(let k=1;k<=8;k++)await touch('touchMove',110-70*k/8);await touch('touchEnd',40);
- await page.locator('.library-grid').waitFor();
+ const cdp=await context.newCDPSession(page);
+ // Pinching is the only way in (user, 2026-11-13): no mode button anywhere.
+ assert.equal(await page.getByTestId('open-grid').count(),0,'no grid button: pinch only');
+ assert.equal(await page.getByTestId('grid-exit').count(),0,'no ✕ on the cards');
+ const pinchIn=async()=>{const b=await page.locator('.photo-card.front').boundingBox(),x=b.x+b.width/2,y=b.y+b.height/2;const touch=(type,d)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:type==='touchEnd'?[]:[{x:x-d,y,id:1},{x:x+d,y,id:2}]});
+  await touch('touchStart',110);for(let k=1;k<=8;k++)await touch('touchMove',110-70*k/8);await touch('touchEnd',40);await page.locator('.library-grid').waitFor();};
+ // A small pinch that comes back apart before lifting returns to the card.
+ {const touch=(type,d)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:type==='touchEnd'?[]:[{x:cx-d,y:cy,id:1},{x:cx+d,y:cy,id:2}]});
+  await touch('touchStart',110);for(const d of [104,96,88,96,106,112])await touch('touchMove',d);await touch('touchEnd',112);
+  await page.waitForFunction(()=>!document.querySelector('.library-grid'));}
+ await pinchIn();
+ assert.equal(await page.getByTestId('grid-exit').count(),1,'in the grid, a red ✕ leads back');
  await page.locator('.grid-tile.is-current').waitFor();
  const visible=async()=>page.evaluate(()=>{const r=document.querySelector('.grid-scroller').getBoundingClientRect(),d=document.querySelector('.grid-dock').getBoundingClientRect();return [...document.querySelectorAll('.grid-tile')].filter(t=>{const b=t.getBoundingClientRect();return b.top>=r.top+2&&b.bottom<=d.top-2;}).map(t=>Number(t.dataset.i)).sort((a,b)=>a-b);});
  const centred=async()=>page.evaluate(()=>{const r=document.querySelector('.grid-scroller').getBoundingClientRect(),d=document.querySelector('.grid-dock').getBoundingClientRect(),c=document.querySelector('.grid-tile.is-current');if(!c)return false;const b=c.getBoundingClientRect();return b.top>=r.top&&b.bottom<=d.top;});
@@ -76,7 +85,8 @@ try{
  const swipe=async(dx,dy)=>{await settled();await page.waitForTimeout(250);box=await page.locator('.inspection-photo').boundingBox();const x=box.x+box.width/2,y=box.y+box.height/2;await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+dx/2,y+dy/2,{steps:4});await page.mouse.move(x+dx,y+dy,{steps:4});await page.mouse.up();};
  await swipe(180,0);await page.waitForFunction(()=>/1 de 4/.test(document.querySelector('.inspect-set')?.innerText??''));
  await swipe(-180,0);await page.waitForFunction(()=>/1 de 3/.test(document.querySelector('.inspect-set')?.innerText??''));
- await page.locator('.inspection.is-pinned').first().waitFor({timeout:3000});
+ // The outgoing view leaves within a frame of the set moving on: one view remains.
+ await page.waitForFunction(()=>document.querySelectorAll('.inspection').length===1,null,{timeout:3000});
  await page.locator('.inspection').getByRole('button',{name:'Cerrar'}).click();
  await page.waitForFunction(()=>!document.querySelector('.inspection'));
  assert.equal(await page.locator('.grid-tile.is-selected').count(),3,'the two decided photos leave the selection');
@@ -130,11 +140,12 @@ try{
  // The selection survives going back to the cards and returning; a decision on the cards ends it.
  let keepSel=(await visible())[2];await page.locator(`[data-i="${keepSel}"]`).click();
  await page.getByRole('button',{name:'Volver a las cartas'}).click();await page.waitForFunction(()=>!document.querySelector('.library-grid'));
- await page.getByTestId('open-grid').click();await page.locator('.grid-tile.is-selected').waitFor();
- assert.equal(await page.locator('.grid-tile.is-selected').count(),1,'selection kept across modes');
+ // Reopening centres the card in hand, so the selected tile may sit off screen: the pill says what is selected.
+ await pinchIn();await page.locator('.grid-selection').waitFor();
+ assert.match(await page.locator('.grid-selection').innerText(),/1 seleccionada/,'selection kept across modes');
  await page.getByRole('button',{name:'Volver a las cartas'}).click();await page.waitForFunction(()=>!document.querySelector('.library-grid'));
  await page.getByRole('button',{name:'Conservar',exact:true}).first().click();await page.waitForTimeout(300);
- await page.getByTestId('open-grid').click();await page.locator('.grid-tile').first().waitFor();
+ await pinchIn();await page.locator('.grid-tile').first().waitFor();
  assert.equal(await page.locator('.grid-tile.is-selected').count(),0,'a decision on the cards ends the selection');
  results.push('selection survives switching modes until a card is decided');
  // One photo selected: share sits by Anclar, and «Revisar en orden desde aquí» deals the pile from it, filters off.
