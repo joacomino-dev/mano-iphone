@@ -20,7 +20,7 @@ jobs:
       run:
         working-directory: mano
     env:
-      COCO_VERSION: '0.9.9.2'
+      COCO_VERSION: '0.9.9.3'
       COCO_ADMOB_ANDROID_APP_ID: ${{ vars.COCO_ADMOB_ANDROID_APP_ID }}
       COCO_ADMOB_ANDROID_NATIVE_UNIT: ${{ vars.COCO_ADMOB_ANDROID_NATIVE_UNIT }}
       COCO_PLAY_LICENSE_PUBLIC_KEY: ${{ secrets.COCO_PLAY_LICENSE_PUBLIC_KEY }}

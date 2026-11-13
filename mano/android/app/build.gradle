@@ -4,10 +4,10 @@ apply plugin: 'org.jetbrains.kotlin.android'
 // CocoWash for Android. Same application ID as the iPhone bundle (user decision,
 // 2026-11-07): permanent once uploaded to Play.
 //
-// Versions: versionName follows the iPhone line (0.9.9.2); versionCode is Android's
+// Versions: versionName follows the iPhone line (0.9.9.3); versionCode is Android's
 // own build counter and must only grow (Play rejects a repeated or lower code).
-def cocoVersionName = '0.9.9.2'
-def cocoVersionCode = 4
+def cocoVersionName = '0.9.9.3'
+def cocoVersionCode = 5
 
 def env = { String name -> System.getenv(name) ?: '' }
 // main is the store source. Owner supplies Android IDs; until then these sample
