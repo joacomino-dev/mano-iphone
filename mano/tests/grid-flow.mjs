@@ -9,14 +9,20 @@ import assert from 'node:assert/strict';
 import {installAppleFixture} from './apple-fixture.mjs';
 const url=process.env.APPLE_AUDIT_URL||'http://127.0.0.1:4186/native.html';
 const browser=await chromium.launch({channel:process.env.APPLE_BROWSER_CHANNEL||'msedge',headless:true});
-const context=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'});
+const context=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce',hasTouch:true});
 const results=[];
 try{
  await context.addInitScript(installAppleFixture,{});
  await context.addInitScript(()=>{window.appleFixture.assets=Array.from({length:3000},(_,i)=>({id:`fixture-${i}`,kind:i%17===0?'video':'photo',date:1700000000000-i*3600000,width:1000,height:1500,duration:i%17===0?13:0,hasLocation:false,demo:true,bytes:1000000+i}));});
  const page=await context.newPage();page.setDefaultTimeout(15000);const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto(url);await page.locator('.photo-card.front').waitFor();await page.waitForFunction(()=>!document.querySelector('.splash-lockup'));
- await page.getByTestId('open-grid').click();
+ // Pinch in on the card (zooming out, as in Photos) opens the grid; the header and the progress row never change.
+ const progressBefore=await page.locator('.archive-progress .pile-count').innerText();
+ // A real two-finger touch pinch (CDP), as on the phone.
+ const card=await page.locator('.photo-card.front').boundingBox(),cx=card.x+card.width/2,cy=card.y+card.height/2;
+ const cdp=await context.newCDPSession(page);const touch=(type,d)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:type==='touchEnd'?[]:[{x:cx-d,y:cy,id:1},{x:cx+d,y:cy,id:2}]});
+ await touch('touchStart',110);for(let k=1;k<=8;k++)await touch('touchMove',110-70*k/8);await touch('touchEnd',40);
+ await page.locator('.library-grid').waitFor();
  await page.locator('.grid-tile.is-current').waitFor();
  const visible=async()=>page.evaluate(()=>{const r=document.querySelector('.grid-scroller').getBoundingClientRect(),d=document.querySelector('.grid-dock').getBoundingClientRect();return [...document.querySelectorAll('.grid-tile')].filter(t=>{const b=t.getBoundingClientRect();return b.top>=r.top+2&&b.bottom<=d.top-2;}).map(t=>Number(t.dataset.i)).sort((a,b)=>a-b);});
  const centred=async()=>page.evaluate(()=>{const r=document.querySelector('.grid-scroller').getBoundingClientRect(),d=document.querySelector('.grid-dock').getBoundingClientRect(),c=document.querySelector('.grid-tile.is-current');if(!c)return false;const b=c.getBoundingClientRect();return b.top>=r.top&&b.bottom<=d.top;});
@@ -24,8 +30,10 @@ try{
  const mounted=await page.locator('.grid-tile').count();
  assert.ok(mounted<150,`only visible rows mount (${mounted} of 3000)`);
  assert.equal(await page.getByRole('button',{name:/^Ver más/}).count(),0,'no density button: pinch only');
- assert.equal(await page.locator('.grid-header').getByRole('button',{name:/^Terminar/}).count(),1,'«Terminar» stays top right');
- results.push(`opens on the card in hand; ${mounted}/3000 tiles; no density button; Terminar on top`);
+ assert.equal(await page.locator('.archive-header').getByRole('button',{name:/^Terminar/}).count(),1,'«Terminar» stays top right');
+ assert.equal(await page.locator('.archive-progress .pile-count').innerText(),progressBefore,'the progress row does not change when entering the grid');
+ assert.equal(await page.locator('.library-grid .grid-title, .library-grid header').count(),0,'no second header: the name stays CocoWash');
+ results.push(`pinch in opens it on the card in hand; ${mounted}/3000 tiles; header and progress unchanged; no density button`);
  // Pinch keeps the working photo in view however often it changes density.
  const pinch=async(from,to)=>page.evaluate(([from,to])=>{const el=document.querySelector('.grid-scroller'),r=el.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/3;
   const fire=(type,id,dx)=>el.dispatchEvent(new PointerEvent(type,{pointerId:id,isPrimary:id===1,clientX:cx+dx,clientY:cy,bubbles:true,pointerType:'touch'}));
@@ -86,7 +94,7 @@ try{
  await page.waitForFunction(()=>document.querySelectorAll('.grid-tile.is-pending').length===5);
  assert.equal(await page.locator('.grid-selection').count(),0,'deciding clears the selection');
  await page.locator('.grid-dock').getByRole('button',{name:/^Eliminar/}).click();
- assert.match(await page.locator('.grid-toast').innerText(),/No hay fotos seleccionadas/,'no selection: a press explains, nothing is decided');
+ assert.match(await page.locator('.center-notice').innerText(),/No hay fotos seleccionadas/,'no selection: a press explains, nothing is decided');
  assert.equal(await page.locator('.grid-tile.is-pending').count(),5);
  await page.locator('.grid-dock').getByRole('button',{name:'Deshacer la última decisión'}).click();
  await page.waitForFunction(()=>document.querySelectorAll('.grid-tile.is-pending').length===0);
@@ -106,21 +114,31 @@ try{
  await page.waitForFunction(()=>!document.querySelector('.grid-selection'));
  results.push('album from the selection saves and clears it');
  // Filtros: editing from the grid (shared with the pile), then the funnel toggles.
- const total=async()=>Number((await page.locator('.grid-progress .pile-count').innerText()).split('/').pop().replace(/\D/g,''));
+ const total=async()=>Number(await page.locator('.library-grid').getAttribute('data-count'));
  assert.equal(await total(),3000);
- await page.locator('.library-grid').getByRole('button',{name:'Filtros',exact:true}).click();
+ await page.locator('.archive-header').getByRole('button',{name:'Filtros',exact:true}).click();
  await page.locator('.native-sheet').getByText('Vídeos',{exact:true}).first().click();
  await page.getByRole('button',{name:/^Aplicar filtros/}).click();
  await page.waitForFunction(()=>!document.querySelector('.native-sheet'));
  const videos=await total();
  assert.ok(videos>0&&videos<3000,`edited filters apply to the grid at once (${videos})`);
- await page.locator('.library-grid').getByRole('switch',{name:'Desactivar filtros'}).click();
+ await page.locator('.archive-header').getByRole('switch',{name:'Desactivar filtros'}).click();
  assert.equal(await total(),3000,'the funnel turns the filters off: whole library');
- await page.locator('.library-grid').getByRole('switch',{name:'Activar filtros'}).click();
+ await page.locator('.archive-header').getByRole('switch',{name:'Activar filtros'}).click();
  assert.equal(await total(),videos,'and back on');
  results.push(`Filtros edits (${videos} videos) and toggles (3000 ↔ ${videos})`);
+ // The selection survives going back to the cards and returning; a decision on the cards ends it.
+ let keepSel=(await visible())[2];await page.locator(`[data-i="${keepSel}"]`).click();
+ await page.getByRole('button',{name:'Volver a las cartas'}).click();await page.waitForFunction(()=>!document.querySelector('.library-grid'));
+ await page.getByTestId('open-grid').click();await page.locator('.grid-tile.is-selected').waitFor();
+ assert.equal(await page.locator('.grid-tile.is-selected').count(),1,'selection kept across modes');
+ await page.getByRole('button',{name:'Volver a las cartas'}).click();await page.waitForFunction(()=>!document.querySelector('.library-grid'));
+ await page.getByRole('button',{name:'Conservar',exact:true}).first().click();await page.waitForTimeout(300);
+ await page.getByTestId('open-grid').click();await page.locator('.grid-tile').first().waitFor();
+ assert.equal(await page.locator('.grid-tile.is-selected').count(),0,'a decision on the cards ends the selection');
+ results.push('selection survives switching modes until a card is decided');
  // One photo selected: share sits by Anclar, and «Revisar en orden desde aquí» deals the pile from it, filters off.
- await page.locator('.library-grid').getByRole('switch',{name:'Desactivar filtros'}).click();
+ await page.locator('.archive-header').getByRole('switch',{name:'Desactivar filtros'}).click();
  const one=(await visible())[3];await page.locator(`[data-i="${one}"]`).click();
  assert.equal(await page.locator('.grid-selection').getByRole('button',{name:'Compartir'}).count(),1,'share next to Anclar');
  const pickId=await page.locator(`[data-i="${one}"]`).getAttribute('data-id');

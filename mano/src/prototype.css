@@ -940,9 +940,8 @@
    between two wavy lines, in the decision's colour. */
 .stamp.is-composed{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;width:fit-content;margin-inline:auto;padding:0}
 .stamp.is-composed img{flex:none;width:118px;height:auto}
-.stamp-lettering{--wave:var(--cw-turquoise);padding:6px 14px 9px;border-radius:14px;background:rgba(250,246,238,.94);box-shadow:inset 0 0 0 1.5px rgba(46,24,14,.18);font:700 24px/1.25 var(--cw-font-brand);color:var(--cw-lettering);white-space:nowrap;
-  text-decoration-line:underline overline;text-decoration-style:wavy;text-decoration-color:var(--wave);text-decoration-thickness:2px;text-underline-offset:7px}
-.stamp-discard .stamp-lettering{--wave:var(--cw-graphite)}.stamp-favorite .stamp-lettering{--wave:var(--cw-wash)}.stamp-later .stamp-lettering{--wave:var(--cw-coconut-deep)}
+.stamp-lettering{display:block;padding:5px 16px 6px;border-radius:14px;background:rgba(250,246,238,.94);box-shadow:inset 0 0 0 1.5px rgba(46,24,14,.18);font:700 24px/1.1 var(--cw-font-brand);color:var(--cw-lettering);white-space:nowrap;text-align:center;text-decoration:none}
+
 /* Introduction, card 3: the group counter and the two ways to zoom. */
 .ob-count{position:absolute;z-index:4;top:-10px;left:0;right:0;margin-inline:auto;width:fit-content;padding:3px 10px;border-radius:var(--cw-radius-pill);background:var(--cw-surface);box-shadow:inset 0 0 0 1px var(--cw-line),var(--cw-shadow-1);font:600 var(--cw-text-xs)/1.3 var(--cw-font);color:var(--cw-ink);font-variant-numeric:tabular-nums}
 .ob-ways{display:flex;flex-wrap:wrap;gap:4px 6px;margin:4px 0}
@@ -1191,9 +1190,13 @@ input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;u
 /* 44 pt target around the small chip (the progress row stays 28 px tall). */
 .grid-open::after{content:'';position:absolute;inset:-8px -5px}
 .grid-open:active{transform:scale(.92)}
-.library-grid{position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;background:var(--cw-paper-base,var(--cw-bg));color:var(--cw-ink)}
+.library-grid{position:fixed;left:0;right:0;bottom:0;z-index:70;display:flex;flex-direction:column;color:var(--cw-ink);padding:0 calc(env(safe-area-inset-right) + var(--cw-gutter)) 0 calc(env(safe-area-inset-left) + var(--cw-gutter))}
+/* The paper behind the grid fades in and out on its own layer, so the pile underneath
+   dissolves instead of popping; the working photo flies above it. */
+.library-grid::before{content:'';position:absolute;inset:0;z-index:-1;background:var(--cw-paper-base,var(--cw-bg));animation:cw-fade 220ms cubic-bezier(.2,.8,.2,1) both}
+.library-grid.is-leaving::before{animation:cw-fade-out 260ms cubic-bezier(.4,0,.2,1) both}
+.library-grid .grid-body{animation:cw-fade 220ms cubic-bezier(.2,.8,.2,1) both}
 .library-grid[aria-busy=true]{display:grid;place-items:center}
-.grid-header .header-action:active{transform:translateY(2px);box-shadow:none}
 .grid-select{justify-self:end}
 .grid-scroller{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y}
 .grid-canvas{position:relative;contain:strict;width:100%}
@@ -1222,12 +1225,9 @@ input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;u
    (.on-device padding, .archive-header, .archive-progress), so its buttons land
    exactly where they were; the way back and the density live in the progress row,
    leaving the bottom to the photos until something is selected. */
-.grid-title{margin:0;font:700 22px/1 var(--cw-font-brand,var(--cw-font));letter-spacing:.01em;color:var(--cw-ink);text-align:center}
-.grid-progress .grid-open.is-back{background:var(--cw-action-primary);box-shadow:none;color:var(--cw-on-action-primary)}
 
 /* Fototeca, third pass (user, 2026-11-12): photos run to the bottom edge under a
    floating dock; the pile's decision bar shrinks into it between Deshacer and Álbum. */
-.library-grid.on-device{padding-bottom:0;animation:cw-fade 160ms var(--cw-ease) both}
 .grid-body{position:relative;flex:1;min-height:0;margin-top:var(--cw-space-3);border-radius:var(--cw-radius-md) var(--cw-radius-md) 0 0;overflow:hidden}
 .grid-dock{position:absolute;left:0;right:0;bottom:0;z-index:5;display:grid;grid-template-columns:52px 1fr 52px;align-items:end;gap:6px;
   padding:0 0 calc(env(safe-area-inset-bottom) + var(--cw-space-2));box-sizing:content-box;
@@ -1238,7 +1238,6 @@ input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;u
 .grid-dock-scale{position:absolute;left:50%;bottom:0;transform-origin:center bottom}
 .library-grid.is-entered .grid-dock-scale{transition:transform 420ms cubic-bezier(.2,.8,.2,1)}
 .library-grid:not(.is-entered) .grid-dock-side{opacity:0;transform:translateY(10px)}
-.grid-finish{justify-self:end;display:flex}
 .grid-selection{position:absolute;left:0;right:0;margin-inline:auto;width:fit-content;z-index:6;display:flex;align-items:center;gap:8px;padding:4px 4px 4px 6px;border-radius:var(--cw-radius-pill);background:var(--cw-teal-900,#122D2E);color:var(--cw-paper-light);box-shadow:0 6px 18px rgba(8,32,33,.28);font:600 14px/1 var(--cw-font);white-space:nowrap;animation:cw-rise 180ms var(--cw-ease) both}
 .grid-selection button{display:inline-flex;align-items:center;gap:6px;min-height:36px;border:0;border-radius:var(--cw-radius-pill);-webkit-tap-highlight-color:transparent}
 .grid-selection-clear{width:36px;justify-content:center;padding:0;background:rgba(250,246,238,.14);color:inherit}
@@ -1269,24 +1268,14 @@ input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;u
 /* «Filtros» (user, 2026-11-12): one split button on the pile and in the Fototeca —
    the funnel switches the filters, the word opens the editor. */
 .filter-switch{justify-self:start;display:inline-flex;align-items:stretch;padding:0;gap:0;overflow:hidden}
-.filter-switch button{display:grid;place-items:center;min-height:var(--cw-touch);padding:0 10px 0 12px;border:0;background:transparent;color:inherit;font:inherit;-webkit-tap-highlight-color:transparent;transition:background-color 180ms var(--cw-ease),color 180ms var(--cw-ease)}
-.filter-switch .filter-switch-edit{padding:0 14px 0 10px}
-.filter-switch-rule{width:1.5px;margin:10px 0;background:var(--cw-outline);opacity:.35}
-.filter-switch.is-on .filter-switch-toggle{background:var(--cw-action-primary);color:var(--cw-on-action-primary)}
-.filter-switch.is-on .filter-switch-toggle svg{color:inherit}
-.filter-switch:not(.is-on) .filter-switch-toggle svg{opacity:.6}
 .grid-selection-share{width:36px;justify-content:center;padding:0;background:rgba(250,246,238,.14);color:inherit}
 .grid-review-from{position:absolute;left:0;right:0;margin-inline:auto;width:fit-content;z-index:6;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 14px;border:0;border-radius:var(--cw-radius-pill);background:var(--cw-paper-light);color:var(--cw-ink);box-shadow:inset 0 0 0 1.5px var(--cw-line-strong),0 4px 12px rgba(8,32,33,.16);font:600 14px/1 var(--cw-font);animation:cw-rise 180ms var(--cw-ease) both;-webkit-tap-highlight-color:transparent}
 /* Leaving: everything fades to the pile underneath except the working photo, which flies back to its card. */
-.library-grid.is-leaving{background:none;pointer-events:none}
+.library-grid.is-leaving{pointer-events:none}
 .library-grid.is-leaving :is(.grid-header,.grid-progress,.grid-dock,.grid-selection,.grid-review-from,.grid-ad,.grid-tile:not(.is-flying)){animation:cw-fade-out 240ms cubic-bezier(.4,0,.2,1) both}
 .library-grid.is-leaving .grid-dock-scale{transition:transform 300ms cubic-bezier(.4,0,.2,1)}
 @keyframes cw-fade-out{to{opacity:0}}
 .grid-tile{transform-origin:0 0}
-.grid-title-room{display:grid;place-items:center;min-width:120px;max-width:170px;min-height:var(--cw-touch)}
-.grid-title-room>*{grid-area:1/1}
-.grid-toast{display:flex;align-items:center;justify-content:center;text-align:center;color:var(--pal-text,var(--cw-ink))}
-.grid-toast>span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;white-space:pre-line;font:600 .875rem/1.2 var(--cw-font-brand,var(--cw-font));text-wrap:balance}
 /* «Modo Polaroid» off (user, 2026-11-12): the photo alone, in the frame's room. */
 .photo-card.paper.is-plain{padding:0;border-radius:var(--cw-radius-md);background:var(--cw-paper-dim)}
 .photo-card.paper.is-plain .photo-window{border-radius:inherit}
@@ -1295,9 +1284,23 @@ input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;u
 .mini-polaroid.is-plain img{border-radius:inherit}
 /* Anchored from the Fototeca (user, 2026-11-12): a stack of Polaroids — the top one's
    paper frame moves with the photo, the next ones peek out behind, slightly turned. */
-.inspection-mount{position:absolute;box-sizing:border-box;border-radius:var(--cw-radius-xs);background:var(--cw-paper-light);box-shadow:0 1px 0 var(--cw-paper-edge),0 14px 34px rgba(4,18,19,.42);pointer-events:none}
-.inspection-mount.is-back{background:var(--cw-paper);box-shadow:0 1px 0 var(--cw-paper-edge),0 8px 22px rgba(4,18,19,.35)}
-.mount-caption{position:absolute;left:14px;right:14px;bottom:0;height:48px;display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--cw-ink);font:500 14px/1.2 var(--cw-font-mono,monospace)}
-.mount-caption .caption-where{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--cw-font-brand,var(--cw-font));font-weight:600}
-.mount-caption .caption-when{flex:none;margin-inline-start:auto;font-variant-numeric:tabular-nums}
 .inspection-mount~.inspection-photo{border-radius:1px}
+
+/* One notice style for every screen (user, 2026-11-13): centred, paper card, never in the header. */
+.center-notice-layer{position:fixed;inset:0;z-index:95;display:grid;place-items:center;pointer-events:none;padding:0 32px}
+.center-notice{max-width:280px;padding:14px 20px;border-radius:var(--cw-radius-lg,18px);background:var(--cw-paper-light);color:var(--cw-ink);box-shadow:inset 0 0 0 1.5px var(--cw-line),0 12px 32px rgba(8,32,33,.22);text-align:center}
+.center-notice>span{display:block;white-space:pre-line;font:600 1rem/1.3 var(--cw-font-brand,var(--cw-font));text-wrap:balance}
+.grid-open[aria-pressed=true]{background:var(--cw-action-primary);box-shadow:none;color:var(--cw-on-action-primary)}
+
+/* Filtros: one pill, the state in its icon (filled ✓ on, empty ✕ off). */
+.filter-switch button{display:grid;place-items:center;min-height:var(--cw-touch);padding:0;border:0;background:transparent;color:inherit;font:inherit;-webkit-tap-highlight-color:transparent}
+.filter-switch .filter-switch-toggle{padding:0 4px 0 10px}
+.filter-switch .filter-switch-edit{padding:0 14px 0 4px}
+.filter-switch .filter-switch-toggle svg{color:var(--cw-ink-faint);transition:color 180ms var(--cw-ease),transform 220ms cubic-bezier(.2,.8,.2,1)}
+.filter-switch.is-on .filter-switch-toggle svg{color:var(--cw-action-primary)}
+.filter-switch .filter-switch-toggle:active svg{transform:scale(.86)}
+
+/* Anchored stack = the pile's own Polaroid: same paper, padding, caption and shadows. */
+.inspection-mount{position:absolute;box-sizing:border-box;border-radius:var(--cw-radius-xs);background:var(--cw-paper-light);box-shadow:var(--cw-shadow-card);pointer-events:none}
+.inspection-mount.is-back{background:var(--cw-paper);box-shadow:var(--cw-shadow-card-back)}
+.inspection-mount .polaroid-caption{left:var(--cw-space-3);right:var(--cw-space-3)}

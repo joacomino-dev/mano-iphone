@@ -1,5 +1,4 @@
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 import { CheckIcon, ArrowUUpLeftIcon, CloudIcon, ImageBrokenIcon, CardsThreeIcon, FolderSimplePlusIcon, XIcon, PushPinIcon, ExportIcon, ListNumbersIcon } from '@phosphor-icons/react';
 import type { Action, Asset, Filter, RecordState } from './domain';
 import { gridMatch } from './domain';
@@ -11,7 +10,6 @@ import { DecisionIcon, Stamp } from './Stamp';
 import { useAndroidBack } from './androidBack';
 import { formatNumber, t } from './i18n';
 import { haptic } from './haptics';
-import { PileProgress, FilterSwitch } from './Chrome';
 
 /** «Fototeca» (user, 2026-11-12; docs/ai-handoff/GRID_VIEW_PLAN.md): the whole
  * library in its real order, opened on the card in hand, with each decision's
@@ -28,7 +26,15 @@ const clock = (seconds: number) => { const s = Math.max(0, Math.round(seconds));
 
 type Props = {
   /** `filter`: the person's chosen filters; `filtersOn`: the shared Filtros switch. */
-  assets: Asset[]; state: RecordState; filter: Filter; filtersOn: boolean; toggleFilters: () => void; current?: string; busy: boolean;
+  assets: Asset[]; state: RecordState; filter: Filter; filtersOn: boolean; current?: string; busy: boolean;
+  /** The grid is a mode of the main screen (user, 2026-11-13): the header, the name,
+   * Filtros, Terminar and the progress row stay where they are; the grid fills the
+   * room below them (`top`, the progress row's bottom edge). */
+  top: number;
+  /** The selection lives in the app, so it survives going back to the cards. */
+  selected: ReadonlySet<string>; setSelected: Dispatch<SetStateAction<ReadonlySet<string>>>;
+  /** Lets the main screen's grid button close with the same animation. */
+  closeRef: { current: () => void };
   /** Shares the selection (several originals in one sheet). */
   share: (ids: string[]) => void;
   /** «Revisar en orden desde esta foto»: back to the cards, filters off, from this photo. */
@@ -40,10 +46,6 @@ type Props = {
   open: (asset: Asset, from: DOMRect) => void;
   /** Anchors several items to rotate through, growing from the first one's tile. */
   openSet: (assets: Asset[], from: DOMRect) => void;
-  /** Opens the pile's filter editor (the same filters drive the grid). */
-  editFilters: () => void;
-  /** «Terminar», as in the pile's header. */
-  finish: ReactNode;
   /** Where the pile's decision bar was, so the dock can grow out of it. */
   enterFrom?: DOMRect;
   /** The ad letter for the strip on screen; absent when no ad was loaded at opening. */
@@ -86,19 +88,14 @@ const Tile = memo(function Tile({ asset, index, x, y, side, size, selected, curr
   </button>;
 });
 
-export default function LibraryGrid({ assets, state, filter, filtersOn, toggleFilters, current, busy, close: leave, decide, undo, notice, open, openSet, editFilters, finish, enterFrom, cardFrom, ad, album, albumDone, share, reviewFrom }: Props) {
+export default function LibraryGrid({ assets, state, filter, filtersOn, current, busy, close: leave, decide, undo, notice, open, openSet, enterFrom, cardFrom, ad, album, albumDone, share, reviewFrom, top, selected, setSelected, closeRef }: Props) {
   const scroller = useRef<HTMLDivElement>(null), dock = useRef<HTMLDivElement>(null), bar = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0), [height, setHeight] = useState(0), [offset, setOffset] = useState(0);
   const [columns, setColumns] = useState<3 | 5>(readColumns);
-  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
-  // Notices show where the pile shows them — in place of the title — since the pile's own
-  // notice sits under this overlay. Also spoken through the app's live region (notice).
-  const [toast, setToast] = useState<{ id: number; text: string } | null>(null);
-  const say = (text: string) => { setToast({ id: Date.now(), text }); notice(text); };
-  useEffect(() => { if (!toast) return; const timer = window.setTimeout(() => setToast(null), 2200); return () => window.clearTimeout(timer); }, [toast]);
+  // Notices use the app's one centred notice (it shows above this mode).
+  const say = notice;
   const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   useAndroidBack(true, () => { if (selected.size) setSelected(new Set()); else closeRef.current(); });
-  const closeRef = useRef(() => leave());
 
   // Real library order (oldest first, like Photos); removed items never return here.
   const items = useMemo(() => {
@@ -193,7 +190,13 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, toggleFi
     if (to === 'out') el.classList.add('is-flying');
     el.animate(to === 'in' ? [card, tile] : [tile, card], { duration: to === 'in' ? 420 : 300, easing: to === 'in' ? 'cubic-bezier(.2,.8,.2,1)' : 'cubic-bezier(.4,0,.2,1)', fill: to === 'in' ? 'none' : 'forwards' });
   };
-  useLayoutEffect(() => { if (flyIn.current && side) { flyIn.current = false; flyTile('in'); } }, [side]);
+  // The working photo's tile mounts only once the grid has scrolled to it: fly then.
+  useLayoutEffect(() => {
+    if (!flyIn.current || !side) return;
+    const id = items[focusIndex(items)]?.id ?? '';
+    if (!scroller.current?.querySelector(`.grid-tile[data-id="${CSS.escape(id)}"]`)) return;
+    flyIn.current = false; flyTile('in');
+  }, [side, offset, first, last]);
   const close = () => {
     if (leaving) return;
     if (reduced || !cardFrom) { leave(); return; }
@@ -292,6 +295,7 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, toggleFi
     if (g.mode === 'wait') toggle(g.start);
   };
   const onPointerCancel = (e: React.PointerEvent) => { fingers.current.delete(e.pointerId); pinch.current = null; const g = gesture.current; if (g) clearTimeout(g.timer); cancelAnimationFrame(edge.current); gesture.current = null; };
+  const lastTouch = useRef<{ t: number; x: number; y: number } | null>(null);
   // Touch: WebKit only stops a scroll when the FIRST touchmove is cancelled, so the
   // direction is chosen there: sideways selects, up/down scrolls.
   useEffect(() => {
@@ -305,8 +309,17 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, toggleFi
       clearTimeout(g.timer);
       if (Math.abs(dx) >= Math.abs(dy)) { g.mode = 'select'; e.preventDefault(); } else g.mode = 'scroll';
     };
+    // A second quick touch in the same spot (tap, then tap and hold) must never start
+    // WebKit's text loupe here: the grid handles its own touches (user, 2026-11-13).
+    const start = (e: TouchEvent) => {
+      const touch = e.touches[0], prev = lastTouch.current; if (!touch) return;
+      if (prev && e.timeStamp - prev.t < 400 && Math.hypot(touch.clientX - prev.x, touch.clientY - prev.y) < 44) e.preventDefault();
+    };
+    const end = (e: TouchEvent) => { const touch = e.changedTouches[0]; if (touch) lastTouch.current = { t: e.timeStamp, x: touch.clientX, y: touch.clientY }; };
+    el.addEventListener('touchstart', start, { passive: false });
+    el.addEventListener('touchend', end, { passive: true });
     el.addEventListener('touchmove', move, { passive: false });
-    return () => el.removeEventListener('touchmove', move);
+    return () => { el.removeEventListener('touchstart', start); el.removeEventListener('touchend', end); el.removeEventListener('touchmove', move); };
   });
   // Keyboard and assistive technology: Enter/Space on a tile selects it.
   const onClick = (e: React.MouseEvent) => {
@@ -314,7 +327,6 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, toggleFi
     const el = (e.target as HTMLElement).closest<HTMLElement>('[data-i]'); if (el) toggle(Number(el.dataset.i));
   };
 
-  const decided = useMemo(() => items.reduce((n, a) => n + (state.marks[a.id] || marks.pending.has(a.id) || marks.favorites.has(a.id) ? 1 : 0), 0), [items, state, marks]);
   const targets = useMemo(() => items.filter(a => selected.has(a.id)), [items, selected]);
   const nothing = () => { haptic('warning'); say(t('No hay fotos seleccionadas')); };
   const run = useCallback(async (action: Action) => {
@@ -349,20 +361,7 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, toggleFi
 
   const count = targets.length;
   closeRef.current = close;
-  return <section className={`library-grid on-device ${entered ? 'is-entered' : ''} ${leaving ? 'is-leaving' : ''}`} role="dialog" aria-modal="true" aria-label={t('Fototeca')}>
-    <header className="archive-header is-session grid-header">
-      <FilterSwitch on={filtersOn} toggle={() => { refocus.current = true; say(filtersOn ? t('Filtros desactivados\nTodo en orden cronológico') : t('Filtros activados')); toggleFilters(); }} edit={editFilters}/>
-      <div className="grid-title-room">
-        <AnimatePresence initial={false} mode="popLayout">{toast
-          ? <motion.span key={toast.id} className="grid-toast" role="status" initial={{ opacity: 0, scale: reduced ? 1 : .96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: reduced ? 1 : .98 }} transition={{ duration: .18 }}><span>{toast.text}</span></motion.span>
-          : <motion.h2 key="title" className="grid-title" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .18 }}>{t('Fototeca')}</motion.h2>}</AnimatePresence>
-      </div>
-      <div className="grid-finish" onClickCapture={() => haptic('light')}>{finish}</div>
-    </header>
-    <div className="archive-progress grid-progress">
-      <button type="button" className="grid-open is-back" onClick={close} aria-label={t('Volver a las cartas')}><CardsThreeIcon size={18} weight="bold"/></button>
-      <PileProgress reviewed={decided} total={items.length} count={<>{formatNumber(decided)}<span className="pile-slash">/</span>{formatNumber(items.length)}</>}/>
-    </div>
+  return <section className={`library-grid ${entered ? 'is-entered' : ''} ${leaving ? 'is-leaving' : ''}`} style={{ top }} data-count={items.length} role="region" aria-label={t('Fototeca')}>
     <div className="grid-body">
       <div ref={scroller} className="grid-scroller" onScroll={onScroll}
         onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerCancel} onClick={onClick} onContextMenu={e => e.preventDefault()}>

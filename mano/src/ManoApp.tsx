@@ -2,7 +2,7 @@ import { FinishButton } from './FinishButton';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type PointerEvent, type MouseEvent } from 'react';
 import { AnimatePresence, motion, useReducedMotion, useMotionValue, animate, type MotionValue } from 'motion/react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { ExportIcon, SquaresFourIcon, CaretLeftIcon, FolderOpenIcon, FolderSimplePlusIcon, CaretRightIcon, CaretDownIcon, ArrowCounterClockwiseIcon, ArrowUUpLeftIcon, StackIcon, TrashIcon, CheckIcon, XIcon, PlayIcon, SlidersHorizontalIcon, ArrowClockwiseIcon, ImageBrokenIcon, PlusIcon, PushPinIcon, InfoIcon, CloudIcon, SparkleIcon } from '@phosphor-icons/react';
+import { ExportIcon, SquaresFourIcon, CardsThreeIcon, CaretLeftIcon, FolderOpenIcon, FolderSimplePlusIcon, CaretRightIcon, CaretDownIcon, ArrowCounterClockwiseIcon, ArrowUUpLeftIcon, StackIcon, TrashIcon, CheckIcon, XIcon, PlayIcon, SlidersHorizontalIcon, ArrowClockwiseIcon, ImageBrokenIcon, PlusIcon, PushPinIcon, InfoIcon, CloudIcon, SparkleIcon } from '@phosphor-icons/react';
 import { BottomSheet, KeyboardInput, useKeyboard } from './mobile';
 import { ReviewGrid } from './ReviewGrid';
 import { decide, undo, restore, eligible, eligibleFrom, orderAssets, readState, reconcileLibrary, libraryFingerprint, filterScope, LEVELS, initialFilter, initialState, effectiveFilter, type Action, type Asset, type Decision, type Filter, type RecordState } from './domain';
@@ -158,20 +158,20 @@ function AlbumInput({value,change}:{value:string;change:(value:string)=>void}) {
 function PreviewAlbumInput({value,change}:{value:string;change:(value:string)=>void}) {
   const keyboard=useKeyboard();return <KeyboardInput value={value} onChange={e=>change(e.target.value)} onBlur={()=>keyboard.hide()} maxLength={100} placeholder={t('Por ejemplo, Verano')}/>;
 }
-/** A short notice that appears exactly where the name is: the wordmark fades
- * out (it stays in place, so the cell, the header height and the buttons never
- * move) and the notice fades in over the room between Filtros and Terminar
- * (`--notice-room`, measured by useNoticeRoom). At most two lines; VoiceOver
- * hears the full text through the app's status region. Errors never use this
- * slot (ErrorAlert). Reduce Motion: a plain swap. */
+/** The name in the header never changes (user, 2026-11-13: notices are forbidden
+ * there). Notices appear in one place and one style for every screen: CenterNotice. */
 type Notice={id:number;text:string};
-function BrandStatus({notice}:{notice:Notice|null}) {
- const reduced=useReducedMotion();const timing=reduced?{duration:0}:{duration:.2,ease:[.2,.8,.2,1] as const};
- return <div className={`brand-status ${notice?'has-message':''}`}>
-  <motion.span className="brand-wordmark" aria-hidden="true" initial={false} animate={{opacity:notice?0:1,scale:notice&&!reduced?.94:1}} transition={timing}><Wordmark/></motion.span>
-  <span className="sr-only">CocoWash</span>
-  <AnimatePresence initial={false}>{notice&&<motion.span key={notice.id} className="brand-notice" aria-hidden="true" initial={{opacity:0,scale:reduced?1:.96}} animate={{opacity:1,scale:1}} exit={{opacity:0,scale:reduced?1:.98}} transition={timing}><span>{notice.text}</span></motion.span>}</AnimatePresence>
- </div>;
+function BrandStatus(_:{notice:Notice|null}) {
+ return <div className="brand-status"><span className="brand-wordmark" aria-hidden="true"><Wordmark/></span><span className="sr-only">CocoWash</span></div>;
+}
+/** One notice style, centred on the screen above the pile, the Fototeca and the
+ * anchored view; it leaves on its own. VoiceOver hears it through the status region.
+ * Errors never use it (ErrorAlert). Reduce Motion: a plain fade. */
+function CenterNotice({notice}:{notice:Notice|null}) {
+ const reduced=useReducedMotion();
+ return <div className="center-notice-layer" aria-hidden="true"><AnimatePresence initial={false}>{notice&&<motion.div key={notice.id} className="center-notice"
+  initial={{opacity:0,scale:reduced?1:.94,y:reduced?0:6}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0,scale:reduced?1:.97}}
+  transition={reduced?{duration:.12}:{type:'spring',stiffness:520,damping:34}}><span>{notice.text}</span></motion.div>}</AnimatePresence></div>;
 }
 /** Measures the room a notice may use in the header: centred on the screen like
  * the name, as wide as the gap left by the wider of the two side buttons. */
@@ -386,6 +386,10 @@ export function ManoApp() {
   /** «Favoritas» set: the heart takes items out of Favorites; they cannot be queued for deletion. */
   const favView=filter.smart==='favorites';
   const [gridOpen,setGridOpen]=useState(false);const [gridAds,setGridAds]=useState(false);
+  // The grid is a mode below the header and progress row (user, 2026-11-13): those never move.
+  const [gridTop,setGridTop]=useState(0);const gridClose=useRef<()=>void>(()=>{});
+  // Selected in the grid, kept while moving between modes; a decision on the cards ends it.
+  const [gridSelection,setGridSelection]=useState<ReadonlySet<string>>(new Set());const gridOpenNow=useRef(false);gridOpenNow.current=gridOpen;
   // The grid's selection can go to an album through the same sheet as the card in hand.
   const [albumIds,setAlbumIds]=useState<string[]|null>(null);const [gridAlbumDone,setGridAlbumDone]=useState(0);
   // Photos anchored together from the grid: shown large one at a time, rotated with ‹ › (user, 2026-11-12).
@@ -525,6 +529,7 @@ export function ManoApp() {
     const nextLock=afterDecision(hand,ids,best);
     await persistRecord(apply(recordNow.current),{context:{...context,handIds:nextLock.ids,selected:[],best:nextLock.best}},favorite,clearIntent);
     setLock(nextLock);setPinnedInspect(false);setInspect(null);setSelected([]);
+    if(!gridOpenNow.current)setGridSelection(previous=>previous.size?new Set():previous);
     if(action!=='unfavorite'){setStats(previous=>({...previous,[action]:previous[action]+ids.length}));setFlash({kind:action,key:Date.now()});}setDecidedHere(previous=>new Set([...previous,...ids]));money.review(ids);
     setSpoken(`${SPOKEN[action]()}${ids.length>1?`: ${formatNumber(ids.length)}`:''}`);
   };
@@ -611,7 +616,8 @@ export function ManoApp() {
     const g:NonNullable<typeof gesture.current>={x:e.clientX,y:e.clientY,t0:e.timeStamp,held:false,timer:null,id:asset.id,review,element:e.currentTarget,asset,followers};
     g.timer=setTimeout(()=>{g.timer=null;hold(g);},HOLD_MS);gesture.current=g;};
   const move=(e:PointerEvent)=>{const g=gesture.current;if(!g)return;if(pointers.current.has(e.pointerId))pointers.current.set(e.pointerId,{x:e.clientX,y:e.clientY});
-    if(g.pinch){const [a,b]=[...pointers.current.values()];if(a&&b&&Math.hypot(b.x-a.x,b.y-a.y)/g.pinch>1.25){const asset=hand.find(h=>h.id===g.id);gesture.current=null;if(asset)openPinned(asset,e.currentTarget);}return;}
+    // Pinch out: the anchored view. Pinch in — zooming out, as in Photos — opens the Fototeca (user, 2026-11-13).
+    if(g.pinch){const [a,b]=[...pointers.current.values()];const ratio=a&&b?Math.hypot(b.x-a.x,b.y-a.y)/g.pinch:1;if(ratio>1.25){const asset=hand.find(h=>h.id===g.id);gesture.current=null;if(asset)openPinned(asset,e.currentTarget);}else if(ratio<.78&&!gridOpen&&!deckAd){gesture.current=null;pointers.current.clear();(document.querySelector('[data-testid="open-grid"]') as HTMLButtonElement|null)?.click();}return;}
     const x=e.clientX-g.x,y=e.clientY-g.y;
     if(!g.held&&Math.hypot(x,y)>10&&g.timer){
       // The finger stayed within slop for the whole hold time: it is a hold, even
@@ -755,9 +761,9 @@ export function ManoApp() {
   else if(!session)screen=showDone&&sheet==='review'?<div className="session-content">{doneHeader}<main className="status-screen is-quiet"><Character pose="coqui-review" height={120} motion="still"/><p className="status-line">{t('Una última mirada antes de terminar.')}</p></main></div>:showDone?<div className="session-content">{doneHeader}<SessionDone stats={stats} pending={pending} pendingBytes={reviewBytes.bytes} pendingPartial={reviewBytes.partial} again={()=>{money.clear();setShowDone(false);setNotice('');}} review={()=>{money.clear();setError('');setSheet('review');}} monetization={money.available&&(money.placement==='finish'||money.awaiting==='finish')&&<div className="finish-monetization">{money.placement==='finish'?<AdSlot where="finish" money={money}/>:<AdRoom where="finish"/>}</div>}/></div>:<PreparingScreen cancel={()=>{cancelWarmup();setShowDone(true);}}/>;
   else screen=<div className="session-content" inert={pinnedInspect}>
     {/* «Terminar» ends the round: the summary keeps pending discards and offers the review. */}
-    <header ref={noticeRoom} className="archive-header is-session">{filtersButton}{brand}<FinishButton pending={pending} busy={busy} announce={setSpoken} finish={()=>{cancel();setError('');setSheet('review');haptic('light');}}/></header>
+    <header ref={noticeRoom} className="archive-header is-session">{filtersButton}{brand}<FinishButton pending={pending} busy={busy} announce={setSpoken} finish={()=>{if(gridOpen){setGridOpen(false);setGridAds(false);money.release('grid');}cancel();setError('');setSheet('review');haptic('light');}}/></header>
     {/* Second row: how far through the filtered pile (same calculation as before). */}
-    <div className="archive-progress">{testMode&&<button className="access-indicator test-mode" onClick={()=>{setSheetTab('settings');setSheet('filters');}}>{t('Modo de prueba')}</button>}{limited&&<button className="access-indicator" onClick={()=>void manageLimited()}><InfoIcon size={14} weight="bold"/>{t('Acceso limitado')}</button>}{assets.length>0&&<button type="button" className="grid-open" data-testid="open-grid" onClick={()=>{haptic('light');gridEnter.current=document.querySelector('.archive-session .decision-bar, .decision-bar')?.getBoundingClientRect();gridCard.current=document.querySelector('.photo-card.front .photo-window')?.getBoundingClientRect();setGridAds(money.grid());setGridOpen(true);}} aria-label={t('Ver la fototeca')} disabled={deckAd}><SquaresFourIcon size={18} weight="bold"/></button>}<PileProgress reviewed={scope.reviewed} total={scope.total} count={<><AnimatedNumber value={scope.reviewed}/><span className="pile-slash">/</span><AnimatedNumber value={scope.total} className="is-total"/></>}/></div>
+    <div className="archive-progress">{testMode&&<button className="access-indicator test-mode" onClick={()=>{setSheetTab('settings');setSheet('filters');}}>{t('Modo de prueba')}</button>}{limited&&<button className="access-indicator" onClick={()=>void manageLimited()}><InfoIcon size={14} weight="bold"/>{t('Acceso limitado')}</button>}{assets.length>0&&<button type="button" className="grid-open" data-testid="open-grid" onClick={()=>{if(gridOpen){gridClose.current();return;}haptic('light');setGridTop(document.querySelector('.archive-progress')?.getBoundingClientRect().bottom??0);gridEnter.current=document.querySelector('.archive-session .decision-bar, .decision-bar')?.getBoundingClientRect();gridCard.current=document.querySelector('.photo-card.front .photo-window')?.getBoundingClientRect();setGridAds(money.grid());setGridOpen(true);}} aria-label={gridOpen?t('Volver a las cartas'):t('Ver la fototeca')} aria-pressed={gridOpen} disabled={deckAd}>{gridOpen?<CardsThreeIcon size={18} weight="bold"/>:<SquaresFourIcon size={18} weight="bold"/>}</button>}<PileProgress reviewed={scope.reviewed} total={scope.total} count={<><AnimatedNumber value={scope.reviewed}/><span className="pile-slash">/</span><AnimatedNumber value={scope.total} className="is-total"/></>}/></div>
     <section ref={stage} className={`hand-space ${currentColor}`} aria-label={t('Pila de recuerdos')}>{alert}
       {deckAd?<motion.div key="deck-ad" className="ad-stage" initial={reduced?false:{opacity:0,y:16,scale:.96}} animate={{opacity:1,y:0,scale:1}} transition={{duration:.3,ease:[.2,.8,.2,1]}}><AdSlot where="deck" money={money}/></motion.div>:!connected?<div className="empty-state"><Character pose="coqui-wave" height={140} className="empty-character"/><h2>{t('Tu carrete, en tus manos.')}</h2><p>{t('Revisa, conserva y ordena tus recuerdos. Nada se borra sin tu confirmación.')}</p><button className="primary-empty" onClick={connect} disabled={loading}>{loading?t('Abriendo Fotos…'):t('Abrir mi biblioteca')}</button><small>{t('Todo se analiza en tu iPhone.')}</small></div>:!active?<div className="empty-state"><Character pose={scope.total?'coqui-calm':'coqui-wonder'} height={120} className="empty-character" motion="sway"/><h2>{favView&&!scope.total?t('Aún no hay favoritas.'):scope.total?t('Todo en su sitio.'):t('Nada con estos filtros.')}</h2><p>{favView&&!scope.total?t('Toca el corazón o desliza hacia arriba para guardar una.'):narrowed?t('Prueba con otros filtros o resetéalos.'):pending?t('Lo marcado para eliminar te espera al pulsar Terminar.'):scope.total?t('No quedan fotos pendientes con estos filtros.'):t('Prueba con otras fechas o con todo el contenido.')}</p><button className="primary-empty" onClick={()=>{setSheetTab('filters');setSheet('filters');}}>{t('Cambiar filtros')}</button>{narrowed&&<button className="secondary-empty" data-testid="reset-filters" onClick={resetFilters}><ArrowCounterClockwiseIcon size={18} weight="bold"/>{t('Resetear filtros')}</button>}{!demo&&<button className="text-button" onClick={connect}>{t('Actualizar biblioteca')}</button>}</div>:<div className="polaroid-stack" data-testid="photo-hand">
         <AnimatePresence>{bundleKey&&<motion.div className="bundle-arrival" key={bundleKey} initial={reduced?false:{opacity:0,scale:.94,y:-6}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{duration:.24,ease:[.2,.8,.2,1]}} role="status"><StackIcon size={15} weight="bold"/><span aria-hidden="true">{targetIds.length ? t('{n} de {total}',{n:targetIds.length,total:hand.length}) : tn('photos',hand.length)}</span><span className="sr-only">{targetIds.length ? t('{n} de {total} fotos seleccionadas',{n:targetIds.length,total:hand.length}) : tn('photos',hand.length)}</span></motion.div>}</AnimatePresence>
@@ -819,15 +825,14 @@ export function ManoApp() {
     {screen}
     <p className="sr-only" role="status" aria-live="polite">{spoken}</p>
     {splash&&<Splash done={()=>setSplash(false)}/>}
-    {gridOpen&&<Suspense fallback={<div className="library-grid" aria-busy="true"><CocoLoader size={44}/></div>}><LibraryGrid assets={assets} state={state} filter={filterSetting} filtersOn={!filterSetting.off} toggleFilters={toggleFilters} cardFrom={gridCard.current}
+    {gridOpen&&<Suspense fallback={<div className="library-grid" aria-busy="true"><CocoLoader size={44}/></div>}><LibraryGrid assets={assets} state={state} filter={filterSetting} filtersOn={!filterSetting.off} cardFrom={gridCard.current} top={gridTop} selected={gridSelection} setSelected={setGridSelection} closeRef={gridClose}
       share={ids=>void shareMany(ids)} reviewFrom={asset=>{resumeContext.current=undefined;setFilter(f=>({...f,off:true,startAt:asset.date}));setSelected([]);setLock(NO_HAND);setGridOpen(false);setGridAds(false);money.release('grid');setNotice(t('En orden desde esta foto'));}} current={hand[0]?.id} busy={busy} close={()=>{setGridOpen(false);setGridAds(false);money.release('grid');}} decide={(action,ids)=>act(action,ids)} undo={()=>void undoLast()} notice={setNotice}
       album={onAndroid()?undefined:ids=>void openAlbums(ids)} albumDone={gridAlbumDone} enterFrom={gridEnter.current}
       openSet={(list,from)=>{heldVideo.current=null;inspectOrigin.current=from;resetPeek();setInspectSet(list.length>1?list:null);setInspectFromGrid(true);setPinnedInspect(true);setInspect(list[0]);haptic('rigid');}}
-      editFilters={()=>{setSheetTab('filters');openFilters();}}
-      finish={<FinishButton pending={pending} busy={busy} announce={setSpoken} finish={()=>{setGridOpen(false);setGridAds(false);money.release('grid');cancel();setError('');setSheet('review');haptic('light');}}/>}
       open={(asset,from)=>{heldVideo.current=null;inspectOrigin.current=from;resetPeek();setInspectFromGrid(true);setPinnedInspect(true);setInspect(asset);haptic('rigid');}}
       ad={gridAds&&money.placement==='grid'?within=><AdSlot where="grid" money={money} within={within}/>:undefined}/></Suspense>}
     {inspect&&inspectSet&&inspectSet.length>1&&<div className="inspect-set" role="group" aria-label={t('Fotos ancladas')}><button type="button" onClick={()=>rotateSet(-1)} aria-label={t('Anterior')}><CaretLeftIcon size={20} weight="bold" className="flip-rtl"/></button><span aria-live="polite">{t('{n} de {total}',{n:formatNumber(inspectSet.findIndex(a=>a.id===inspect.id)+1),total:formatNumber(inspectSet.length)})}</span><button type="button" onClick={()=>rotateSet(1)} aria-label={t('Siguiente')}><CaretRightIcon size={20} weight="bold" className="flip-rtl"/></button></div>}
+    <CenterNotice notice={notice}/>
     <AnimatePresence>{inspect&&<InspectorBoundary key={inspect.id} close={closeInspect}><Suspense fallback={<div className="inspection is-pinned" aria-busy="true"><div className="inspection-shade"/><CocoLoader size={44}/></div>}><Inspector asset={inspect} src={sharpPreview(inspect)??(preloader.current?.get(inspect)?.poster||undefined)} cloud={!!preloader.current?.peek(inspect)?.value?.cloud} pinned={pinnedInspect} origin={inspectOrigin.current} peek={{x:peekX,y:peekY}} anchor={anchor} armed={overHook} geek={!!filter.geek} polaroid={anchoredCaption&&inspect?.kind!=='video'?{where:anchoredCaption.where,when:anchoredCaption.when,behind:Math.max(0,(inspectSet?.length??1)-1)}:undefined} close={closeInspect} decide={inspectFromGrid&&pinnedInspect?decideAnchored:undefined} next={inspectFromGrid&&inspectSet&&inspectSet.length>1?()=>rotateSet(1):undefined} pin={()=>{setPinnedInspect(true);haptic('rigid');}}
       video={(inspect.kind==='video'&&inspect.id===active?.id)||(inspect.kind==='live'&&!onAndroid())?{state:inspect.kind==='live'?inspectedLive:frontVideo,request:()=>requestLive(inspect),retry:()=>getVideos().retry(motionAsset(inspect)),download:()=>{requestLive(inspect);getVideos().download(motionAsset(inspect));},fullscreen:()=>{if(inspect.kind==='video')void play(inspect);},openSettings,sound:videoSound,onSound:()=>setVideoSound(v=>!v),freeze:inspect.kind==='video'?heldVideo.current:undefined}:undefined}/></Suspense></InspectorBoundary>}</AnimatePresence>
     <Sheet open={sheet==='filters'} close={()=>setSheet(null)} title={sheetTab==='filters'?t('Filtros'):sheetTab==='support'?t('Apoyo'):t('Ajustes')} description={sheetTab==='filters'?t('Elige qué fotos entran en la pila.'):sheetTab==='support'?t('Quita los anuncios o invita un café a quien la hace.'):t('Elige cómo se ven tus recuerdos.')} error={visibleError} returnTo="filter-trigger">

@@ -1,16 +1,16 @@
 import type { ReactNode } from 'react';
-import { FunnelSimpleIcon, FunnelSimpleXIcon } from '@phosphor-icons/react';
+import { CheckCircleIcon, XCircleIcon } from '@phosphor-icons/react';
 import { t } from './i18n';
 
-/** «Filtros», the same split button on the pile and in the Fototeca (user, 2026-11-12):
- * the funnel switches the filters on and off (off: the whole library in time order);
- * the word opens the editor. */
+/** «Filtros», the same button on the pile and in the Fototeca (user, 2026-11-13): one
+ * pill whose icon says the state — a filled circle with a check when the filters are on,
+ * an empty circle with a cross when off. The circle switches them; the word opens the
+ * editor. Off means the whole library in time order. */
 export function FilterSwitch({ on, toggle, edit, id }: { on: boolean; toggle: () => void; edit: () => void; id?: string }) {
   return <div className={`header-action filter-switch ${on ? 'is-on' : ''}`}>
     <button type="button" className="filter-switch-toggle" role="switch" aria-checked={on} aria-label={on ? t('Desactivar filtros') : t('Activar filtros')} onClick={toggle}>
-      {on ? <FunnelSimpleIcon size={18} weight="bold"/> : <FunnelSimpleXIcon size={18} weight="bold"/>}
+      {on ? <CheckCircleIcon size={22} weight="fill"/> : <XCircleIcon size={22} weight="regular"/>}
     </button>
-    <span className="filter-switch-rule" aria-hidden="true"/>
     <button type="button" id={id} className="filter-switch-edit" onClick={edit}>{t('Filtros')}</button>
   </div>;
 }
