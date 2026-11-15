@@ -1,0 +1,47 @@
+{
+  "date": "2026-11-15",
+  "productVersion": "0.9.9.3",
+  "iosMarketingVersion": "0.9.9",
+  "iosBuild": "46",
+  "source": "1a89cd1ff0e099b79b0060b090b7d0de52c701ab",
+  "run": 43667412374,
+  "runURL": "https://github.com/joacomino-dev/mano-iphone/actions/runs/43667412374",
+  "artifact": 14142369143,
+  "artifactSHA256": "eea57576185283244db2d81b470b03fea2b625201c98fa47c3ae2f0fdea5865b",
+  "fileName": "CocoWash-0.9.9.3-build46-1a89cd1.ipa",
+  "bytes": 7090866,
+  "sha256": "1be2e31dbde8d0c08b4ad4413ef66af431f2fa8fe94e8dbd2cef9e766e7b1cf7",
+  "bundle": "work.joaquin.mano",
+  "architecture": "arm64",
+  "minimumIOS": "17.0",
+  "languages": [
+    "es",
+    "en",
+    "fr",
+    "de",
+    "it",
+    "ar",
+    "ja"
+  ],
+  "checks": {
+    "artifactDigest": "PASS",
+    "outerZIPCRC": "PASS",
+    "ipaCRC": "PASS",
+    "validationSourceSHA": "PASS",
+    "nativeArchitectureAndPlatform": "PASS",
+    "versionAndBuild": "PASS",
+    "testAdsOnly": "PASS",
+    "noDevelopmentResetFlag": "PASS",
+    "shippedOptimizedGrid": "PASS",
+    "privacyManifestPresent": "PASS",
+    "nativeStartupAndSameBuildRelaunch": "PASS"
+  },
+  "distribution": "unsigned development IPA for user-led iLoader signing/install; not App Store/TestFlight",
+  "physicalInstallation": "NOT PERFORMED",
+  "physicalPerformance": "PENDING",
+  "otherCI": {
+    "iosRelease": 43667412346,
+    "android": 43667412329,
+    "status": "success"
+  }
+}

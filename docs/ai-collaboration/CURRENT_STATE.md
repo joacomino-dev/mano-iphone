@@ -1,12 +1,17 @@
 # CocoWash — estado vigente
 
-## Codex CW-CX-066 — IPA optimizada (2026-11-14, en curso)
+## Codex CW-CX-066 — IPA optimizada entregada (2026-11-15)
 
-Usuario pide generar la IPA y completar la entrega para iLoader. Codex prepara checkpoint
-y push normal a main para el workflow público gratuito existente, sin duplicarlo.
-Producto 0.9.9.3; build iOS 46 y etiqueta de inicio alineada. Preservar datos, bundle,
-permisos, canal de tienda en fuente y Android code5. Sin publicación en tiendas ni instalación física.
-Tras CI: verificar fuente, ZIP, Info.plist/arm64, canal de prueba y SHA256; entregar en Descargas.
+Código CW-CX-065 integrado y enviado a main en `1a89cd1`; producto 0.9.9.3,
+iOS 0.9.9/build46, etiqueta de inicio alineada, Android code5 conservado.
+CI desarrollo [43667412374](https://github.com/joacomino-dev/mano-iphone/actions/runs/43667412374),
+tienda43667412346 y Android43667412329 PASS. Desarrollo prueba arranque/relanzamiento en simulador.
+IPA en `C:/Users/Joaco/Downloads/CocoWash-0.9.9.3-build46-1a89cd1.ipa`, 7.090.866 bytes.
+[Recibo verificable](../apple-readiness/evidence/strategic/20261115-build46-ipa.json):
+digest del artefacto, CRC, fuente, bundle, arm64/iOS17, siete idiomas y optimizaciones PASS.
+Sin bandera de reset; anuncios de prueba; unsigned para firma/instalación del usuario con iLoader.
+Fuentes conservan canal de tienda; CI modifica solo su copia. Sin instalación física ni publicación.
+QA física de pellizcos, fluidez y rendimiento R-73/R-74 pendientes. No repetir CI por este cierre documental.
 
 ## Codex CW-CX-065 — fluidez de cuadrícula (2026-11-14, completada local)
 

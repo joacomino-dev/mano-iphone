@@ -146,7 +146,7 @@ en curso. No duplicarlo ni repetir builds de app sin cambios.
 | R-71 | Doble toque hacía zoom de toda la pantalla; toque + mantener mostraba la lupa (usuario, 2026-11-12) | CL | **Implementado; iPhone pendiente** | 125f46e: viewport sin zoom + `touch-action:manipulation`; iOS desactiva el reconocedor «tap and a half» de WebKit (log `COCOWASH_LOUPE_DISABLED`). Compila en CI release; falta probar en el teléfono |
 | R-72 | Vista «Fototeca» (cuadrícula) con decisiones en lote (usuario, 2026-11-12) | CL | **F1–F4 implementadas; iPhone pendiente** | aae4dba: revisión de diseño (coco-mobile-ui + frontend-design), toque → vista anclada, franja de anuncio cada 10 filas solo con carta cargada (aprobado por el usuario), precacheo nativo de miniaturas en iOS. `tests/grid-flow.mjs` PASS |
 | R-73 | Lentitud tras uso prolongado (usuario, 2026-11-12) | CL | **Web y Android sin fuga; iOS `sample` pendiente** | `tests/long-use-profile.mjs`: 400 decisiones en 3000 sin crecimiento de memoria/DOM/latencia; 12 min en reposo sin actividad. Android: CPU «en reposo» eran picos post-ronda → medición asentada 3df87da. Memoria Android: la pendiente era caché descartable del renderer; purga por DevTools cada ronda (ee4bcf4) → 43486731821 tres PASS seguidos, renderer plano. iOS: gate completo con `sample` del proceso caliente pendiente |
-| R-74 | Tirones al encadenar pellizcos carta ↔ 3 ↔ 5 columnas, especialmente iPhone (usuario, 2026-11-14) | CX | **Corrección local; QA física pendiente** | CW-CX-065 sobre b945cc0: cancela asentamiento anterior conservando pose, agrupa dibujo, prioriza visibles/reutiliza miniaturas, pausa vídeo oculto y zoom por MotionValue. 20 ciclos iOS + 5 Android sintéticos PASS; [evidencia/límites](apple-readiness/evidence/strategic/20261114-grid-motion.json). No cierra R-73 ni acredita hardware. |
+| R-74 | Tirones al encadenar pellizcos carta ↔ 3 ↔ 5 columnas, especialmente iPhone (usuario, 2026-11-14) | CX | **Integrado; IPA46 entregada; QA física pendiente** | CW-CX-065/066, 1a89cd1: interrupción conservando pose, dibujo agrupado, prioridad/reutilización de miniaturas, vídeo oculto pausado y zoom por MotionValue. 20 ciclos iOS + 5 Android sintéticos PASS. CI desarrollo43667412374 PASS; [IPA/recibo](apple-readiness/evidence/strategic/20261115-build46-ipa.json). R-73 sigue abierto. |
 
 ## A · Código y pruebas iOS (antes de firmar)
 
@@ -169,7 +169,7 @@ en curso. No duplicarlo ni repetir builds de app sin cambios.
 | R-13 | Perfil de pagos de AdMob | U | Pendiente | AdMob iOS y mensajes ya hechos (2026-11-06) |
 | R-14 | Marca «CocoWash» sin conflicto en los mercados | U | Pendiente | — |
 | R-15 | Productos en ASC con IDs exactos: `noads.year` (no renovable), `noads.lifetime` (no consumible), `coffee` (consumible); precios | U (+C textos) | Pendiente | Textos en `docs/appstore/in-app-purchases.md` |
-| R-16 | Versión y build de envío | U + C | **Configuración PASS; disponibilidad BLOCKED** | Visible0.9.9.2; iOS0.9.9/build44; Android0.9.9.2/code4. Consultar ambas consolas antes de firmar |
+| R-16 | Versión y build de envío | U + C | **Configuración PASS; disponibilidad BLOCKED** | Producto0.9.9.3; iOS0.9.9/build46; Android0.9.9.3/code5. IPA desarrollo46 verificada. Consultar ambas consolas antes de firmar para tiendas. |
 | R-17 | Publicar políticas corregidas ES/EN con Android | U autoriza, C prepara | **Preparadas; publicación BLOCKED** | 9nov: ambas URL y soporte200 con agente navegador; archivos anteriores sin Android. [Recibo](apple-readiness/evidence/strategic/0992-public-policies.json); sin despliegue |
 | R-18 | Ficha, etiquetas de privacidad, clasificación por edad, notas de revisión | U + C | En curso | Borradores en `docs/appstore/` y `docs/apple-readiness/storefront/`; revisión nativa de textos pendiente |
 
@@ -264,6 +264,8 @@ Fallos en el Organizador y en Play Vitals, valoraciones, AdMob (relleno, consent
 textos con hablantes nativos, 1.0.1 para lo que salga.
 
 ## Registro de avance
+
+- 2026-11-15 · Codex · CW-CX-066 · 1a89cd1 enviado: IPA0.9.9.3/build46 verificada en Descargas. Desarrollo43667412374 (arranque/relanzamiento), tienda43667412346 y Android43667412329 PASS. Recibo `apple-readiness/evidence/strategic/20261115-build46-ipa.json`. Instalación/QA física pendientes; sin publicación ni nueva CI documental.
 
 - 2026-11-14 · Codex · CW-CX-065 · R-74 implementado localmente sin commit/push: 148 Node, TS/protected28/builds/release/contratos/Sites y regresiones grid/Inspector PASS. Movimiento normal: 20 ciclos iOS + 5 Android; miniaturas 95→50. Evidencia `apple-readiness/evidence/strategic/20261114-grid-motion.json`. QA física y paquete nuevo pendientes; R-73 sigue abierto.
 

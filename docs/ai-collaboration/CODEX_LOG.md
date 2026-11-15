@@ -587,3 +587,16 @@ Decisiones relevantes: aprobación del usuario; conservar gestos/calidad, arte, 
 Validaciones: 148 Node, TS, runtime28, builds, release/contratos/Sites, grid/Inspector PASS. 20 ciclos iOS + 5 Android sintéticos PASS. [Evidencia](../apple-readiness/evidence/strategic/20261114-grid-motion.json): miniaturas95→50; lecturas136→2; layout140→73, muestra CPU×4.
 Impacto para Claude: preservar diff; aceptación artística pendiente.
 Pendientes: iPhone/Android físicos y paquete nuevo; persisten tareas largas bajo carga. Sin publicación ni CI nueva; R-73 abierto.
+
+### CW-CX-066 — IPA 0.9.9.3 build46 verificada
+Fecha: 2026-11-15, America/Bogota
+Agente: Codex
+Tarea: generar IPA y completar entrega autorizada.
+Estado: código integrado; paquete entregado; aceptación física pendiente.
+Base Git / commit: 1a89cd1 enviado a main; posterior cierre solo documental.
+Archivos modificados: build iOS46, Splash, coordinación y recibo; integra CW-CX-065.
+Cambios realizados: CI pública gratuita existente, una ejecución; IPA en Descargas con recibo/hash.
+Decisiones relevantes: conserva producto0.9.9.3, bundle/datos y Android5; unsigned/iLoader, sin reset ni tiendas.
+Validaciones: 148 Node/TS/runtime28/release13; desarrollo43667412374, tienda43667412346 y Android43667412329 PASS. Arranque/relanzamiento nativo PASS. Digest GitHub, CRC, fuente, arm64/iOS17, siete idiomas y canal de prueba PASS. [Recibo](../apple-readiness/evidence/strategic/20261115-build46-ipa.json).
+Impacto para Claude: main contiene las optimizaciones; conservar arte/contratos.
+Pendientes: instalación por usuario, QA física de gestos y rendimiento. No atribuir fluidez al simulador ni repetir CI por documentación.
