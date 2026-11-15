@@ -1,5 +1,13 @@
 # CocoWash — Release Candidate en estabilización
 
+## Auditoría actual — 15 de noviembre de 2026
+
+Producto 0.9.9.3; candidata iOS 0.9.9/build47, Android code5.
+[CW-CX-067](CODE_AUDIT_2026-11-15.md) contiene limpieza, pruebas locales y pendientes.
+El usuario acepta la fluidez física de build46. Eso no valida los cambios nativos de
+build47 ni resuelve firma, privacidad, compras o aceptación de Apple. **Envío bloqueado.**
+Las secciones siguientes conservan el candidato del 9 de noviembre y sus SHA originales.
+
 ## Candidato 0.9.9.2 — 9 de noviembre de 2026
 
 **Estado: FAIL técnico / distribución BLOCKED. No apta para enviar.**

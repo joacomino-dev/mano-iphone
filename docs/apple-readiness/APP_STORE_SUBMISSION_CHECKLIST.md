@@ -1,8 +1,9 @@
 # Checklist operativo de envío — CocoWash
 
-2026-11-09. **Envío bloqueado.** Candidato **0.9.9.2**, app `fa318ba`, pruebas `afbd2f9`, en validación.
-Configurado: iOS **0.9.9 / build44**, Android **0.9.9.2 / code4**. Confirmar que
-estén libres en las consolas antes de firmar/subir; no volver a utilizar build43.
+2026-11-15. **Envío bloqueado.** Candidato de auditoría **0.9.9.3**, iOS **0.9.9 / build47**,
+Android **0.9.9.3 / code5**. [Auditoría y evidencia actual](CODE_AUDIT_2026-11-15.md).
+Los resultados por SHA de los pasos inferiores son históricos: no acreditan build47.
+Confirmar números libres en las consolas antes de firmar/subir; no reutilizar builds enviados.
 PASS exige evidencia del SHA/binario exacto;
 FAIL=fallo comprobado; BLOCKED=decisión/herramienta/acceso ausente;
 NOT TESTED=prueba aún no ejecutada. Documentación o CI verde sin XCTest no es PASS.

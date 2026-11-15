@@ -39,6 +39,8 @@ jobs:
           build/signature-tests
           swiftc ios/App/App/DevelopmentSafety.swift tests/swift-safety/main.swift -o build/safety-tests
           build/safety-tests
+          swiftc ios/App/App/VideoByteRange.swift tests/swift-range/main.swift -o build/range-tests
+          build/range-tests
       # `main` holds the App Store channel (verify-release.yml checks it). This job
       # switches only its own checkout to the development channel: «Modo developer»
       # and Google's sample app ID (test ads). Nothing is committed back.

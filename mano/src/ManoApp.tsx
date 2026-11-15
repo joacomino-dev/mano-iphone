@@ -1,8 +1,9 @@
 import { FinishButton } from './FinishButton';
+import { guardPhotoTextInteraction } from './textInteraction';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type PointerEvent, type MouseEvent } from 'react';
 import { AnimatePresence, motion, useReducedMotion, useMotionValue, useTransform, animate, type MotionValue } from 'motion/react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { ExportIcon, CaretLeftIcon, FolderOpenIcon, FolderSimplePlusIcon, CaretRightIcon, CaretDownIcon, ArrowCounterClockwiseIcon, ArrowUUpLeftIcon, StackIcon, TrashIcon, CheckIcon, XIcon, PlayIcon, SlidersHorizontalIcon, ArrowClockwiseIcon, ImageBrokenIcon, PlusIcon, PushPinIcon, InfoIcon, CloudIcon, SparkleIcon } from '@phosphor-icons/react';
+import { ExportIcon, FolderOpenIcon, FolderSimplePlusIcon, CaretRightIcon, CaretDownIcon, ArrowCounterClockwiseIcon, ArrowUUpLeftIcon, StackIcon, TrashIcon, CheckIcon, XIcon, ArrowClockwiseIcon, ImageBrokenIcon, PlusIcon, PushPinIcon, InfoIcon, CloudIcon, SparkleIcon } from '@phosphor-icons/react';
 import { BottomSheet, KeyboardInput, useKeyboard } from './mobile';
 import { ReviewGrid } from './ReviewGrid';
 import { decide, undo, restore, eligible, eligibleFrom, orderAssets, readState, reconcileLibrary, libraryFingerprint, filterScope, LEVELS, initialFilter, initialState, effectiveFilter, type Action, type Asset, type Decision, type Filter, type RecordState } from './domain';
@@ -77,10 +78,7 @@ function savedGroups(items: Asset[]) {
  * through `cloudPreviews`, which the iCloud indicator follows.
  * `quiet`: the owner (a video card) shows the one error state; this only
  * renders the poster or a neutral placeholder, so messages never stack. */
-function Photo(props: { asset: Asset; small?: boolean; pool?: AssetPreloader<PreparedMedia>|null; quiet?: boolean }) {
-  return <UnprotectedPhoto {...props}/>;
-}
-function UnprotectedPhoto({ asset, small=false, pool, quiet=false }: { asset: Asset; small?: boolean; pool?: AssetPreloader<PreparedMedia>|null; quiet?: boolean }) {
+function Photo({ asset, small=false, pool, quiet=false }: { asset: Asset; small?: boolean; pool?: AssetPreloader<PreparedMedia>|null; quiet?: boolean }) {
   const policy = useSyncExternalStore(subscribePreviewPolicy, previewPolicyKey);
   const [own, setOwn] = useState<{src:string;cloud:boolean;missing:boolean}|null>(null); const [error, setError] = useState(false); const [retry, setRetry] = useState(0);
   useSyncExternalStore(useCallback((listener:()=>void)=>pool?pool.subscribeItem(asset,listener):()=>{},[pool,asset.id,asset.modified]), ()=>pool?.version(asset)??'');
@@ -349,6 +347,7 @@ export function ManoApp() {
   });
   const cancelWarmup=()=>{setLiveRequested(null);sessionNumber.current++;warmingNow.current=false;prepareWindow([],String(sessionNumber.current));warmWait.current?.();setWarming(false);setLoading(false);const groups=deferredGroups.current;if(groups){deferredGroups.current=null;setAssets(prev=>prev.map(a=>({...a,group:groups.get(a.id)})));}};
   useEffect(()=>{document.title=`CocoWash: ${t('Lo que importa, se queda')}`;installErrorReporting();},[]);
+  useEffect(() => guardPhotoTextInteraction(document), []);
   const appliedPolicy=useRef('');
   useEffect(()=>{saveDisplay(display);setHapticsEnabled(display.haptics);setPreviewSizing({plain:!display.photo.polaroid,quality:display.quality,cloud:display.cloud,scale:typeof window!=='undefined'?window.devicePixelRatio||2:2});
     const key=previewPolicyKey();if(appliedPolicy.current&&appliedPolicy.current!==key){resetPreviewPolicy();preloader.current?.invalidate();videos.current?.reconcilePolicy();}appliedPolicy.current=key;},[display]);

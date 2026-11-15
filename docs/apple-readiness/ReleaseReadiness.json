@@ -1,5 +1,19 @@
 {
-  "updated": "2026-11-09",
+  "updated": "2026-11-15",
+  "currentCandidate": {
+    "task": "CW-CX-067",
+    "report": "CODE_AUDIT_2026-11-15.md",
+    "evidence": "evidence/strategic/20261115-code-audit.json",
+    "base": "be288a05bb3921d6950bc41a29cad374402c21c1",
+    "product": "0.9.9.3",
+    "iosBuild": 47,
+    "androidVersionCode": 5,
+    "localChecks": "PASS",
+    "nativeChecks": "PENDING_CI",
+    "appStoreReady": false
+  },
+  "historicalSnapshotDate": "2026-11-09",
+  "historicalScope": "All remaining checkpoint, versions, gates, evidence, packages and candidate run status below describe the 2026-11-09 snapshot and their stated SHAs, not currentCandidate. See its report for current blockers.",
   "sourceCheckpoint": "afbd2f991aeddbd850b72eac547fe6cfc420714b",
   "releaseState": "FAIL",
   "publishAuthorized": false,

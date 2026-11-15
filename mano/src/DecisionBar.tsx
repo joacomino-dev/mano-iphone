@@ -234,6 +234,3 @@ function SideButton({ kind, piece, fit, disabled, label, onClick }: { kind: 'dis
     </span>
   </button>;
 }
-
-/** Exported for the visual check and tests. */
-export const BAR_LINES = { CREAM, INK, BAND, GAP, BASE };

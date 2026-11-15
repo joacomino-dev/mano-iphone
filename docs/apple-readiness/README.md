@@ -1,11 +1,16 @@
 # CocoWash — preparación Apple y distribución
 
-Estado vigente, 2026-11-09: fuente única main en `C:/Users/Joaco/Developer/CocoWash-android`.
-**0.9.9.2: NO APTA para envío. Android completo y relanzamiento ×5 de ambas plataformas PASS; R-67/Live iOS, privacidad del archivo, hardware y distribución pendientes.**
+Estado vigente, 2026-11-15: fuente única main en `C:/Users/Joaco/Developer/CocoWash-android`.
+**0.9.9.3, candidato iOS build47: NO APTO para envío.**
+[Auditoría y limpieza CW-CX-067](CODE_AUDIT_2026-11-15.md): 149 Node, 17 contratos/empaquetado,
+43 herramientas, TS estricto, protected28 y builds locales PASS; npm audit cero avisos.
+Usuario acepta fluidez de build46. Build47 cambia fuentes nativas y necesita su propia CI/QA;
+privacidad del archivo, hardware, comercio y distribución siguen pendientes.
 Ya se utilizan runners macOS públicos estándar autorizados. Windows no compila Swift;
 la evidencia de CI se identifica por SHA/run, sin fingir dispositivos físicos.
 
-- [Release Candidate actual](RELEASE_CANDIDATE.md).
+- [Auditoría actual y puertas de Apple](CODE_AUDIT_2026-11-15.md).
+- [Historial Release Candidate](RELEASE_CANDIDATE.md).
 - [Checklist operativo actual](APP_STORE_SUBMISSION_CHECKLIST.md).
 - [Roadmap único y paquete del propietario](../ROADMAP.md).
 - [Laboratorio nativo y medidas reales](NATIVE_LAB.md).

@@ -59,36 +59,7 @@ class ManoBridgeController: CAPBridgeViewController {
         bridge?.registerPluginInstance(PhotoLibraryPlugin())
         bridge?.registerPluginInstance(CocoMonetizationPlugin())
         webView?.allowsLinkPreview = false
-        disableLoupe()
         devLog("COCOWASH_BRIDGE_READY")
-    }
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        disableLoupe()
-    }
-    /// WebKit creates its text-interaction recognizers lazily (first touch, first focus):
-    /// check again whenever the web view lays out. Cheap: a few recognizers, a name test.
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        disableLoupe()
-    }
-    /// Tap, then touch and hold opens the text loupe even where CSS disables
-    /// (iOS 17+: also its loupe gesture, «…Loupe…», besides «tap and a half»)
-    /// selection (WebKit's "tap and a half" recognizer). CocoWash never needs it:
-    /// fields keep the long press to place the caret. Public API only.
-    private func disableLoupe() {
-        guard let web = webView else { return }
-        var views: [UIView] = [web, web.scrollView]
-        views += web.scrollView.subviews
-        var disabled = 0
-        for view in views {
-            for recognizer in view.gestureRecognizers ?? [] {
-                let name = NSStringFromClass(type(of: recognizer))
-                guard recognizer.isEnabled, name.contains("TapAndAHalf") || name.contains("Loupe") else { continue }
-                recognizer.isEnabled = false; disabled += 1
-            }
-        }
-        if disabled > 0 { devLog("COCOWASH_LOUPE_DISABLED count=\(disabled)") }
     }
     // Coco Cream (0.9): dark status bar text on the light cream frame.
     override var preferredStatusBarStyle: UIStatusBarStyle { .darkContent }
@@ -118,15 +89,7 @@ final class PreparedVideoStreamHandler: NSObject, WKURLSchemeHandler {
                 DispatchQueue.main.async { self.fail(task, URLError(.fileDoesNotExist)) }; return
             }
             defer { try? handle.close() }
-            var lower = 0, upper = size - 1
-            if let range, range.hasPrefix("bytes=") {
-                let bounds = range.dropFirst(6).split(separator: "-", omittingEmptySubsequences: false)
-                if bounds.count == 2 {
-                    if bounds[0].isEmpty, let suffix = Int(bounds[1]) { lower = max(0, size - suffix) }
-                    else { lower = Int(bounds[0]) ?? 0; if let end = Int(bounds[1]) { upper = min(end, size - 1) } }
-                }
-            }
-            guard lower <= upper else {
+            guard let parsed = VideoByteRange.parse(range, size: size) else {
                 DispatchQueue.main.async {
                     guard self.active.contains(id) else { return }
                     guard let response = HTTPURLResponse(url: url, statusCode: 416, httpVersion: "HTTP/1.1", headerFields: ["Content-Range": "bytes */\(size)"]) else { self.fail(task, URLError(.badServerResponse)); return }
@@ -134,10 +97,11 @@ final class PreparedVideoStreamHandler: NSObject, WKURLSchemeHandler {
                 }
                 return
             }
+            let lower = parsed.lower, upper = parsed.upper
             var headers = ["Content-Type": file.pathExtension == "mov" ? "video/quicktime" : "video/mp4",
-                           "Accept-Ranges": "bytes", "Content-Length": String(upper - lower + 1), "Cache-Control": "no-cache"]
-            if range != nil { headers["Content-Range"] = "bytes \(lower)-\(upper)/\(size)" }
-            guard let response = HTTPURLResponse(url: url, statusCode: range != nil ? 206 : 200, httpVersion: "HTTP/1.1", headerFields: headers) else {
+                           "Accept-Ranges": "bytes", "Content-Length": String(parsed.length), "Cache-Control": "no-cache"]
+            if parsed.partial { headers["Content-Range"] = "bytes \(lower)-\(upper)/\(size)" }
+            guard let response = HTTPURLResponse(url: url, statusCode: parsed.partial ? 206 : 200, httpVersion: "HTTP/1.1", headerFields: headers) else {
                 DispatchQueue.main.async { self.fail(task, URLError(.badServerResponse)) }; return
             }
             var alive = DispatchQueue.main.sync { () -> Bool in

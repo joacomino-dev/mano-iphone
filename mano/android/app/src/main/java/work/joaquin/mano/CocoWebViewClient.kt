@@ -40,26 +40,27 @@ class CocoWebViewClient(private val bridge: Bridge) : BridgeWebViewClient(bridge
             val descriptor = context.contentResolver.openAssetFileDescriptor(uri, "r") ?: return status(404, "Not Found")
             val size = descriptor.length.takeIf { it > 0 } ?: descriptor.parcelFileDescriptor.statSize
             if (size <= 0) { descriptor.close(); return status(404, "Not Found") }
-            var lower = 0L; var upper = size - 1
             val range = request.requestHeaders.entries.firstOrNull { it.key.equals("Range", true) }?.value
-            if (range != null && range.startsWith("bytes=")) {
-                val bounds = range.removePrefix("bytes=").split(",")[0].split("-")
-                if (bounds.size == 2) {
-                    if (bounds[0].isEmpty()) bounds[1].toLongOrNull()?.let { lower = maxOf(0, size - it) }
-                    else { lower = bounds[0].toLongOrNull() ?: 0; bounds[1].toLongOrNull()?.let { upper = minOf(it, size - 1) } }
-                }
-            }
-            if (lower > upper) {
+            val parsed = VideoByteRange.parse(range, size)
+            if (parsed == null) {
                 descriptor.close()
                 return WebResourceResponse(mime, null, 416, "Range Not Satisfiable", mapOf("Content-Range" to "bytes */$size"), null)
             }
-            val stream = descriptor.createInputStream()
-            var skipped = 0L
-            while (skipped < lower) { val n = stream.skip(lower - skipped); if (n <= 0) break; skipped += n }
-            val length = upper - lower + 1
+            val lower = parsed.lower; val upper = parsed.upper
+            val stream = try { descriptor.createInputStream() } catch (error: Exception) { descriptor.close(); throw error }
+            try {
+                var skipped = 0L
+                while (skipped < lower) {
+                    val n = stream.skip(lower - skipped)
+                    if (n > 0) skipped += n
+                    else if (stream.read() >= 0) skipped++
+                    else { stream.close(); return status(416, "Range Not Satisfiable") }
+                }
+            } catch (error: Exception) { stream.close(); throw error }
+            val length = parsed.length
             val headers = mutableMapOf("Accept-Ranges" to "bytes", "Content-Length" to length.toString(), "Cache-Control" to "no-cache")
-            if (range != null) headers["Content-Range"] = "bytes $lower-$upper/$size"
-            WebResourceResponse(mime, null, if (range != null) 206 else 200, if (range != null) "Partial Content" else "OK", headers, Bounded(stream, length))
+            if (parsed.partial) headers["Content-Range"] = "bytes $lower-$upper/$size"
+            WebResourceResponse(mime, null, if (parsed.partial) 206 else 200, if (parsed.partial) "Partial Content" else "OK", headers, Bounded(stream, length))
         } catch (e: Exception) { status(404, "Not Found") }
     }
 

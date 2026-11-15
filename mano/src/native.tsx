@@ -17,12 +17,11 @@ async function start() {
       favorites: demo ? {} : legacyFavorites(FAVORITES_KEY),
       inFlight: demo ? {} : legacyFavorites(IN_FLIGHT_KEY)
     }));
-    root.render(<React.StrictMode><ManoApp/></React.StrictMode>);
   } catch {
     // No storage notice for the person (user, 2026-11-08): without a readable
     // journal the app still starts, on the localStorage copy that every journal
     // write mirrors. Nothing is deleted; the journal is tried again next launch.
-    root.render(<React.StrictMode><ManoApp/></React.StrictMode>);
   }
+  root.render(<React.StrictMode><ManoApp/></React.StrictMode>);
 }
 void start();

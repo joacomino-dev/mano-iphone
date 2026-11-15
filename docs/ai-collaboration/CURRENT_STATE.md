@@ -1,5 +1,26 @@
 # CocoWash — estado vigente
 
+## Codex CW-CX-067 — auditoría y limpieza para Apple (2026-11-15, local PASS)
+
+Usuario confirma fluidez de build46 en iPhone y autoriza auditoría completa, limpieza de código
+y preparación técnica para Apple. Base limpia be288a0. Codex reserva fuentes compartidas,
+puentes nativos/configuración que presenten defectos demostrables, checks y documentación.
+Mantener experiencia aprobada, datos, contratos de Fotos, bundle y protected28. Sin tiendas/cuentas
+ni secretos; aceptación Apple depende también de archivo firmado, consolas y QA externa.
+R-74 recibe aceptación subjetiva del usuario; R-73 conserva medición nativa pendiente.
+
+Candidato 0.9.9.3/iOS build47, Android5. [Informe](../apple-readiness/CODE_AUDIT_2026-11-15.md)
+y [recibo](../apple-readiness/evidence/strategic/20261115-code-audit.json).
+Elimina código sin uso, duplicación y heurística sobre nombres internos WebKit; guard DOM público
+conserva campos/controles/pinch. Parsers de rangos Swift/Kotlin con fixture20 y salto Android seguro.
+149 Node, 17 release/contratos/Sites, 43 herramientas, TS noUnused, protected28, builds web/native-web
+y recorridos sintéticos PASS. npm audit 12 avisos/6 paquetes→0; Vite8.1.6 y transitivas corregidas.
+La falla inicial de seek era del servidor sin rangos; producción con Vite preview pasa sin parche de app.
+Swift/Kotlin y gate nativo completo pendientes de CI; no declarar listo para Apple ni build47 físico.
+Puertas externas: firma/archivo+privacidad agregada, ATT/compras/accesibilidad/iCloud físicos,
+consolas del propietario y políticas corregidas sin publicar. Reserva termina al entregar;
+conservar cambios nativos y gestos. No se modifican cuentas, tiendas, claves o runtime protegido.
+
 ## Codex CW-CX-066 — IPA optimizada entregada (2026-11-15)
 
 Código CW-CX-065 integrado y enviado a main en `1a89cd1`; producto 0.9.9.3,

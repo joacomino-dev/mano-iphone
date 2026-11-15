@@ -1,5 +1,10 @@
 # Mapa técnico de CocoWash
 
+Estado actual (2026-11-15): [CURRENT_STATE](../ai-collaboration/CURRENT_STATE.md) y
+[auditoría CW-CX-067](../apple-readiness/CODE_AUDIT_2026-11-15.md).
+La app incluye Android nativo; Vite es 8.1.6, producto 0.9.9.3/iOS build47.
+El inventario y los resultados del 30 de octubre que siguen son históricos.
+
 Auditado el 30 de octubre de 2026 en Windows. Rutas relativas a la raíz Git.
 La primera preparación agregó documentación/instrucciones/capturas, sin cambios funcionales.
 La revisión definitiva de la misma fecha reconsultó manifiesto, entradas, bridge

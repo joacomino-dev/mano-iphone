@@ -23,7 +23,15 @@ una puerta nativa, comercial o de distribución.
 **Estados:** Hecho · En curso · Pendiente · Bloqueado (falta herramienta, acceso o decisión) · FAIL
 (comprobado y fallando). **Quién:** U = usuario · CX = Codex · CL = Claude · C = cualquiera de los dos.
 
-## Dónde estamos (2026-11-09, CW-CX-060 — candidato 0.9.9.2)
+## Dónde estamos (2026-11-15, CW-CX-067 — auditoría 0.9.9.3)
+
+Usuario acepta fluidez de IPA46. Limpieza y preparación de build47 verificadas localmente:
+149 Node, 17 contratos/empaquetado, 43 herramientas, protected28, TS estricto y builds PASS;
+npm audit cero avisos. [Informe y pendientes reales de Apple](apple-readiness/CODE_AUDIT_2026-11-15.md).
+Swift/Kotlin nuevos requieren CI; archivo firmado, QA física, privacidad y comercio siguen pendientes.
+**Envío bloqueado.** Los resultados por SHA siguientes conservan el historial de estabilización.
+
+### Candidato histórico 0.9.9.2 — CW-CX-060
 
 - Usuario autoriza cerrar ambas plataformas con etiqueta **0.9.9.2**. iOS mantiene versión nativa
   **0.9.9**, build candidato **44**; Android **0.9.9.2**, código **4**. Consultar disponibilidad en las
@@ -146,7 +154,8 @@ en curso. No duplicarlo ni repetir builds de app sin cambios.
 | R-71 | Doble toque hacía zoom de toda la pantalla; toque + mantener mostraba la lupa (usuario, 2026-11-12) | CL | **Implementado; iPhone pendiente** | 125f46e: viewport sin zoom + `touch-action:manipulation`; iOS desactiva el reconocedor «tap and a half» de WebKit (log `COCOWASH_LOUPE_DISABLED`). Compila en CI release; falta probar en el teléfono |
 | R-72 | Vista «Fototeca» (cuadrícula) con decisiones en lote (usuario, 2026-11-12) | CL | **F1–F4 implementadas; iPhone pendiente** | aae4dba: revisión de diseño (coco-mobile-ui + frontend-design), toque → vista anclada, franja de anuncio cada 10 filas solo con carta cargada (aprobado por el usuario), precacheo nativo de miniaturas en iOS. `tests/grid-flow.mjs` PASS |
 | R-73 | Lentitud tras uso prolongado (usuario, 2026-11-12) | CL | **Web y Android sin fuga; iOS `sample` pendiente** | `tests/long-use-profile.mjs`: 400 decisiones en 3000 sin crecimiento de memoria/DOM/latencia; 12 min en reposo sin actividad. Android: CPU «en reposo» eran picos post-ronda → medición asentada 3df87da. Memoria Android: la pendiente era caché descartable del renderer; purga por DevTools cada ronda (ee4bcf4) → 43486731821 tres PASS seguidos, renderer plano. iOS: gate completo con `sample` del proceso caliente pendiente |
-| R-74 | Tirones al encadenar pellizcos carta ↔ 3 ↔ 5 columnas, especialmente iPhone (usuario, 2026-11-14) | CX | **Integrado; IPA46 entregada; QA física pendiente** | CW-CX-065/066, 1a89cd1: interrupción conservando pose, dibujo agrupado, prioridad/reutilización de miniaturas, vídeo oculto pausado y zoom por MotionValue. 20 ciclos iOS + 5 Android sintéticos PASS. CI desarrollo43667412374 PASS; [IPA/recibo](apple-readiness/evidence/strategic/20261115-build46-ipa.json). R-73 sigue abierto. |
+| R-74 | Tirones al encadenar pellizcos carta ↔ 3 ↔ 5 columnas, especialmente iPhone (usuario, 2026-11-14) | CX | **Integrado; fluidez física build46 aceptada por usuario** | CW-CX-065/066/067, 1a89cd1; usuario 2026-11-15: «la siento super bien». 20 ciclos iOS + 5 Android sintéticos PASS. [IPA/recibo](apple-readiness/evidence/strategic/20261115-build46-ipa.json). Es aceptación subjetiva, no medición Instruments; R-73 y QA build47 siguen pendientes. |
+| R-75 | Limpieza de código y preparación Apple (usuario, 2026-11-15) | CX | **Local PASS; nativo/Apple pendientes** | CW-CX-067: elimina código muerto y dependencia de nombres internos WebKit, valida rangos Swift/Kotlin y actualiza dependencias (12 avisos→0). [Auditoría](apple-readiness/CODE_AUDIT_2026-11-15.md). No equivale a aprobación ni envío. |
 
 ## A · Código y pruebas iOS (antes de firmar)
 
@@ -264,6 +273,8 @@ Fallos en el Organizador y en Play Vitals, valoraciones, AdMob (relleno, consent
 textos con hablantes nativos, 1.0.1 para lo que salga.
 
 ## Registro de avance
+
+- 2026-11-15 · Codex · CW-CX-067 · Auditoría y limpieza 0.9.9.3/build47 local PASS: 149 Node, 17 contratos/empaquetado, 43 herramientas, TS/protected28/builds; npm audit 0. Parsers nativos con fixture20 y reemplazo público de heurística WebKit. Usuario acepta fluidez de build46; CI/QA build47 y puertas externas de Apple pendientes. Informe y recibo en `apple-readiness/CODE_AUDIT_2026-11-15.md`.
 
 - 2026-11-15 · Codex · CW-CX-066 · 1a89cd1 enviado: IPA0.9.9.3/build46 verificada en Descargas. Desarrollo43667412374 (arranque/relanzamiento), tienda43667412346 y Android43667412329 PASS. Recibo `apple-readiness/evidence/strategic/20261115-build46-ipa.json`. Instalación/QA física pendientes; sin publicación ni nueva CI documental.
 

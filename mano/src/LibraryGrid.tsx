@@ -13,6 +13,7 @@ import { haptic } from './haptics';
 import { flushSync } from 'react-dom';
 import type { MotionValue } from 'motion/react';
 import { frame as motionFrame, cancelFrame } from 'motion';
+import { repeatedPress } from './textInteraction';
 
 /** «Fototeca» (user, 2026-11-12; docs/ai-handoff/GRID_VIEW_PLAN.md): the whole
  * library in its real order, opened on the card in hand, with each decision's
@@ -231,12 +232,6 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
       if (Math.abs(k - 1) < .001 && Math.abs(dx) < .5 && Math.abs(dy) < .5) return;
       el.animate([{ transformOrigin: '0 0', transform: `translate(${dx}px,${dy}px) scale(${k}) ${el.style.transform}` }, { transformOrigin: '0 0', transform: `translate(0px,0px) scale(1) ${el.style.transform}` }], { duration: 420, easing: 'cubic-bezier(.22,1,.36,1)' });
     });
-    // Tiles of the old layout with no place in the new one: their copies fade where they were.
-    const room = body.current, shown = new Set([...scroller.current!.querySelectorAll<HTMLElement>('.grid-tile')].map(el => el.dataset.id));
-    if (room) { const at = room.getBoundingClientRect(); leaving.current.forEach((copy, id) => { const was = before.get(id); if (shown.has(id) || !was) return;
-      copy.style.cssText = `position:absolute;left:${was.left - at.left}px;top:${was.top - at.top}px;width:${was.width}px;height:${was.height}px;transform:none;pointer-events:none;z-index:2`;
-      room.appendChild(copy); copy.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, easing: 'ease-out', fill: 'forwards' }).finished.then(() => copy.remove(), () => copy.remove()); }); }
-    leaving.current.clear();
   }, [columns]);
   // The working photo between its card and its tile, painted from `progress`: the
   // grid's paper, tiles and dock come in around it while it shrinks onto its tile,
@@ -372,15 +367,6 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
   // Density: every visible photo glides and scales from where it was to where it goes.
   const flip = useRef<Map<string, DOMRect> | null>(null);
   const snapshot = () => { const map = new Map<string, DOMRect>(); scroller.current?.querySelectorAll<HTMLElement>('.grid-tile').forEach(el => { if (el.dataset.id) map.set(el.dataset.id, el.getBoundingClientRect()); }); return map; };
-  const leaving = useRef(new Map<string, HTMLElement>());
-  const switchColumns = (anchor?: { x: number; y: number }) => {
-    if (!reduced) { flip.current = snapshot(); scroller.current?.querySelectorAll<HTMLElement>('.grid-tile').forEach(el => { if (el.dataset.id) leaving.current.set(el.dataset.id, el.cloneNode(true) as HTMLElement); }); }
-    const under = anchor && document.elementFromPoint(anchor.x, anchor.y)?.closest<HTMLElement>('.grid-tile')?.dataset.id;
-    pinchAnchor.current = under && anchor ? { id: under, y: anchor.y } : null;
-    refocus.current = true;
-    const next = columns === 3 ? 5 : 3; setColumns(next); haptic('selection');
-    try { localStorage.setItem(COLUMNS_KEY, String(next)); } catch { /* per-device convenience only */ }
-  };
   const lastDecision = state.history.at(-1);
   useEffect(() => { if (!lastDecision) return; setSelected(previous => lastDecision.ids.some(id => previous.has(id)) ? new Set([...previous].filter(id => !lastDecision.ids.includes(id))) : previous); }, [lastDecision]);
   const lastAlbum = useRef(albumDone);
@@ -544,7 +530,7 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
     if (g.mode === 'wait') toggle(g.start);
   };
   const onPointerCancel = (e: React.PointerEvent) => { fingers.current.delete(e.pointerId); endPinch(); const g = gesture.current; if (g) clearTimeout(g.timer); cancelAnimationFrame(edge.current); gesture.current = null; };
-  const lastTouch = useRef<{ t: number; x: number; y: number } | null>(null);
+  const lastTouch = useRef<{ time: number; clientX: number; clientY: number } | undefined>(undefined);
   // Touch: WebKit only stops a scroll when the FIRST touchmove is cancelled, so the
   // direction is chosen there: sideways selects, up/down scrolls.
   useEffect(() => {
@@ -562,9 +548,9 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
     // WebKit's text loupe here: the grid handles its own touches (user, 2026-11-13).
     const start = (e: TouchEvent) => {
       const touch = e.touches[0], prev = lastTouch.current; if (!touch) return;
-      if (prev && e.timeStamp - prev.t < 400 && Math.hypot(touch.clientX - prev.x, touch.clientY - prev.y) < 44) e.preventDefault();
+      if (repeatedPress(prev, touch, e.timeStamp)) e.preventDefault();
     };
-    const end = (e: TouchEvent) => { const touch = e.changedTouches[0]; if (touch) lastTouch.current = { t: e.timeStamp, x: touch.clientX, y: touch.clientY }; };
+    const end = (e: TouchEvent) => { const touch = e.changedTouches[0]; if (touch) lastTouch.current = { time: e.timeStamp, clientX: touch.clientX, clientY: touch.clientY }; };
     el.addEventListener('touchstart', start, { passive: false });
     el.addEventListener('touchend', end, { passive: true });
     el.addEventListener('touchmove', move, { passive: false });

@@ -30,6 +30,8 @@ swiftc ios/App/App/SignatureIndex.swift tests/swift/main.swift -o "$out/signatur
 "$out/signature-tests" > "$out/signature-tests.log"
 swiftc ios/App/App/DevelopmentSafety.swift tests/swift-safety/main.swift -o "$out/safety-tests"
 "$out/safety-tests" > "$out/safety-tests.log"
+swiftc ios/App/App/VideoByteRange.swift tests/swift-range/main.swift -o "$out/range-tests"
+"$out/range-tests" > "$out/range-tests.log"
 npm run sync:ios
 # Check generated configuration too; don't accept a lowered target or missing bridge.
 node --experimental-strip-types --test tests/native-contract.test.mjs

@@ -600,3 +600,19 @@ Decisiones relevantes: conserva producto0.9.9.3, bundle/datos y Android5; unsign
 Validaciones: 148 Node/TS/runtime28/release13; desarrollo43667412374, tienda43667412346 y Android43667412329 PASS. Arranque/relanzamiento nativo PASS. Digest GitHub, CRC, fuente, arm64/iOS17, siete idiomas y canal de prueba PASS. [Recibo](../apple-readiness/evidence/strategic/20261115-build46-ipa.json).
 Impacto para Claude: main contiene las optimizaciones; conservar arte/contratos.
 Pendientes: instalación por usuario, QA física de gestos y rendimiento. No atribuir fluidez al simulador ni repetir CI por documentación.
+
+### CW-CX-067 — Auditoría de código, limpieza y preparación Apple
+Fecha: 2026-11-15, America/Bogota
+Agente: Codex
+Tarea: auditoría completa y limpieza autorizadas; usuario acepta fluidez física de build46.
+Estado: completada local; validación nativa y distribución pendientes.
+Base Git / commit: main/be288a0; candidato 0.9.9.3/iOS47, Android5.
+Archivos modificados: fuentes React, bridge/stream Swift/Kotlin, dependencias, checks y documentación.
+Cambios realizados: código muerto/wrappers/imports/callbacks vacíos retirados; noUnused activo;
+heurística de clases WebKit sustituida por DOM público; parsers de rangos y skip Android corregidos;
+Vite/transitivas actualizadas. [Informe](../apple-readiness/CODE_AUDIT_2026-11-15.md).
+Decisiones relevantes: conserva arte/UX, datos, permisos, bundle y protected28; sin reescritura masiva.
+Validaciones: 149 Node, 17 contratos/empaquetado, 43 herramientas, TS/runtime/builds y navegador PASS;
+npm audit12→0. Seek Live falla solo en servidor sin rangos; pasa en producción/Vite, sin ocultar aserción.
+Impacto para Claude: preservar guard público, edición de campos y optimizaciones aprobadas; R-74 aceptada subjetivamente.
+Pendientes: CI nativa del candidato y fixture20, iPhone build47, R-73, archivo/firma/privacidad/comercio; envío bloqueado.
