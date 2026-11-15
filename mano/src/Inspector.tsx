@@ -60,7 +60,10 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
  const [sharp,setSharp]=useState('');const download=useCloud(asset.kind==='video'?undefined:asset);
  useEffect(()=>{if(!pinned||asset.kind==='video')return;const controller=new AbortController();const timer=window.setTimeout(()=>{loadZoomPreview(asset,controller.signal).then(value=>{if(!controller.signal.aborted)setSharp(value);}).catch(()=>{});},polaroid?.stack?380:0);return()=>{window.clearTimeout(timer);controller.abort();};},[pinned,asset.id,asset.modified,policy]);
  const [space,setSpace]=useState<{target:Box;origin:Box;scale:number;fit:(ratio:number)=>Box}|null>(null);
- const [meta,setMeta]=useState<AssetMetadata|null>(null);const [metaError,setMetaError]=useState('');const [zoom,setZoom]=useState(1);const [pan,setPan]=useState({x:0,y:0});
+ const [meta,setMeta]=useState<AssetMetadata|null>(null);const [metaError,setMetaError]=useState('');const zoom=useMotionValue(1),panX=useMotionValue(0),panY=useMotionValue(0);
+ const setPan=(p:{x:number;y:number})=>{panX.set(p.x);panY.set(p.y);};
+ const setZoom=(z:number)=>{zoom.set(z);if(z===1)setPan({x:0,y:0});};
+ const mediaTransform=useTransform(()=>`translate(${panX.get()}px,${panY.get()}px) scale(${zoom.get()})`);
  // Pinching in past the fitted size shrinks the view with the fingers; let go small and it
  // closes — the opposite of the pinch out that opened it (user, 2026-11-13).
  const shrink=useMotionValue(1),shadeFade=useTransform(shrink,[.45,1],[.3,1]);
@@ -88,7 +91,7 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
  const dismissFade=useTransform(()=>1-Math.min(.5,Math.hypot(dismissX.get(),dismissY.get())/480));
  const dismiss=useRef<{id:number;x:number;y:number;t:number}|null>(null);
  const onControl=(e:PointerEvent)=>!!(e.target as HTMLElement).closest('button,input,a,.video-controls');
- const startDismiss=(e:PointerEvent)=>{if(!pinned||zoom>1||onControl(e)||dismiss.current)return false;dismiss.current={id:e.pointerId,x:e.clientX,y:e.clientY,t:performance.now()};return true;};
+ const startDismiss=(e:PointerEvent)=>{if(!pinned||zoom.get()>1||onControl(e)||dismiss.current)return false;dismiss.current={id:e.pointerId,x:e.clientX,y:e.clientY,t:performance.now()};return true;};
  const [swipe,setSwipe]=useState<StampKind|null>(null);
  const swipeNow=useRef<StampKind|null>(null);
  const kindOf=(x:number,y:number):StampKind|null=>Math.hypot(x,y)<56?null:Math.abs(x)>=Math.abs(y)?(x>0?'keep':'discard'):(y<0?'favorite':'later');
@@ -102,19 +105,19 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
     void Promise.all([animate(dismissX,flight.x,leave),animate(dismissY,flight.y,leave),animate(dismissTurn,flight.turn,leave)]).then(()=>decide(kind)).then(done=>{swipeNow.current=null;setSwipe(null);if(!done){animate(dismissX,0,settle);animate(dismissY,0,settle);animate(dismissTurn,0,settle);}});}
    else{animate(dismissX,0,settle);animate(dismissY,0,settle);close();}}
   else{swipeNow.current=null;setSwipe(null);animate(dismissX,0,settle);animate(dismissY,0,settle);}return distance;};
- const rebase=()=>{const p=[...points.current.values()];base.current={distance:p.length>1?Math.hypot(p[1].x-p[0].x,p[1].y-p[0].y):0,zoom,x:p[0]?.x??0,y:p[0]?.y??0,panX:pan.x,panY:pan.y};};
+ const rebase=()=>{const p=[...points.current.values()];base.current={distance:p.length>1?Math.hypot(p[1].x-p[0].x,p[1].y-p[0].y):0,zoom:zoom.get(),x:p[0]?.x??0,y:p[0]?.y??0,panX:panX.get(),panY:panY.get()};};
  const down=(e:PointerEvent)=>{if(!pinned||onControl(e))return;e.stopPropagation();if(!points.current.size)downAt.current={x:e.clientX,y:e.clientY};e.currentTarget.setPointerCapture(e.pointerId);points.current.set(e.pointerId,{x:e.clientX,y:e.clientY});if(points.current.size===1)startDismiss(e);else resetDismiss();rebase();};
  const move=(e:PointerEvent)=>{if(moveDismiss(e)){e.stopPropagation();if(points.current.has(e.pointerId))points.current.set(e.pointerId,{x:e.clientX,y:e.clientY});return;}if(!points.current.has(e.pointerId))return;e.stopPropagation();points.current.set(e.pointerId,{x:e.clientX,y:e.clientY});const p=[...points.current.values()],b=base.current;
-  if(p.length>1&&b.distance){const z=b.zoom*Math.hypot(p[1].x-p[0].x,p[1].y-p[0].y)/b.distance;if(z<1){if(zoom!==1)setZoom(1);shrink.set(Math.max(.45,z));}else{shrink.set(1);setZoom(Math.min(5,z));}}
-  else if(zoom>1){const rect=frame.current!.getBoundingClientRect();const maxX=rect.width*(zoom-1)/2,maxY=rect.height*(zoom-1)/2;setPan({x:Math.min(maxX,Math.max(-maxX,b.panX+e.clientX-b.x)),y:Math.min(maxY,Math.max(-maxY,b.panY+e.clientY-b.y))});}
+  if(p.length>1&&b.distance){const z=b.zoom*Math.hypot(p[1].x-p[0].x,p[1].y-p[0].y)/b.distance;if(z<1){if(zoom.get()!==1)setZoom(1);shrink.set(Math.max(.45,z));}else{shrink.set(1);setZoom(Math.min(5,z));}}
+  else if(zoom.get()>1){const rect=frame.current!.getBoundingClientRect();const maxX=rect.width*(zoom.get()-1)/2,maxY=rect.height*(zoom.get()-1)/2;setPan({x:Math.min(maxX,Math.max(-maxX,b.panX+e.clientX-b.x)),y:Math.min(maxY,Math.max(-maxY,b.panY+e.clientY-b.y))});}
  };
  // Double tap on the anchored media zooms in at that point; another double tap
  // zooms back out (user, 2026-11-09). Single taps keep their meaning.
  const lastTap=useRef<{t:number;x:number;y:number}|null>(null);const downAt=useRef({x:0,y:0});const tapTimer=useRef(0);
  useEffect(()=>()=>window.clearTimeout(tapTimer.current),[]);
- const doubleTap=(e:PointerEvent,moved:number)=>{if(!pinned||moved>=10||points.current.size||onControl(e))return;if(next){if(zoom===1&&shrink.get()===1)next();return;}const now=performance.now(),prev=lastTap.current;
+ const doubleTap=(e:PointerEvent,moved:number)=>{if(!pinned||moved>=10||points.current.size||onControl(e))return;if(next){if(zoom.get()===1&&shrink.get()===1)next();return;}const now=performance.now(),prev=lastTap.current;
   if(prev&&now-prev.t<320&&Math.hypot(e.clientX-prev.x,e.clientY-prev.y)<30){lastTap.current=null;window.clearTimeout(tapTimer.current);
-   if(zoom>1){setZoom(1);setPan({x:0,y:0});}else{const rect=frame.current!.getBoundingClientRect(),k=scale.current||1,z=2.5;
+   if(zoom.get()>1){setZoom(1);setPan({x:0,y:0});}else{const rect=frame.current!.getBoundingClientRect(),k=scale.current||1,z=2.5;
     const px=(e.clientX-(rect.left+rect.width/2))/k,py=(e.clientY-(rect.top+rect.height/2))/k,maxX=rect.width/k*(z-1)/2,maxY=rect.height/k*(z-1)/2;
     setZoom(z);setPan({x:Math.min(maxX,Math.max(-maxX,-px*(z-1))),y:Math.min(maxY,Math.max(-maxY,-py*(z-1)))});}
   }else{const tap={t:now,x:e.clientX,y:e.clientY};lastTap.current=tap;}};
@@ -125,7 +128,6 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
  const shadeDown=(e:PointerEvent)=>{if(!pinned)return;tap.current=tap.current?{...tap.current,multi:true}:{x:e.clientX,y:e.clientY,multi:false};down(e);};
  const shadeUp=(e:PointerEvent)=>{const start=tap.current;up(e);if(points.current.size)return;tap.current=null;if(start&&!start.multi&&Math.hypot(e.clientX-start.x,e.clientY-start.y)<10)close();};
  const shadeCancel=(e:PointerEvent)=>{resetDismiss();up(e);tap.current=null;};
- useEffect(()=>{if(zoom===1)setPan({x:0,y:0});},[zoom]);
  const expanded=meta?{...meta,...meta.exif,...meta.location}:null;
  const weight=formatBytes(asset.bytes,locale);
  const values=expanded?[...(weight?[[t('Peso'),weight]]:[]),...Object.entries(expanded).filter(([key,value])=>!['id','exifStatus','exif','location'].includes(key)&&value!==undefined&&value!==null).map(([key,value])=>[GEEK_LABELS[key]?.()??key,key.toLowerCase().includes('date')&&typeof value==='number'?new Date(value).toLocaleString(locale):typeof value==='boolean'?(value?t('Sí'):t('No')):String(value)])]:[];
@@ -157,8 +159,8 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
    transition={{...settle,opacity:{duration:.16}}} style={{transformOrigin:`50% calc(var(--cw-card-side) + ${space.target.height/2}px)`,left:`calc(${space.target.x}px - var(--cw-card-side))`,top:`calc(${space.target.y}px - var(--cw-card-side))`,width:`calc(${space.target.width}px + 2 * var(--cw-card-side))`,height:`calc(${space.target.height}px + var(--cw-card-side) + var(--cw-caption))`}}><span className="polaroid-caption mount-caption">{polaroid.where&&<span className="caption-where">{polaroid.where}</span>}{polaroid.when&&<span className="caption-when">{polaroid.when}</span>}</span></motion.div>}<motion.div ref={frame} className="inspection-photo" tabIndex={pinned?0:-1} style={{left:space.target.x,top:space.target.y,width:space.target.width,height:space.target.height,'--inspect-ratio':asset.width/asset.height} as CSSProperties}
    initial={reduced||chained?false:atOrigin} animate={pose} exit={reduced||rotatingOut?gone:{...atOrigin,transition:settle}}
    transition={reduced?{duration:0}:settle} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={e=>{resetDismiss();up(e);}} onClick={e=>e.stopPropagation()}>
-   {video?<div className="inspection-media"><InlineVideo asset={asset} state={video.state} request={video.request} mediaStyle={{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}} mode={pinned?'full':'peek'} sound={video.sound} onSound={video.onSound} retry={video.retry} download={video.download} fullscreen={video.fullscreen} openSettings={video.openSettings}>{freeze?<canvas ref={still} className="inspection-still"/>:(poster||sharp||download?.src)?<img src={pinned&&sharp?sharp:poster||download?.src} alt="" draggable={false} style={{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}}/>:null}</InlineVideo></div>
-    :poster||(pinned&&sharp)||download?.src?<img src={pinned&&sharp?sharp:poster||download?.src} alt={t('Recuerdo ampliado')} draggable={false} style={{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}}/>:<span>{posterCloud?(pinned?'':t('En iCloud. Ancla para descargarla.')):posterError?t('No se pudo cargar la imagen.'):''}{posterError&&pinned&&<button onClick={()=>setPosterRetry(v=>v+1)}>{t('Reintentar')}</button>}</span>}
+   {video?<div className="inspection-media"><InlineVideo asset={asset} state={video.state} request={video.request} mediaStyle={{transform:mediaTransform}} mode={pinned?'full':'peek'} sound={video.sound} onSound={video.onSound} retry={video.retry} download={video.download} fullscreen={video.fullscreen} openSettings={video.openSettings}>{freeze?<canvas ref={still} className="inspection-still"/>:(poster||sharp||download?.src)?<motion.img src={pinned&&sharp?sharp:poster||download?.src} alt="" draggable={false} style={{transform:mediaTransform}}/>:null}</InlineVideo></div>
+    :poster||(pinned&&sharp)||download?.src?<motion.img src={pinned&&sharp?sharp:poster||download?.src} alt={t('Recuerdo ampliado')} draggable={false} style={{transform:mediaTransform}}/>:<span>{posterCloud?(pinned?'':t('En iCloud. Ancla para descargarla.')):posterError?t('No se pudo cargar la imagen.'):''}{posterError&&pinned&&<button onClick={()=>setPosterRetry(v=>v+1)}>{t('Reintentar')}</button>}</span>}
    {!sharp&&(cloud||download?.status==='downloading')&&<CloudBadge className="cloud-download" state={download?.status==='ready'?undefined:download} lite={cloud} onRetry={()=>void cloudPreviews.retry(asset,'zoom').then(setSharp).catch(()=>{})}/>}
    {swipe&&<span className={`inspection-swipe is-${swipe}`} aria-hidden="true"><Stamp kind={swipe} word/></span>}
   </motion.div></motion.div></motion.div></motion.div>}

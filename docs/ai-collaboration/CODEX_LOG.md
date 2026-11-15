@@ -574,3 +574,16 @@ A1: WIP ccf393e revisado e integrado a mano corrigiendo operaciones tardías e i
 OpenClaw gateway arrancado; lista ACP amplía codex/gemini y ruta Codex antigua corregida en configuración (aplicación parcial). Codex ACP respondió pero herramientas Core fallan por app instalada; Gemini CLI ausente. No secretos ni publicaciones. Pull--rebase rechaza árbol compartido modificado: fetch+verificación de ancestro remoto antes de cada commit, sin stash/reset.
 
 CW-CX-064, ampliación: runtime navegador8, seguridad9, readiness19, accesibilidad6 y seis ciclos sin errores PASS. Bundle nativo de producción HTTP4190: Ajustes/Inspector/primer onboarding, chunks200 y cero errores/sources PASS. VHS extendido iOS/Android × movimiento normal/reducido4PASS y setter de currentTime intacto. Android1/3PASS43126422530; segundo43128137830. Gemini Windows recuperó conexión y respondió al diagnóstico; hipótesis de composición/SDK no confirmadas ni implementadas. Gateway sigue agotando respuesta tras corregir ruta/reiniciar; no se declara delegación efectiva.
+
+### CW-CX-065 — Pellizcos encadenados y carga visible
+Fecha: 2026-11-14, America/Bogota
+Agente: Codex
+Tarea: aplicar auditoría aprobada de 0.9.9.3.
+Estado: completada local; hardware pendiente.
+Base Git / commit: main b945cc0, inicialmente limpio; diff local sin commit/push.
+Archivos modificados: LibraryGrid, review/library, ManoApp, Inspector/InlineVideo, prototype.css; regresiones y coordinación.
+Cambios realizados: asentamiento interrumpible desde la pose actual, dibujo por fotograma, vuelo por transforms, animación visible, prioridad/reutilización de miniaturas y pausa del vídeo oculto; zoom/pan sin renders por movimiento.
+Decisiones relevantes: aprobación del usuario; conservar gestos/calidad, arte, datos, puentes nativos, versión y protected28.
+Validaciones: 148 Node, TS, runtime28, builds, release/contratos/Sites, grid/Inspector PASS. 20 ciclos iOS + 5 Android sintéticos PASS. [Evidencia](../apple-readiness/evidence/strategic/20261114-grid-motion.json): miniaturas95→50; lecturas136→2; layout140→73, muestra CPU×4.
+Impacto para Claude: preservar diff; aceptación artística pendiente.
+Pendientes: iPhone/Android físicos y paquete nuevo; persisten tareas largas bajo carga. Sin publicación ni CI nueva; R-73 abierto.

@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type MutableRefObject, type ReactNode, type SyntheticEvent } from 'react';
-import { useIsPresent, AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { useIsPresent, AnimatePresence, motion, useReducedMotion, type MotionStyle } from 'motion/react';
 import { PlayIcon, PauseIcon, CornersOutIcon, ArrowClockwiseIcon, GearSixIcon, SpeakerHighIcon, SpeakerSlashIcon, CloudArrowDownIcon, EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
 import type { Asset } from './domain';
 import type { Place } from './library';
@@ -51,7 +51,7 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
   asset: Asset; state: VideoState; active?: boolean; mode?: 'card' | 'peek' | 'full'; retry: () => void; download: () => void; fullscreen: () => void; openSettings: () => void;
   meta?: VideoMeta; place?: Place; sound?: boolean; onSound?: () => void; onOsd?: () => void; control?: MutableRefObject<VideoControl | null>;
   /** Extra card tool (Compartir) drawn in the same row as sound and VHS. */
-  tools?: ReactNode; children: ReactNode; request?:()=>void; mediaStyle?:CSSProperties;
+  tools?: ReactNode; children: ReactNode; request?:()=>void; mediaStyle?:MotionStyle;
 }) {
   const player = useRef<HTMLVideoElement>(null);
   const reduced = useReducedMotion();
@@ -188,7 +188,7 @@ export function InlineVideo({ asset, state, active = true, mode = 'card', retry,
 
   return <div className={`inline-media ${live?'is-live':''} ${shown ? 'is-started' : ''} ${playing ? 'is-playing' : ''} ${frame ? 'has-frame' : ''}`}>
     {children}
-    {url && (!live||!card||!userPaused) && <video data-testid="inline-video" ref={player} src={url} style={mediaStyle} playsInline muted={muted} loop={live||!full} preload={card ? 'metadata' : 'auto'} aria-label={live?t('Reproducir Live Photo'):t('Vídeo de tu biblioteca')}
+    {url && (!live||!card||!userPaused) && <motion.video data-testid="inline-video" ref={player} src={url} style={mediaStyle} playsInline muted={muted} loop={live||!full} preload={card ? 'metadata' : 'auto'} aria-label={live?t('Reproducir Live Photo'):t('Vídeo de tu biblioteca')}
       onLoadedData={() => setFrame(true)}
       onLoadedMetadata={e => { const v = e.currentTarget, d = v.duration; if (Number.isFinite(d) && d > 0) setLength(d);
         // Same moment as the view it came from (card ↔ held ↔ anchored).

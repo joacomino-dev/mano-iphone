@@ -18,6 +18,21 @@ const request = (loader, key, run) => {
   return { controller, promise };
 };
 
+test('review: newly visible photos pass queued overscan without exceeding the limit', async () => {
+  const loader = new ReviewLoader(1), order = [], gates = [];
+  const run = name => () => new Promise(resolve => { order.push(name); gates.push(resolve); });
+  const signal = () => new AbortController().signal;
+  const front = loader.request('front', run('front'), signal(), true);
+  const behind = loader.request('behind', run('behind'), signal());
+  const visible = loader.request('visible', run('visible'), signal(), true);
+  await flush(); assert.deepEqual(order, ['front']);
+  gates.shift()('ready'); await front; await flush();
+  assert.deepEqual(order, ['front', 'visible']);
+  gates.shift()('ready'); await visible; await flush();
+  assert.deepEqual(order, ['front', 'visible', 'behind']);
+  gates.shift()('ready'); await behind;
+});
+
 test('review: a thousand requests never start more than two; closing drops the backlog', async () => {
   const loader = new ReviewLoader(), c = controlled();
   const items = Array.from({ length: 1000 }, (_, i) => request(loader, String(i), c.run));

@@ -2,7 +2,7 @@
  * the native promise settles, so rapid scrolling never exceeds the limit. */
 const aborted = () => new DOMException('Revisión cancelada', 'AbortError');
 type Waiter<T> = { resolve: (value: T) => void; reject: (error: unknown) => void; detach: () => void };
-type Job<T> = { key: string; run: (signal: AbortSignal) => Promise<T>; controller: AbortController; waiters: Set<Waiter<T>> };
+type Job<T> = { key: string; priority: boolean; run: (signal: AbortSignal) => Promise<T>; controller: AbortController; waiters: Set<Waiter<T>> };
 export class ReviewLoader<T> {
   private jobs = new Map<string, Job<T>>();
   private waiting: Job<T>[] = [];
@@ -13,7 +13,7 @@ export class ReviewLoader<T> {
   private keep: number;
   constructor(concurrency = 2, keep = 60) { this.concurrency = concurrency; this.keep = keep; }
 
-  request(key: string, run: Job<T>['run'], signal: AbortSignal): Promise<T> {
+  request(key: string, run: Job<T>['run'], signal: AbortSignal, priority = false): Promise<T> {
     if (signal.aborted) return Promise.reject(aborted());
     if (this.cache.has(key)) {
       const value = this.cache.get(key)!; this.cache.delete(key); this.cache.set(key, value);
@@ -21,9 +21,9 @@ export class ReviewLoader<T> {
     }
     let job = this.jobs.get(key);
     if (!job || job.controller.signal.aborted) {
-      job = { key, run, controller: new AbortController(), waiters: new Set() };
+      job = { key, priority, run, controller: new AbortController(), waiters: new Set() };
       this.jobs.set(key, job); this.waiting.push(job);
-    }
+    } else if (priority) job.priority = true;
     const task = job;
     return new Promise<T>((resolve, reject) => {
       const cancel = () => {
@@ -52,7 +52,8 @@ export class ReviewLoader<T> {
   }
   private pump() {
     while (this.active.size < this.concurrency && this.waiting.length) {
-      const job = this.waiting.shift()!;
+      const priority = this.waiting.findIndex(job => job.priority);
+      const [job] = this.waiting.splice(priority < 0 ? 0 : priority, 1);
       if (job.controller.signal.aborted) continue;
       this.active.add(job);
       void Promise.resolve().then(() => {

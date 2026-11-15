@@ -1,5 +1,27 @@
 # CocoWash — estado vigente
 
+## Codex CW-CX-066 — IPA optimizada (2026-11-14, en curso)
+
+Usuario pide generar la IPA y completar la entrega para iLoader. Codex prepara checkpoint
+y push normal a main para el workflow público gratuito existente, sin duplicarlo.
+Producto 0.9.9.3; build iOS 46 y etiqueta de inicio alineada. Preservar datos, bundle,
+permisos, canal de tienda en fuente y Android code5. Sin publicación en tiendas ni instalación física.
+Tras CI: verificar fuente, ZIP, Info.plist/arm64, canal de prueba y SHA256; entregar en Descargas.
+
+## Codex CW-CX-065 — fluidez de cuadrícula (2026-11-14, completada local)
+
+Usuario autorizó aplicar la auditoría de 0.9.9.3 (`b945cc0`), especialmente pellizcos
+encadenados en iPhone. Cambios locales sin commit/push: transición de densidad interrumpible,
+dibujo agrupado y foto en vuelo con transforms, prioridad visible/reutilización de miniaturas,
+vídeo oculto pausado y zoom/pan por MotionValue. Swift/Kotlin, gestos, calidad, datos y protected28 conservados.
+148 Node, TS, 28 hashes, builds web/native-web, release/contratos/Sites y recorridos grid/Inspector PASS.
+Movimiento normal: 20 ciclos interrumpidos iOS + 5 Android sintéticos; sin escrituras de la animación anterior.
+Miniaturas nuevas 95→50; geometría de la entrada 136→2 lecturas y layout 140→73 en una muestra CPU×4.
+[Evidencia y límites](../apple-readiness/evidence/strategic/20261114-grid-motion.json).
+No equivale a rendimiento físico: quedan tareas largas bajo carga, QA iPhone/Android, aceptación visual
+del propietario/Claude y paquete nativo nuevo. Sin publicación, cambio de versión ni dependencias nuevas.
+Reserva terminada; preservar el diff local al continuar. Los estados inferiores son históricos.
+
 ## Claude CW-CL-079 — 0.9.9.3 entregada, Android estable (2026-11-13)
 
 `main` en `ee4bcf4`. App 0.9.9.3 (`f456868`): IPA build 45 y APK build 5 entregados al usuario. Android 43486731821:

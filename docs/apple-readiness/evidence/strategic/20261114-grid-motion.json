@@ -1,0 +1,164 @@
+{
+  "date": "2026-11-14",
+  "base": "b945cc0fa9e819f4b6231c4492e88287b7fa8560",
+  "delivery": "local changes, no commit/push or physical install",
+  "version": "0.9.9.3 / iOS 45 / Android 5 (unchanged)",
+  "scope": "shared React interface and thumbnail scheduling; Swift/Kotlin bridges unchanged",
+  "environment": {
+    "bundle": "Vite production native.html",
+    "browser": "Edge headless Windows",
+    "viewport": [
+      390,
+      844
+    ],
+    "dpr": 3,
+    "library": "3000 synthetic photos; no personal media",
+    "cpuThrottlingRate": 4,
+    "limit": "CPU throttling is not iPhone or Android timing; single before/after sample; no guaranteed frame rate"
+  },
+  "checks": {
+    "nodeTests": 148,
+    "nativeReleaseSitesTests": 17,
+    "typescript": "PASS",
+    "protected28": "PASS",
+    "webBuild": "PASS",
+    "nativeWebBuild": "PASS",
+    "gridFlow": "PASS",
+    "anchoredFlow": "PASS",
+    "normalMotionStress": {
+      "iosContractInterruptedCycles": 20,
+      "androidContractInterruptedCycles": 5,
+      "oldCompletionWhileFingersHeld": 0,
+      "densityReversalContinuesToCardWithoutLifting": "PASS"
+    },
+    "thumbnails": {
+      "viewportWidth": 430,
+      "oldRequests": 95,
+      "newRequests": 50,
+      "sameAssetDowngradeRequests": 0,
+      "firstRequestVisible": true,
+      "artificialNativeLatencyMs": 20,
+      "reusedFilesExcludedFromPhotoKitPrecache": true
+    },
+    "video": "hidden paused; resumes; manual pause retained"
+  },
+  "profiles": [
+    {
+      "port": 4192,
+      "phase": "card-to-grid3",
+      "metrics": {
+        "LayoutCount": 140,
+        "RecalcStyleCount": 208,
+        "LayoutDuration": 0.0516,
+        "RecalcStyleDuration": 0.1639,
+        "ScriptDuration": 0.2153,
+        "TaskDuration": 0.785
+      },
+      "geometryReads": 136,
+      "longTasks": [
+        79
+      ]
+    },
+    {
+      "port": 4192,
+      "phase": "grid3-to-grid5",
+      "metrics": {
+        "LayoutCount": 3,
+        "RecalcStyleCount": 178,
+        "LayoutDuration": 0.009,
+        "RecalcStyleDuration": 0.4702,
+        "ScriptDuration": 0.2407,
+        "TaskDuration": 1.1678
+      },
+      "geometryReads": 3,
+      "longTasks": [
+        151
+      ]
+    },
+    {
+      "port": 4192,
+      "phase": "grid5-to-grid3",
+      "metrics": {
+        "LayoutCount": 3,
+        "RecalcStyleCount": 127,
+        "LayoutDuration": 0.0043,
+        "RecalcStyleDuration": 0.9442,
+        "ScriptDuration": 0.2786,
+        "TaskDuration": 2.1459
+      },
+      "geometryReads": 3,
+      "longTasks": [
+        94
+      ]
+    },
+    {
+      "port": 4191,
+      "phase": "card-to-grid3",
+      "metrics": {
+        "LayoutCount": 73,
+        "RecalcStyleCount": 167,
+        "LayoutDuration": 0.0365,
+        "RecalcStyleDuration": 0.1447,
+        "ScriptDuration": 0.2158,
+        "TaskDuration": 0.6869
+      },
+      "geometryReads": 2,
+      "longTasks": [
+        70
+      ]
+    },
+    {
+      "port": 4191,
+      "phase": "grid3-to-grid5",
+      "metrics": {
+        "LayoutCount": 6,
+        "RecalcStyleCount": 92,
+        "LayoutDuration": 0.0071,
+        "RecalcStyleDuration": 0.4069,
+        "ScriptDuration": 0.1848,
+        "TaskDuration": 1.0372
+      },
+      "geometryReads": 1,
+      "longTasks": [
+        61
+      ]
+    },
+    {
+      "port": 4191,
+      "phase": "grid5-to-grid3",
+      "metrics": {
+        "LayoutCount": 3,
+        "RecalcStyleCount": 84,
+        "LayoutDuration": 0.0051,
+        "RecalcStyleDuration": 0.7579,
+        "ScriptDuration": 0.2214,
+        "TaskDuration": 1.744
+      },
+      "geometryReads": 1,
+      "longTasks": [
+        73
+      ]
+    }
+  ],
+  "sourceSHA256": {
+    "mano/src/LibraryGrid.tsx": "67ca2f9951e7161cb097ea87b913221e15ca422a7725783e051bf0267f1a1909",
+    "mano/src/review.ts": "97f2ec018186782f5a6c6f3267fb3f1f30633b1acc20b9bc5d04a93a7766a344",
+    "mano/src/library.ts": "daf23fb8173cfb27b661d39cacf17039dc58620f2f66421e23a1aaa85483cb27",
+    "mano/src/Inspector.tsx": "567339ad939426c8cfed0ba2bd22d7e8014bc13cd7b0617dfa74282f6f7be5d0",
+    "mano/src/InlineVideo.tsx": "46b622eb661ab7b0c7bfdf95038122fade4986214fb22897dcbc4e4187452d0e",
+    "mano/src/ManoApp.tsx": "feea5c53bb8733787a8bb6659c3c7d6a547853c49c4976d96da1b71ccf5c5996",
+    "mano/src/prototype.css": "5aa1686543c74efef2e8e3e87b7073d61f14eafb171882fb4d21017361223688",
+    "mano/tests/grid-motion-flow.mjs": "492ed2bf9c3d2d7b0d33c93772d46e1cd4675448722e86d94d2c407a2d48b9e1",
+    "mano/tests/review.test.mjs": "fa8f808e71eeb7c6d119133c927def0786b742c7d5f7545f5546a447c7ee8e8f"
+  },
+  "pending": [
+    "Physical iPhone repeated-gesture QA and rendering traces",
+    "Android hardware QA",
+    "Actual native package and installation",
+    "Final artistic acceptance by owner/Claude"
+  ],
+  "screenshots": [
+    "work/grid-motion-cw-cx065/flight-before.png",
+    "work/grid-motion-cw-cx065/flight-after.png"
+  ]
+}

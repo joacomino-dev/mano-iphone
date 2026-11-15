@@ -12,6 +12,7 @@ import { formatNumber, t } from './i18n';
 import { haptic } from './haptics';
 import { flushSync } from 'react-dom';
 import type { MotionValue } from 'motion/react';
+import { frame as motionFrame, cancelFrame } from 'motion';
 
 /** «Fototeca» (user, 2026-11-12; docs/ai-handoff/GRID_VIEW_PLAN.md): the whole
  * library in its real order, opened on the card in hand, with each decision's
@@ -21,8 +22,11 @@ import type { MotionValue } from 'motion/react';
  * time and are cancelled as soon as their row scrolls away. With a loaded ad, a
  * letter strip sits after every AD_EVERY rows (50: «cada 5 veces más», user
  * 2026-11-12); only the one on screen hosts it. */
-const GAP = 2, OVERSCAN = 4, COLUMNS_KEY = 'cocowash-grid-columns-v1', AD_EVERY = 50, AD_H = 184;
+const GAP = 2, OVERSCAN = 4, OVERSCAN_DELAY_MS = 100, COLUMNS_KEY = 'cocowash-grid-columns-v1', AD_EVERY = 50, AD_H = 184;
 const loader = new ReviewLoader<Thumb>(4, 240);
+// File references only. Keep a larger local thumbnail when a denser grid needs
+// fewer pixels, rather than decoding/encoding the same photo again at that size.
+const gridThumbs = new Map<string, { size: number; value: Thumb }>();
 const readColumns = (): 3 | 5 => { try { return localStorage.getItem(COLUMNS_KEY) === '5' ? 5 : 3; } catch { return 3; } };
 const clock = (seconds: number) => { const s = Math.max(0, Math.round(seconds)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 
@@ -78,30 +82,44 @@ type Props = {
 };
 type Marks = { pending: Set<string>; favorites: Set<string>; later: Set<string> };
 
-const GridThumb = memo(function GridThumb({ asset, size }: { asset: Asset; size: number }) {
+const GridThumb = memo(function GridThumb({ asset, size, visible }: { asset: Asset; size: number; visible: boolean }) {
   const [thumb, setThumb] = useState<Thumb>(), [state, setState] = useState<'loading' | 'cloud' | 'error'>('loading');
+  const [retry, setRetry] = useState(0);
   const key = `${asset.id}:${asset.modified ?? 0}:${size}`;
   useEffect(() => {
+    const identity = `${asset.id}:${asset.modified ?? 0}`, known = gridThumbs.get(identity);
+    if (!retry && known && known.size >= size) { gridThumbs.delete(identity); gridThumbs.set(identity, known); setThumb(known.value); return; }
     const controller = new AbortController(); setState('loading');
-    void loader.request(key, signal => reviewThumbnail(asset, size, signal), controller.signal)
-      .then(value => { if (!controller.signal.aborted) setThumb(value); })
+    // Visible cells subscribe first; the four overscan rows remain mounted and
+    // cancellable but never get ahead of the photos actually on screen.
+    const start = () => {
+    void loader.request(`${key}:${retry}`, signal => reviewThumbnail(asset, size, signal, retry > 0, visible), controller.signal, visible)
+      .then(value => { if (!controller.signal.aborted) {
+        const previous = gridThumbs.get(identity);
+        if (!previous || previous.size <= size) { gridThumbs.delete(identity); gridThumbs.set(identity, { size, value }); }
+        while (gridThumbs.size > 240) gridThumbs.delete(gridThumbs.keys().next().value!);
+        setThumb(value);
+      } })
       .catch(e => { if (!controller.signal.aborted) setState(inCloudError(e) ? 'cloud' : 'error'); });
-    return () => controller.abort();
-  }, [key]);
-  if (thumb) return <img src={thumb.src} alt="" draggable={false} decoding="async"/>;
+    };
+    const timer = visible ? undefined : window.setTimeout(start, OVERSCAN_DELAY_MS);
+    if (visible) start();
+    return () => { window.clearTimeout(timer); controller.abort(); };
+  }, [key, visible, retry]);
+  if (thumb) return <img src={thumb.src} alt="" draggable={false} decoding="async" onError={() => { gridThumbs.delete(`${asset.id}:${asset.modified ?? 0}`); loader.forget(`${key}:${retry}`); setThumb(undefined); if (!retry) setRetry(1); else setState('error'); }}/>;
   return <span className={`grid-thumb-wait is-${state}`}>{state === 'cloud' ? <CloudIcon size={18}/> : state === 'error' ? <ImageBrokenIcon size={18}/> : null}</span>;
 });
 
-const Tile = memo(function Tile({ asset, index, x, y, side, size, selected, current, level, pending, favorite, later, flying }: {
+const Tile = memo(function Tile({ asset, index, x, y, side, size, visible, selected, current, level, pending, favorite, later, flying }: {
   asset: Asset; index: number; x: number; y: number; side: number; size: number; selected: boolean; current: boolean; flying?: boolean;
-  level: number; pending: boolean; favorite: boolean; later: boolean;
+  level: number; pending: boolean; favorite: boolean; later: boolean; visible: boolean;
 }) {
   const decision = pending ? t('para eliminar') : favorite ? t('favorita') : level ? t('conservada') : '';
   const label = [asset.kind === 'video' ? t('Vídeo') : t('Foto'), new Date(asset.date).toLocaleDateString(), decision, later ? t('más tarde') : ''].filter(Boolean).join(', ');
   return <button type="button" className={`grid-tile ${selected ? 'is-selected' : ''} ${current ? 'is-current' : ''} ${pending ? 'is-pending' : ''}`}
     data-i={index} data-id={asset.id} style={{ width: side, height: side, transform: `translate(${x}px,${y}px)`, visibility: flying ? 'hidden' : undefined }}
     aria-label={label} aria-pressed={selected} aria-current={current || undefined}>
-    <GridThumb asset={asset} size={size}/>
+    <GridThumb asset={asset} size={size} visible={visible}/>
     {asset.kind === 'video' && <span className="grid-duration">{clock(asset.duration)}</span>}
     {(pending || favorite || level > 0) && <span className="grid-stamp">{pending ? <Stamp kind="discard"/> : favorite ? <Stamp kind="favorite"/> : <Stamp kind="keep" level={level}/>}</span>}
     {later && <span className="grid-later"><DecisionIcon kind="later" size={14}/></span>}
@@ -113,6 +131,7 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
   const scroller = useRef<HTMLDivElement>(null), dock = useRef<HTMLDivElement>(null), bar = useRef<HTMLDivElement>(null);
   const section = useRef<HTMLElement>(null), body = useRef<HTMLDivElement>(null), paper = useRef<HTMLDivElement>(null), shade = useRef<HTMLDivElement>(null), ghost = useRef<HTMLDivElement>(null), ghostImg = useRef<HTMLImageElement>(null), ghostPaper = useRef<HTMLDivElement>(null), ghostCaption = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0), [height, setHeight] = useState(0), [offset, setOffset] = useState(0);
+  const geometry = useRef<{ box: DOMRect; top: number } | null>(null);
   const [columns, setColumns] = useState<3 | 5>(readColumns);
   // Notices use the app's one centred notice (it shows above this mode).
   const say = notice;
@@ -173,7 +192,7 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
 
   useLayoutEffect(() => {
     const el = scroller.current; if (!el) return;
-    const read = () => { setWidth(el.clientWidth); setHeight(el.clientHeight); };
+    const read = () => { geometry.current = null; setWidth(el.clientWidth); setHeight(el.clientHeight); };
     read(); const observer = new ResizeObserver(read); observer.observe(el); return () => observer.disconnect();
   }, []);
   // The photo being worked on (the card in hand) is the fixed point: opening, pinching
@@ -202,10 +221,14 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
     const before = flip.current, canvas = scroller.current?.querySelector('.grid-canvas'); flip.current = null;
     if (!before || !canvas) return;
     const box = canvas.getBoundingClientRect();
-    scroller.current!.querySelectorAll<HTMLElement>('.grid-tile').forEach(el => {
-      const was = before.get(el.dataset.id ?? ''), now = el.getBoundingClientRect();
+    const view = scroller.current!.getBoundingClientRect();
+    const measured = [...scroller.current!.querySelectorAll<HTMLElement>('.grid-tile')]
+      .map(el => ({ el, was: before.get(el.dataset.id ?? ''), now: el.getBoundingClientRect() }));
+    measured.forEach(({ el, was, now }) => {
+      if (now.bottom < view.top || now.top > view.bottom) return;
       if (!was) { el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: 60, easing: 'ease-out', fill: 'backwards' }); return; }
       const k = was.width / Math.max(1, now.width), dx = was.left - box.left - k * (now.left - box.left), dy = was.top - box.top - k * (now.top - box.top);
+      if (Math.abs(k - 1) < .001 && Math.abs(dx) < .5 && Math.abs(dy) < .5) return;
       el.animate([{ transformOrigin: '0 0', transform: `translate(${dx}px,${dy}px) scale(${k}) ${el.style.transform}` }, { transformOrigin: '0 0', transform: `translate(0px,0px) scale(1) ${el.style.transform}` }], { duration: 420, easing: 'cubic-bezier(.22,1,.36,1)' });
     });
     // Tiles of the old layout with no place in the new one: their copies fade where they were.
@@ -245,7 +268,8 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
       if (reached.current) { const date = assets.find(a => a.id === current)?.date; if (current && date !== undefined) focus.current = { id: current, date }; startFlight(cardTarget()); }
       else startFlight(cardFrom);
     }
-    const zoom = 1 + .06 * (1 - v), box = frame.getBoundingClientRect(), top0 = root.getBoundingClientRect().top;
+    const bounds = geometry.current ??= { box: frame.getBoundingClientRect(), top: root.getBoundingClientRect().top };
+    const zoom = 1 + .06 * (1 - v), box = bounds.box, top0 = bounds.top;
     const f = flight.current, index = f?.index ?? -1;
     // The tile's centre on screen (kept inside the visible band), the origin of the grid's zoom.
     let cx = box.left + box.width / 2, cy = box.top + box.height / 2;
@@ -290,21 +314,35 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
     }
     lastRect.current = r;
     // The card's paper around the photo, shrinking to nothing at the tile; its caption fades.
-    const pf = f.from.frame, frameSize = pf ? r.width / Math.max(1, card.width) * (1 - v) : 0, paperEl = ghostPaper.current, cap = ghostCaption.current;
+    const sx = r.width / Math.max(1, card.width), sy = r.height / Math.max(1, card.height);
+    const pf = f.from.frame, frameSize = pf ? sx * (1 - v) : 0, paperEl = ghostPaper.current, cap = ghostCaption.current;
     if (paperEl && pf) {
-      paperEl.style.inset = `${-(card.top - pf.top) * frameSize}px ${-(pf.right - card.right) * frameSize}px ${-(pf.bottom - card.bottom) * frameSize}px ${-(card.left - pf.left) * frameSize}px`;
+      const left = (card.left - pf.left) * (1 - v), above = (card.top - pf.top) * frameSize / sy;
+      paperEl.style.transform = `translate(${-left}px,${-above}px) scale(${1 + (pf.width - card.width) * (1 - v) / card.width},${1 + (pf.height - card.height) * frameSize / (sy * card.height)})`;
       paperEl.style.opacity = frameSize > .02 ? '1' : '0';
     }
-    if (cap && pf) { const k = r.width / Math.max(1, card.width); cap.style.opacity = String(clamp01(1 - v * 2.2)); cap.style.transform = `scale(${k})`; cap.style.width = `${card.width}px`; }
+    if (cap && pf) { cap.style.opacity = String(clamp01(1 - v * 2.2)); cap.style.transform = `scale(1,${sx / sy})`; cap.style.width = `${card.width}px`; }
     g.style.display = 'block';
-    g.style.width = `${r.width}px`; g.style.height = `${r.height}px`;
-    g.style.transform = `translate(${r.left}px,${r.top - top0}px)`;
-    g.style.borderRadius = `${mix(2, 0, v)}px`;
+    // Fixed layout box; only transforms change while flying. Counter-scale the
+    // image uniformly inside the clipping window, preserving object-fit: cover
+    // even when the photograph and the target square have different proportions.
+    g.style.width = `${card.width}px`; g.style.height = `${card.height}px`;
+    g.style.transform = `translate(${r.left}px,${r.top - top0}px) scale(${sx},${sy})`;
+    const img = ghostImg.current;
+    if (img) {
+      const iw = img.naturalWidth || card.width, ih = img.naturalHeight || card.height;
+      const cover = Math.max(r.width / iw, r.height / ih) / Math.max(card.width / iw, card.height / ih);
+      img.style.transform = `scale(${cover / sx},${cover / sy})`;
+    }
+    const radius = mix(2, 0, v); g.style.borderRadius = `${radius / sx}px / ${radius / sy}px`;
   };
   const painter = useRef(paint); painter.current = paint;
-  useEffect(() => progress.on('change', v => painter.current(v)), [progress]);
+  const renderFlight = useCallback(() => painter.current(progress.get()), [progress]);
+  const scheduleFlight = useCallback(() => { motionFrame.render(renderFlight); }, [renderFlight]);
+  useEffect(() => progress.on('change', scheduleFlight), [progress, scheduleFlight]);
   // Fingers move: repaint; fingers lift: the flight lands from where the photo was.
-  useEffect(() => grasp.on('change', hold => { if (!hold && lastRect.current) { landing.current = { rect: lastRect.current, from: progress.get() }; heldBase.current = null; } painter.current(progress.get()); }), [grasp, progress]);
+  useEffect(() => grasp.on('change', hold => { if (!hold && lastRect.current) { landing.current = { rect: lastRect.current, from: progress.get() }; heldBase.current = null; } scheduleFlight(); }), [grasp, progress, scheduleFlight]);
+  useEffect(() => () => cancelFrame(renderFlight), [renderFlight]);
   // Filters edited from here apply to the grid at once (the same filters as the pile).
   const filterKey = JSON.stringify(filter) + filtersOn;
   const lastFilter = useRef(filterKey);
@@ -317,8 +355,13 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
     const timer = window.setTimeout(() => {
       const screen = Math.max(1, last - first - OVERSCAN * 2);
       const from = down ? first : Math.max(0, first - screen * 2), to = down ? Math.min(rows - 1, last + screen * 2) : last;
-      const ids = items.slice(from * columns, (to + 1) * columns).filter(a => !a.demo).map(a => a.id).slice(0, 240);
-      if (ids.length) void Library.cacheThumbnails({ ids, size }).catch(() => {});
+      const ids = items.slice(from * columns, (to + 1) * columns).filter(a => {
+        const known = gridThumbs.get(`${a.id}:${a.modified ?? 0}`);
+        return !a.demo && (!known || known.size < size);
+      }).map(a => a.id).slice(0, 240);
+      // PhotoKit need not decode a second representation of a file the grid
+      // already reuses. Empty also cancels obsolete work after a fast reversal.
+      void Library.cacheThumbnails({ ids, size }).catch(() => {});
     }, 160);
     return () => window.clearTimeout(timer);
   }, [first, last, columns, items, size]);
@@ -365,7 +408,7 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
   const tileRect = (index: number) => scroller.current?.querySelector<HTMLElement>(`[data-i="${index}"]`)?.getBoundingClientRect();
   // The tile's thumbnail goes with it, so the opened photo shows from its first frame.
   const tileSrc = (index: number) => scroller.current?.querySelector<HTMLImageElement>(`[data-i="${index}"] img`)?.src;
-  const fingers = useRef(new Map<number, { x: number; y: number }>()), pinch = useRef<{ spread: number; ratio: number; ox: number; oy: number; mx: number; my: number; x: number; y: number } | null>(null);
+  const fingers = useRef(new Map<number, { x: number; y: number }>()), pinch = useRef<{ spread: number; ratio: number; ox: number; oy: number; mx: number; my: number; x: number; y: number; startT: number } | null>(null);
   const canvasOf = () => scroller.current?.querySelector<HTMLElement>('.grid-canvas') ?? null;
   // Density follows the fingers too: the canvas scales around them, then settles.
   const settleCanvas = () => { const c = canvasOf(); if (!c || !c.style.transform) return; const from = c.style.transform, origin = c.style.transformOrigin; c.style.transform = ''; if (!reduced) c.animate([{ transform: from, transformOrigin: origin }, { transform: 'none', transformOrigin: origin }], { duration: 380, easing: 'cubic-bezier(.22,1,.36,1)' }); };
@@ -375,6 +418,8 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
   // then the layout switches, to exactly what is already on screen.
   type Morph = { to: 3 | 5; t: number; k: number; anchor: { id: string; y: number }; tiles: { el: HTMLElement; from: string; ox: number; oy: number; tx: number; ty: number }[] };
   const morph = useRef<Morph | null>(null);
+  const densityFrame = useRef(0), densityEpoch = useRef(0);
+  const pendingMorph = useRef<{ morph: Morph; value: number } | null>(null);
   const beginMorph = (to: 3 | 5, mx: number, my: number): Morph | null => {
     const sc = scroller.current; if (!sc || !side || !width) return null;
     const box = sc.getBoundingClientRect();
@@ -383,11 +428,14 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
     const side2 = (width - GAP * (to - 1)) / to, pitch2 = side2 + GAP;
     const rowY2 = (row: number) => row * pitch2 + (ad ? Math.floor(row / AD_EVERY) * AD_H : 0);
     const rows2 = Math.ceil(items.length / to), strips2 = ad ? Math.max(0, Math.floor((rows2 - 1) / AD_EVERY)) : 0;
-    const total2 = Math.max(0, rows2 * pitch2 - GAP + strips2 * AD_H) + tail, S = sc.scrollTop;
-    const S2 = Math.max(0, Math.min(Math.max(0, total2 - sc.clientHeight), rowY2(Math.floor(ai / to)) + side2 / 2 - (my - box.top)));
+    const total2 = Math.max(0, rows2 * pitch2 - GAP + strips2 * AD_H) + tail, S = sc.scrollTop, viewHeight = sc.clientHeight;
+    const S2 = Math.max(0, Math.min(Math.max(0, total2 - viewHeight), rowY2(Math.floor(ai / to)) + side2 / 2 - (my - box.top)));
     const tiles = [...sc.querySelectorAll<HTMLElement>('.grid-tile')].map(el => {
       const i = Number(el.dataset.i);
       return { el, from: el.style.transform, ox: (i % columns) * pitch, oy: rowY(Math.floor(i / columns)), tx: (i % to) * pitch2, ty: rowY2(Math.floor(i / to)) - S2 + S };
+    }).filter(x => {
+      const from = x.oy - S, toY = x.ty - S;
+      return Math.max(from + side, toY + side2) > -Math.max(pitch, pitch2) && Math.min(from, toY) < viewHeight + Math.max(pitch, pitch2);
     });
     return { to, t: 0, k: side2 / side, anchor: { id, y: my }, tiles };
   };
@@ -395,10 +443,22 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
     m.t = t; const k = mix(1, m.k, t);
     for (const x of m.tiles) { x.el.style.transformOrigin = '0 0'; x.el.style.transform = `translate(${mix(x.ox, x.tx, t)}px,${mix(x.oy, x.ty, t)}px) scale(${k})`; }
   };
+  const morphPainter = useRef(paintMorph); morphPainter.current = paintMorph;
+  const renderMorph = useCallback(() => {
+    const pending = pendingMorph.current; pendingMorph.current = null;
+    if (pending && pending.morph === morph.current) morphPainter.current(pending.morph, pending.value);
+  }, []);
+  const stopDensity = () => {
+    ++densityEpoch.current; cancelAnimationFrame(densityFrame.current); densityFrame.current = 0;
+    cancelFrame(renderMorph); renderMorph();
+  };
+  useEffect(() => () => { ++densityEpoch.current; cancelAnimationFrame(densityFrame.current); cancelFrame(renderMorph); pendingMorph.current = null; }, [renderMorph]);
   const finishMorph = (commit: boolean) => {
-    const m = morph.current; if (!m) return; morph.current = null;
+    const m = morph.current; if (!m) return; stopDensity(); const epoch = densityEpoch.current;
     const from = m.t, to = commit ? 1 : 0, start = performance.now(), duration = reduced ? 0 : 140 + 220 * Math.abs(to - from);
     const done = () => {
+      if (epoch !== densityEpoch.current) return;
+      morph.current = null; densityFrame.current = 0;
       const seen = snapshot();
       for (const x of m.tiles) { x.el.style.transform = x.from; x.el.style.transformOrigin = ''; }
       if (!commit) return;
@@ -407,8 +467,8 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
       try { localStorage.setItem(COLUMNS_KEY, String(m.to)); } catch { /* per-device convenience only */ }
     };
     if (!duration) { paintMorph(m, to); done(); return; }
-    const step = (now: number) => { const q = Math.min(1, (now - start) / duration), e = 1 - Math.pow(1 - q, 3); paintMorph(m, mix(from, to, e)); if (q < 1) requestAnimationFrame(step); else done(); };
-    requestAnimationFrame(step);
+    const step = (now: number) => { if (epoch !== densityEpoch.current) return; const q = Math.min(1, (now - start) / duration), e = 1 - Math.pow(1 - q, 3); paintMorph(m, mix(from, to, e)); if (q < 1) densityFrame.current = requestAnimationFrame(step); else done(); };
+    densityFrame.current = requestAnimationFrame(step);
   };
   const endPinch = () => {
     const p = pinch.current; pinch.current = null; if (!p) return;
@@ -421,9 +481,12 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
     if (e.isPrimary) { fingers.current.clear(); pinch.current = null; }
     fingers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (fingers.current.size === 2) {
+      // Take ownership of the current visual position. An older settling loop
+      // must never commit its columns or overwrite the new fingers' transforms.
+      stopDensity();
       const g = gesture.current; if (g) clearTimeout(g.timer); gesture.current = null;
       const [a, b] = [...fingers.current.values()], c = canvasOf()?.getBoundingClientRect();
-      pinch.current = { spread: spread(), ratio: 1, ox: (a.x + b.x) / 2 - (c?.left ?? 0), oy: (a.y + b.y) / 2 - (c?.top ?? 0), mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; return;
+      pinch.current = { spread: spread(), ratio: 1, ox: (a.x + b.x) / 2 - (c?.left ?? 0), oy: (a.y + b.y) / 2 - (c?.top ?? 0), mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, startT: morph.current?.t ?? 0 }; return;
     }
     const index = indexAt(e.clientX, e.clientY); if (index < 0 || !e.isPrimary || progress.get() < 1) return;
     const g = { start: index, x: e.clientX, y: e.clientY, mode: 'wait' as 'wait' | 'select' | 'scroll' | 'held', adding: !selected.has(items[index].id), base: selected, timer: 0, id: e.pointerId };
@@ -439,18 +502,29 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
     if (p && fingers.current.size === 2) {
       const ratio = spread() / Math.max(1, p.spread), c = canvasOf(); p.ratio = ratio;
       // 3 columns, fingers apart: the photo in hand grows back into its card (user, 2026-11-13).
-      if (columns === 3 && ratio > 1) {
+      if (columns === 3 && ratio > 1 && (!morph.current || p.startT + (1 - ratio) / .4 <= 0)) {
         if (c) c.style.transform = '';
-        if (morph.current) { paintMorph(morph.current, 0); for (const x of morph.current.tiles) { x.el.style.transform = x.from; x.el.style.transformOrigin = ''; } morph.current = null; }
+        if (morph.current) {
+          stopDensity();
+          for (const x of morph.current.tiles) { x.el.style.transform = x.from; x.el.style.transformOrigin = ''; }
+          morph.current = null;
+        }
+        // Reversing a density gesture can keep opening the card without lifting.
+        // Its new starting spread is the exact point where density reached 3.
+        const boundary = 1 + p.startT * .4, cardRatio = ratio / boundary;
+        p.spread *= boundary; p.startT = 0;
         const [a, b] = [...fingers.current.values()], m = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-        const h = grasp.get(); grasp.set(h ? { ...h, x: m.x, y: m.y, ratio } : { x0: m.x, y0: m.y, x: m.x, y: m.y, ratio });
-        scrub(Math.min(.98, clamp01(1 - (ratio - 1) / .7))); return;
+        const h = grasp.get(); grasp.set(h ? { ...h, x: m.x, y: m.y, ratio: cardRatio } : { x0: m.x, y0: m.y, x: m.x, y: m.y, ratio: cardRatio });
+        scrub(Math.min(.98, clamp01(1 - (cardRatio - 1) / .7))); return;
       }
       if (progress.get() < 1) scrub(1);
       const [fa, fb] = [...fingers.current.values()]; p.x = (fa.x + fb.x) / 2; p.y = (fa.y + fb.y) / 2;
       // 3 → 5 as the fingers close to 0.6 of their spread; 5 → 3 as they open to 1.6.
       if (!morph.current && (columns === 3 ? ratio < .98 : ratio > 1.02)) morph.current = beginMorph(columns === 3 ? 5 : 3, p.mx, p.my);
-      if (morph.current) paintMorph(morph.current, columns === 3 ? clamp01((1 - ratio) / .4) : clamp01((ratio - 1) / .6));
+      if (morph.current) {
+        const value = clamp01(p.startT + (columns === 3 ? (1 - ratio) / .4 : (ratio - 1) / .6));
+        morph.current.t = value; pendingMorph.current = { morph: morph.current, value }; motionFrame.render(renderMorph);
+      }
       return;
     }
     const g = gesture.current; if (!g || e.pointerId !== g.id) return;
@@ -522,6 +596,7 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
   for (let row = first; row <= last; row++) for (let col = 0; col < columns; col++) {
     const index = row * columns + col, asset = items[index]; if (!asset) break;
     tiles.push(<Tile key={asset.id} asset={asset} index={index} x={col * pitch} y={rowY(row)} side={side} size={size}
+      visible={rowY(row) + side > offset && rowY(row) < offset + height}
       selected={selected.has(asset.id)} current={asset.id === current} level={state.marks[asset.id]?.level ?? 0}
       pending={marks.pending.has(asset.id)} favorite={marks.favorites.has(asset.id)} later={marks.later.has(asset.id)} flying={asset.id === flyingId}/>);
   }
@@ -536,7 +611,7 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
 
   const count = targets.length;
   // Paint after every render too (first frame, scroll to the working photo, density).
-  useLayoutEffect(() => { painter.current(progress.get()); });
+  useLayoutEffect(() => { scheduleFlight(); });
   return <section ref={section} className={`library-grid cols-${columns} ${flyingId ? 'is-flying' : ''}`} style={{ top }} data-count={items.length} role="region" aria-label={t('Fototeca')}>
     <div ref={paper} className="grid-paper" style={{ opacity: 0 }}/>
     <div ref={body} className="grid-body">

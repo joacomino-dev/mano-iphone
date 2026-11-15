@@ -146,6 +146,7 @@ en curso. No duplicarlo ni repetir builds de app sin cambios.
 | R-71 | Doble toque hacía zoom de toda la pantalla; toque + mantener mostraba la lupa (usuario, 2026-11-12) | CL | **Implementado; iPhone pendiente** | 125f46e: viewport sin zoom + `touch-action:manipulation`; iOS desactiva el reconocedor «tap and a half» de WebKit (log `COCOWASH_LOUPE_DISABLED`). Compila en CI release; falta probar en el teléfono |
 | R-72 | Vista «Fototeca» (cuadrícula) con decisiones en lote (usuario, 2026-11-12) | CL | **F1–F4 implementadas; iPhone pendiente** | aae4dba: revisión de diseño (coco-mobile-ui + frontend-design), toque → vista anclada, franja de anuncio cada 10 filas solo con carta cargada (aprobado por el usuario), precacheo nativo de miniaturas en iOS. `tests/grid-flow.mjs` PASS |
 | R-73 | Lentitud tras uso prolongado (usuario, 2026-11-12) | CL | **Web y Android sin fuga; iOS `sample` pendiente** | `tests/long-use-profile.mjs`: 400 decisiones en 3000 sin crecimiento de memoria/DOM/latencia; 12 min en reposo sin actividad. Android: CPU «en reposo» eran picos post-ronda → medición asentada 3df87da. Memoria Android: la pendiente era caché descartable del renderer; purga por DevTools cada ronda (ee4bcf4) → 43486731821 tres PASS seguidos, renderer plano. iOS: gate completo con `sample` del proceso caliente pendiente |
+| R-74 | Tirones al encadenar pellizcos carta ↔ 3 ↔ 5 columnas, especialmente iPhone (usuario, 2026-11-14) | CX | **Corrección local; QA física pendiente** | CW-CX-065 sobre b945cc0: cancela asentamiento anterior conservando pose, agrupa dibujo, prioriza visibles/reutiliza miniaturas, pausa vídeo oculto y zoom por MotionValue. 20 ciclos iOS + 5 Android sintéticos PASS; [evidencia/límites](apple-readiness/evidence/strategic/20261114-grid-motion.json). No cierra R-73 ni acredita hardware. |
 
 ## A · Código y pruebas iOS (antes de firmar)
 
@@ -263,6 +264,8 @@ Fallos en el Organizador y en Play Vitals, valoraciones, AdMob (relleno, consent
 textos con hablantes nativos, 1.0.1 para lo que salga.
 
 ## Registro de avance
+
+- 2026-11-14 · Codex · CW-CX-065 · R-74 implementado localmente sin commit/push: 148 Node, TS/protected28/builds/release/contratos/Sites y regresiones grid/Inspector PASS. Movimiento normal: 20 ciclos iOS + 5 Android; miniaturas 95→50. Evidencia `apple-readiness/evidence/strategic/20261114-grid-motion.json`. QA física y paquete nuevo pendientes; R-73 sigue abierto.
 
 - 2026-11-11 · Codex · CW-CX-064 · db33b1a enviado: A3 diálogo Android, A1 arranque acotado y sample, A4 -6,18% inicial, A0 pruebas navegador PASS sin reproducción y nueva sonda nativa. Full43126451617/Live43126455524/Android43126422530 en curso; todavía sin tres verdes ni APK nuevo. Evidencia `apple-readiness/evidence/strategic/20261111-block-a-local.json`.
 

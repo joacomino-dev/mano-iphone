@@ -99,9 +99,9 @@ export function thumbnailInfo(asset: Asset, size = 900, refresh = false, network
 export const thumbnail = (asset: Asset, size = 900, refresh = false, network?: boolean, signal?: AbortSignal) => thumbnailInfo(asset, size, refresh, network, signal).then(t => t.src);
 /** Owned by the review loader, independently cancellable from the main pile.
  * Local-only, as the previous review thumbnails; no original or iCloud fetch. */
-export async function reviewThumbnail(asset: Asset, size: number, signal: AbortSignal, refresh = false): Promise<Thumb> {
+export async function reviewThumbnail(asset: Asset, size: number, signal: AbortSignal, refresh = false, priority = false): Promise<Thumb> {
   if (signal.aborted) throw new DOMException('Revisión cancelada', 'AbortError');
-  return thumbnailInfo(asset, size, refresh, false, signal);
+  return thumbnailInfo(asset, size, refresh, false, signal, undefined, priority);
 }
 export const inCloudError = (error: unknown) => (error as { code?: string })?.code === 'IN_CLOUD';
 // Demo media spans several days so date filters and the counter can be tried;
