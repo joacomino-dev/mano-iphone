@@ -17,6 +17,9 @@ conserva campos/controles/pinch. Parsers de rangos Swift/Kotlin con fixture20 y 
 y recorridos sintéticos PASS. npm audit 12 avisos/6 paquetes→0; Vite8.1.6 y transitivas corregidas.
 La falla inicial de seek era del servidor sin rangos; producción con Vite preview pasa sin parche de app.
 Swift/Kotlin y gate nativo completo pendientes de CI; no declarar listo para Apple ni build47 físico.
+Código `b780b3c` enviado a main. Confirmados en ejecución: desarrollo43687846424,
+tienda43687846408, Android43687846362 y [full43687846772](https://github.com/joacomino-dev/mano-iphone/actions/runs/43687846772),
+simulador standard. Un único dispatch full; resultados pendientes, no duplicar.
 Puertas externas: firma/archivo+privacidad agregada, ATT/compras/accesibilidad/iCloud físicos,
 consolas del propietario y políticas corregidas sin publicar. Reserva termina al entregar;
 conservar cambios nativos y gestos. No se modifican cuentas, tiendas, claves o runtime protegido.

@@ -2,6 +2,18 @@
   "date": "2026-11-15",
   "task": "CW-CX-067",
   "base": "be288a05bb3921d6950bc41a29cad374402c21c1",
+  "codeCommit": "b780b3cff14c26fd49f1306707585b91216f718b",
+  "ci": {
+    "observedDate": "2026-11-15",
+    "statusAtObservation": "in_progress",
+    "developmentRun": 43687846424,
+    "releaseRun": 43687846408,
+    "androidRun": 43687846362,
+    "nativeFullRun": 43687846772,
+    "nativeFullSimulator": "standard",
+    "result": "PENDING",
+    "boundary": "One full gate dispatch and existing automatic push builds. Initial execution confirmed; no duplicate runs or outcome inferred."
+  },
   "product": "0.9.9.3",
   "ios": { "marketingVersion": "0.9.9", "build": 47 },
   "android": { "versionName": "0.9.9.3", "versionCode": 5 },

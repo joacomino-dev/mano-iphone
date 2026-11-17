@@ -616,3 +616,5 @@ Validaciones: 149 Node, 17 contratos/empaquetado, 43 herramientas, TS/runtime/bu
 npm audit12→0. Seek Live falla solo en servidor sin rangos; pasa en producción/Vite, sin ocultar aserción.
 Impacto para Claude: preservar guard público, edición de campos y optimizaciones aprobadas; R-74 aceptada subjetivamente.
 Pendientes: CI nativa del candidato y fixture20, iPhone build47, R-73, archivo/firma/privacidad/comercio; envío bloqueado.
+Integración: `b780b3c` enviado a main; desarrollo43687846424, tienda43687846408,
+Android43687846362 y full43687846772 (standard) confirmados en ejecución. Resultado pendiente; no duplicar.

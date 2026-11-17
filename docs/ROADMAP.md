@@ -29,6 +29,8 @@ Usuario acepta fluidez de IPA46. Limpieza y preparación de build47 verificadas 
 149 Node, 17 contratos/empaquetado, 43 herramientas, protected28, TS estricto y builds PASS;
 npm audit cero avisos. [Informe y pendientes reales de Apple](apple-readiness/CODE_AUDIT_2026-11-15.md).
 Swift/Kotlin nuevos requieren CI; archivo firmado, QA física, privacidad y comercio siguen pendientes.
+Código `b780b3c` enviado. Desarrollo43687846424, tienda43687846408, Android43687846362 y
+full43687846772 confirmados en ejecución; no duplicar ni marcar PASS sin resultados.
 **Envío bloqueado.** Los resultados por SHA siguientes conservan el historial de estabilización.
 
 ### Candidato histórico 0.9.9.2 — CW-CX-060

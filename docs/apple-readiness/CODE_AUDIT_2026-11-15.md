@@ -76,6 +76,13 @@ se ejecuta en Vite dev; las demás admiten el build estático.
 Logs completos y sondas: `work/code-audit-20261115/` (local, ignorado). Recibo público
 sin fotos ni credenciales: [code-audit.json](evidence/strategic/20261115-code-audit.json).
 
+Código integrado en `b780b3c`, enviado a main. CI confirmada en ejecución el 15 de
+noviembre: [desarrollo](https://github.com/joacomino-dev/mano-iphone/actions/runs/43687846424),
+[tienda sin firma](https://github.com/joacomino-dev/mano-iphone/actions/runs/43687846408),
+[Android](https://github.com/joacomino-dev/mano-iphone/actions/runs/43687846362) y
+[gate nativo completo, simulador standard](https://github.com/joacomino-dev/mano-iphone/actions/runs/43687846772).
+Resultado pendiente; no duplicar ejecuciones ni interpretar este estado como PASS.
+
 ## Puertas pendientes para Apple
 
 1. Compilar el candidato exacto en macOS/Android y ejecutar los oráculos nuevos;
