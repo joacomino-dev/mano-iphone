@@ -95,13 +95,13 @@ class ASC:
         if self._token and now < self._expires - 60:
             return self._token
         header = b64url(json.dumps({'alg': 'ES256', 'kid': self.key_id, 'typ': 'JWT'}).encode())
-        payload = b64url(json.dumps({'iss': self.issuer, 'iat': now, 'exp': now + 1200,
+        payload = b64url(json.dumps({'iss': self.issuer, 'iat': now - 30, 'exp': now + 900,
                                      'aud': 'appstoreconnect-v1'}).encode())
         signing_input = f'{header}.{payload}'.encode()
         der = subprocess.run(['openssl', 'dgst', '-sha256', '-sign', self.key_path], input=signing_input,
                              capture_output=True, check=True).stdout
         self._token = f'{header}.{payload}.{b64url(der_to_raw(der))}'
-        self._expires = now + 1200
+        self._expires = now + 900
         return self._token
 
     def call(self, method, path, body=None):
@@ -118,6 +118,11 @@ class ASC:
                 text = error.read().decode('utf-8', 'replace')
                 if error.code in (429, 500, 502, 503, 504) and attempt < 3:
                     time.sleep(5 * (attempt + 1))
+                    continue
+                if error.code == 401 and attempt < 3:
+                    # Apple occasionally rejects a valid token mid-run; sign a fresh one and retry.
+                    self._token = None
+                    time.sleep(3 * (attempt + 1))
                     continue
                 raise APIError(error.code, method, path.split('?')[0], text) from None
         raise RuntimeError('unreachable')
