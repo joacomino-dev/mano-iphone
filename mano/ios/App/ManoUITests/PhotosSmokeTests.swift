@@ -1062,7 +1062,7 @@ final class PhotosSmokeTests: XCTestCase {
     @MainActor private func tapSystemButton(_ app:XCUIApplication,_ labels:[String],timeout:TimeInterval,searchApp:Bool=true) -> String? {
         let system=XCUIApplication(bundleIdentifier:"com.apple.springboard")
         let deadline=Date().addingTimeInterval(timeout)
-        var lastRead=Date.distantPast
+        var lastRead=Date.distantPast,seen:[String]=[]
         while Date()<deadline {
             // The app has its own «Eliminar» (discard): for the delete confirmation only the system is searched.
             for owner in searchApp ? [system,app] : [system] {
@@ -1076,6 +1076,7 @@ final class PhotosSmokeTests: XCTestCase {
                 request.usesLanguageCorrection=false
                 request.recognitionLanguages=["es-ES","en-US"]
                 try? VNImageRequestHandler(cgImage:cg).perform([request])
+                seen=(request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
                 for observation in request.results ?? [] {
                     guard let text=observation.topCandidates(1).first?.string.trimmingCharacters(in:.whitespacesAndNewlines),labels.contains(text) else { continue }
                     let box=observation.boundingBox
@@ -1085,6 +1086,9 @@ final class PhotosSmokeTests: XCTestCase {
             }
             Thread.sleep(forTimeInterval:0.25)
         }
+        // Not found: keep what was on screen, so the next failure says what the dialog was.
+        let shot=XCTAttachment(screenshot:XCUIScreen.main.screenshot());shot.name="System button \(labels.first ?? "") not found";shot.lifetime = .keepAlways;add(shot)
+        print("COCOWASH_UI_SYSTEM_TEXT_SEEN wanted=\(labels) seen=\(seen.prefix(40))")
         return nil
     }
 
