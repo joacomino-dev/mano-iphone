@@ -56,7 +56,8 @@ def evaluate(report):
     idle_cpu=[c for _,c in idle]
     baseline_cpu=statistics.median(idle_cpu[:3]);late_cpu=statistics.median(idle_cpu[-3:])
     checks={**combined['checks'],'rolesWithinMemoryBudget':all(all(t['checks'].values()) for t in role_trends.values()),'stableProcessesWithinMemoryBudget':all(all(t['checks'].values()) for t in process_trends.values()),'lateIdleCpu':late_cpu<=BUDGETS['maxLateIdleCpuPercent'],'idleCpuGrowth':late_cpu-baseline_cpu<=BUDGETS['maxIdleCpuGrowthPercentagePoints'],
-            # Android probes for quiet before measuring; a row that never settled is a real busy loop.
+            # Both collectors probe for quiet before measuring (Android, and iOS since CW-CL-084);
+            # a row that never settled is a real busy loop.
             'appSettlesAfterEveryRound':all(r.get('settled',True) or r.get('mediaPlaying') for r in rows)}
     return dict(result,**{k:v for k,v in combined.items() if k!='checks'},status='PASS' if all(checks.values()) else 'FAIL',checks=checks,roleTrends=role_trends,stableProcessTrends=process_trends,baselineIdleCpuPercent=baseline_cpu,lateIdleCpuPercent=late_cpu)
 

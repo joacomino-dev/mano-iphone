@@ -11,7 +11,7 @@ import statistics
 import subprocess
 import sys
 import time
-from native_cpu_samples import measure
+from native_cpu_samples import measure, settle
 
 assert sys.platform == 'darwin'
 assert os.environ.get('GITHUB_ACTIONS') == 'true' and os.environ.get('RUNNER_ENVIRONMENT') == 'github-hosted'
@@ -56,6 +56,15 @@ def snapshot():
         samples.append({'pid':int(pid),'role':role,'rssKiB':int(rss),'cpuSeconds':cpu_seconds(cpu),'monotonic':time.monotonic(),'ownership':proof})
     return samples
 
+def app_snapshot():
+    """The app process only: enough for the settle probes, and quick (no WebContent ownership checks)."""
+    app_path=run('xcrun','simctl','get_app_container',simulator,'work.joaquin.mano','app')
+    for line in run('ps','-axo','pid=,rss=,time=,comm=').splitlines():
+        parts=line.strip().split(None,3)
+        if len(parts)==4 and parts[3]==app_path+'/App':
+            return [{'pid':int(parts[0]),'role':'app','rssKiB':int(parts[1]),'cpuSeconds':cpu_seconds(parts[2]),'monotonic':time.monotonic()}]
+    return []
+
 def save():
     (out/'native-cycles.json').write_text(json.dumps(report,indent=2)+'\n')
 
@@ -69,9 +78,18 @@ try:
         cycle=len(rows)
         if not (runner/f'native-cycle-{cycle}.request').exists(): time.sleep(.25);continue
         time.sleep(3)
+        # Measure the app at rest, as on Android: work still running after a round (run
+        # 43687846772, round 6 at 82 % CPU) is not idle memory. Still busy after eight probes:
+        # keep its call stacks (symbol names only) to see what it is.
+        def busy_sample(probe,cycle=cycle):
+            try:
+                app=app_snapshot()[0]
+                subprocess.run(['sample',str(app['pid']),'3','-mayDie','-file',str(out/f"cpu-sample-cycle-{cycle}-settling-app-{app['pid']}.txt")],capture_output=True,timeout=40,check=False)
+            except Exception: pass
+        quiet=settle(app_snapshot,time.sleep,on_busy=busy_sample)
         measurement=measure(snapshot,time.sleep,max_attempts=3)
         complete=measurement['complete']
-        rows.append({'cycle':cycle,**measurement,'combinedRssKiB':sum(p['rssKiB'] for p in measurement['processes'])})
+        rows.append({'cycle':cycle,**quiet,**measurement,'combinedRssKiB':sum(p['rssKiB'] for p in measurement['processes'])})
         # Run 42682535759: from round 7 the app process idled at ~70 % CPU. Numbers do not
         # say what was running; when it happens again keep the call stacks (fixture
         # simulator only, symbol names, no arguments or environment).

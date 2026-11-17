@@ -28,4 +28,21 @@ class NativeCpuSamples(unittest.TestCase):
     def test_zero_time_not_accepted(self):self.assertFalse(cpu.counters(snapshot(1),snapshot(1))[1])
     def test_missing_role_not_accepted(self):self.assertFalse(cpu.counters(snapshot(1)[:1],snapshot(3)[:1])[1])
 
+    # Settle before measuring (run 43687846772: round 6 was measured with the app at 82 % CPU).
+    def test_settle_waits_for_a_quiet_app(self):
+        busy=lambda second:[{'pid':1,'role':'app','monotonic':second,'cpuSeconds':second*.8},{'pid':2,'role':'webcontent','monotonic':second,'cpuSeconds':0}]
+        quiet=lambda second:[{'pid':1,'role':'app','monotonic':second,'cpuSeconds':100+second*.02},{'pid':2,'role':'webcontent','monotonic':second,'cpuSeconds':0}]
+        source=iter([busy(0),busy(1),busy(2),busy(3),quiet(4),quiet(5)])
+        result=cpu.settle(lambda:next(source),lambda seconds:None)
+        self.assertTrue(result['settled']);self.assertEqual(result['settleProbes'],2)
+    def test_settle_is_bounded_and_says_so(self):
+        busy=lambda second:[{'pid':1,'role':'app','monotonic':second,'cpuSeconds':second*.8}]
+        clock=iter(range(1000));seen=[]
+        result=cpu.settle(lambda:busy(next(clock)),lambda seconds:None,max_probes=5,on_busy=lambda probe:seen.append(probe),report_after=3)
+        self.assertFalse(result['settled']);self.assertEqual(result['settleProbes'],5);self.assertEqual(seen,[3])
+    def test_settle_unknown_cpu_is_not_quiet(self):
+        source=iter([[{'pid':1,'role':'app','monotonic':0,'cpuSeconds':0}],[{'pid':9,'role':'app','monotonic':1,'cpuSeconds':0}]]*2)
+        result=cpu.settle(lambda:next(source),lambda seconds:None,max_probes=2)
+        self.assertFalse(result['settled'])
+
 if __name__=='__main__':unittest.main()
