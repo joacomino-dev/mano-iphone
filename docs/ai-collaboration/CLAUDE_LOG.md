@@ -1030,3 +1030,20 @@ Observaciones del usuario sobre `6c117eb` y respuesta:
   - Desbordaba en teléfonos reales (zonas seguras). Textos más cortos, columna de iconos más estrecha, filas más compactas y el contador libre de la barra de progreso.
   - Medido: sin desbordamiento a 375×667, 390×760 y 430×860.
 Validación: 147 unitarias, 14 baterías de navegador, runtime 28, builds PASS. Sondas táctiles CDP (traza de aterrizaje sin fotograma vacío ni segundo vuelo).
+
+### CW-CL-083 — Revisión de `b780b3c` (ECC) y corrección del desplazamiento 3↔5
+Fecha: 2026-11-16, America/Bogota
+Agente: Claude
+Revisión con `ecc:verification-loop` de lo integrado por Codex (`1a89cd1`, `be288a0`, `b780b3c`):
+- Tipos, 149 unitarias, protected28 y builds PASS.
+- CI desarrollo/tienda/Android PASS.
+- Gate nativo completo 43687846772 FAIL solo por `NATIVE_CYCLE_BUDGET`: proceso app iOS +3,7 MB en diez rondas, pendiente 1390 KiB/ronda > 1024; WebContent baja. R-73 iOS sigue abierto.
+- `grid-motion-flow` (vista previa de producción) fallaba siempre.
+Causa (ciclo `ecc:tdd-workflow`):
+- Rojo: tras la primera ida y vuelta 3→5→3 con los dedos quietos, otra foto bajo ellos (`fixture-2683` frente a `fixture-2692`).
+- Dos errores del ancla de densidad:
+  - Se medía el borde del contenedor desplazable, que sigue escalado mientras se asienta la entrada (media casilla por cambio).
+  - En 5 columnas los dedos caen sobre la vecina de la foto anclada, que en 3 columnas está en otra fila.
+- Corrección: el ancla se calcula con la geometría (fila/columna/desplazamiento sobre el marco sin transformar) y conserva la foto del último cambio mientras siga en la fila bajo los dedos.
+Verde: `grid-motion-flow` 4/4 (20 ciclos iOS y 5 Android interrumpidos, misma foto bajo los dedos), `text-interaction-flow`, las 14 baterías de siempre, 149 unitarias, tipos, protected28 y builds PASS.
+Las notas sin commit de Codex en ROADMAP/CURRENT_STATE (CI en curso) se dejan intactas.

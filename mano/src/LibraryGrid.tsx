@@ -213,7 +213,7 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
     refocus.current = false;
     // A density pinch keeps the photo under the fingers where it was (no recentring jump).
     const held = pinchAnchor.current; pinchAnchor.current = null;
-    if (held) { const i = items.findIndex(a => a.id === held.id); if (i >= 0) { const top = el.getBoundingClientRect().top; el.scrollTop = Math.max(0, rowY(Math.floor(i / columns)) + side / 2 - (held.y - top)); setOffset(el.scrollTop); return; } }
+    if (held) { const i = items.findIndex(a => a.id === held.id); if (i >= 0) { const top = (body.current ?? el).getBoundingClientRect().top; el.scrollTop = Math.max(0, rowY(Math.floor(i / columns)) + side / 2 - (held.y - top)); setOffset(el.scrollTop); return; } }
     const index = focusIndex(items); if (index < 0) return;
     const visible = el.clientHeight - dockHeight;
     el.scrollTop = Math.max(0, rowY(Math.floor(index / columns)) - (visible - pitch) / 2); setOffset(el.scrollTop);
@@ -403,14 +403,22 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
   // under the fingers staying under them. Letting go finishes the trip (or undoes it) and only
   // then the layout switches, to exactly what is already on screen.
   type Morph = { to: 3 | 5; t: number; k: number; anchor: { id: string; y: number }; tiles: { el: HTMLElement; from: string; ox: number; oy: number; tx: number; ty: number }[] };
-  const morph = useRef<Morph | null>(null);
+  const morph = useRef<Morph | null>(null), lastAnchor = useRef<string | null>(null);
   const densityFrame = useRef(0), densityEpoch = useRef(0);
   const pendingMorph = useRef<{ morph: Morph; value: number } | null>(null);
   const beginMorph = (to: 3 | 5, mx: number, my: number): Morph | null => {
     const sc = scroller.current; if (!sc || !side || !width) return null;
-    const box = sc.getBoundingClientRect();
-    const under = document.elementFromPoint(mx, my)?.closest<HTMLElement>('.grid-tile');
-    const ai = under ? Number(under.dataset.i) : Math.max(0, focusIndex(items)); const id = items[ai]?.id; if (!id) return null;
+    // The grid's frame, never the scroller: while the way in settles the scroller is zoomed,
+    // and its moved edge put the anchor half a tile off per change (user, 2026-11-16).
+    const box = (body.current ?? sc).getBoundingClientRect();
+    // The photo anchored by the last density change stays the anchor while it is still in the
+    // row under the fingers: a 5-column row holds other photos at the fingers' x, and taking
+    // one of those slid the view a row per round trip (user, 2026-11-16).
+    // Both found from the layout (rows, columns, scroll), never from what is painted mid-motion.
+    const y = my - box.top + sc.scrollTop, row = rowAt(y), col = Math.max(0, Math.min(columns - 1, Math.floor((mx - box.left) / pitch)));
+    const keptIndex = lastAnchor.current ? items.findIndex(a => a.id === lastAnchor.current) : -1;
+    const ai = keptIndex >= 0 && Math.floor(keptIndex / columns) === row ? keptIndex : Math.min(items.length - 1, row * columns + col);
+    const id = items[ai]?.id; if (!id) return null;
     const side2 = (width - GAP * (to - 1)) / to, pitch2 = side2 + GAP;
     const rowY2 = (row: number) => row * pitch2 + (ad ? Math.floor(row / AD_EVERY) * AD_H : 0);
     const rows2 = Math.ceil(items.length / to), strips2 = ad ? Math.max(0, Math.floor((rows2 - 1) / AD_EVERY)) : 0;
@@ -448,7 +456,7 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
       const seen = snapshot();
       for (const x of m.tiles) { x.el.style.transform = x.from; x.el.style.transformOrigin = ''; }
       if (!commit) return;
-      flip.current = seen; pinchAnchor.current = m.anchor; refocus.current = true;
+      flip.current = seen; pinchAnchor.current = m.anchor; lastAnchor.current = m.anchor.id; refocus.current = true;
       flushSync(() => setColumns(m.to)); haptic('selection');
       try { localStorage.setItem(COLUMNS_KEY, String(m.to)); } catch { /* per-device convenience only */ }
     };
