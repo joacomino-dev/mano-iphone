@@ -1,5 +1,6 @@
 import XCTest
 import UIKit
+import Vision
 
 final class PhotosSmokeTests: XCTestCase {
     override func setUpWithError() throws {
@@ -530,20 +531,10 @@ final class PhotosSmokeTests: XCTestCase {
         // sometimes in the app's own process (iOS 17+): look in both for the same 30 s. Only
         // looking in SpringBoard failed intermittently and cascaded into W, X and Z (gate runs
         // since 42669952998; CW-CL-084).
-        let labels=["Cancel","Cancelar","Don't Allow","Don’t Allow","No permitir"]
-        let system=XCUIApplication(bundleIdentifier:"com.apple.springboard")
-        var cancel:XCUIElement?
-        let offeredBy=Date().addingTimeInterval(30)
-        while cancel==nil && Date()<offeredBy {
-            for owner in [system,app] {
-                let candidate=owner.buttons.matching(NSPredicate(format:"label IN %@",labels)).firstMatch
-                if candidate.exists && candidate.isHittable { cancel=candidate;break }
-            }
-            if cancel==nil { Thread.sleep(forTimeInterval:0.25) }
-        }
-        XCTAssertNotNil(cancel,"A real Photos cancellation button must be offered")
-        guard let cancel else { return }
-        cancel.tap()
+        let tapped=tapSystemButton(app,["Cancel","Cancelar","Don't Allow","Don’t Allow","No permitir"],timeout:30)
+        XCTAssertNotNil(tapped,"A real Photos cancellation button must be offered")
+        guard let tapped else { return }
+        print("COCOWASH_UI_SYSTEM_CANCEL via=\(tapped)")
         let retained=XCTNSPredicateExpectation(predicate:NSPredicate(format:"exists == true AND enabled == true"),object:confirm)
         XCTAssertEqual(XCTWaiter().wait(for:[retained],timeout:20),.completed,"Cancellation must preserve the queued item, never report deletion")
         XCTAssertFalse(app.buttons["Seguir revisando"].firstMatch.exists)
@@ -999,14 +990,12 @@ final class PhotosSmokeTests: XCTestCase {
         let confirm=app.buttons.matching(NSPredicate(format:"label == %@ OR label BEGINSWITH %@","Eliminar 1","Eliminar 1 (")).firstMatch
         XCTAssertTrue(confirm.waitForExistence(timeout:15),"Review must contain exactly one generated item")
         confirm.tap()
-        let system=XCUIApplication(bundleIdentifier:"com.apple.springboard")
-        let remove=system.buttons.matching(NSPredicate(format:"label IN %@",["Delete","Delete Photo","Delete 1 Photo","Eliminar","Eliminar foto","Eliminar 1 foto"])).firstMatch
-        guard remove.waitForExistence(timeout:30) else {
+        guard let removed=tapSystemButton(app,["Delete","Delete Photo","Delete 1 Photo","Eliminar","Eliminar foto","Eliminar 1 foto"],timeout:30,searchApp:false) else {
             self.attachScreenshot(app,"Expected system fixture deletion confirmation missing")
             XCTFail("No recognized real Photos deletion confirmation; never dismiss an unknown alert")
             return
         }
-        remove.tap()
+        print("COCOWASH_UI_SYSTEM_DELETE via=\(removed)")
         let again=app.buttons["Seguir revisando"].firstMatch
         XCTAssertTrue(again.waitForExistence(timeout:45),"Successful native delete must reach the completed round")
         XCUIDevice.shared.press(.home);Thread.sleep(forTimeInterval:1);app.activate()
@@ -1062,6 +1051,41 @@ final class PhotosSmokeTests: XCTestCase {
             print("COCOWASH_UI_TAP_RETRY \(name) \(attempt)")
         }
         return done()
+    }
+
+    /// Photos' deletion confirmation sometimes reaches SpringBoard as a remote placeholder
+    /// whose contents XCTest cannot read («AX remote access is disabled», gate 43989542050).
+    /// Look for one of `labels` through accessibility in SpringBoard and the app; failing that,
+    /// read the screen with Vision and tap a recognized word that equals one of `labels`
+    /// exactly (never a substring: «Eliminar 1 (10 KB)» or a title cannot match). The alert
+    /// is modal, so a tap outside it does nothing.
+    @MainActor private func tapSystemButton(_ app:XCUIApplication,_ labels:[String],timeout:TimeInterval,searchApp:Bool=true) -> String? {
+        let system=XCUIApplication(bundleIdentifier:"com.apple.springboard")
+        let deadline=Date().addingTimeInterval(timeout)
+        var lastRead=Date.distantPast
+        while Date()<deadline {
+            // The app has its own «Eliminar» (discard): for the delete confirmation only the system is searched.
+            for owner in searchApp ? [system,app] : [system] {
+                let candidate=owner.buttons.matching(NSPredicate(format:"label IN %@",labels)).firstMatch
+                if candidate.exists && candidate.isHittable { let label=candidate.label;candidate.tap();return "accessibility:"+label }
+            }
+            if Date().timeIntervalSince(lastRead)>=1, let cg=XCUIScreen.main.screenshot().image.cgImage {
+                lastRead=Date()
+                let request=VNRecognizeTextRequest()
+                request.recognitionLevel = .accurate
+                request.usesLanguageCorrection=false
+                request.recognitionLanguages=["es-ES","en-US"]
+                try? VNImageRequestHandler(cgImage:cg).perform([request])
+                for observation in request.results ?? [] {
+                    guard let text=observation.topCandidates(1).first?.string.trimmingCharacters(in:.whitespacesAndNewlines),labels.contains(text) else { continue }
+                    let box=observation.boundingBox
+                    system.coordinate(withNormalizedOffset:CGVector(dx:box.midX,dy:1-box.midY)).tap()
+                    return "vision:"+text
+                }
+            }
+            Thread.sleep(forTimeInterval:0.25)
+        }
+        return nil
     }
 
     @MainActor private func attachScreenshot(_ app: XCUIApplication, _ name: String) {
