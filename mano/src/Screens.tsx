@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { GearSixIcon, ArrowClockwiseIcon, CaretRightIcon, ImagesIcon, EyeIcon, ClockCountdownIcon, ImageSquareIcon, FilmStripIcon } from '@phosphor-icons/react';
 import { AnimatedNumber, CocoLoader } from './Loader';
@@ -6,6 +6,7 @@ import type { PhotoPermission } from './library';
 import { Character } from './Characters';
 import { formatBytes } from './meta';
 import { locale, parts, t, tn } from './i18n';
+import { burst, centreOf, stopParticles } from './particles';
 
 const rise = (reduced: boolean | null, delay = 0) => reduced ? { initial: false as const } : { initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 }, transition: { type: 'spring' as const, stiffness: 320, damping: 32, delay } };
 
@@ -83,6 +84,13 @@ function numbered(text: string): ReactNode {
 export function SessionDone({ stats, pending, pendingBytes, pendingPartial, again, review, monetization }: { stats: RoundStats; pending: number; pendingBytes: number; pendingPartial: boolean; again: () => void; review: () => void; monetization?: ReactNode }) {
   const reduced = useReducedMotion();
   const total = stats.keep + stats.discard + stats.favorite + stats.later;
+  // The round's one celebration (rare): a short burst of paper from the stamp as it lands.
+  const doneStamp = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (reduced || !(total || stats.freedPhotos + stats.freedVideos)) return;
+    const timer = window.setTimeout(() => { const at = centreOf(doneStamp.current); if (at) burst('done', at, 'paper', 20); }, 180);
+    return () => { window.clearTimeout(timer); stopParticles('done'); };
+  }, []);
   const freed = stats.freedPhotos + stats.freedVideos > 0;
   const freedLabel = formatBytes(stats.freed, locale);
   const pendingLabel = formatBytes(pendingBytes, locale);
@@ -96,7 +104,7 @@ export function SessionDone({ stats, pending, pendingBytes, pendingPartial, agai
     <div className="done-hero">
     {total || freed ? <div className="character-pair"><Character pose="coqui-cheer" height={compact ? 96 : 140} motion="hop"/></div>
       : <Character pose="coqui-calm" height={compact ? 90 : 120} className="status-character" motion="sway"/>}
-    <motion.div className="done-stamp" initial={reduced ? false : { scale: 1.6, opacity: 0, rotate: -14 }} animate={{ scale: 1, opacity: 1, rotate: -6 }} transition={{ type: 'spring', stiffness: 380, damping: 18, delay: .05 }} aria-hidden="true">{freed ? t('Eliminado') : t('Guardado')}</motion.div>
+    <motion.div ref={doneStamp} className="done-stamp" initial={reduced ? false : { scale: 1.6, opacity: 0, rotate: -14 }} animate={{ scale: 1, opacity: 1, rotate: -6 }} transition={{ type: 'spring', stiffness: 380, damping: 18, delay: .05 }} aria-hidden="true">{freed ? t('Eliminado') : t('Guardado')}</motion.div>
     </div>
     {freed ? <motion.section {...rise(reduced, .12)} className="done-freed" aria-label={t('Espacio liberado')}>
       <motion.strong className={`freed-amount ${amount[1] ? '' : 'is-plain'}`} dir={freedLabel ? 'ltr' : undefined} initial={reduced ? false : { scale: .6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 16, delay: .25 }}>

@@ -169,7 +169,7 @@ function BrandStatus(_:{notice:Notice|null}) {
 function CenterNotice({notice}:{notice:Notice|null}) {
  const reduced=useReducedMotion();
  return <div className="center-notice-layer" aria-hidden="true"><AnimatePresence initial={false}>{notice&&<motion.div key={notice.id} className="center-notice"
-  initial={{opacity:0,scale:reduced?1:.94,y:reduced?0:6}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0,scale:reduced?1:.97}}
+  initial={{opacity:0,scale:reduced?1:.96,y:reduced?0:6}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0,scale:reduced?1:.98,transition:{duration:.12,ease:[.2,.8,.2,1]}}}
   transition={reduced?{duration:.12}:{type:'spring',stiffness:520,damping:34}}><span>{notice.text}</span></motion.div>}</AnimatePresence></div>;
 }
 /** Measures the room a notice may use in the header: centred on the screen like
@@ -304,7 +304,7 @@ export function ManoApp() {
   const pointers = useRef(new Map<number,{x:number;y:number}>());
   // Decision feedback without interruptions: a stamp over the stack and a
   // VoiceOver-only announcement (no visible notice after each swipe).
-  const [flash,setFlash]=useState<{kind:StampKind;key:number}|null>(null);const [spoken,setSpoken]=useState('');
+  const [flash,setFlash]=useState<{kind:StampKind;key:number;level?:number}|null>(null);const [spoken,setSpoken]=useState('');
   // Swipes: the finger writes each card's offset directly (HandCard); React only
   // hears which zone (keep/discard/favorite/later) the card is armed for.
   const [zone,setZone]=useState<StampKind|''>('');const stampOpacity=useMotionValue(0);
@@ -554,12 +554,14 @@ export function ManoApp() {
   const hideSeals=()=>{setDisplay(d=>({...d,photo:{...d.photo,seal:false}}));haptic('selection');setNotice(t('Sellos ocultos\nVuelven en Ajustes'));};
   const record=async(action:Action,ids:string[],apply=(s:RecordState)=>decide(s,ids,action,Date.now(),context),favorite?:{ids:string[];value:boolean},clearIntent=false)=>{
     const nextLock=afterDecision(hand,ids,best);
-    await persistRecord(apply(recordNow.current),{context:{...context,handIds:nextLock.ids,selected:[],best:nextLock.best}},favorite,clearIntent);
+    // Computed once, as before; also read for the stamp's earned star (level of a single keep).
+    const next=apply(recordNow.current);
+    await persistRecord(next,{context:{...context,handIds:nextLock.ids,selected:[],best:nextLock.best}},favorite,clearIntent);
     setLock(nextLock);setPinnedInspect(false);setInspect(null);setSelected([]);
     if(!gridOpenNow.current)setGridSelection(previous=>previous.size?new Set():previous);
     // The photo opened with «Revisar en orden desde aquí» leads only until it is decided.
     if(filterSetting.startId&&ids.includes(filterSetting.startId))setFilter(f=>({...f,startId:undefined}));
-    if(action!=='unfavorite'){setStats(previous=>({...previous,[action]:previous[action]+ids.length}));setFlash({kind:action,key:Date.now()});}setDecidedHere(previous=>new Set([...previous,...ids]));money.review(ids);
+    if(action!=='unfavorite'){setStats(previous=>({...previous,[action]:previous[action]+ids.length}));setFlash({kind:action,key:Date.now(),level:action==='keep'&&ids.length===1?next.marks[ids[0]]?.level:undefined});}setDecidedHere(previous=>new Set([...previous,...ids]));money.review(ids);
     setSpoken(`${SPOKEN[action]()}${ids.length>1?`: ${formatNumber(ids.length)}`:''}`);
   };
   /** Resolves true only after the decision and any Android queue are committed. */
@@ -828,7 +830,7 @@ export function ManoApp() {
           </HandCard>;
         })}</AnimatePresence>
         {currentColor&&!(favView&&currentColor==='favorite')&&<motion.span className={`drag-stamp ${currentColor}`} style={{opacity:stampOpacity}}><Stamp kind={currentColor} word lettering={stampWords}/></motion.span>}
-        {flash&&<DecisionStamp key={flash.key} kind={flash.kind} lettering={stampWords} reduced={!!reduced} done={()=>setFlash(f=>f?.key===flash.key?null:f)}/>}
+        {flash&&<DecisionStamp key={flash.key} kind={flash.kind} level={flash.level} lettering={stampWords} reduced={!!reduced} done={()=>setFlash(f=>f?.key===flash.key?null:f)}/>}
       </div>}
     </motion.section>
     <motion.div className="bundle-controls" style={{opacity:laterFade}} inert={deckAd||gridIn}>{hand.length>1&&!deckAd?<div className="segmented"><button onClick={()=>{haptic('selection');setSelected(allPicked?[]:others);}}>{allPicked?t('Quitar selección'):best?t('Elegir las demás'):t('Elegir todas')}</button><button onClick={cycle} aria-label={t('Ver la siguiente foto del grupo')}><ArrowClockwiseIcon size={16}/>{t('Siguiente')}</button></div>:null}</motion.div>

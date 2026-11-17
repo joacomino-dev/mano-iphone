@@ -1346,3 +1346,20 @@ button.inspect-set{left:0;right:0;margin-inline:auto;width:fit-content;transform
 /* Anchored stack = the pile's own Polaroid: same paper, padding, caption and shadows. */
 .inspection-mount{position:absolute;box-sizing:border-box;border-radius:var(--cw-radius-xs);background:var(--cw-paper-light);box-shadow:var(--cw-shadow-card);pointer-events:none}
 .inspection-mount .polaroid-caption{left:var(--cw-space-3);right:var(--cw-space-3)}
+
+/* Particles (CW-CL-085): one decorative layer, a few spans at a time (particles.ts).
+   Transform/opacity only, no pointer events; Reduce Motion never creates them. */
+.cw-particles{position:fixed;inset:0;z-index:96;pointer-events:none;overflow:hidden;contain:strict}
+.cw-particle{position:absolute;left:0;top:0;display:block;pointer-events:none;will-change:transform,opacity}
+.cw-particle.is-ink{width:6px;height:6px;border-radius:50%;background:var(--pal-turquoise,#1E7470)}
+.cw-particle.is-ink:nth-child(odd){width:4px;height:4px}
+.cw-particle.is-heart{width:14px;height:13px;background:#EB4E69;clip-path:path('M7 13 C7 13 0 8.6 0 4.1 C0 1.8 1.8 0 4 0 C5.3 0 6.4 .6 7 1.6 C7.6 .6 8.7 0 10 0 C12.2 0 14 1.8 14 4.1 C14 8.6 7 13 7 13Z')}
+.cw-particle.is-sparkle{width:10px;height:10px;background:var(--cw-star,#F4B63F);clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%)}
+.cw-particle.is-paper{width:8px;height:5px;border-radius:1px}
+/* The confirmation stamp's crown: art and stars positioned together. */
+.stamp.is-composed .stamp-art{position:relative;display:block;flex:none;width:118px}
+.stamp.is-composed .stamp-art>img{display:block;width:100%;height:auto}
+/* The star just earned settles on its own (~200 ms after the press); the others stay still. */
+.stamp-star.is-fresh{animation:cw-star-earn 200ms cubic-bezier(.3,1.25,.55,1) 220ms both}
+@keyframes cw-star-earn{from{scale:.4;opacity:0}to{scale:1;opacity:1}}
+@media (prefers-reduced-motion:reduce){.stamp-star.is-fresh{animation:cw-fade 160ms ease-out both}}

@@ -1,5 +1,6 @@
-import type { CSSProperties } from 'react';
+import { useEffect, useRef, type CSSProperties } from 'react';
 import { motion } from 'motion/react';
+import { burst, centreOf } from './particles';
 import { DAYS } from './domain';
 import { t } from './i18n';
 
@@ -37,12 +38,12 @@ export function LevelStar({ className = '', style }: { className?: string; style
   </svg>;
 }
 /** The stars over the stamp's top edge, fanned on its rim like a crown. */
-function Stars({ count }: { count: number }) {
+function Stars({ count, fresh = false }: { count: number; fresh?: boolean }) {
   if (!count) return null;
   const spread = 34, start = -spread * (count - 1) / 2;
   return <span className="stamp-stars">{Array.from({ length: count }, (_, k) => {
     const angle = start + spread * k, rad = angle * Math.PI / 180;
-    return <LevelStar key={k} className="stamp-star" style={{ left: `${50 + 47 * Math.sin(rad)}%`, top: `${50 - 47 * Math.cos(rad)}%`, transform: `translate(-50%,-50%) rotate(${angle}deg)` }}/>;
+    return <LevelStar key={k} className={`stamp-star ${fresh && k === count - 1 ? 'is-fresh' : ''}`} style={{ left: `${50 + 47 * Math.sin(rad)}%`, top: `${50 - 47 * Math.cos(rad)}%`, transform: `translate(-50%,-50%) rotate(${angle}deg)` }}/>;
   })}</span>;
 }
 /** Mini icons shared by buttons, stamps and the tutorial (24 × 24, stroke 2). */
@@ -73,8 +74,8 @@ const ART: Record<StampKind, string> = {
 const WORDS: Record<StampKind, () => string> = { keep: () => t('Conservar'), discard: () => t('Eliminar'), favorite: () => t('Favorita'), later: () => t('Más tarde') };
 /** `word`: the large decision stamp (cards, drag, tour). `lettering`: its word
  * underneath, on a cream plate; off, the same stamp at the same size, alone. */
-export function Stamp({ kind, level, word = false, lettering = true, className = '' }: { kind: StampKind; level?: number; word?: boolean; lettering?: boolean; className?: string }) {
-  if (level) return <span className={`stamp stamp-${kind} is-art is-level ${className}`} aria-hidden="true">
+export function Stamp({ kind, level, word = false, lettering = true, fresh = false, className = '' }: { kind: StampKind; level?: number; word?: boolean; lettering?: boolean; fresh?: boolean; className?: string }) {
+  if (level && !word) return <span className={`stamp stamp-${kind} is-art is-level ${className}`} aria-hidden="true">
     <img src={ART.keep} alt="" draggable={false}/><Stars count={levelStars(level)}/>
   </span>;
   // The illustrated word is lettered in Spanish: other languages set the same
@@ -82,24 +83,48 @@ export function Stamp({ kind, level, word = false, lettering = true, className =
   // 9.8.4: with its word, the stamp is large and the word sits underneath,
   // between two wavy lines, set in the app's language (same for all four).
   if (word) return <span className={`stamp stamp-${kind} is-art has-word is-composed ${className}`} aria-hidden="true">
-    <img src={ART[kind]} alt="" draggable={false}/>{lettering && <span className="stamp-lettering">{WORDS[kind]()}</span>}
+    {level && levelStars(level) ? <span className="stamp-art"><img src={ART[kind]} alt="" draggable={false}/><Stars count={levelStars(level)} fresh={fresh}/></span>
+      : <img src={ART[kind]} alt="" draggable={false}/>}{lettering && <span className="stamp-lettering">{WORDS[kind]()}</span>}
   </span>;
   return <span className={`stamp stamp-${kind} is-art ${className}`} aria-hidden="true">
     <img src={ART[kind]} alt="" draggable={false}/>
   </span>;
 }
 
-/** A decision lands: the stamp hits the table, then follows the card out. It is
- * pure decoration over the stack (no pointer events, no state), so it never
- * delays the next gesture. Reduce Motion: the same stamp, no travel or scale. */
-export function DecisionStamp({ kind, reduced, done, lettering = true }: { kind: StampKind; reduced: boolean; done: () => void; lettering?: boolean }) {
-  const travel = kind === 'keep' ? { x: [0, 0, 0, 96], y: [0, 0, 0, 0] } : kind === 'discard' ? { x: [0, 0, 0, -96], y: [0, 0, 0, 0] } : kind === 'later' ? { x: [0, 0, 0, 0], y: [0, 0, 0, 96] } : { x: [0, 0, 0, 0], y: [0, 0, 0, -96] };
+/** A decision lands: the stamp hits the paper — a small approach, a press and a settle
+ * (about 200 ms) — holds, then follows the card out. Decoration only (no pointer events,
+ * no state), so it never delays the next gesture; it is shown only once the decision is
+ * saved (`record`), so it never announces one that is not. A keep that earned a seal
+ * level shows its crown with the new star popping; a keep leaves a few ink dots, a
+ * favourite two or three hearts (particles.ts). Discard and «Más tarde» stay sober.
+ * Reduce Motion: the same stamp fading in and out, no travel, scale or particles. */
+export function DecisionStamp({ kind, reduced, done, lettering = true, level }: { kind: StampKind; reduced: boolean; done: () => void; lettering?: boolean; level?: number }) {
+  const out = kind === 'keep' ? [0, 0, 0, 0, 96] : kind === 'discard' ? [0, 0, 0, 0, -96] : [0, 0, 0, 0, 0];
+  const down = kind === 'later' ? [0, 0, 0, 0, 96] : kind === 'favorite' ? [0, 0, 0, 0, -96] : [0, 0, 0, 0, 0];
   const tilt = kind === 'keep' ? -10 : kind === 'discard' ? 8 : kind === 'later' ? -4 : 0;
-  return <motion.div className={`decision-stamp is-${kind}`} aria-hidden="true"
+  const earned = kind === 'keep' && !!level && levelStars(level) > 0;
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (reduced) return;
+    // At the press (~110 ms): ink or hearts from the stamp; the new star sparkles once it pops.
+    const press = window.setTimeout(() => {
+      const el = ref.current; if (!el || el.closest('.is-gridding')) return;
+      const at = centreOf(el.querySelector('img'));
+      if (at && kind === 'keep') burst('stamp', at, 'ink', 5);
+      if (at && kind === 'favorite') burst('stamp', at, 'heart', 3);
+    }, 110);
+    const star = earned ? window.setTimeout(() => {
+      const el = ref.current; if (!el || el.closest('.is-gridding')) return;
+      const at = centreOf(el.querySelector('.stamp-star.is-fresh'));
+      if (at) burst('star', at, 'sparkle', 3);
+    }, 300) : 0;
+    return () => { window.clearTimeout(press); window.clearTimeout(star); };
+  }, []);
+  return <motion.div ref={ref} className={`decision-stamp is-${kind}`} aria-hidden="true"
     initial={false}
-    animate={reduced ? { opacity: [0, 1, 1, 0] } : { opacity: [0, 1, 1, 0], scale: [1.35, 1, 1, .9], rotate: tilt, ...travel }}
-    transition={reduced ? { duration: .6, times: [0, .1, .75, 1] } : { duration: .5, times: [0, .24, .62, 1], ease: 'easeOut' }}
+    animate={reduced ? { opacity: [0, 1, 1, 0] } : { opacity: [0, 1, 1, 1, 0], scale: [1.18, .95, 1, 1, .9], rotate: [tilt + 5, tilt, tilt, tilt, tilt], x: out, y: down }}
+    transition={reduced ? { duration: .6, times: [0, .1, .75, 1] } : { duration: .56, times: [0, .2, .36, .68, 1], ease: [.2, .8, .2, 1] }}
     onAnimationComplete={done}>
-    <Stamp kind={kind} word lettering={lettering}/>
+    <Stamp kind={kind} word lettering={lettering} level={earned ? level : undefined} fresh={earned}/>
   </motion.div>;
 }
