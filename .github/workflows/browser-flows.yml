@@ -1,0 +1,51 @@
+name: Verify CocoWash browser flows
+# The interface's browser suites — touch, pinch, motion, density, anchored view, sessions,
+# purchases, text guard — on the runner's Edge. Synthetic fixtures only: no personal media,
+# and no device timing (a phone still has the last word on feel). Until 2026-11-16 none of
+# these ran in CI, so grid-motion-flow could fail for days unseen (CW-CL-083).
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['mano/src/**', 'mano/public/**', 'mano/tests/*-flow.mjs', 'mano/tests/apple-fixture.mjs', 'mano/index.html', 'mano/native.html', 'mano/vite.config.ts', 'mano/package.json', 'mano/package-lock.json', '.github/workflows/browser-flows.yml']
+permissions:
+  contents: read
+concurrency:
+  group: cocowash-browser-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  flows:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: mano
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+        timeout-minutes: 10
+      - name: Production bundle (the preview suites run against it)
+        run: npm run build
+      - name: Browser suites
+        run: |
+          # Development server (most suites) and production preview (grid motion, text guard).
+          node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 4186 --strictPort > /tmp/dev.log 2>&1 &
+          node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 4191 --strictPort > /tmp/preview.log 2>&1 &
+          for port in 4186 4191; do
+            for i in $(seq 90); do curl -sf "http://127.0.0.1:$port/native.html" > /dev/null && break; sleep 1; done
+            curl -sf "http://127.0.0.1:$port/native.html" > /dev/null || { echo "server $port did not start"; cat /tmp/dev.log /tmp/preview.log; exit 1; }
+          done
+          failed=''
+          for suite in tests/*-flow.mjs; do
+            echo "::group::$suite"
+            if ! timeout 600 node "$suite"; then failed="$failed $suite"; fi
+            echo '::endgroup::'
+          done
+          if [ -n "$failed" ]; then echo "BROWSER_FLOWS_FAIL:$failed"; exit 1; fi
+          echo 'BROWSER_FLOWS_OK'
