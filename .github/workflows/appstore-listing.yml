@@ -101,6 +101,7 @@ jobs:
           echo "ASC_KEY_PATH=$RUNNER_TEMP/asc/AuthKey_$ASC_KEY_ID.p8" >> "$GITHUB_ENV"
       - name: Fill App Store Connect
         run: |
+          set -o pipefail
           args=(--version 1.0 --steps "$STEPS" --release-type "$RELEASE_TYPE" --build "$BUILD")
           [ -z "${SCREENS:-}" ] || args+=(--screens "$SCREENS")
           [ -z "$PRICE_YEAR" ] || args+=(--price-year "$PRICE_YEAR")
