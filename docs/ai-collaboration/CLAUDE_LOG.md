@@ -1047,3 +1047,31 @@ Causa (ciclo `ecc:tdd-workflow`):
 - Corrección: el ancla se calcula con la geometría (fila/columna/desplazamiento sobre el marco sin transformar) y conserva la foto del último cambio mientras siga en la fila bajo los dedos.
 Verde: `grid-motion-flow` 4/4 (20 ciclos iOS y 5 Android interrumpidos, misma foto bajo los dedos), `text-interaction-flow`, las 14 baterías de siempre, 149 unitarias, tipos, protected28 y builds PASS.
 Las notas sin commit de Codex en ROADMAP/CURRENT_STATE (CI en curso) se dejan intactas.
+
+### CW-CL-084 — CI de navegador y gate nativo iOS
+Fecha: 2026-11-16/17, America/Bogota
+Agente: Claude
+- `6800e15`: workflow `browser-flows.yml` con las baterías `*-flow.mjs` (Edge en Ubuntu); primera ejecución BROWSER_FLOWS_OK.
+- Notas sin commit de Codex (CW-CX-067) subidas tal cual (`c62957d`) y resultado real de su CI (`1a5f9e6`).
+- R-73 (sin cerrar):
+  - El recolector iOS mide ahora en reposo, como Android (`ff933e6`, sondeos de CPU < 10 %, presupuestos sin cambios). Antes la ronda 6 se medía con la app al 82 % de CPU y la «pendiente» era una joroba transitoria.
+  - El gate sigue cortado antes de las rondas. `testV` no ve el diálogo de borrado de Fotos: llega como `RemotePlaceholder` con «AX remote access is disabled».
+  - Respuestas probadas: búsqueda en app y SpringBoard, OCR con Vision y diagnóstico de pantalla. El diagnóstico reveló la bienvenida de iTunes Store, que ahora se continúa.
+  - Tras ella la pantalla queda vacía, sin diálogo. Pendiente investigar; sin tocar límites.
+
+### CW-CL-085 — Pasada de movimiento: pellizco de build46 y acabado
+Fecha: 2026-11-17, America/Bogota
+Agente: Claude
+Skills de Emil Kowalski instaladas en el proyecto (`d969f4b`, revisión `64eb3de`, MIT): find-animation-opportunities, animate, animation-performance, review-animations. La última solo la puede invocar el usuario (`/review-animations`).
+Bloque 1 (`ab31893`):
+- Medido contra build46 (`1a89cd1`) en las mismas condiciones (bundle de producción, CPU ×4, 3000 fotos sintéticas, mediana de 3): el trabajo del pellizco es el mismo y los mecanismos de Codex siguen intactos.
+- La diferencia desde build46: el guardia de texto de `b780b3c` escuchaba `touchstart` no pasivo en todo el documento (0 en build46, 1 ahora). Ahora escucha solo en el escenario de cartas y la vista anclada, con la misma lógica, y el documento vuelve a 0.
+- Se conservan `52349a0` y el guardia público. El truco nativo de la lupa sigue retirado.
+- Evidencia: `20261117-motion-block1.json`.
+Bloque 2 (`d9c9e17`):
+- Sello de decisión con aproximación, presión y asentamiento (~200 ms) tras guardarse la decisión.
+- Estrella ganada: solo la nueva se asienta.
+- `particles.ts` (WAAPI, ≤24, sin estado React, nada oculto ni con movimiento reducido ni sobre la cuadrícula): tinta al conservar, corazones en favorita, destellos en estrella nueva y papel al terminar la ronda.
+- Descarte y «Más tarde» sin partículas. Avisos con salida de 120 ms. Los sellos persistentes siguen estáticos.
+Validación: 149 unitarias, tipos, protected28, builds y 17 baterías (motion-flow nueva: ráfagas acotadas, sin acumulación, sin nodos residuales, nada en cuadrícula ni con movimiento reducido).
+Pendiente en iPhone: arranque del pellizco y desplazamiento de la cuadrícula (despacho táctil de WebKit), sensación del sello, partículas y estrella nueva.

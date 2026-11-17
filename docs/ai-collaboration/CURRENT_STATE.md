@@ -1,5 +1,12 @@
 # CocoWash — estado vigente
 
+## Claude CW-CL-085 — pasada de movimiento (2026-11-17)
+
+`main` con `ab31893` (guardia táctil acotado: pellizco de build46), `d969f4b` (skills de animación)
+y `d9c9e17` (sello con impacto, estrella ganada, partículas acotadas). Navegador, unitarias, tipos,
+protected28 y builds PASS; motion-flow nueva. Pendiente: sensación en iPhone. R-73 sigue abierto
+(gate iOS: diálogo de borrado remoto ilegible para XCTest; ver CW-CL-084).
+
 ## Claude CW-CL-083/084 — revisión de b780b3c y pendientes (2026-11-16)
 
 Resultado de la CI de `b780b3c`: desarrollo, tienda y Android PASS; gate nativo completo
