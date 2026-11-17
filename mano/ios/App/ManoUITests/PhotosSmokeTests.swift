@@ -34,7 +34,10 @@ final class PhotosSmokeTests: XCTestCase {
             let labels=try XCTUnwrap(tables[lang])
             app.terminate();app.launchArguments=["-AppleLanguages","(\(lang))","-AppleLocale",lang];app.launch()
             let finish=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@",try XCTUnwrap(labels["Terminar"]))).firstMatch
-            XCTAssertTrue(finish.waitForExistence(timeout:120),"Native launch must render the requested language")
+            guard finish.waitForExistence(timeout:120) else {
+                print("COCOWASH_UI_STORE_RELAUNCH_TREE lang=\(lang)\n\(app.debugDescription)")
+                XCTFail("Native launch must render the requested language");return
+            }
             let filters=app.buttons[try XCTUnwrap(labels["Filtros"])].firstMatch
             XCTAssertTrue(filters.isHittable);try capture(lang,"01-cards")
             let discard=app.buttons[try XCTUnwrap(labels["Eliminar"])].firstMatch
