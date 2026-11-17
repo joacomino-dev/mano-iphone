@@ -25,7 +25,8 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 API = os.environ.get('ASC_API_BASE', 'https://api.appstoreconnect.apple.com')  # override only in tests
 BUNDLE = 'work.joaquin.mano'
 MARKETING_URL = 'https://joaquinmino.work/cocowash/'
-SCREENS = ['01-cards', '02-review', '03-filters', '04-settings']
+# 02-review is left out: the CI build shows Google's «Test mode» ad there, which App Review rejects.
+SCREENS = ['01-cards', '03-filters', '04-settings']
 SCREEN_SIZES = {(1320, 2868), (1290, 2796), (1260, 2736)}  # 6.9" display slot
 EDITABLE = {'PREPARE_FOR_SUBMISSION', 'DEVELOPER_REJECTED', 'REJECTED', 'METADATA_REJECTED', 'INVALID_BINARY'}
 # Age rating: a photo organizer with no such content of its own. Ads (G-rated inventory)
@@ -501,7 +502,8 @@ def main():
     if 'purchases' in steps:
         prices = {'work.joaquin.mano.noads.year': args.price_year, 'work.joaquin.mano.noads.lifetime': args.price_lifetime,
                   'work.joaquin.mano.coffee': args.price_coffee}
-        review_shot = pathlib.Path(args.screens) / 'es-04-settings.png' if args.screens else None
+        folder = pathlib.Path(args.screens) if args.screens else None
+        review_shot = next((folder / n for n in ('es-05-support.png', 'es-04-settings.png') if folder and (folder / n).exists()), None)
         step_purchases(asc, app, prices, review_shot if review_shot and review_shot.exists() else None, sources, excluded)
     if 'submit' in steps:
         if not args.build:

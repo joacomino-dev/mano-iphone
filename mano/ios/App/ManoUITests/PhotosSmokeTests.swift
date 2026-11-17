@@ -50,9 +50,12 @@ final class PhotosSmokeTests: XCTestCase {
             try XCTUnwrap(filterTab).tap();try capture(lang,"03-filters")
             let settings=app.descendants(matching:.any).matching(NSPredicate(format:"label == %@",try XCTUnwrap(labels["Ajustes"]))).allElementsBoundByIndex.filter{$0.isHittable}.last
             try XCTUnwrap(settings).tap();try capture(lang,"04-settings")
+            // Support tab with the three purchases: App Review screenshot for the in-app purchases.
+            let support=app.descendants(matching:.any).matching(NSPredicate(format:"label == %@",try XCTUnwrap(labels["Apoyo"]))).allElementsBoundByIndex.filter{$0.isHittable}.last
+            try XCTUnwrap(support).tap();try capture(lang,"05-support")
             XCTAssertTrue(close.isHittable);close.tap()
         }
-        print("COCOWASH_UI_NATIVE_STORE_SCREENS_OK count=28")
+        print("COCOWASH_UI_NATIVE_STORE_SCREENS_OK count=35")
     }
 
     @MainActor

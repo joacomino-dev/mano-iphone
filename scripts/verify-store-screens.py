@@ -9,7 +9,7 @@ def verify(folder,platform):
     folder=Path(folder);screens=[]
     allowed={(1179,2556),(1206,2622),(1260,2736),(1290,2796),(1320,2868)} if platform=='ios' else {(1080,1920)}
     for lang in ['es','en','fr','de','it','ar','ja']:
-        for screen in ['01-cards','02-review','03-filters','04-settings']:
+        for screen in ['01-cards','02-review','03-filters','04-settings','05-support']:
             name=f'{lang}-{screen}.png';data=(folder/name).read_bytes()
             assert data[:8]==b'\x89PNG\r\n\x1a\n','Actual PNG required'
             width,height=struct.unpack('>II',data[16:24])
