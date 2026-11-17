@@ -9,6 +9,8 @@ CW-CL-085). Copied verbatim, no local edits:
 - Skills: `find-animation-opportunities`, `animate` (+ `RECIPES.md`), `animation-performance`,
   `review-animations` (+ `STANDARDS.md`).
 - Reviewed before install: Markdown only, no scripts, no install/fetch commands.
+- Added 2026-11-17 (same revision, user request, CW-CL-086): `choreograph` (+ `RECIPES.md`),
+  `gestures`, `improve-animations` (+ `AUDIT.md`, `PLAN-TEMPLATE.md`).
 
 CocoWash is React + Capacitor with Motion (`motion` 12). These skills guide principles;
 they do not authorise upgrading Motion or migrating APIs. Project rules (AGENTS.md,
