@@ -11,6 +11,7 @@ import { locale, t } from './i18n';
 import type { Asset } from './domain';
 import { Stamp, type StampKind } from './Stamp';
 import { haptic } from './haptics';
+import { guardPhotoTextInteraction } from './textInteraction';
 
 const GEEK_LABELS:Record<string,()=>string>={latitude:()=>t('Latitud'),longitude:()=>t('Longitud'),altitude:()=>t('Altitud'),filename:()=>t('Archivo'),width:()=>t('Ancho'),height:()=>t('Alto'),creationDate:()=>t('Capturada'),modified:()=>t('Modificada'),duration:()=>t('Duración'),kind:()=>t('Tipo'),uniformTypeIdentifier:()=>t('Formato'),cameraMake:()=>t('Fabricante'),cameraModel:()=>t('Cámara'),lensModel:()=>t('Objetivo'),fNumber:()=>t('Apertura'),exposureTime:()=>t('Exposición'),dateTimeOriginal:()=>t('Fecha EXIF'),orientation:()=>t('Orientación'),camera:()=>t('Cámara'),lens:()=>t('Objetivo'),iso:()=>'ISO',aperture:()=>t('Apertura'),shutter:()=>t('Exposición'),focalLength:()=>t('Distancia focal'),isFavorite:()=>t('Favorita'),isHidden:()=>t('Oculta')};
 export type InspectOrigin={x:number;y:number;width:number;height:number};
@@ -47,6 +48,8 @@ export function Inspector({asset,src,cloud=false,pinned,origin,peek,anchor,armed
  // error: it says so, and anchoring downloads it (loadZoomPreview below).
  const [posterError,setPosterError]=useState(false);const [posterCloud,setPosterCloud]=useState(false);const [posterRetry,setPosterRetry]=useState(0);const [poster,setPoster]=useState(src??stackSrc.get(asset.id));useEffect(()=>{let alive=true;const controller=new AbortController();if(src){setPoster(src);return;}const known=stackSrc.get(asset.id);if(known)setPoster(known);setPosterError(false);setPosterCloud(false);thumbnail(asset,cardPixels(asset),posterRetry>0,false,controller.signal).then(value=>{if(alive)setPoster(value);}).catch(e=>{if(!alive)return;if(inCloudError(e))setPosterCloud(true);else setPosterError(true);});return()=>{alive=false;controller.abort();};},[asset.id,asset.modified,src,posterRetry,policy]);
  const outer=useRef<HTMLDivElement>(null);const reduced=useReducedMotion();const frame=useRef<HTMLDivElement>(null);
+ // The anchored view's photo and shade get the same scoped text-selection guard as the cards.
+ useEffect(()=>outer.current?guardPhotoTextInteraction(outer.current):undefined,[]);
  // A held video continues from the card's frame: paint that frame once, under the
  // video element, until the element shows the same moment (drawing a video into a
  // canvas never reads its pixels back, so any source is allowed).

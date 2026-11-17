@@ -13,9 +13,10 @@ try {
   await page.locator('.photo-card.front').waitFor();
   await page.waitForFunction(() => !document.querySelector('.splash-lockup'));
   const result = await page.evaluate(() => {
+    // The guard listens on the card stage (scoped since CW-CL-085), so the probe card lives there.
     const host = document.createElement('div'); host.className = 'photo-card';
     host.innerHTML = '<span>Photo</span><button>Control</button><input><div contenteditable="true">Text</div>';
-    document.body.append(host);
+    document.querySelector('.hand-space').append(host);
     const start = (target, count = 1) => {
       const points = Array.from({ length: count }, (_, identifier) => new Touch({ identifier, target, clientX: 100 + identifier * 60, clientY: 100 }));
       const e = new TouchEvent('touchstart', { bubbles: true, cancelable: true, touches: points });

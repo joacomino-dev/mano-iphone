@@ -275,7 +275,9 @@ export function ManoApp() {
   const [stageSize,setStageSize]=useState({width:340,height:440});const stageObserver=useRef<ResizeObserver|null>(null);
   // Callback ref: the stage remounts whenever another screen (onboarding, access,
   // end of round) replaced it, and must be measured again each time it returns.
-  const stage=useCallback((element:HTMLElement|null)=>{stageObserver.current?.disconnect();stageObserver.current=null;if(!element)return;const observer=new ResizeObserver(([entry])=>{const size={width:entry.contentRect.width,height:entry.contentRect.height};stageMeasured.current=true;rootObserver.current?.disconnect();setPreviewSizing({stage:size});setStageSize(size);});observer.observe(element);stageObserver.current=observer;},[]);
+  // The card stage also carries the text-selection guard, scoped to it (never the document).
+  const stageGuard=useRef<(()=>void)|null>(null);
+  const stage=useCallback((element:HTMLElement|null)=>{stageObserver.current?.disconnect();stageObserver.current=null;stageGuard.current?.();stageGuard.current=null;if(!element)return;stageGuard.current=guardPhotoTextInteraction(element);const observer=new ResizeObserver(([entry])=>{const size={width:entry.contentRect.width,height:entry.contentRect.height};stageMeasured.current=true;rootObserver.current?.disconnect();setPreviewSizing({stage:size});setStageSize(size);});observer.observe(element);stageObserver.current=observer;},[]);
   // Until the stack is on screen (onboarding, preparing), estimate its size from
   // the app frame so the first previews are requested at the right sharpness.
   const stageMeasured=useRef(false);const rootObserver=useRef<ResizeObserver|null>(null);
@@ -347,7 +349,6 @@ export function ManoApp() {
   });
   const cancelWarmup=()=>{setLiveRequested(null);sessionNumber.current++;warmingNow.current=false;prepareWindow([],String(sessionNumber.current));warmWait.current?.();setWarming(false);setLoading(false);const groups=deferredGroups.current;if(groups){deferredGroups.current=null;setAssets(prev=>prev.map(a=>({...a,group:groups.get(a.id)})));}};
   useEffect(()=>{document.title=`CocoWash: ${t('Lo que importa, se queda')}`;installErrorReporting();},[]);
-  useEffect(() => guardPhotoTextInteraction(document), []);
   const appliedPolicy=useRef('');
   useEffect(()=>{saveDisplay(display);setHapticsEnabled(display.haptics);setPreviewSizing({plain:!display.photo.polaroid,quality:display.quality,cloud:display.cloud,scale:typeof window!=='undefined'?window.devicePixelRatio||2:2});
     const key=previewPolicyKey();if(appliedPolicy.current&&appliedPolicy.current!==key){resetPreviewPolicy();preloader.current?.invalidate();videos.current?.reconcilePolicy();}appliedPolicy.current=key;},[display]);

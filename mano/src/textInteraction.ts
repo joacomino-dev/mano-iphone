@@ -9,20 +9,25 @@ export function repeatedPress(previous: LastTouch | undefined, point: TouchPoint
 
 /** Cards own their pointer gestures. Suppress native text selection on a second
  * touch there using DOM events, leaving controls and editable fields untouched.
- * The grid has its own equivalent guard alongside its scroll/selection routing. */
-export function guardPhotoTextInteraction(root: Document): () => void {
+ * The grid has its own equivalent guard alongside its scroll/selection routing.
+ * Install it on the photo surfaces' own containers (the card stage, the anchored
+ * view), never on the document: a non-passive touchstart there makes WebKit wait for
+ * the main thread before every scroll and pinch anywhere in the app (CW-CL-085). */
+export function guardPhotoTextInteraction(root: Document | HTMLElement): () => void {
   let previous: LastTouch | undefined;
   let multiple = false;
   const editable = 'button,a,input,textarea,select,[contenteditable]:not([contenteditable="false"]),[role="slider"]';
   const surface = '.photo-card,.inspection-photo,.inspection-shade';
-  const start = (event: TouchEvent) => {
+  const start = (event: Event) => {
+    if (!(event instanceof TouchEvent)) return;
     if (event.touches.length !== 1) { multiple = true; previous = undefined; return; }
     multiple = false;
     const target = event.target;
     if (!(target instanceof Element) || target.closest(editable) || !target.closest(surface)) { previous = undefined; return; }
     if (repeatedPress(previous, event.touches[0], event.timeStamp)) event.preventDefault();
   };
-  const end = (event: TouchEvent) => {
+  const end = (event: Event) => {
+    if (!(event instanceof TouchEvent)) return;
     if (multiple || event.touches.length) return;
     const target = event.target, point = event.changedTouches[0];
     previous = point && target instanceof Element && !target.closest(editable) && target.closest(surface)

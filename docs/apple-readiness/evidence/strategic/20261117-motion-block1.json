@@ -1,0 +1,142 @@
+{
+  "date": "2026-11-17",
+  "agent": "Claude CW-CL-085",
+  "scope": "Motion pass block 1: recover build46 pinch feel; compare build46 1a89cd1, HEAD d4dff3a and the scoped text guard",
+  "environment": {
+    "bundle": "Vite production native.html (vite preview)",
+    "browser": "Edge headless Windows",
+    "viewport": [
+      390,
+      844
+    ],
+    "dpr": 3,
+    "cpuThrottlingRate": 4,
+    "library": "3000 synthetic photos, no personal media",
+    "runs": 3,
+    "statistic": "median",
+    "limit": "Desktop CPU throttling is not iPhone/Android timing and cannot show WebKit touch dispatch; no frame-rate claim for a phone"
+  },
+  "method": "CDP Performance.getMetrics deltas per phase (card→3, 3→5, 5→3), longtask observer, DOMDebugger.getEventListeners(document) for non-passive touchstart",
+  "results": {
+    "b46": {
+      "commit": "1a89cd1",
+      "docTouchstartNonPassive": 0,
+      "phases": {
+        "card-to-grid3": {
+          "LayoutCount": 69,
+          "RecalcStyleCount": 139,
+          "LayoutDuration": 0.0378,
+          "RecalcStyleDuration": 0.1249,
+          "ScriptDuration": 0.2384,
+          "TaskDuration": 0.67,
+          "longTasks": 1,
+          "longestTaskMs": 91
+        },
+        "grid3-to-grid5": {
+          "LayoutCount": 6,
+          "RecalcStyleCount": 76,
+          "LayoutDuration": 0.005,
+          "RecalcStyleDuration": 0.1259,
+          "ScriptDuration": 0.1189,
+          "TaskDuration": 0.4462,
+          "longTasks": 0,
+          "longestTaskMs": 0
+        },
+        "grid5-to-grid3": {
+          "LayoutCount": 5,
+          "RecalcStyleCount": 77,
+          "LayoutDuration": 0.0039,
+          "RecalcStyleDuration": 0.1379,
+          "ScriptDuration": 0.1119,
+          "TaskDuration": 0.4665,
+          "longTasks": 0,
+          "longestTaskMs": 0
+        }
+      }
+    },
+    "head": {
+      "commit": "d4dff3a",
+      "docTouchstartNonPassive": 1,
+      "phases": {
+        "card-to-grid3": {
+          "LayoutCount": 67,
+          "RecalcStyleCount": 143,
+          "LayoutDuration": 0.0333,
+          "RecalcStyleDuration": 0.1248,
+          "ScriptDuration": 0.2371,
+          "TaskDuration": 0.6546,
+          "longTasks": 1,
+          "longestTaskMs": 95
+        },
+        "grid3-to-grid5": {
+          "LayoutCount": 6,
+          "RecalcStyleCount": 74,
+          "LayoutDuration": 0.0058,
+          "RecalcStyleDuration": 0.1251,
+          "ScriptDuration": 0.116,
+          "TaskDuration": 0.4459,
+          "longTasks": 0,
+          "longestTaskMs": 0
+        },
+        "grid5-to-grid3": {
+          "LayoutCount": 3,
+          "RecalcStyleCount": 72,
+          "LayoutDuration": 0.0026,
+          "RecalcStyleDuration": 0.1436,
+          "ScriptDuration": 0.1052,
+          "TaskDuration": 0.4616,
+          "longTasks": 0,
+          "longestTaskMs": 0
+        }
+      }
+    },
+    "scoped": {
+      "commit": "d4dff3a + scoped guard",
+      "docTouchstartNonPassive": 0,
+      "phases": {
+        "card-to-grid3": {
+          "LayoutCount": 66,
+          "RecalcStyleCount": 143,
+          "LayoutDuration": 0.0343,
+          "RecalcStyleDuration": 0.1203,
+          "ScriptDuration": 0.2339,
+          "TaskDuration": 0.6586,
+          "longTasks": 1,
+          "longestTaskMs": 91
+        },
+        "grid3-to-grid5": {
+          "LayoutCount": 6,
+          "RecalcStyleCount": 74,
+          "LayoutDuration": 0.0046,
+          "RecalcStyleDuration": 0.1219,
+          "ScriptDuration": 0.1201,
+          "TaskDuration": 0.4429,
+          "longTasks": 0,
+          "longestTaskMs": 0
+        },
+        "grid5-to-grid3": {
+          "LayoutCount": 3,
+          "RecalcStyleCount": 67,
+          "LayoutDuration": 0.0034,
+          "RecalcStyleDuration": 0.1405,
+          "ScriptDuration": 0.1088,
+          "TaskDuration": 0.4549,
+          "longTasks": 0,
+          "longestTaskMs": 0
+        }
+      }
+    }
+  },
+  "finding": "Main-thread pinch work is the same in build46 and HEAD (Codex's interruption, batched painting and transforms are intact). The difference: since b780b3c a non-passive touchstart listener on the whole document (text guard) makes WebKit wait for the main thread before any scroll or pinch anywhere; build46 had none. The guard is now scoped to the card stage and the anchored view (same public DOM logic): document listeners back to 0, work unchanged.",
+  "notRestored": "build46's native WebKit loupe-recognizer disabling (class-name heuristic) stays removed, as decided by the b780b3c audit.",
+  "preserved": [
+    "52349a0 untransformed-frame geometry and anchor continuity across 3↔5",
+    "b780b3c public text guard (scoped, same logic)"
+  ],
+  "checks": {
+    "gridMotionFlow": "PASS 4/4 (20 interrupted iOS + 5 Android 3↔5 cycles, same photo under the fingers, reversal to card, thumbnails, hidden video)",
+    "textInteractionFlow": "PASS",
+    "unit": 149
+  },
+  "pendingDevice": "Feel of pinch start and grid scroll on a physical iPhone (WebKit touch dispatch, loupe recognizers) — not measurable in a desktop browser"
+}
