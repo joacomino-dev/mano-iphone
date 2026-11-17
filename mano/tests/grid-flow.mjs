@@ -57,6 +57,14 @@ try{
  const before=await cols();await pinch(before===3?120:40,before===3?40:120);await page.waitForTimeout(150);
  assert.equal(await cols(),before===3?5:3,'a pinch after a finger lifted outside the grid still switches density');
  results.push('pinch keeps working after a finger lifts over the dock');
+ // Round trips 3→5→3 with the fingers still come back to the same photo (no drift;
+ // user 2026-11-16: the view slid three rows per round trip).
+ {const under=()=>page.evaluate(()=>{const r=document.querySelector('.grid-scroller').getBoundingClientRect();return document.elementFromPoint(r.left+r.width/2,r.top+r.height/3)?.closest('.grid-tile')?.dataset.id;});
+  if(await cols()===5){await pinch(40,120);await page.waitForTimeout(150);}
+  const start=await under();
+  for(let k=0;k<3;k++){await pinch(120,40);await page.waitForTimeout(150);await pinch(40,120);await page.waitForTimeout(150);}
+  assert.equal(await cols(),3);assert.equal(await under(),start,'three round trips 3→5→3 leave the same photo under the fingers');}
+ results.push('three density round trips come back to the same photo');
  // Tap selects; a sideways drag selects a range.
  let vis=await visible();
  await page.locator(`[data-i="${vis[0]}"]`).click();

@@ -42,6 +42,9 @@ try {
     const { context, page, touch, pinch } = await setup({ platform });
     await pinch('.photo-card.front', 110, 40); await page.locator('.library-grid.cols-3').waitFor();
     const repeats = platform === 'ios' ? 20 : 5;
+    // The photo under the fingers must survive every interrupted round trip (no drift; user 2026-11-16).
+    const under = () => page.evaluate(() => { const r = document.querySelector('.grid-scroller').getBoundingClientRect(); return document.elementFromPoint(r.left + r.width / 2, r.top + r.height * .4)?.closest('.grid-tile')?.dataset.id; });
+    const anchored = await under();
     for (let i = 0; i < repeats; i++) {
       await pinch('.grid-scroller', 110, 85, 20); // release before settling completes
       const b = await page.locator('.grid-scroller').boundingBox(), x = b.x + b.width / 2, y = b.y + b.height * .4;
@@ -53,6 +56,7 @@ try {
       assert.equal(await page.locator('.grid-tile.is-current').getAttribute('style'), pose, 'stationary fingers retain the exact pose; no old loop writes over it');
       await touch('touchEnd', x, y, 105); await page.locator('.library-grid.cols-5').waitFor(); await page.waitForTimeout(150);
       await pinch('.grid-scroller', 55, 95); await page.locator('.library-grid.cols-3').waitFor();
+      assert.equal(await under(), anchored, `round trip ${i + 1}: the same photo stays under the fingers`);
     }
     // Reverse density and continue all the way to the normal card in the same
     // two-finger gesture; interruptibility must preserve this existing route.
