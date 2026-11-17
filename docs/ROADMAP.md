@@ -195,7 +195,7 @@ en curso. No duplicarlo ni repetir builds de app sin cambios.
 
 | ID | Qué | Quién | Estado | Evidencia / siguiente paso |
 |---|---|---|---|---|
-| R-30 | Certificado de distribución y perfil App Store; firma y archivo con `scripts/archive-apple-release.sh` | U + C | Bloqueado | Depende de R-02, R-10, R-16 |
+| R-30 | Certificado de distribución y perfil App Store; firma, archivo y subida a TestFlight | U + C | **Workflow listo; secretos pendientes (U)** | CW-CL-088: `appstore-testflight.yml` (manual, firma en la nube con clave API Admin, IPA comprobada con `verify-appstore-ipa.sh`, sin envío a revisión). App «CocoWash» ya creada en ASC (iOS 1.0). Falta: clave API + Team ID como secretos del entorno `app-store` ([guía](apple-readiness/TESTFLIGHT.md)) y primera ejecución. Envío sigue dependiendo de R-02, R-10, R-16 |
 | R-31 | TestFlight interno y QA en iPhone real: sandbox (comprar, restaurar, caducidad, café), RGPD/ATT, biblioteca grande, iCloud, 7 idiomas, árabe RTL, texto grande, VoiceOver, SE e iOS 17 | U + C | Bloqueado | Plantilla `docs/apple-readiness/device-results.template.csv` |
 | R-32 | Envío a App Review y lanzamiento | U | Bloqueado | Tras R-01…R-31 |
 
@@ -275,6 +275,8 @@ Fallos en el Organizador y en Play Vitals, valoraciones, AdMob (relleno, consent
 textos con hablantes nativos, 1.0.1 para lo que salga.
 
 ## Registro de avance
+
+- 2026-11-17 · Claude · CW-CL-088 · R-30: app «CocoWash» creada en ASC por el usuario (iOS 1.0, Prepare for Submission). Nuevo workflow manual `appstore-testflight.yml` + `mano/scripts/verify-appstore-ipa.sh` (sintaxis y puertas de liberación PASS en local; firma/subida no ejecutadas: faltan secretos). Abiertos para el usuario: clave API/Team ID, acuerdo de apps de pago y estado de comerciante DSA.
 
 - 2026-11-15 · Codex · CW-CX-067 · Auditoría y limpieza 0.9.9.3/build47 local PASS: 149 Node, 17 contratos/empaquetado, 43 herramientas, TS/protected28/builds; npm audit 0. Parsers nativos con fixture20 y reemplazo público de heurística WebKit. Usuario acepta fluidez de build46; CI/QA build47 y puertas externas de Apple pendientes. Informe y recibo en `apple-readiness/CODE_AUDIT_2026-11-15.md`.
 

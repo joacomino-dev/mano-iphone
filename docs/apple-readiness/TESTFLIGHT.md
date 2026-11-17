@@ -1,5 +1,40 @@
 # Protocolo de dispositivos físicos y TestFlight
 
+## Subida a TestFlight desde CI (CW-CL-088, 2026-11-17)
+
+El propietario no tiene Mac. A petición suya, la firma y la subida se hacen con el workflow manual
+[`appstore-testflight.yml`](../../.github/workflows/appstore-testflight.yml): archiva `main` (canal de
+tienda), firma con el **certificado de distribución gestionado por Apple en la nube** usando una clave
+de la API de App Store Connect, comprueba la IPA firmada con `mano/scripts/verify-appstore-ipa.sh`
+(bundle, versión/build, perfil App Store, `get-task-allow=false`, arm64, iOS 17, IDs reales de AdMob,
+sin banderas de desarrollo) y la sube. **Nunca envía a revisión.** Esto sustituye, solo en CI, la
+regla anterior de no usar `-allowProvisioningUpdates`: sin Mac no hay llavero local, y el proyecto no
+tiene archivo de entitlements, así que el perfil App Store que crea Xcode no añade capacidades.
+`scripts/archive-apple-release.sh` sigue siendo la vía local en un Mac.
+
+Preparación (una vez, solo el propietario; ningún agente maneja estas claves):
+
+1. App Store Connect → Users and Access → Integrations → App Store Connect API → **Team Keys**.
+   La primera vez, el titular pulsa «Request Access» y acepta. Generar una clave «CocoWash CI» con
+   acceso **Admin** (necesario para el certificado de distribución en la nube). Descargar
+   `AuthKey_<KEYID>.p8` (solo se puede una vez) y anotar **Key ID** e **Issuer ID**.
+2. developer.apple.com/account → Membership details → **Team ID** (10 caracteres).
+3. GitHub `joacomino-dev/mano-iphone` → Settings → Environments → **`app-store`** (recomendado:
+   Required reviewers = el propietario; Deployment branches = `main`) → secretos del entorno:
+   `ASC_KEY_ID`, `ASC_ISSUER_ID`, `APPLE_TEAM_ID` y `ASC_KEY_P8` (el texto completo del `.p8`,
+   con las líneas BEGIN/END). Con `gh`: `gh secret set ASC_KEY_P8 --env app-store --repo
+   joacomino-dev/mano-iphone < AuthKey_<KEYID>.p8`. Después, borrar el `.p8` de Descargas o
+   guardarlo en el gestor de contraseñas; nunca en el repositorio.
+
+Ejecución: Actions → «App Store · sign and upload to TestFlight» → Run workflow con versión `1.0`
+(la de App Store Connect) y build vacío (= número de ejecución, siempre creciente). Si la exportación
+falla con el archivo sin firmar, repetir con `archive_signing = automatic`. La build aparece en
+TestFlight tras el procesado de Apple; `ITSAppUsesNonExemptEncryption=false` evita la pregunta de
+cifrado. Las compras en sandbox requieren además el acuerdo de apps de pago activo.
+
+Subir a TestFlight interno no levanta las puertas de envío: R-00, R-01, R-02 y R-07 siguen
+bloqueando el envío a revisión.
+
 **RC 0.9.9.2, actualizado 2026-11-09:** fuente ya preparada con developer=false y ajustes comerciales Release existentes, sin cambio de estrategia. Archivo/subida no realizados. Seguir el [gate Mac actualizado](NATIVE_GATE.md) y [checklist de envío](APP_STORE_SUBMISSION_CHECKLIST.md); cerrar R-67/Live y privacidad del archivo antes de firmar. El texto siguiente conserva procedimientos de Fase2.
 
 Preparado 2026-11-07; **PENDIENTE**, no ejecutado. Ninguna subida, publicación,

@@ -154,7 +154,7 @@ UI: sin Landing; onboarding de 4 tarjetas solo en el primer arranque (sin «salt
 Ubicación: nuevo método nativo `place` (CLGeocoder, coordenadas redondeadas ~1 km, cola con 1,2 s entre consultas, caché local por id). Implica una consulta al servicio de Apple; está explicado en el onboarding y en Ajustes, desactivable. Decisión pendiente del usuario si prefiere desactivarla por defecto.
 Skills: coco-mobile-ui (procedimiento), ui-ux-pro-max (búsquedas onboarding/carga/movimiento; su pauta «onboarding saltable» cede ante la instrucción expresa del usuario), styleseed review (checklist aplicada: hex a tokens, objetivos 44 px), swiftui-pro (Swift 5 + GCD por convención existente; force unwraps eliminados; CLGeocoder y exportAsynchronously deprecados en SDK 26: aviso, no error), frontend-design (dirección VHS/Polaroid).
 Validaciones: 43/43 tests (9 nuevos), runtime 28, tsc, build web + Sites 4/4, build:native + prepare-native, bash -n. Preview demo verificada: onboarding 1–4, sesión automática, vídeo inline reproduce (readyState 4, pausa, tiempo, fin), descarte con contador, anclaje (proximidad 0→1, armado, «Anclada», salida monótona 346→301 px), filtro 24 h → 0 de 6, ajustes VHS 3→0 líneas y persistencia, fin de ronda, sin errores de consola.
-No verificado: Swift no compila en Windows; reproducción real con vídeos locales/iCloud/HEVC/slow-motion, esquema `cocowash-media`, hápticos, geocodificación y XCTest actualizado (onboarding → permiso → anclaje por gesto) requieren el workflow macOS. Sin commit ni push.
+No verificado: Swift no compila en Windows; reproducción real con vídeos locales/iCloud/HEVC/slow-motion, esquema `cocowash-media`, hápticos, geocodificación y XCTest actualizado (onboarding → permiso → anclaje por gesto) requieren el workflow macOS. Commit y push a main autorizados por el usuario.
 
 ### CW-CL-022 — Barra de decisiones cartoon + set «Favoritas»
 Fecha: 2026-11-01, America/Bogota
@@ -1100,3 +1100,13 @@ Pedido del usuario (prueba en iPhone de CW-CL-086, «se siente genial»): tras a
 - Prueba nueva en grid-motion-flow (RED antes del arreglo con `{ghost:'block', flying:true, hidden:1}`, el mismo estado de la captura): tres idas y vueltas carta↔rejilla sin levantar; no queda copia, ni modo vuelo, ni miniatura oculta, y «Revisar en orden desde aquí» cierra la rejilla.
 - Partículas: conservar 5→7 gotas de tinta, eliminar 6→8 motas (tope por microevento) y motas 1 px más grandes. Corazones y «Más tarde» sin cambios.
 - Versión: Android 0.9.9.4 (versionCode 6), iPhone 0.9.9 (48), nombres de artefactos de CI.
+
+### CW-CL-088 — Firma y subida a TestFlight desde CI
+Fecha: 2026-11-17, America/Bogota
+Agente: Claude
+Pedido del usuario: no podía avanzar en App Store Connect; ya tiene la cuenta de desarrollador. Autoriza preparar el flujo de CI que firma la 1.0 y la sube a TestFlight («Sí, prepáralo»).
+- Diagnóstico: la app «CocoWash» ya está creada (iOS 1.0, Prepare for Submission); volver a «+» no avanza. Falta una build: no había ruta de subida (el script de archivo de Codex es solo local, sin subida). El proyecto está en 0.9.9 (48); la versión de ASC es 1.0.
+- `.github/workflows/appstore-testflight.yml` (solo `workflow_dispatch`, `main`, entorno `app-store`): puertas de liberación (privacidad, check-release, runtime, unitarias), `sync:ios`, archivo sin firmar (o automático como alternativa), exportación firmada con certificado de distribución gestionado en la nube vía clave API (`-allowProvisioningUpdates`, excepción documentada en TESTFLIGHT.md por no haber Mac), comprobación de la IPA y subida con `destination=upload`. Versión y build se sobrescriben en tiempo de compilación (por defecto 1.0 y número de ejecución); el código fuente no cambia de versión. Borra la clave y las salidas al terminar; solo guarda logs si algo falla, nunca la IPA.
+- `mano/scripts/verify-appstore-ipa.sh`: las mismas comprobaciones que `archive-apple-release.sh` aplicadas a la IPA firmada. No se modificó el script de Codex.
+Validación: sintaxis de los 7 pasos de shell y del script PASS (Git Bash); validación de entradas probada con valores buenos y malos; check-release, privacidad y runtime PASS en local. No verificado: la firma en la nube, el archivo y la subida (requieren los secretos y un runner macOS).
+Pendiente del usuario: clave API Team (Admin), Issuer ID, Team ID como secretos; acuerdo de apps de pago; DSA. Commit y push a main autorizados por el usuario.

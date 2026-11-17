@@ -1,5 +1,13 @@
 # CocoWash — estado vigente
 
+## Claude CW-CL-088 — subida a TestFlight desde CI (2026-11-17)
+
+App «CocoWash» ya creada en App Store Connect (iOS 1.0). Nuevo workflow manual
+`appstore-testflight.yml`: archiva `main`, firma con certificado de distribución en la nube (clave
+API Admin), comprueba la IPA con `mano/scripts/verify-appstore-ipa.sh` y la sube; nunca envía a
+revisión. Sin ejecutar: faltan los secretos del entorno `app-store` (usuario). Guía en
+`docs/apple-readiness/TESTFLIGHT.md`. Envío sigue bloqueado por R-00/R-01/R-02/R-07.
+
 ## Claude CW-CL-087 — 0.9.9.4: foto que ya no flota, partículas más densas (2026-11-17)
 
 Arreglado: volver de la carta a la rejilla sin levantar los dedos dejaba la foto en revisión

@@ -1,0 +1,145 @@
+name: App Store · sign and upload to TestFlight
+# Run by hand only. Archives `main` (the App Store channel), signs it with Apple's
+# cloud-managed distribution certificate through an App Store Connect API key, checks
+# the signed IPA and uploads it to App Store Connect, where it appears in TestFlight
+# once processed. It never submits for review: that stays a manual step for the owner.
+#
+# Secrets (environment `app-store`, or repository secrets):
+#   ASC_KEY_ID      Key ID of a Team API key with the Admin role
+#   ASC_ISSUER_ID   Issuer ID shown above the keys list
+#   ASC_KEY_P8      Full text of AuthKey_<id>.p8, BEGIN/END lines included
+#   APPLE_TEAM_ID   10-character Team ID (Membership details)
+# No certificate, profile or IPA is stored in the repository, the logs or the artifacts.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versión (debe coincidir con la de App Store Connect)'
+        default: '1.0'
+        required: true
+      build:
+        description: 'Número de build (vacío = número de esta ejecución)'
+        default: ''
+        required: false
+      archive_signing:
+        description: 'Firma del archivo (unsigned = la firma la pone la exportación; automatic si unsigned falla)'
+        type: choice
+        options: [unsigned, automatic]
+        default: unsigned
+permissions:
+  contents: read
+concurrency:
+  group: cocowash-appstore-upload
+  cancel-in-progress: false
+jobs:
+  upload:
+    if: github.event.repository.private == false && github.ref == 'refs/heads/main'
+    runs-on: xcode-27
+    environment: app-store
+    timeout-minutes: 60
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
+      VERSION: ${{ inputs.version }}
+      BUILD: ${{ inputs.build != '' && inputs.build || github.run_number }}
+      ARCHIVE_SIGNING: ${{ inputs.archive_signing }}
+      TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+    defaults:
+      run:
+        working-directory: mano
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check inputs and secrets are present
+        run: |
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]] || { echo "Invalid version: $VERSION"; exit 1; }
+          [[ "$BUILD" =~ ^[1-9][0-9]*$ ]] || { echo "Invalid build: $BUILD"; exit 1; }
+          [[ "$TEAM_ID" =~ ^[A-Z0-9]{10}$ ]] || { echo 'APPLE_TEAM_ID missing or not 10 characters'; exit 1; }
+          [[ "$ASC_KEY_ID" =~ ^[A-Z0-9]{10}$ ]] || { echo 'ASC_KEY_ID missing or not 10 characters'; exit 1; }
+          [[ "$ASC_ISSUER_ID" =~ ^[0-9a-f-]{36}$ ]] || { echo 'ASC_ISSUER_ID missing or not a UUID'; exit 1; }
+          echo "Uploading work.joaquin.mano $VERSION ($BUILD) from $(git rev-parse --short HEAD), archive signing: $ARCHIVE_SIGNING"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --no-audit --no-fund
+        timeout-minutes: 10
+      - name: Release gates (channel, privacy, runtime, unit tests)
+        run: |
+          python3 -B ../scripts/check-apple-privacy.py --submission
+          node scripts/check-release.mjs
+          node scripts/check-mobile-runtime.mjs
+          npm test
+      - name: Build and sync sources
+        run: npm run sync:ios
+      - name: Install the App Store Connect API key
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          umask 077
+          mkdir -p "$RUNNER_TEMP/asc"
+          printf '%s\n' "$ASC_KEY_P8" > "$RUNNER_TEMP/asc/AuthKey_$ASC_KEY_ID.p8"
+          grep -q 'BEGIN PRIVATE KEY' "$RUNNER_TEMP/asc/AuthKey_$ASC_KEY_ID.p8" || { echo 'ASC_KEY_P8 is not a .p8 private key'; exit 1; }
+          echo "ASC_KEY_PATH=$RUNNER_TEMP/asc/AuthKey_$ASC_KEY_ID.p8" >> "$GITHUB_ENV"
+          echo "OUT=$RUNNER_TEMP/cocowash" >> "$GITHUB_ENV"
+      - name: Archive
+        run: |
+          mkdir -p "$OUT/logs"
+          auth=(-allowProvisioningUpdates -authenticationKeyPath "$ASC_KEY_PATH" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+          if [ "$ARCHIVE_SIGNING" = unsigned ]; then
+            signing=(CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=)
+          else
+            signing=("${auth[@]}" CODE_SIGN_STYLE=Automatic)
+          fi
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath "$OUT/CocoWash.xcarchive" \
+            DEVELOPMENT_TEAM="$TEAM_ID" MARKETING_VERSION="$VERSION" CURRENT_PROJECT_VERSION="$BUILD" \
+            "${signing[@]}" archive > "$OUT/logs/archive.log" 2>&1 \
+            || { tail -80 "$OUT/logs/archive.log"; exit 1; }
+          test -d "$OUT/CocoWash.xcarchive/Products/Applications/App.app"
+      - name: Sign and export the IPA (cloud-managed distribution certificate)
+        run: |
+          for destination in export upload; do
+            plist="$OUT/ExportOptions-$destination.plist"
+            /usr/libexec/PlistBuddy -c 'Add :method string app-store-connect' \
+              -c "Add :destination string $destination" -c 'Add :signingStyle string automatic' \
+              -c "Add :teamID string $TEAM_ID" -c 'Add :uploadSymbols bool false' \
+              -c 'Add :manageAppVersionAndBuildNumber bool false' "$plist" >/dev/null
+            plutil -lint "$plist"
+          done
+          xcodebuild -exportArchive -archivePath "$OUT/CocoWash.xcarchive" -exportPath "$OUT/export" \
+            -exportOptionsPlist "$OUT/ExportOptions-export.plist" -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            > "$OUT/logs/export.log" 2>&1 || { tail -80 "$OUT/logs/export.log"; exit 1; }
+      - name: Check the signed IPA
+        run: |
+          ipa=$(find "$OUT/export" -name '*.ipa' | head -1)
+          test -n "$ipa"
+          bash scripts/verify-appstore-ipa.sh "$ipa" "$TEAM_ID" "$VERSION" "$BUILD"
+          echo "IPA_SHA256=$(shasum -a 256 "$ipa" | cut -d' ' -f1)" >> "$GITHUB_ENV"
+      - name: Upload to App Store Connect
+        run: |
+          xcodebuild -exportArchive -archivePath "$OUT/CocoWash.xcarchive" -exportPath "$OUT/upload" \
+            -exportOptionsPlist "$OUT/ExportOptions-upload.plist" -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            > "$OUT/logs/upload.log" 2>&1 || { tail -80 "$OUT/logs/upload.log"; exit 1; }
+          tail -5 "$OUT/logs/upload.log"
+          {
+            echo "### Subida a App Store Connect"
+            echo "- work.joaquin.mano **$VERSION ($BUILD)** desde \`$(git rev-parse --short HEAD)\`"
+            echo "- SHA-256 de la IPA comprobada: \`$IPA_SHA256\`"
+            echo "- Aparece en TestFlight cuando Apple termine de procesarla (5–30 min). No se ha enviado a revisión."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Keep logs when something failed (no IPA, no key)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: appstore-logs-${{ github.run_number }}
+          path: ${{ runner.temp }}/cocowash/logs/*.log
+          retention-days: 7
+          if-no-files-found: ignore
+      - name: Remove the API key and signed outputs
+        if: always()
+        working-directory: ${{ runner.temp }}
+        run: rm -rf asc cocowash
