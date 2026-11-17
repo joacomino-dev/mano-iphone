@@ -51,7 +51,8 @@ for(const reducedMotion of ['no-preference','reduce']){
   await toggle.check();
   for(const name of ['Fecha','Hora','Ubicación','Duración'])assert.equal(await settings.getByRole('switch',{name,exact:true}).count(),1);
   assert.equal(await settings.getByRole('switch',{name:/^Peso/}).count(),1);
-  await page.getByRole('button',{name:'Cerrar',exact:true}).click();await checkEye(true);
+  // The sheet slides out (~200 ms, CW-CL-086); the card is back once it has gone.
+  await page.getByRole('button',{name:'Cerrar',exact:true}).click();await page.locator('.native-sheet').waitFor({state:'detached'});await checkEye(true);
   await page.reload();await page.waitForFunction(()=>!document.querySelector('.splash-lockup')&&!!document.querySelector('.photo-card.front video'));
   await checkEye(true);
   console.log('PASS VHS eye',platform,reducedMotion,JSON.stringify(playback));

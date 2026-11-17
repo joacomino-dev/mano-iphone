@@ -636,6 +636,11 @@
 .native-sheet>header button{flex-shrink:0;width:var(--cw-touch);height:var(--cw-touch);display:grid;place-items:center;border:0;border-radius:50%;background:var(--cw-paper-dim);color:var(--cw-ink)}
 .native-sheet .mano-sheet-body{min-height:0;overflow:auto;padding:0 var(--cw-space-5) var(--cw-space-6)}
 @keyframes cw-fade{from{opacity:0}}@keyframes cw-sheet-in{from{transform:translateY(100%)}}
+/* Closing leaves the way it came (Radix keeps the sheet mounted until this ends): shorter than
+   the entrance, same curve; the shade fades with it. Reduce Motion turns both off (see below). */
+.native-sheet[data-state=closed]{animation:cw-sheet-out var(--cw-base) var(--cw-ease) forwards}
+.native-shade[data-state=closed]{animation:cw-fade-out var(--cw-base) var(--cw-ease) forwards}
+@keyframes cw-sheet-out{to{transform:translateY(100%)}}
 
 /* ---------- Onboarding ---------- */
 /* A large paper card over the empty main screen (header + empty pile): the tour
@@ -1206,12 +1211,12 @@ input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;u
 .grid-ghost-photo img{display:block;width:100%;height:100%;object-fit:cover}
 .grid-ghost-caption{position:absolute!important;left:0!important;right:auto!important;top:100%!important;bottom:auto!important;transform-origin:0 0;padding-top:6px;pointer-events:none}
 /* Smaller marks at five columns (user, 2026-11-13: the stamps were too big there). */
-.library-grid.cols-5 .grid-stamp{width:22px;height:22px;right:2px;bottom:2px}
-.library-grid.cols-5 .grid-later{width:16px;height:16px;left:2px;bottom:2px}
-.library-grid.cols-5 .grid-later svg{width:10px;height:10px}
-.library-grid.cols-5 .grid-check{width:18px;height:18px;left:3px;top:3px}
-.library-grid.cols-5 .grid-check svg{width:11px;height:11px}
-.library-grid.cols-5 .grid-duration{right:2px;top:2px;padding:2px 3px;font-size:9px}
+.grid-canvas.cols-5 .grid-stamp{width:22px;height:22px;right:2px;bottom:2px}
+.grid-canvas.cols-5 .grid-later{width:16px;height:16px;left:2px;bottom:2px}
+.grid-canvas.cols-5 .grid-later svg{width:10px;height:10px}
+.grid-canvas.cols-5 .grid-check{width:18px;height:18px;left:3px;top:3px}
+.grid-canvas.cols-5 .grid-check svg{width:11px;height:11px}
+.grid-canvas.cols-5 .grid-duration{right:2px;top:2px;padding:2px 3px;font-size:9px}
 .grid-scroller{will-change:transform,opacity}
 .library-grid.is-flying .grid-dock,.library-grid.is-flying .grid-selection,.library-grid.is-flying .grid-review-from{pointer-events:none}
 /* While the grid is in, the pile's photo travels as the ghost and its bar as the dock's. */
@@ -1351,11 +1356,14 @@ button.inspect-set{left:0;right:0;margin-inline:auto;width:fit-content;transform
    Transform/opacity only, no pointer events; Reduce Motion never creates them. */
 .cw-particles{position:fixed;inset:0;z-index:96;pointer-events:none;overflow:hidden;contain:strict}
 .cw-particle{position:absolute;left:0;top:0;display:block;pointer-events:none;will-change:transform,opacity}
-.cw-particle.is-ink{width:6px;height:6px;border-radius:50%;background:var(--pal-turquoise,#1E7470)}
-.cw-particle.is-ink:nth-child(odd){width:4px;height:4px}
+.cw-particle.is-ink{width:7px;height:7px;border-radius:50%;background:var(--pal-turquoise,#1E7470)}
+.cw-particle.is-ink:nth-child(odd){width:5px;height:5px}
 .cw-particle.is-heart{width:14px;height:13px;background:#EB4E69;clip-path:path('M7 13 C7 13 0 8.6 0 4.1 C0 1.8 1.8 0 4 0 C5.3 0 6.4 .6 7 1.6 C7.6 .6 8.7 0 10 0 C12.2 0 14 1.8 14 4.1 C14 8.6 7 13 7 13Z')}
 .cw-particle.is-sparkle{width:10px;height:10px;background:var(--cw-star,#F4B63F);clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%)}
 .cw-particle.is-paper{width:8px;height:5px;border-radius:1px}
+.cw-particle.is-dust{width:4px;height:4px;border-radius:50%;background:#7C8B8C}
+.cw-particle.is-dust:nth-child(3n){width:3px;height:3px}
+.drag-stamp-ink{display:block;transform-origin:50% 50%}
 /* The confirmation stamp's crown: art and stars positioned together. */
 .stamp.is-composed .stamp-art{position:relative;display:block;flex:none;width:118px}
 .stamp.is-composed .stamp-art>img{display:block;width:100%;height:auto}

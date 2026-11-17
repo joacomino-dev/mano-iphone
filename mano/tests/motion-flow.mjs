@@ -46,6 +46,23 @@ try {
     await page.waitForTimeout(1800); s = await state(page);
     assert.ok(s.peak >= 10 && s.peak <= 24, `paper burst within the global budget (peak ${s.peak})`); assert.equal(s.live, 0);
     results.push(`paper burst + ink: peak ${s.peak} (cap 24), gone after`);
+    // A discard is sober: a few grey specks that fall, nothing celebratory.
+    await page.waitForTimeout(400); await page.evaluate(() => { window.__peak = 0; window.__dust = 0; const tick = () => { window.__dust = Math.max(window.__dust, document.querySelectorAll('.cw-particle.is-dust').length); if (window.__dust < 99) requestAnimationFrame(tick); }; requestAnimationFrame(tick); });
+    await page.locator('.decision-bar').first().getByRole('button', { name: /^Eliminar/ }).click(); await page.waitForTimeout(900);
+    s = await state(page); const dust = await page.evaluate(() => window.__dust);
+    assert.ok(dust > 0 && dust <= 8 && s.peak === dust, `a discard leaves only a little dust (dust ${dust}, all ${s.peak})`); assert.equal(s.live, 0);
+    results.push(`discard: ${dust} dust specks, gone after`);
+    // Armed by a drag, the stamp drops in (not a pop) and lifts away when the card returns.
+    const card = await page.locator('.photo-card.front').boundingBox(), cx = card.x + card.width / 2, cy = card.y + card.height / 2;
+    await page.mouse.move(cx, cy); await page.mouse.down(); for (let k = 1; k <= 6; k++) await page.mouse.move(cx + 14 * k, cy);
+    await page.waitForTimeout(30);
+    const early = await page.evaluate(() => { const el = document.querySelector('.drag-stamp-ink'); return el ? new DOMMatrix(getComputedStyle(el).transform).a : null; });
+    await page.waitForTimeout(400);
+    const late = await page.evaluate(() => { const el = document.querySelector('.drag-stamp-ink'); return el ? new DOMMatrix(getComputedStyle(el).transform).a : null; });
+    assert.ok(early !== null && early > 1.02, `the armed stamp starts raised (scale ${early})`); assert.ok(Math.abs(late - 1) < .02, `and settles (scale ${late})`);
+    for (let k = 5; k >= 0; k--) await page.mouse.move(cx + 14 * k, cy); await page.mouse.up(); await page.waitForTimeout(400);
+    assert.equal(await page.locator('.drag-stamp').count(), 0, 'disarmed, the stamp leaves');
+    results.push(`drag stamp: drops in from ${early.toFixed(2)}, settles, leaves`);
     assert.deepEqual(errors, []); await context.close();
   }
   {

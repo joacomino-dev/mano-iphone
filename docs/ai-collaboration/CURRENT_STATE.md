@@ -1,5 +1,13 @@
 # CocoWash — estado vigente
 
+## Claude CW-CL-086 — densidad estable y sellos con entrada (2026-11-17)
+
+Densidad 3↔5: fundido con zoom con la foto en revisión fija (grid-motion-flow comprueba su
+altura en 25 ciclos interrumpidos). Sellos que caen al armarse, decisión más ágil, partículas
+por decisión con botón o gesto, estampado en miniaturas y hojas que salen por su borde.
+Gramática en `docs/ai-handoff/UI_ARCHITECTURE.md`. Pendiente: sensación en iPhone. R-73 sigue
+abierto e independiente.
+
 ## Claude CW-CL-085 — pasada de movimiento (2026-11-17)
 
 `main` con `ab31893` (guardia táctil acotado: pellizco de build46), `d969f4b` (skills de animación)

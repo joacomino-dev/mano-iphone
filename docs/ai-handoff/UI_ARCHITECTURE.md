@@ -125,3 +125,41 @@ El checker de runtime detecta cambios en 28 archivos, no los impide y no cubre
 toda lógica sensible. Swift revalida favoritos/ocultos y Photos confirma borrado;
 estas defensas no sustituyen revisión de diff ni QA. Git es recuperación solo
 para contenido guardado; no respalda por sí solo cambios locales o Fotos.
+
+## Gramática de movimiento (CW-CL-086, 2026-11-17)
+
+Un solo vocabulario para todo lo que se mueve. Antes de animar algo nuevo, ubícalo en
+una fila; si no encaja, probablemente no debe animarse. Tokens: `--cw-ease`
+`cubic-bezier(.2,.8,.2,1)` (salida), `--cw-ease-settle` `cubic-bezier(.3,1.25,.55,1)`
+(asentar con un leve rebote), `--cw-fast` .12s, `--cw-base` .2s, `--cw-slow` .32s.
+
+| Momento | Propósito | Cómo se mueve | Duración / curva |
+| --- | --- | --- | --- |
+| Gesto que sigue al dedo (carta, pinza, rejilla) | Continuidad | 1:1 con el dedo, sin animación propia; al soltar, resorte desde la velocidad | resorte 260/30 (rejilla), 520/42 (pila anclada) |
+| Densidad 3↔5 | Lugar constante | Fundido con zoom: la foto en revisión (si está en pantalla; si no, la de bajo los dedos) es el punto fijo y solo cambia de tamaño; la rejilla vieja es una copia que se funde encima; ninguna miniatura cruza la rejilla. Dos transforms por fotograma | sigue los dedos; al soltar 140–340 ms ease-out cúbica |
+| Sello armado al arrastrar | Estado | Cae sobre la carta (escala 1.28→1, giro 5°→0) y se va al desarmar | resorte .22 s, rebote .28; salida .1 s |
+| Sello de decisión | Feedback | Se acerca, presiona (~80 ms), se asienta, sigue a la carta | .5 s, tiempos 0/.16/.32/.66/1, `--cw-ease` |
+| Sello en miniatura (rejilla) | Feedback | Se estampa solo en una decisión nueva (nunca al montar por scroll ni al deshacer) | WAAPI 240 ms, 1.7→.9→1 |
+| Partículas | Feedback que representa la decisión | Conservar: 5 gotas de tinta desde el borde del sello. Favorita: 3 corazones que suben. Eliminar: 6 motas grises que caen (sobrio). Más tarde: ninguna; el matasellos se balancea. Final de ronda: 20 papeles | 300–640 ms (papel ~1.1 s); opacidad plena ~55 %, luego se apaga |
+| Hoja (sheet) | Lugar | Sube desde abajo y vuelve por el mismo borde; la sombra se funde | entra `--cw-slow`, sale `--cw-base` |
+| Aviso centrado | Estado | Aparece desde .96, se va a .98 | sale .12 s |
+| Pulsar un botón | Feedback | `scale(.97)` | `--cw-fast` |
+
+Reglas:
+
+- Las partículas salen igual con botón o con gesto: ambos pasan por `record()` →
+  `DecisionStamp`. En la rejilla no hay partículas (miniaturas pequeñas y densas):
+  solo el estampado de la miniatura. Una decisión múltiple emite una sola ráfaga.
+- Presupuesto: 4–8 por micro-evento, 16–24 en celebración, 24 vivas como máximo; una
+  ráfaga nueva reemplaza a la del mismo canal (nunca cola). Capa única `aria-hidden`
+  sin eventos de puntero; WAAPI sobre transform/opacity, sin estado React por
+  partícula. Nada con la página oculta ni con Reducir movimiento.
+- Las partículas nacen en el borde de lo que las emite, nunca detrás.
+- Reducir movimiento: mismos momentos solo con opacidad; sin viaje, escala ni
+  partículas; las hojas y sombras sin animación (`animation:none`).
+- Nunca `ease-in` en UI, nunca `scale(0)`, nunca animar width/height/top/left.
+- Evidencia: `mano/tests/motion-flow.mjs` (presupuestos, limpieza, Reducir
+  movimiento, sello armado) y `mano/tests/grid-motion-flow.mjs` (la foto en revisión
+  conserva su altura en 3↔5, ciclos interrumpidos, vuelta a la carta).
+  `node tests/motion-frames.mjs <dir>` graba fotograma a fotograma (reloj ×10 más lento,
+  ~40 ms por captura, solo arte de fixture). El tiempo del navegador no es el del teléfono.

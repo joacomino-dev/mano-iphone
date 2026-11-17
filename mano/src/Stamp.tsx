@@ -96,34 +96,38 @@ export function Stamp({ kind, level, word = false, lettering = true, fresh = fal
  * no state), so it never delays the next gesture; it is shown only once the decision is
  * saved (`record`), so it never announces one that is not. A keep that earned a seal
  * level shows its crown with the new star popping; a keep leaves a few ink dots, a
- * favourite two or three hearts (particles.ts). Discard and «Más tarde» stay sober.
+ * favourite three hearts, a discard a little grey dust that falls (particles.ts, sober: no
+ * celebration); «Más tarde» rocks like a postmark and emits nothing.
  * Reduce Motion: the same stamp fading in and out, no travel, scale or particles. */
 export function DecisionStamp({ kind, reduced, done, lettering = true, level }: { kind: StampKind; reduced: boolean; done: () => void; lettering?: boolean; level?: number }) {
   const out = kind === 'keep' ? [0, 0, 0, 0, 96] : kind === 'discard' ? [0, 0, 0, 0, -96] : [0, 0, 0, 0, 0];
   const down = kind === 'later' ? [0, 0, 0, 0, 96] : kind === 'favorite' ? [0, 0, 0, 0, -96] : [0, 0, 0, 0, 0];
   const tilt = kind === 'keep' ? -10 : kind === 'discard' ? 8 : kind === 'later' ? -4 : 0;
+  // «Más tarde» is a postmark: it rocks once as it lands instead of settling straight.
+  const rock = kind === 'later' ? [tilt + 6, tilt - 3, tilt + 1.5, tilt, tilt] : [tilt + 5, tilt, tilt, tilt, tilt];
   const earned = kind === 'keep' && !!level && levelStars(level) > 0;
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (reduced) return;
-    // At the press (~110 ms): ink or hearts from the stamp; the new star sparkles once it pops.
+    // At the press (~80 ms): ink, hearts or a little grey dust from the stamp; the new star sparkles once it pops.
     const press = window.setTimeout(() => {
       const el = ref.current; if (!el || el.closest('.is-gridding')) return;
-      const at = centreOf(el.querySelector('img'));
-      if (at && kind === 'keep') burst('stamp', at, 'ink', 5);
-      if (at && kind === 'favorite') burst('stamp', at, 'heart', 3);
-    }, 110);
+      const art = el.querySelector('img'), at = centreOf(art), rim = (art?.getBoundingClientRect().width ?? 0) / 2;
+      if (at && kind === 'keep') burst('stamp', at, 'ink', 5, rim);
+      if (at && kind === 'favorite') burst('stamp', at, 'heart', 3, rim);
+      if (at && kind === 'discard') burst('stamp', at, 'dust', 6, rim);
+    }, 80);
     const star = earned ? window.setTimeout(() => {
       const el = ref.current; if (!el || el.closest('.is-gridding')) return;
       const at = centreOf(el.querySelector('.stamp-star.is-fresh'));
       if (at) burst('star', at, 'sparkle', 3);
-    }, 300) : 0;
+    }, 270) : 0;
     return () => { window.clearTimeout(press); window.clearTimeout(star); };
   }, []);
   return <motion.div ref={ref} className={`decision-stamp is-${kind}`} aria-hidden="true"
     initial={false}
-    animate={reduced ? { opacity: [0, 1, 1, 0] } : { opacity: [0, 1, 1, 1, 0], scale: [1.18, .95, 1, 1, .9], rotate: [tilt + 5, tilt, tilt, tilt, tilt], x: out, y: down }}
-    transition={reduced ? { duration: .6, times: [0, .1, .75, 1] } : { duration: .56, times: [0, .2, .36, .68, 1], ease: [.2, .8, .2, 1] }}
+    animate={reduced ? { opacity: [0, 1, 1, 0] } : { opacity: [0, 1, 1, 1, 0], scale: [1.18, .95, 1, 1, .9], rotate: rock, x: out, y: down }}
+    transition={reduced ? { duration: .52, times: [0, .1, .75, 1] } : { duration: .5, times: [0, .16, .32, .66, 1], ease: [.2, .8, .2, 1] }}
     onAnimationComplete={done}>
     <Stamp kind={kind} word lettering={lettering} level={earned ? level : undefined} fresh={earned}/>
   </motion.div>;

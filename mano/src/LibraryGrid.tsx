@@ -134,6 +134,7 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
   const [width, setWidth] = useState(0), [height, setHeight] = useState(0), [offset, setOffset] = useState(0);
   const geometry = useRef<{ box: DOMRect; top: number } | null>(null);
   const [columns, setColumns] = useState<3 | 5>(readColumns);
+  const [settled, setSettled] = useState<3 | 5>(columns);
   // Notices use the app's one centred notice (it shows above this mode).
   const say = notice;
   const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -218,21 +219,6 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
     const visible = el.clientHeight - dockHeight;
     el.scrollTop = Math.max(0, rowY(Math.floor(index / columns)) - (visible - pitch) / 2); setOffset(el.scrollTop);
   }, [pitch, columns, items]);
-  useLayoutEffect(() => {
-    const before = flip.current, canvas = scroller.current?.querySelector('.grid-canvas'); flip.current = null;
-    if (!before || !canvas) return;
-    const box = canvas.getBoundingClientRect();
-    const view = scroller.current!.getBoundingClientRect();
-    const measured = [...scroller.current!.querySelectorAll<HTMLElement>('.grid-tile')]
-      .map(el => ({ el, was: before.get(el.dataset.id ?? ''), now: el.getBoundingClientRect() }));
-    measured.forEach(({ el, was, now }) => {
-      if (now.bottom < view.top || now.top > view.bottom) return;
-      if (!was) { el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: 60, easing: 'ease-out', fill: 'backwards' }); return; }
-      const k = was.width / Math.max(1, now.width), dx = was.left - box.left - k * (now.left - box.left), dy = was.top - box.top - k * (now.top - box.top);
-      if (Math.abs(k - 1) < .001 && Math.abs(dx) < .5 && Math.abs(dy) < .5) return;
-      el.animate([{ transformOrigin: '0 0', transform: `translate(${dx}px,${dy}px) scale(${k}) ${el.style.transform}` }, { transformOrigin: '0 0', transform: `translate(0px,0px) scale(1) ${el.style.transform}` }], { duration: 420, easing: 'cubic-bezier(.22,1,.36,1)' });
-    });
-  }, [columns]);
   // The working photo between its card and its tile, painted from `progress`: the
   // grid's paper, tiles and dock come in around it while it shrinks onto its tile,
   // and the same frames run backwards on the way out. A ghost carries the photo, so
@@ -365,9 +351,22 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
   const onScroll = () => { if (frame.current) return; frame.current = requestAnimationFrame(() => { frame.current = 0; setOffset(scroller.current?.scrollTop ?? 0); }); };
   useEffect(() => () => { cancelAnimationFrame(frame.current); loader.cancelAll(); }, []);
   // Density: every visible photo glides and scales from where it was to where it goes.
-  const flip = useRef<Map<string, DOMRect> | null>(null);
-  const snapshot = () => { const map = new Map<string, DOMRect>(); scroller.current?.querySelectorAll<HTMLElement>('.grid-tile').forEach(el => { if (el.dataset.id) map.set(el.dataset.id, el.getBoundingClientRect()); }); return map; };
   const lastDecision = state.history.at(-1);
+  // A decision taken here presses its stamp onto the tiles on screen (user 2026-11-17: the icons
+  // «solo aparecen»). Only for a new decision: never for tiles mounted by scrolling, an undo or
+  // a decision from before the grid opened. Before paint, so the stamp never shows unpressed.
+  const stampedAt = useRef(lastDecision?.at ?? 0);
+  useLayoutEffect(() => {
+    if (!lastDecision || lastDecision.at <= stampedAt.current) return;
+    stampedAt.current = lastDecision.at;
+    if (reduced || Date.now() - lastDecision.at > 1000) return;
+    for (const id of lastDecision.ids.slice(0, 60)) {
+      const tile = scroller.current?.querySelector(`.grid-tile[data-id="${CSS.escape(id)}"]`);
+      const mark = tile?.querySelector<HTMLElement>(lastDecision.action === 'later' ? '.grid-later' : '.grid-stamp');
+      mark?.animate([{ opacity: 0, transform: 'scale(1.7) rotate(-8deg)' }, { opacity: 1, transform: 'scale(.9) rotate(0deg)', offset: .55 }, { opacity: 1, transform: 'scale(1)' }],
+        { duration: 240, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    }
+  }, [lastDecision]);
   useEffect(() => { if (!lastDecision) return; setSelected(previous => lastDecision.ids.some(id => previous.has(id)) ? new Set([...previous].filter(id => !lastDecision.ids.includes(id))) : previous); }, [lastDecision]);
   const lastAlbum = useRef(albumDone);
   useEffect(() => { if (albumDone !== lastAlbum.current) { lastAlbum.current = albumDone; setSelected(new Set()); } }, [albumDone]);
@@ -398,44 +397,66 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
   const canvasOf = () => scroller.current?.querySelector<HTMLElement>('.grid-canvas') ?? null;
   // Density follows the fingers too: the canvas scales around them, then settles.
   const settleCanvas = () => { const c = canvasOf(); if (!c || !c.style.transform) return; const from = c.style.transform, origin = c.style.transformOrigin; c.style.transform = ''; if (!reduced) c.animate([{ transform: from, transformOrigin: origin }, { transform: 'none', transformOrigin: origin }], { duration: 380, easing: 'cubic-bezier(.22,1,.36,1)' }); };
-  // Density follows the fingers (user, 2026-11-13: «super burda»): each photo on screen moves
-  // from its place at this density to its place at the other, in step with the pinch, the photo
-  // under the fingers staying under them. Letting go finishes the trip (or undoes it) and only
-  // then the layout switches, to exactly what is already on screen.
-  type Morph = { to: 3 | 5; t: number; k: number; anchor: { id: string; y: number }; tiles: { el: HTMLElement; from: string; ox: number; oy: number; tx: number; ty: number }[] };
+  // Density as one object (user, 2026-11-17: «elementos que se mueven descontrolados… se pierde la
+  // ubicación de la foto que está revisando»). Choreography: the lead — the photo being reviewed
+  // when it is on screen, otherwise the one under the fingers — stays where it is and only
+  // changes size; the old grid and the new one are two layers carried by that one motion,
+  // crossfading around it. No tile ever travels across the grid. Per frame: two transforms and
+  // two opacities. The new layout is rendered once when the gesture begins (the old one stays
+  // visible as a copy); letting go finishes or undoes the crossfade, then the copy is dropped.
+  type Morph = { from: 3 | 5; to: 3 | 5; t: number; anchor: { id: string; y: number }; ghost: HTMLElement;
+    old: { x: number; y: number; side: number }; next: { x: number; y: number; side: number }; S: number };
   const morph = useRef<Morph | null>(null), lastAnchor = useRef<string | null>(null);
   const densityFrame = useRef(0), densityEpoch = useRef(0);
   const pendingMorph = useRef<{ morph: Morph; value: number } | null>(null);
   const beginMorph = (to: 3 | 5, mx: number, my: number): Morph | null => {
-    const sc = scroller.current; if (!sc || !side || !width) return null;
-    // The grid's frame, never the scroller: while the way in settles the scroller is zoomed,
-    // and its moved edge put the anchor half a tile off per change (user, 2026-11-16).
-    const box = (body.current ?? sc).getBoundingClientRect();
-    // The photo anchored by the last density change stays the anchor while it is still in the
-    // row under the fingers: a 5-column row holds other photos at the fingers' x, and taking
-    // one of those slid the view a row per round trip (user, 2026-11-16).
-    // Both found from the layout (rows, columns, scroll), never from what is painted mid-motion.
-    const y = my - box.top + sc.scrollTop, row = rowAt(y), col = Math.max(0, Math.min(columns - 1, Math.floor((mx - box.left) / pitch)));
-    const keptIndex = lastAnchor.current ? items.findIndex(a => a.id === lastAnchor.current) : -1;
-    const ai = keptIndex >= 0 && Math.floor(keptIndex / columns) === row ? keptIndex : Math.min(items.length - 1, row * columns + col);
+    const sc = scroller.current, frame = body.current, canvas = canvasOf(); if (!sc || !frame || !canvas || !side || !width) return null;
+    // The grid's frame, never the scroller (it may still be zoomed by the way in).
+    const box = frame.getBoundingClientRect(), S = sc.scrollTop, view = sc.clientHeight - dockHeight;
+    const centreY = (index: number) => box.top + rowY(Math.floor(index / columns)) - S + side / 2;
+    const onScreen = (index: number) => { const y = centreY(index); return index >= 0 && y > box.top + side * .25 && y < box.top + view - side * .25; };
+    // The lead: the photo being reviewed if it is on screen; else the last anchor if it is still
+    // in the row under the fingers (round trips stay put); else the photo under the fingers.
+    const working = current ? items.findIndex(a => a.id === current) : -1;
+    const row = rowAt(my - box.top + S), col = Math.max(0, Math.min(columns - 1, Math.floor((mx - box.left) / pitch)));
+    const kept = lastAnchor.current ? items.findIndex(a => a.id === lastAnchor.current) : -1;
+    const ai = onScreen(working) ? working : kept >= 0 && Math.floor(kept / columns) === row ? kept : Math.min(items.length - 1, row * columns + col);
     const id = items[ai]?.id; if (!id) return null;
-    const side2 = (width - GAP * (to - 1)) / to, pitch2 = side2 + GAP;
-    const rowY2 = (row: number) => row * pitch2 + (ad ? Math.floor(row / AD_EVERY) * AD_H : 0);
-    const rows2 = Math.ceil(items.length / to), strips2 = ad ? Math.max(0, Math.floor((rows2 - 1) / AD_EVERY)) : 0;
-    const total2 = Math.max(0, rows2 * pitch2 - GAP + strips2 * AD_H) + tail, S = sc.scrollTop, viewHeight = sc.clientHeight;
-    const S2 = Math.max(0, Math.min(Math.max(0, total2 - viewHeight), rowY2(Math.floor(ai / to)) + side2 / 2 - (my - box.top)));
-    const tiles = [...sc.querySelectorAll<HTMLElement>('.grid-tile')].map(el => {
-      const i = Number(el.dataset.i);
-      return { el, from: el.style.transform, ox: (i % columns) * pitch, oy: rowY(Math.floor(i / columns)), tx: (i % to) * pitch2, ty: rowY2(Math.floor(i / to)) - S2 + S };
-    }).filter(x => {
-      const from = x.oy - S, toY = x.ty - S;
-      return Math.max(from + side, toY + side2) > -Math.max(pitch, pitch2) && Math.min(from, toY) < viewHeight + Math.max(pitch, pitch2);
-    });
-    return { to, t: 0, k: side2 / side, anchor: { id, y: my }, tiles };
+    const old = { x: box.left + (ai % columns) * pitch + side / 2, y: centreY(ai), side };
+    // The old grid, as it is now, becomes a still copy on top; the real one changes layout under it.
+    const ghost = canvas.cloneNode(true) as HTMLElement;
+    ghost.classList.add('grid-canvas-ghost'); ghost.removeAttribute('style');
+    ghost.style.cssText = `position:absolute;left:${canvas.offsetLeft}px;top:${canvas.offsetTop - S}px;width:${canvas.offsetWidth}px;height:${canvas.offsetHeight}px;pointer-events:none;z-index:2;contain:strict`;
+    ghost.querySelectorAll('[id]').forEach(el => el.removeAttribute('id')); ghost.setAttribute('aria-hidden', 'true');
+    frame.appendChild(ghost);
+    const m: Morph = { from: columns, to, t: 0, anchor: { id, y: old.y }, ghost, old, next: old, S };
+    morph.current = m;
+    pinchAnchor.current = { id, y: old.y }; refocus.current = true;
+    flushSync(() => setColumns(to));
+    const side2 = (width - GAP * (to - 1)) / to, S2 = sc.scrollTop;
+    m.next = { x: box.left + (ai % to) * (side2 + GAP) + side2 / 2, y: box.top + (Math.floor(ai / to) * (side2 + GAP) + (ad ? Math.floor(Math.floor(ai / to) / AD_EVERY) * AD_H : 0)) - S2 + side2 / 2, side: side2 };
+    paintMorph(m, 0);
+    return m;
   };
+  // Both layers show the lead at the same place: its box moves from where it was to where it
+  // goes, and each layer is scaled and moved so that its own copy of the lead fills that box.
   const paintMorph = (m: Morph, t: number) => {
-    m.t = t; const k = mix(1, m.k, t);
-    for (const x of m.tiles) { x.el.style.transformOrigin = '0 0'; x.el.style.transform = `translate(${mix(x.ox, x.tx, t)}px,${mix(x.oy, x.ty, t)}px) scale(${k})`; }
+    m.t = t; const canvas = canvasOf(), box = body.current?.getBoundingClientRect(); if (!canvas || !box) return;
+    const cx = mix(m.old.x, m.next.x, t), cy = mix(m.old.y, m.next.y, t), size = mix(m.old.side, m.next.side, t);
+    const sc = scroller.current!;
+    const place = (el: HTMLElement, lead: { x: number; y: number; side: number }, scrollTop: number) => {
+      // Origin at the lead's centre in the layer's own coordinates.
+      const ox = lead.x - box.left - canvas.offsetLeft, oy = lead.y - box.top - canvas.offsetTop + scrollTop;
+      el.style.transformOrigin = `${ox}px ${oy}px`;
+      el.style.transform = `translate(${cx - lead.x}px,${cy - lead.y}px) scale(${size / lead.side})`;
+    };
+    place(m.ghost, m.old, m.S);
+    place(canvas, m.next, sc.scrollTop);
+    // Short overlap: the new layout is ready underneath before the copy fades, so the double
+    // exposure lasts only the middle of the gesture. Towards 3 columns the new layer is smaller
+    // than the screen until the very end, so the copy stays longer and no bare edge shows.
+    m.ghost.style.opacity = String(1 - clamp01(m.to === 3 ? (t - .5) / .45 : (t - .2) / .4));
+    canvas.style.opacity = String(clamp01(t / .35));
   };
   const morphPainter = useRef(paintMorph); morphPainter.current = paintMorph;
   const renderMorph = useCallback(() => {
@@ -446,20 +467,25 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
     ++densityEpoch.current; cancelAnimationFrame(densityFrame.current); densityFrame.current = 0;
     cancelFrame(renderMorph); renderMorph();
   };
-  useEffect(() => () => { ++densityEpoch.current; cancelAnimationFrame(densityFrame.current); cancelFrame(renderMorph); pendingMorph.current = null; }, [renderMorph]);
+  useEffect(() => () => { ++densityEpoch.current; cancelAnimationFrame(densityFrame.current); cancelFrame(renderMorph); pendingMorph.current = null; morph.current?.ghost.remove(); }, [renderMorph]);
+  /** Ends a crossfade at once: the new layout kept (commit) or the old one restored. */
+  const closeMorph = (m: Morph, commit: boolean) => {
+    morph.current = null; densityFrame.current = 0;
+    const canvas = canvasOf(); if (canvas) { canvas.style.transform = ''; canvas.style.transformOrigin = ''; canvas.style.opacity = ''; }
+    if (commit) {
+      lastAnchor.current = m.anchor.id; setSettled(m.to); haptic('selection');
+      try { localStorage.setItem(COLUMNS_KEY, String(m.to)); } catch { /* per-device convenience only */ }
+    } else {
+      // Back to the old layout at the old scroll: identical to the copy, then the copy goes.
+      pinchAnchor.current = { id: m.anchor.id, y: m.anchor.y }; refocus.current = true;
+      flushSync(() => setColumns(m.from));
+    }
+    m.ghost.remove();
+  };
   const finishMorph = (commit: boolean) => {
     const m = morph.current; if (!m) return; stopDensity(); const epoch = densityEpoch.current;
-    const from = m.t, to = commit ? 1 : 0, start = performance.now(), duration = reduced ? 0 : 140 + 220 * Math.abs(to - from);
-    const done = () => {
-      if (epoch !== densityEpoch.current) return;
-      morph.current = null; densityFrame.current = 0;
-      const seen = snapshot();
-      for (const x of m.tiles) { x.el.style.transform = x.from; x.el.style.transformOrigin = ''; }
-      if (!commit) return;
-      flip.current = seen; pinchAnchor.current = m.anchor; lastAnchor.current = m.anchor.id; refocus.current = true;
-      flushSync(() => setColumns(m.to)); haptic('selection');
-      try { localStorage.setItem(COLUMNS_KEY, String(m.to)); } catch { /* per-device convenience only */ }
-    };
+    const from = m.t, to = commit ? 1 : 0, start = performance.now(), duration = reduced ? 0 : 140 + 200 * Math.abs(to - from);
+    const done = () => { if (epoch === densityEpoch.current) closeMorph(m, commit); };
     if (!duration) { paintMorph(m, to); done(); return; }
     const step = (now: number) => { if (epoch !== densityEpoch.current) return; const q = Math.min(1, (now - start) / duration), e = 1 - Math.pow(1 - q, 3); paintMorph(m, mix(from, to, e)); if (q < 1) densityFrame.current = requestAnimationFrame(step); else done(); };
     densityFrame.current = requestAnimationFrame(step);
@@ -478,6 +504,9 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
       // Take ownership of the current visual position. An older settling loop
       // must never commit its columns or overwrite the new fingers' transforms.
       stopDensity();
+      // Both fingers belong to the grid until they lift: a density change re-renders the tiles
+      // they went down on, and a touch captured by a removed tile would lose its release.
+      for (const id of fingers.current.keys()) { try { e.currentTarget.setPointerCapture(id); } catch { /* already lifted */ } }
       const g = gesture.current; if (g) clearTimeout(g.timer); gesture.current = null;
       const [a, b] = [...fingers.current.values()], c = canvasOf()?.getBoundingClientRect();
       pinch.current = { spread: spread(), ratio: 1, ox: (a.x + b.x) / 2 - (c?.left ?? 0), oy: (a.y + b.y) / 2 - (c?.top ?? 0), mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, startT: morph.current?.t ?? 0 }; return;
@@ -496,13 +525,10 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
     if (p && fingers.current.size === 2) {
       const ratio = spread() / Math.max(1, p.spread), c = canvasOf(); p.ratio = ratio;
       // 3 columns, fingers apart: the photo in hand grows back into its card (user, 2026-11-13).
-      if (columns === 3 && ratio > 1 && (!morph.current || p.startT + (1 - ratio) / .4 <= 0)) {
+      const base = morph.current?.from ?? columns;
+      if (base === 3 && ratio > 1 && (!morph.current || p.startT + (1 - ratio) / .4 <= 0)) {
         if (c) c.style.transform = '';
-        if (morph.current) {
-          stopDensity();
-          for (const x of morph.current.tiles) { x.el.style.transform = x.from; x.el.style.transformOrigin = ''; }
-          morph.current = null;
-        }
+        if (morph.current) { stopDensity(); closeMorph(morph.current, false); }
         // Reversing a density gesture can keep opening the card without lifting.
         // Its new starting spread is the exact point where density reached 3.
         const boundary = 1 + p.startT * .4, cardRatio = ratio / boundary;
@@ -514,9 +540,9 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
       if (progress.get() < 1) scrub(1);
       const [fa, fb] = [...fingers.current.values()]; p.x = (fa.x + fb.x) / 2; p.y = (fa.y + fb.y) / 2;
       // 3 → 5 as the fingers close to 0.6 of their spread; 5 → 3 as they open to 1.6.
-      if (!morph.current && (columns === 3 ? ratio < .98 : ratio > 1.02)) morph.current = beginMorph(columns === 3 ? 5 : 3, p.mx, p.my);
+      if (!morph.current && (base === 3 ? ratio < .98 : ratio > 1.02)) beginMorph(base === 3 ? 5 : 3, p.mx, p.my);
       if (morph.current) {
-        const value = clamp01(p.startT + (columns === 3 ? (1 - ratio) / .4 : (ratio - 1) / .6));
+        const value = clamp01(p.startT + (base === 3 ? (1 - ratio) / .4 : (ratio - 1) / .6));
         morph.current.t = value; pendingMorph.current = { morph: morph.current, value }; motionFrame.render(renderMorph);
       }
       return;
@@ -606,12 +632,12 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
   const count = targets.length;
   // Paint after every render too (first frame, scroll to the working photo, density).
   useLayoutEffect(() => { scheduleFlight(); });
-  return <section ref={section} className={`library-grid cols-${columns} ${flyingId ? 'is-flying' : ''}`} style={{ top }} data-count={items.length} role="region" aria-label={t('Fototeca')}>
+  return <section ref={section} className={`library-grid cols-${settled} ${flyingId ? 'is-flying' : ''}`} style={{ top }} data-count={items.length} role="region" aria-label={t('Fototeca')}>
     <div ref={paper} className="grid-paper" style={{ opacity: 0 }}/>
     <div ref={body} className="grid-body">
       <div ref={scroller} className="grid-scroller" onScroll={onScroll}
         onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerCancel} onClick={onClick} onContextMenu={e => e.preventDefault()}>
-        {items.length ? <div className="grid-canvas" style={{ height: total }}>{tiles}{strip}</div>
+        {items.length ? <div className={`grid-canvas cols-${columns}`} style={{ height: total }}>{tiles}{strip}</div>
           : <p className="grid-empty">{t('Nada con estos filtros.')}</p>}
       </div>
     </div>

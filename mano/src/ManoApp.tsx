@@ -829,7 +829,12 @@ export function ManoApp() {
             {display.photo.seal&&state.marks[asset.id]&&<Seal level={state.marks[asset.id].level} hide={hideSeals}/>}
           </HandCard>;
         })}</AnimatePresence>
-        {currentColor&&!(favView&&currentColor==='favorite')&&<motion.span className={`drag-stamp ${currentColor}`} style={{opacity:stampOpacity}}><Stamp kind={currentColor} word lettering={stampWords}/></motion.span>}
+        <AnimatePresence>{currentColor&&!(favView&&currentColor==='favorite')&&<motion.span key={currentColor} className={`drag-stamp ${currentColor}`} style={{opacity:stampOpacity}}>
+          {/* Armed: the stamp drops in over the card (~180 ms, a small settle); disarmed, it lifts off. */}
+          <motion.span className="drag-stamp-ink" initial={reduced?{opacity:0}:{opacity:0,scale:1.28,rotate:currentColor==='discard'?-5:5}} animate={{opacity:1,scale:1,rotate:0}}
+            exit={reduced?{opacity:0,transition:{duration:.1}}:{opacity:0,scale:1.1,transition:{duration:.1,ease:[.2,.8,.2,1]}}}
+            transition={reduced?{duration:.12}:{type:'spring',duration:.22,bounce:.28}}><Stamp kind={currentColor} word lettering={stampWords}/></motion.span>
+        </motion.span>}</AnimatePresence>
         {flash&&<DecisionStamp key={flash.key} kind={flash.kind} level={flash.level} lettering={stampWords} reduced={!!reduced} done={()=>setFlash(f=>f?.key===flash.key?null:f)}/>}
       </div>}
     </motion.section>

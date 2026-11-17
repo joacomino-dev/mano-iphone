@@ -1075,3 +1075,18 @@ Bloque 2 (`d9c9e17`):
 - Descarte y «Más tarde» sin partículas. Avisos con salida de 120 ms. Los sellos persistentes siguen estáticos.
 Validación: 149 unitarias, tipos, protected28, builds y 17 baterías (motion-flow nueva: ráfagas acotadas, sin acumulación, sin nodos residuales, nada en cuadrícula ni con movimiento reducido).
 Pendiente en iPhone: arranque del pellizco y desplazamiento de la cuadrícula (despacho táctil de WebKit), sensación del sello, partículas y estrella nueva.
+
+### CW-CL-086 — Densidad estable, sellos que entran, partículas que representan la decisión
+Fecha: 2026-11-17, America/Bogota
+Agente: Claude
+Pedido del usuario: faltan fotogramas en las transiciones, elementos que se mueven descontrolados, la foto en revisión se pierde entre 5x5 y 3x3 («es vital que la cuadrícula sea constante en su posición»), iconos de decisión que «solo aparecen», partículas posteriores a la decisión; además auditar hojas/paneles, grabar fotograma a fotograma y escribir la gramática de movimiento.
+Skills añadidas (misma fuente y revisión que CW-CL-085, MIT): choreograph, gestures, improve-animations.
+- Densidad 3↔5 (`LibraryGrid.tsx`): ya no vuela cada miniatura. Fundido con zoom: la foto en revisión (si está en pantalla; si no, la de bajo los dedos) es el punto fijo y solo cambia de tamaño; la rejilla vieja queda como copia encima y se funde; dos transforms por fotograma. Se conservan la interrupción de Codex (epoch, `stopDensity`, `startT`, `pendingMorph`) y `52349a0`. La clase `cols-*` de la sección refleja la densidad asentada; los tamaños de sello siguen a cada capa (`.grid-canvas.cols-5`). Se retiró el FLIP por miniatura, que ya no tenía uso.
+- Bug encontrado con la nueva coreografía y corregido: un pellizco que volvía a la carta perdía el levantar de los dedos cuando la miniatura donde se apoyaron se re-renderizaba; los dos dedos quedan capturados por la rejilla hasta levantarlos.
+- Sello armado al arrastrar: cae sobre la carta (resorte .22 s) y se va al desarmar. Sello de decisión más ágil (presión a ~80 ms, .5 s). «Más tarde» se balancea como un matasellos. Sello en miniatura: se estampa solo en decisiones nuevas, nunca al montar por scroll ni al deshacer.
+- Partículas iguales con botón o gesto (ambos pasan por `record()`): tinta (conservar), corazones (favorita), motas grises que caen (eliminar, sobrio), nada en «Más tarde». Salen del borde del sello (antes nacían detrás y no se veían) y mantienen opacidad la primera mitad. En la rejilla, solo el estampado.
+- Hojas: salían de golpe; ahora bajan por el mismo borde y la sombra se funde (Radix `data-state=closed`).
+- Gramática de movimiento en `docs/ai-handoff/UI_ARCHITECTURE.md`. Grabación: `mano/tests/motion-frames.mjs` (reloj ×10 más lento, ~40 ms por captura, solo fixture); las hojas de contacto no se versionan.
+- Pruebas ajustadas al nuevo movimiento: grid-motion-flow mira la miniatura viva (la copia es decorativa), comprueba que la foto en revisión conserva su altura (<2 px) y que la copia desaparece, y toma la posición una vez para que la interrupción llegue antes del final (~215 ms) en máquinas cargadas. vhs-eye espera a que la hoja termine de salir. motion-flow añade polvo sobrio y la caída del sello armado.
+Validación: 149 unitarias, tipos, protected28, build y build:native PASS; 17 baterías `*-flow` PASS (grid-motion 3/3 seguidas tras el ajuste: 20 ciclos iOS y 5 Android); apple-safety PASS.
+Pendiente en iPhone: sensación del fundido 3↔5, caída del sello y partículas. R-73 sin cambios (independiente).

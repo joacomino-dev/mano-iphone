@@ -9,6 +9,8 @@ const browser = await chromium.launch(process.env.APPLE_BROWSER_EXECUTABLE
   ? { executablePath: process.env.APPLE_BROWSER_EXECUTABLE, headless: true }
   : { channel: process.env.APPLE_BROWSER_CHANNEL || 'msedge', headless: true });
 const errors = [];
+// The live grid only: during a density change the old layout is a decorative copy on top.
+const LIVE_CURRENT = '.grid-scroller .grid-tile.is-current';
 async function setup({ platform = 'ios', native = false, video = false, width = 390 } = {}) {
   const context = await browser.newContext({ viewport: { width, height: 932 }, hasTouch: true, deviceScaleFactor: 3, reducedMotion: 'no-preference' });
   await context.addInitScript(installAppleFixture, { video });
@@ -45,16 +47,24 @@ try {
     // The photo under the fingers must survive every interrupted round trip (no drift; user 2026-11-16).
     const under = () => page.evaluate(() => { const r = document.querySelector('.grid-scroller').getBoundingClientRect(); return document.elementFromPoint(r.left + r.width / 2, r.top + r.height * .4)?.closest('.grid-tile')?.dataset.id; });
     const anchored = await under();
+    // The photo being reviewed is the fixed point of a density change (user 2026-11-17: «es vital
+    // que la cuadrícula sea constante en su posición»): its centre keeps its height on screen.
+    const working = () => page.evaluate(sel => { const b = document.querySelector(sel).getBoundingClientRect(); return b.top + b.height / 2; }, LIVE_CURRENT);
+    // Measured once (the scroller never moves), so the interrupting fingers land right after the
+    // release, while the ~215 ms finish is still running, even on a busy machine.
+    const b = await page.locator('.grid-scroller').boundingBox(), x = b.x + b.width / 2, y = b.y + b.height * .4;
     for (let i = 0; i < repeats; i++) {
       await pinch('.grid-scroller', 110, 85, 20); // release before settling completes
-      const b = await page.locator('.grid-scroller').boundingBox(), x = b.x + b.width / 2, y = b.y + b.height * .4;
       await touch('touchStart', x, y, 110); await touch('touchMove', x, y, 105);
       await page.waitForTimeout(60);
-      const pose = await page.locator('.grid-tile.is-current').getAttribute('style');
+      const pose = await page.locator(LIVE_CURRENT).getAttribute('style');
       await page.waitForTimeout(300);
       assert.ok(await page.locator('.library-grid.cols-3').count(), 'old completion cannot change density while new fingers hold it');
-      assert.equal(await page.locator('.grid-tile.is-current').getAttribute('style'), pose, 'stationary fingers retain the exact pose; no old loop writes over it');
+      assert.equal(await page.locator(LIVE_CURRENT).getAttribute('style'), pose, 'stationary fingers retain the exact pose; no old loop writes over it');
+      const before = await working();
       await touch('touchEnd', x, y, 105); await page.locator('.library-grid.cols-5').waitFor(); await page.waitForTimeout(150);
+      { const after = await working(); assert.ok(Math.abs(after - before) < 2, `cycle ${i + 1}: the reviewed photo keeps its place at 5 columns (${before.toFixed(1)} → ${after.toFixed(1)})`); }
+      assert.equal(await page.locator('.grid-canvas-ghost').count(), 0, 'the old layer is dropped once settled');
       await pinch('.grid-scroller', 55, 95); await page.locator('.library-grid.cols-3').waitFor();
       assert.equal(await under(), anchored, `round trip ${i + 1}: the same photo stays under the fingers`);
     }
