@@ -277,10 +277,13 @@ def step_metadata(asc, app, version, release_type, sources):
     detail = asc.get_optional(f'/v1/appStoreVersions/{version["id"]}/appStoreReviewDetail')
     if detail:
         asc.send('PATCH', f'/v1/appStoreReviewDetails/{detail["id"]}', 'appStoreReviewDetails', ident=detail['id'], attributes=attributes)
-    else:
+    elif 'contactPhone' in attributes:
         asc.send('POST', '/v1/appStoreReviewDetails', 'appStoreReviewDetails', attributes=attributes,
                  relationships={'appStoreVersion': rel('appStoreVersions', version['id'])})
-    log('  review contact and notes' + ('' if 'contactPhone' in attributes else ' (phone missing: add it in App Store Connect)'))
+    else:
+        log('  review contact SKIPPED: Apple requires a phone (+country code); set the ASC_REVIEW_PHONE secret')
+        return
+    log('  review contact and notes')
 
 
 def png_size(path):
