@@ -107,7 +107,7 @@ class ASC:
     def call(self, method, path, body=None):
         url = path if path.startswith('http') else API + path
         data = json.dumps(body).encode() if body is not None else None
-        for attempt in range(4):
+        for attempt in range(7):
             request = urllib.request.Request(url, data=data, method=method, headers={
                 'Authorization': 'Bearer ' + self.token(), 'Content-Type': 'application/json'})
             try:
@@ -116,13 +116,14 @@ class ASC:
                     return json.loads(raw) if raw else {}
             except urllib.error.HTTPError as error:
                 text = error.read().decode('utf-8', 'replace')
-                if error.code in (429, 500, 502, 503, 504) and attempt < 3:
+                if error.code in (429, 500, 502, 503, 504) and attempt < 6:
                     time.sleep(5 * (attempt + 1))
                     continue
-                if error.code == 401 and attempt < 3:
-                    # Apple occasionally rejects a valid token mid-run; sign a fresh one and retry.
+                if error.code == 401 and attempt < 6:
+                    # Apple occasionally rejects a valid token for a while mid-run; sign a fresh one and back off.
                     self._token = None
-                    time.sleep(3 * (attempt + 1))
+                    log(f'  · Apple returned 401; new token, retry {attempt + 1}/6')
+                    time.sleep(10 * (attempt + 1))
                     continue
                 raise APIError(error.code, method, path.split('?')[0], text) from None
         raise RuntimeError('unreachable')

@@ -15,6 +15,12 @@ ent() { /usr/libexec/PlistBuddy -c "Print :$1" "$work/entitlements.plist"; }
 prof() { /usr/libexec/PlistBuddy -c "Print :$1" "$work/profile.plist"; }
 info() { /usr/libexec/PlistBuddy -c "Print :$1" "$app/Info.plist"; }
 test "$(ent application-identifier)" = "$team.work.joaquin.mano"
+# Every embedded framework must carry our team's signature, not the vendor's (App Store rejects it).
+for framework in "$app"/Frameworks/*.framework; do
+  [ -e "$framework" ] || continue
+  signer=$(codesign -dv "$framework" 2>&1 | sed -n 's/^TeamIdentifier=//p')
+  [ "$signer" = "$team" ] || { echo "REFUSED: $(basename "$framework") signed by '$signer', not $team" >&2; exit 1; }
+done
 test "$(ent get-task-allow)" = false
 test "$(prof TeamIdentifier:0)" = "$team"
 for forbidden in ProvisionedDevices ProvisionsAllDevices; do
