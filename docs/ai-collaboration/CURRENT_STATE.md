@@ -1,5 +1,13 @@
 # CocoWash — estado vigente
 
+## Claude CW-CL-083/084 — revisión de b780b3c y pendientes (2026-11-16)
+
+Resultado de la CI de `b780b3c`: desarrollo, tienda y Android PASS; gate nativo completo
+43687846772 FAIL solo por `NATIVE_CYCLE_BUDGET` (proceso app iOS, pendiente 1390 KiB/ronda;
++3,7 MB en diez rondas, dentro de 24 MB). Desplazamiento de densidad 3↔5 corregido (`52349a0`,
+TDD rojo→verde con grid-motion-flow). Nuevo workflow `browser-flows.yml` con las 16 baterías.
+En curso: diagnóstico de memoria iOS (R-73).
+
 ## Codex CW-CX-067 — auditoría y limpieza para Apple (2026-11-15, local PASS)
 
 Usuario confirma fluidez de build46 en iPhone y autoriza auditoría completa, limpieza de código

@@ -10,7 +10,7 @@
     "iosBuild": 47,
     "androidVersionCode": 5,
     "localChecks": "PASS",
-    "nativeChecks": "CI_IN_PROGRESS_AT_2026-11-15_OBSERVATION",
+    "nativeChecks": "FAIL_NATIVE_CYCLE_BUDGET_IOS_APP_SLOPE_43687846772",
     "nativeFullRun": 43687846772,
     "appStoreReady": false
   },

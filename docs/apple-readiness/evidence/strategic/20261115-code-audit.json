@@ -12,39 +12,98 @@
     "nativeFullRun": 43687846772,
     "nativeFullSimulator": "standard",
     "result": "PENDING",
-    "boundary": "One full gate dispatch and existing automatic push builds. Initial execution confirmed; no duplicate runs or outcome inferred."
+    "boundary": "One full gate dispatch and existing automatic push builds. Initial execution confirmed; no duplicate runs or outcome inferred.",
+    "outcome": {
+      "observedBy": "Claude CW-CL-083",
+      "observedDate": "2026-11-16",
+      "development": "success",
+      "release": "success",
+      "android": "success",
+      "nativeFull": "failure",
+      "nativeFullCause": "NATIVE_CYCLE_BUDGET only: iOS app process RSS slope 1390 KiB/cycle > 1024 (late growth +3.7 MB, within 24 MB); WebContent decreasing; XCTest and other gates passed"
+    }
   },
   "product": "0.9.9.3",
-  "ios": { "marketingVersion": "0.9.9", "build": 47 },
-  "android": { "versionName": "0.9.9.3", "versionCode": 5 },
+  "ios": {
+    "marketingVersion": "0.9.9",
+    "build": 47
+  },
+  "android": {
+    "versionName": "0.9.9.3",
+    "versionCode": 5
+  },
   "localChecks": {
-    "node": { "passed": 149, "failed": 0, "skipped": 0 },
-    "releaseNativeContractsSites": { "passed": 17, "failed": 0 },
-    "python": { "passed": 43, "failed": 0 },
-    "protectedRuntime": { "passed": 28, "changed": 0 },
+    "node": {
+      "passed": 149,
+      "failed": 0,
+      "skipped": 0
+    },
+    "releaseNativeContractsSites": {
+      "passed": 17,
+      "failed": 0
+    },
+    "python": {
+      "passed": 43,
+      "failed": 0
+    },
+    "protectedRuntime": {
+      "passed": 28,
+      "changed": 0
+    },
     "typescriptNoUnused": "PASS",
     "webBuild": "PASS",
     "nativeWebBuild": "PASS",
     "strictPrivacyDeclaration": "PASS_STATIC_ONLY",
     "browserFlows": "PASS_SYNTHETIC_ONLY",
-    "interruptedGridCycles": { "iosContract": 20, "androidContract": 5 },
+    "interruptedGridCycles": {
+      "iosContract": 20,
+      "androidContract": 5
+    },
     "productionLiveScenarios": 5,
     "publicDomTouchGuard": "PASS",
-    "npmAudit": { "beforeAffectedPackages": 6, "beforeAdvisories": 12, "afterVulnerabilities": 0 }
+    "npmAudit": {
+      "beforeAffectedPackages": 6,
+      "beforeAdvisories": 12,
+      "afterVulnerabilities": 0
+    }
   },
   "nativeRangeFixtureCases": 20,
   "nativeRangeExecution": "PENDING_CI",
   "dependencyVersions": {
-    "vite": "8.1.6", "glob": "14.0.6", "minimatch": "11.0.8",
-    "nanoid": "3.3.20", "postcss": "8.5.33", "source-map-js": "1.2.2"
+    "vite": "8.1.6",
+    "glob": "14.0.6",
+    "minimatch": "11.0.8",
+    "nanoid": "3.3.20",
+    "postcss": "8.5.33",
+    "source-map-js": "1.2.2"
   },
-  "physicalFeedback": { "build": 46, "source": "user", "perceivedFluency": "accepted", "coversBuild47": false },
+  "physicalFeedback": {
+    "build": 46,
+    "source": "user",
+    "perceivedFluency": "accepted",
+    "coversBuild47": false
+  },
   "publicPages": [
-    { "url": "https://joaquinmino.work/cocowash/privacidad.html", "http": 200, "androidMention": false },
-    { "url": "https://joaquinmino.work/cocowash/privacy.html", "http": 200, "androidMention": false },
-    { "url": "https://joaquinmino.work/cocowash/support.html", "http": 200, "androidMention": false }
+    {
+      "url": "https://joaquinmino.work/cocowash/privacidad.html",
+      "http": 200,
+      "androidMention": false
+    },
+    {
+      "url": "https://joaquinmino.work/cocowash/privacy.html",
+      "http": 200,
+      "androidMention": false
+    },
+    {
+      "url": "https://joaquinmino.work/cocowash/support.html",
+      "http": 200,
+      "androidMention": false
+    }
   ],
-  "warnings": ["Web/native-web main chunk remains above 500 kB", "Native compilation and fixture execution require CI"],
+  "warnings": [
+    "Web/native-web main chunk remains above 500 kB",
+    "Native compilation and fixture execution require CI"
+  ],
   "appStoreReady": false,
   "published": false,
   "boundary": "Source audit and synthetic local checks. No signed archive, store submission, physical build47 QA or Apple acceptance. Native and commercial/privacy gates remain independent."
