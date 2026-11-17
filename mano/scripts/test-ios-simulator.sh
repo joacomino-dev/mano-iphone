@@ -113,6 +113,9 @@ for runtime in sorted(inventory.get('runtimes', []), key=lambda r: version(r['ve
             continue
         if os.environ.get('COCO_SIMULATOR_MODE') == 'standard' and 'Duo' in device['name']:
             continue
+        # Store screenshots need the largest class (6.9"): COCO_SIMULATOR_NAME=Pro Max.
+        if os.environ.get('COCO_SIMULATOR_NAME') and os.environ['COCO_SIMULATOR_NAME'] not in device['name']:
+            continue
         kind = device.get('deviceTypeIdentifier')
         if not kind:
             kind = next((t['identifier'] for t in types if t['name'] == device['name']), None)

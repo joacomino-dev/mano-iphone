@@ -12,6 +12,8 @@ jobs:
       DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
       COCO_SIMULATOR_MODE: standard
       COCO_STORE_SCREENS: '1'
+      # App Store Connect requires the 6.9" class (1320×2868); smaller sizes are derived from it.
+      COCO_SIMULATOR_NAME: Pro Max
     defaults:
       run:
         working-directory: mano
