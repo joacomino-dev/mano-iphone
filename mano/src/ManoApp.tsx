@@ -408,7 +408,7 @@ export function ManoApp() {
     // The card's paper and caption go with the photo: the Polaroid travels as one (user, 2026-11-13).
     return {rect:w.getBoundingClientRect(),src:img?.currentSrc||img?.src||video?.poster||'',frame:card?.getBoundingClientRect(),paper:card?getComputedStyle(card).backgroundColor:undefined,caption:cap?{html:cap.innerHTML,className:cap.className}:undefined};};
   const gridUnmount=()=>{gridAnim.current?.stop();gridProgress.stop();gridProgress.set(0);gridFingers.set(null);gridDetent.current=false;setGridIn(false);setGridOpen(false);setGridAds(false);money.release('grid');};
-  const gridScrub=(value:number)=>{gridAnim.current?.stop();gridProgress.stop();gridProgress.set(value);if(value<1)setGridIn(false);const over=value>.5;if(over!==gridDetent.current){gridDetent.current=over;haptic('selection');}};
+  const gridScrub=(value:number)=>{gridAnim.current?.stop();gridProgress.stop();gridProgress.set(value);setGridIn(value>=1);const over=value>.5;if(over!==gridDetent.current){gridDetent.current=over;haptic('selection');}};
   const gridSettle=(to:0|1,velocity=0)=>{gridDetent.current=to===1;if(!to)setGridIn(false);
     if(reducedMotionNow()){gridProgress.set(to);if(to)setGridIn(true);else gridUnmount();return;}
     const from=gridProgress.get();gridAnim.current?.stop();gridAnim.current=animate(from,to,{type:'spring',stiffness:260,damping:30,mass:1,velocity:Math.max(-4,Math.min(4,velocity)),restDelta:.001,restSpeed:.01,

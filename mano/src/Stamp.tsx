@@ -113,9 +113,9 @@ export function DecisionStamp({ kind, reduced, done, lettering = true, level }: 
     const press = window.setTimeout(() => {
       const el = ref.current; if (!el || el.closest('.is-gridding')) return;
       const art = el.querySelector('img'), at = centreOf(art), rim = (art?.getBoundingClientRect().width ?? 0) / 2;
-      if (at && kind === 'keep') burst('stamp', at, 'ink', 5, rim);
+      if (at && kind === 'keep') burst('stamp', at, 'ink', 7, rim);
       if (at && kind === 'favorite') burst('stamp', at, 'heart', 3, rim);
-      if (at && kind === 'discard') burst('stamp', at, 'dust', 6, rim);
+      if (at && kind === 'discard') burst('stamp', at, 'dust', 8, rim);
     }, 80);
     const star = earned ? window.setTimeout(() => {
       const el = ref.current; if (!el || el.closest('.is-gridding')) return;

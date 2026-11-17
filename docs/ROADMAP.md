@@ -286,6 +286,7 @@ textos con hablantes nativos, 1.0.1 para lo que salga.
 
 Una línea por intervención: fecha · agente · entrada · puntos cerrados/abiertos.
 
+- 2026-11-17 · Claude · CW-CL-087 · 0.9.9.4: la foto en revisión ya no queda flotando al volver de la carta a la rejilla sin levantar (dock y «Revisar en orden» respondían mal); prueba en grid-motion-flow. Tinta 7 y polvo 8 por decisión.
 - 2026-11-17 · Claude · CW-CL-086 · Densidad 3↔5 como fundido con zoom anclado en la foto en revisión (sin vuelos cruzados), sello armado que cae, sello de decisión más ágil, matasellos de «Más tarde», partículas por decisión (tinta, corazones, polvo sobrio) también con botones, estampado en miniaturas, salida de hojas, gramática de movimiento y grabación por fotogramas. Abierto: prueba en iPhone
 - 2026-11-17 · Claude · CW-CL-085 · Pasada de movimiento: guardia táctil acotado (pellizco de build46 recuperado sin perder 52349a0 ni b780b3c), sello con impacto, estrella ganada, partículas de marca acotadas, skills de animación instaladas. Abierto: prueba en iPhone
 - 2026-11-17 · Claude · CW-CL-084 · CI de navegador (16 baterías) y gate nativo iOS: medición en reposo; testV bloqueado por diálogo remoto ilegible para XCTest. R-73 abierto

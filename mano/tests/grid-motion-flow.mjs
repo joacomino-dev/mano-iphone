@@ -81,6 +81,27 @@ try {
     await context.close();
   }
   {
+    // Fingers apart towards the card, then together again without lifting (user 2026-11-17: the
+    // reviewed photo stayed floating, its tile empty, and «Revisar en orden» stopped answering).
+    const { context, page, touch, pinch } = await setup();
+    await pinch('.photo-card.front', 110, 40); await page.locator('.library-grid.cols-3').waitFor(); await page.waitForTimeout(700);
+    const b = await page.locator('.grid-scroller').boundingBox(), x = b.x + b.width / 2, y = b.y + b.height * .4;
+    for (let round = 0; round < 3; round++) {
+      await touch('touchStart', x, y, 80);
+      for (let k = 1; k <= 8; k++) { await touch('touchMove', x, y, 80 + 30 * k / 8); await page.waitForTimeout(16); }
+      for (let k = 1; k <= 8; k++) { await touch('touchMove', x, y, 110 - 30 * k / 8); await page.waitForTimeout(16); }
+      await touch('touchEnd', x, y, 80); await page.waitForTimeout(600);
+      const left = await page.evaluate(() => ({ ghost: getComputedStyle(document.querySelector('.grid-ghost')).display, flying: !!document.querySelector('.library-grid.is-flying'), hidden: [...document.querySelectorAll('.grid-scroller .grid-tile')].filter(t => t.style.visibility === 'hidden').length }));
+      assert.deepEqual(left, { ghost: 'none', flying: false, hidden: 0 }, `round ${round + 1}: back at the grid, no photo is left floating`);
+    }
+    assert.ok(await page.locator('.library-grid.cols-3').count(), 'still the grid at 3 columns');
+    await page.locator('.grid-scroller .grid-tile').nth(4).click();
+    await page.getByRole('button', { name: 'Revisar en orden desde aquí' }).click();
+    await page.waitForFunction(() => !document.querySelector('.library-grid'));
+    console.log('PASS card and back without lifting: nothing floats; «Revisar en orden» answers');
+    await context.close();
+  }
+  {
     const { context, page, pinch } = await setup({ native: true, width: 430 });
     await page.waitForTimeout(300); await page.evaluate(() => window.thumbCalls = []);
     await pinch('.photo-card.front', 110, 40); await page.waitForTimeout(900);

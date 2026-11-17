@@ -1,5 +1,12 @@
 # CocoWash — estado vigente
 
+## Claude CW-CL-087 — 0.9.9.4: foto que ya no flota, partículas más densas (2026-11-17)
+
+Arreglado: volver de la carta a la rejilla sin levantar los dedos dejaba la foto en revisión
+flotando y desactivaba dock, selección y «Revisar en orden» (prueba nueva en grid-motion-flow).
+Conservar y eliminar sueltan algo más de partículas. Versión 0.9.9.4 (Android code 6, iPhone
+build 48). Pendiente: sensación en iPhone. R-73 sigue abierto e independiente.
+
 ## Claude CW-CL-086 — densidad estable y sellos con entrada (2026-11-17)
 
 Densidad 3↔5: fundido con zoom con la foto en revisión fija (grid-motion-flow comprueba su

@@ -1090,3 +1090,13 @@ Skills añadidas (misma fuente y revisión que CW-CL-085, MIT): choreograph, ges
 - Pruebas ajustadas al nuevo movimiento: grid-motion-flow mira la miniatura viva (la copia es decorativa), comprueba que la foto en revisión conserva su altura (<2 px) y que la copia desaparece, y toma la posición una vez para que la interrupción llegue antes del final (~215 ms) en máquinas cargadas. vhs-eye espera a que la hoja termine de salir. motion-flow añade polvo sobrio y la caída del sello armado.
 Validación: 149 unitarias, tipos, protected28, build y build:native PASS; 17 baterías `*-flow` PASS (grid-motion 3/3 seguidas tras el ajuste: 20 ciclos iOS y 5 Android); apple-safety PASS.
 Pendiente en iPhone: sensación del fundido 3↔5, caída del sello y partículas. R-73 sin cambios (independiente).
+
+### CW-CL-087 — 0.9.9.4: la foto en revisión ya no queda flotando; partículas algo más densas
+Fecha: 2026-11-17, America/Bogota
+Agente: Claude
+Pedido del usuario (prueba en iPhone de CW-CL-086, «se siente genial»): tras abrir y cerrar varias veces la rejilla, la foto en revisión quedó flotando mal colocada y «Revisar en orden desde aquí» no respondía; subir algo la densidad de partículas de conservar y eliminar (corazones y «Más tarde» se quedan como están). Versión 0.9.9.4 autorizada por el usuario.
+- Causa: en la rejilla a 3 columnas, separar dos dedos hacia la carta y volver a juntarlos sin levantar devolvía el progreso a 1 pero dejaba la foto «sostenida» (`fingers`/grasp). La copia seguía pintada donde estaban los dedos, su miniatura real quedaba oculta y la sección seguía en `is-flying`, que desactiva dock, selección y «Revisar en orden».
+- Corrección (`LibraryGrid.tsx`): al volver a la rejilla sin levantar, la foto deja de estar sostenida y aterriza en su miniatura; al levantar los dedos nunca queda sostenida. `ManoApp.gridScrub` vuelve a marcar la rejilla como presente (`gridIn`) al llegar a 1, para que la pila de detrás quede inerte.
+- Prueba nueva en grid-motion-flow (RED antes del arreglo con `{ghost:'block', flying:true, hidden:1}`, el mismo estado de la captura): tres idas y vueltas carta↔rejilla sin levantar; no queda copia, ni modo vuelo, ni miniatura oculta, y «Revisar en orden desde aquí» cierra la rejilla.
+- Partículas: conservar 5→7 gotas de tinta, eliminar 6→8 motas (tope por microevento) y motas 1 px más grandes. Corazones y «Más tarde» sin cambios.
+- Versión: Android 0.9.9.4 (versionCode 6), iPhone 0.9.9 (48), nombres de artefactos de CI.

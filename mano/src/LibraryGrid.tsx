@@ -493,6 +493,7 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
   const endPinch = () => {
     const p = pinch.current; pinch.current = null; if (!p) return;
     if (progress.get() < 1) { settleCanvas(); finishMorph(false); grasp.set(null); release(); return; }
+    if (grasp.get()) grasp.set(null); // never leave the photo held once the fingers are gone
     // Past 40 % of the way, the other density; otherwise back to this one.
     if (morph.current) finishMorph(morph.current.t > .4); else settleCanvas();
   };
@@ -537,7 +538,9 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
         const h = grasp.get(); grasp.set(h ? { ...h, x: m.x, y: m.y, ratio: cardRatio } : { x0: m.x, y0: m.y, x: m.x, y: m.y, ratio: cardRatio });
         scrub(Math.min(.98, clamp01(1 - (cardRatio - 1) / .7))); return;
       }
-      if (progress.get() < 1) scrub(1);
+      // Back from the card to the grid without lifting: the photo is no longer held, it lands on
+      // its tile (user 2026-11-17: it stayed floating, and the dock and «Revisar en orden» froze).
+      if (progress.get() < 1) { if (grasp.get()) grasp.set(null); scrub(1); }
       const [fa, fb] = [...fingers.current.values()]; p.x = (fa.x + fb.x) / 2; p.y = (fa.y + fb.y) / 2;
       // 3 → 5 as the fingers close to 0.6 of their spread; 5 → 3 as they open to 1.6.
       if (!morph.current && (base === 3 ? ratio < .98 : ratio > 1.02)) beginMorph(base === 3 ? 5 : 3, p.mx, p.my);

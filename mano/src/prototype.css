@@ -1357,12 +1357,12 @@ button.inspect-set{left:0;right:0;margin-inline:auto;width:fit-content;transform
 .cw-particles{position:fixed;inset:0;z-index:96;pointer-events:none;overflow:hidden;contain:strict}
 .cw-particle{position:absolute;left:0;top:0;display:block;pointer-events:none;will-change:transform,opacity}
 .cw-particle.is-ink{width:7px;height:7px;border-radius:50%;background:var(--pal-turquoise,#1E7470)}
-.cw-particle.is-ink:nth-child(odd){width:5px;height:5px}
+.cw-particle.is-ink:nth-child(odd){width:6px;height:6px}
 .cw-particle.is-heart{width:14px;height:13px;background:#EB4E69;clip-path:path('M7 13 C7 13 0 8.6 0 4.1 C0 1.8 1.8 0 4 0 C5.3 0 6.4 .6 7 1.6 C7.6 .6 8.7 0 10 0 C12.2 0 14 1.8 14 4.1 C14 8.6 7 13 7 13Z')}
 .cw-particle.is-sparkle{width:10px;height:10px;background:var(--cw-star,#F4B63F);clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%)}
 .cw-particle.is-paper{width:8px;height:5px;border-radius:1px}
-.cw-particle.is-dust{width:4px;height:4px;border-radius:50%;background:#7C8B8C}
-.cw-particle.is-dust:nth-child(3n){width:3px;height:3px}
+.cw-particle.is-dust{width:5px;height:5px;border-radius:50%;background:#7C8B8C}
+.cw-particle.is-dust:nth-child(3n){width:4px;height:4px}
 .drag-stamp-ink{display:block;transform-origin:50% 50%}
 /* The confirmation stamp's crown: art and stars positioned together. */
 .stamp.is-composed .stamp-art{position:relative;display:block;flex:none;width:118px}
