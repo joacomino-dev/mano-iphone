@@ -1077,6 +1077,17 @@ final class PhotosSmokeTests: XCTestCase {
                 request.recognitionLanguages=["es-ES","en-US"]
                 try? VNImageRequestHandler(cgImage:cg).perform([request])
                 seen=(request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+                // A fresh simulator shows the iTunes Store welcome sheet the first time the app asks
+                // StoreKit for its catalog; it covers Photos' confirmation (gate 44012749510 saw only
+                // it on screen). It is an informational notice on a disposable simulator with no Apple
+                // ID: continue past it, say so, and keep looking for the wanted button.
+                if seen.contains(where:{ $0.hasPrefix("Welcome to the iTunes Store") }),
+                   let proceed=(request.results ?? []).first(where:{ $0.topCandidates(1).first?.string.trimmingCharacters(in:.whitespacesAndNewlines)=="Continue" }) {
+                    let box=proceed.boundingBox
+                    system.coordinate(withNormalizedOffset:CGVector(dx:box.midX,dy:1-box.midY)).tap()
+                    print("COCOWASH_UI_STORE_WELCOME_CONTINUED")
+                    Thread.sleep(forTimeInterval:1);lastRead=Date.distantPast;continue
+                }
                 for observation in request.results ?? [] {
                     guard let text=observation.topCandidates(1).first?.string.trimmingCharacters(in:.whitespacesAndNewlines),labels.contains(text) else { continue }
                     let box=observation.boundingBox
