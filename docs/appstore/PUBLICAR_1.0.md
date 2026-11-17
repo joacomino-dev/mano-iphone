@@ -34,8 +34,8 @@ La versión se fija al compilar; el código fuente no cambia.
    | `ASC_REVIEW_PHONE` | Opcional: tu teléfono para el equipo de revisión, p. ej. `+593 99 999 9999` |
 
    Después guarda el `.p8` en tu gestor de contraseñas y bórralo de Descargas.
-6. **Precios** de las tres compras, en dólares (Apple ajusta el resto de países): un año sin
-   anuncios, sin anuncios para siempre e invítame un café. Díselos a Claude.
+6. **Precios** (decididos 2026-11-17): un año sin anuncios 2,99 USD, para siempre 9,99 USD y café
+   0,99 USD. Apple ajusta el resto de países.
 7. **Privacidad de la app** (la API de Apple no permite rellenarla):
    <https://appstoreconnect.apple.com/apps> → CocoWash → *App Privacy* → *Get Started*.
    ¿Recoges datos? **Sí**. Marca estos tipos y, en cada uno, los usos indicados:

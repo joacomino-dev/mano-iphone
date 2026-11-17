@@ -1,5 +1,11 @@
 # CocoWash — estado vigente
 
+## Claude CW-CL-090 — 1.0 (48) subida; ficha en App Store Connect (2026-11-17)
+
+Build subida (procesándose en Apple). Ficha 8 locales, nombre «CocoWash: Limpiador de fotos», edad,
+gratis, 174 países (sin China) y 24 capturas. Pendiente: teléfono de revisión (secreto `ASC_REVIEW_PHONE`),
+App Privacy (web), compras 2,99/9,99/0,99 USD cuando el acuerdo de pago esté activo, DSA (SMS) y envío.
+
 ## Claude CW-CL-089 — publicar 0.9.9 (48) como 1.0 (2026-11-17)
 
 Decisión del usuario. Capturas de tienda en 6,9" (Pro Max). Nuevo `appstore-listing.yml` con

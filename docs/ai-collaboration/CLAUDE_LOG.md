@@ -1121,3 +1121,13 @@ Pedido del usuario: «haz todo para que se publique la versión iPhone 0.9.9 (bu
 - App Privacy no se puede rellenar por la API: respuestas para el usuario en `docs/appstore/PUBLICAR_1.0.md`, según `app-privacy.md` de Codex.
 Validación: JWT verificado con clave desechable; recorrido completo contra un App Store Connect simulado (8 locales, 32 capturas, 21 localizaciones de compras, precio, disponibilidad, envío) PASS; sintaxis de workflow y Python PASS. No verificado: API real (faltan secretos) ni el tipo de pantalla APP_IPHONE_67 para 6,9".
 Pendiente del usuario: acuerdo de pago, DSA, clave API y secretos, precios, App Privacy y confirmación final de envío.
+
+### CW-CL-090 — 1.0 (48) en App Store Connect: build, ficha, capturas
+Fecha: 2026-11-17, America/Bogota
+Agente: Claude
+Pedido del usuario: seguir hasta publicar; acompañarle en impuestos, banco y DSA; elegir nombre de tienda mirando a la competencia; precios 2,99 / 9,99 / 0,99 USD.
+- Usuario: W-8BEN y certificado de Apple activos, banco en verificación (Paid Apps «Pending User Info»), DSA como comerciante pendiente del SMS. Clave API Admin y 4 secretos en el entorno `app-store`.
+- Subida: el archivo sin firmar dejaba GoogleMobileAds/UMP con la firma de Google y App Store Connect rechazó la IPA; con `archive_signing=automatic` pasa. `verify-appstore-ipa.sh` exige ahora que cada framework esté firmado por el equipo. Reintentos ante cortes de red de Apple (hubo uno). Build 1.0 (48) subida.
+- Ficha: «CocoWash» está ocupado en es-ES por otra cuenta; el usuario eligió «CocoWash: Limpiador de fotos» + «Libera espacio deslizando» (7 idiomas en metadata.json). Edad (incluye `socialMedia`), gratis, 174 países sin China, 24 capturas 6,9" (APP_IPHONE_67). La 02 se excluye: muestra el anuncio de prueba «Test mode». La prueba de capturas añade 05-support (Apoyo) para la revisión de compras.
+- API: Apple devuelve 401 intermitentes; el script firma un token nuevo y reintenta con espera creciente.
+Pendiente: teléfono de revisión, App Privacy, compras (acuerdo activo), DSA, adjuntar build y envío (con confirmación del usuario).

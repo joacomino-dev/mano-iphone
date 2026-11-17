@@ -276,6 +276,8 @@ textos con hablantes nativos, 1.0.1 para lo que salga.
 
 ## Registro de avance
 
+- 2026-11-17 · Claude · CW-CL-090 · R-30/R-32: build 1.0 (48) subida a App Store Connect (firma automática; la del archivo sin firmar dejaba GoogleMobileAds/UMP con firma de Google y Apple la rechazó). Ficha en 8 locales con nombre «CocoWash: Limpiador de fotos» (el nombre solo está ocupado en es-ES por otra cuenta), edad, gratis, 174 países sin China y 24 capturas 6,9" (sin la 02, que muestra un anuncio de prueba). Usuario: impuestos y banco enviados (acuerdo de pago pendiente de verificación), DSA pendiente del SMS. Faltan teléfono de revisión, App Privacy, compras (2,99/9,99/0,99 USD, cuando el acuerdo esté activo) y envío.
+
 - 2026-11-17 · Claude · CW-CL-089 · R-16/R-30/R-32: el usuario decide publicar iPhone 0.9.9 (48) como 1.0. Capturas 6,9" (Pro Max) en CI; `appstore-listing.yml` + `scripts/asc_publish.py` rellenan ficha, capturas, edad, precio gratis, disponibilidad y 3 compras, y envían solo si se marca (recorrido completo PASS contra API simulada; API real pendiente de secretos). Pasos del usuario: `appstore/PUBLICAR_1.0.md`.
 
 - 2026-11-17 · Claude · CW-CL-088 · R-30: app «CocoWash» creada en ASC por el usuario (iOS 1.0, Prepare for Submission). Nuevo workflow manual `appstore-testflight.yml` + `mano/scripts/verify-appstore-ipa.sh` (sintaxis y puertas de liberación PASS en local; firma/subida no ejecutadas: faltan secretos). Abiertos para el usuario: clave API/Team ID, acuerdo de apps de pago y estado de comerciante DSA.
