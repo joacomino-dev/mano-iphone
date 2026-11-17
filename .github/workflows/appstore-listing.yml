@@ -1,0 +1,113 @@
+name: App Store · listing, purchases and submission
+# Run by hand only. Uses the same App Store Connect API key as appstore-testflight.yml
+# to fill version 1.0 from the repository (scripts/asc_publish.py): listing in seven
+# languages, 6.9" screenshots from the latest "Capture real iPhone store screens" run,
+# free price and availability, the three in-app purchases and the age rating.
+# It submits for review only when `submit` is ticked.
+on:
+  workflow_dispatch:
+    inputs:
+      steps:
+        description: 'Pasos (metadata, screenshots, price, purchases, status)'
+        default: 'metadata,screenshots,price,purchases,status'
+        required: true
+      price_year:
+        description: 'Precio USD «Un año sin anuncios» (vacío = no tocar)'
+        default: ''
+        required: false
+      price_lifetime:
+        description: 'Precio USD «Sin anuncios para siempre» (vacío = no tocar)'
+        default: ''
+        required: false
+      price_coffee:
+        description: 'Precio USD «Invítame un café» (vacío = no tocar)'
+        default: ''
+        required: false
+      release_type:
+        description: 'Publicación tras la aprobación'
+        type: choice
+        options: [AFTER_APPROVAL, MANUAL]
+        default: AFTER_APPROVAL
+      submit:
+        description: 'Enviar a revisión al terminar (adjunta la build indicada)'
+        type: boolean
+        default: false
+      build:
+        description: 'Build que se adjunta al enviar'
+        default: '48'
+        required: true
+      screens_run:
+        description: 'ID de la ejecución de capturas (vacío = la última correcta)'
+        default: ''
+        required: false
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: cocowash-appstore-listing
+  cancel-in-progress: false
+jobs:
+  listing:
+    if: github.event.repository.private == false && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    environment: app-store
+    timeout-minutes: 45
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_REVIEW_PHONE: ${{ secrets.ASC_REVIEW_PHONE }}
+      STEPS: ${{ inputs.steps }}${{ inputs.submit && ',submit' || '' }}
+      PRICE_YEAR: ${{ inputs.price_year }}
+      PRICE_LIFETIME: ${{ inputs.price_lifetime }}
+      PRICE_COFFEE: ${{ inputs.price_coffee }}
+      RELEASE_TYPE: ${{ inputs.release_type }}
+      BUILD: ${{ inputs.build }}
+      SCREENS_RUN: ${{ inputs.screens_run }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check inputs and secrets are present
+        run: |
+          [[ "$STEPS" =~ ^[a-z,]+$ ]] || { echo "Invalid steps: $STEPS"; exit 1; }
+          [[ "$BUILD" =~ ^[1-9][0-9]*$ ]] || { echo "Invalid build: $BUILD"; exit 1; }
+          for price in "$PRICE_YEAR" "$PRICE_LIFETIME" "$PRICE_COFFEE"; do
+            [ -z "$price" ] || [[ "$price" =~ ^[0-9]+(\.[0-9]{1,2})?$ ]] || { echo "Invalid price: $price"; exit 1; }
+          done
+          [[ "$ASC_KEY_ID" =~ ^[A-Z0-9]{10}$ ]] || { echo 'ASC_KEY_ID missing or not 10 characters'; exit 1; }
+          [[ "$ASC_ISSUER_ID" =~ ^[0-9a-f-]{36}$ ]] || { echo 'ASC_ISSUER_ID missing or not a UUID'; exit 1; }
+      - name: Download the 6.9" store screenshots
+        if: contains(env.STEPS, 'screenshots') || contains(env.STEPS, 'purchases')
+        run: |
+          run="$SCREENS_RUN"
+          if [ -z "$run" ]; then
+            run=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow apple-store-screens.yml --status success --limit 1 --json databaseId -q '.[0].databaseId')
+          fi
+          [[ "$run" =~ ^[0-9]+$ ]] || { echo 'No successful screenshots run found'; exit 1; }
+          gh run download "$run" --repo "$GITHUB_REPOSITORY" --pattern 'iphone-native-store-screens-*' --dir "$RUNNER_TEMP/screens-raw"
+          folder=$(dirname "$(find "$RUNNER_TEMP/screens-raw" -name 'es-01-cards.png' | head -1)")
+          test -f "$folder/ja-04-settings.png"
+          echo "SCREENS=$folder" >> "$GITHUB_ENV"
+          echo "Screenshots from run $run: $(ls "$folder"/*.png | wc -l) files"
+      - name: Install the App Store Connect API key
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          umask 077
+          mkdir -p "$RUNNER_TEMP/asc"
+          printf '%s\n' "$ASC_KEY_P8" > "$RUNNER_TEMP/asc/AuthKey_$ASC_KEY_ID.p8"
+          grep -q 'BEGIN PRIVATE KEY' "$RUNNER_TEMP/asc/AuthKey_$ASC_KEY_ID.p8" || { echo 'ASC_KEY_P8 is not a .p8 private key'; exit 1; }
+          echo "ASC_KEY_PATH=$RUNNER_TEMP/asc/AuthKey_$ASC_KEY_ID.p8" >> "$GITHUB_ENV"
+      - name: Fill App Store Connect
+        run: |
+          args=(--version 1.0 --steps "$STEPS" --release-type "$RELEASE_TYPE" --build "$BUILD")
+          [ -z "${SCREENS:-}" ] || args+=(--screens "$SCREENS")
+          [ -z "$PRICE_YEAR" ] || args+=(--price-year "$PRICE_YEAR")
+          [ -z "$PRICE_LIFETIME" ] || args+=(--price-lifetime "$PRICE_LIFETIME")
+          [ -z "$PRICE_COFFEE" ] || args+=(--price-coffee "$PRICE_COFFEE")
+          python3 -B scripts/asc_publish.py "${args[@]}" 2>&1 | tee "$RUNNER_TEMP/asc-publish.log"
+          { echo '### App Store Connect'; echo '```'; tail -40 "$RUNNER_TEMP/asc-publish.log"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Remove the API key
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/asc"

@@ -276,6 +276,8 @@ textos con hablantes nativos, 1.0.1 para lo que salga.
 
 ## Registro de avance
 
+- 2026-11-17 · Claude · CW-CL-089 · R-16/R-30/R-32: el usuario decide publicar iPhone 0.9.9 (48) como 1.0. Capturas 6,9" (Pro Max) en CI; `appstore-listing.yml` + `scripts/asc_publish.py` rellenan ficha, capturas, edad, precio gratis, disponibilidad y 3 compras, y envían solo si se marca (recorrido completo PASS contra API simulada; API real pendiente de secretos). Pasos del usuario: `appstore/PUBLICAR_1.0.md`.
+
 - 2026-11-17 · Claude · CW-CL-088 · R-30: app «CocoWash» creada en ASC por el usuario (iOS 1.0, Prepare for Submission). Nuevo workflow manual `appstore-testflight.yml` + `mano/scripts/verify-appstore-ipa.sh` (sintaxis y puertas de liberación PASS en local; firma/subida no ejecutadas: faltan secretos). Abiertos para el usuario: clave API/Team ID, acuerdo de apps de pago y estado de comerciante DSA.
 
 - 2026-11-15 · Codex · CW-CX-067 · Auditoría y limpieza 0.9.9.3/build47 local PASS: 149 Node, 17 contratos/empaquetado, 43 herramientas, TS/protected28/builds; npm audit 0. Parsers nativos con fixture20 y reemplazo público de heurística WebKit. Usuario acepta fluidez de build46; CI/QA build47 y puertas externas de Apple pendientes. Informe y recibo en `apple-readiness/CODE_AUDIT_2026-11-15.md`.

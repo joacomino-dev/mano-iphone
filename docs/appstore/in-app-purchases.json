@@ -1,0 +1,111 @@
+{
+  "source": "docs/appstore/in-app-purchases.md",
+  "reviewNote": "Settings › Support shows the three products. «A year without ads» is a non-renewing subscription: ads stop for one year from purchase and it never renews by itself; the app computes the end date from the signed StoreKit transaction. «No ads, forever» is a one-time non-consumable. «Buy me a coffee» is a consumable tip that unlocks nothing, as the app says next to it. «Restore purchases» is on the same screen.",
+  "products": [
+    {
+      "productId": "work.joaquin.mano.noads.year",
+      "type": "NON_RENEWING_SUBSCRIPTION",
+      "referenceName": "No ads · 1 year",
+      "localizations": {
+        "es-ES": {
+          "name": "Un año sin anuncios",
+          "description": "Un año sin anuncios. No se renueva solo."
+        },
+        "en-US": {
+          "name": "A year without ads",
+          "description": "One year with no ads. Doesn't auto-renew."
+        },
+        "fr-FR": {
+          "name": "Un an sans pub",
+          "description": "Un an sans pub. Sans renouvellement auto."
+        },
+        "de-DE": {
+          "name": "Ein Jahr ohne Werbung",
+          "description": "Ein Jahr werbefrei. Verlängert sich nicht."
+        },
+        "it": {
+          "name": "Un anno senza pubblicità",
+          "description": "Un anno senza pubblicità. Non si rinnova."
+        },
+        "ar-SA": {
+          "name": "سنة بلا إعلانات",
+          "description": "سنة كاملة بلا إعلانات. لا تتجدد تلقائيًا."
+        },
+        "ja": {
+          "name": "1年間広告なし",
+          "description": "1年間広告なし。自動更新はありません。"
+        }
+      }
+    },
+    {
+      "productId": "work.joaquin.mano.noads.lifetime",
+      "type": "NON_CONSUMABLE",
+      "referenceName": "No ads · lifetime",
+      "localizations": {
+        "es-ES": {
+          "name": "Sin anuncios para siempre",
+          "description": "Sin anuncios para siempre. Pago único."
+        },
+        "en-US": {
+          "name": "No ads, forever",
+          "description": "No ads, ever. One-time payment."
+        },
+        "fr-FR": {
+          "name": "Sans pub, pour toujours",
+          "description": "Plus jamais de pub. Paiement unique."
+        },
+        "de-DE": {
+          "name": "Für immer ohne Werbung",
+          "description": "Nie wieder Werbung. Einmalzahlung."
+        },
+        "it": {
+          "name": "Senza pubblicità per sempre",
+          "description": "Mai più pubblicità. Pagamento unico."
+        },
+        "ar-SA": {
+          "name": "بلا إعلانات إلى الأبد",
+          "description": "بلا إعلانات إلى الأبد. دفعة واحدة."
+        },
+        "ja": {
+          "name": "ずっと広告なし",
+          "description": "広告を永久になし。買い切りです。"
+        }
+      }
+    },
+    {
+      "productId": "work.joaquin.mano.coffee",
+      "type": "CONSUMABLE",
+      "referenceName": "Coffee tip",
+      "localizations": {
+        "es-ES": {
+          "name": "Invítame un café",
+          "description": "Una propina. No quita los anuncios."
+        },
+        "en-US": {
+          "name": "Buy me a coffee",
+          "description": "A tip. It doesn't remove ads."
+        },
+        "fr-FR": {
+          "name": "Offre-moi un café",
+          "description": "Un pourboire. Ne retire pas la pub."
+        },
+        "de-DE": {
+          "name": "Spendier mir einen Kaffee",
+          "description": "Ein Trinkgeld. Entfernt keine Werbung."
+        },
+        "it": {
+          "name": "Offrimi un caffè",
+          "description": "Una mancia. Non toglie la pubblicità."
+        },
+        "ar-SA": {
+          "name": "ادعُني إلى قهوة",
+          "description": "إكرامية. لا تزيل الإعلانات."
+        },
+        "ja": {
+          "name": "コーヒーをおごる",
+          "description": "チップです。広告は消えません。"
+        }
+      }
+    }
+  ]
+}

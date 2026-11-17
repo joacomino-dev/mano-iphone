@@ -1110,3 +1110,14 @@ Pedido del usuario: no podía avanzar en App Store Connect; ya tiene la cuenta d
 - `mano/scripts/verify-appstore-ipa.sh`: las mismas comprobaciones que `archive-apple-release.sh` aplicadas a la IPA firmada. No se modificó el script de Codex.
 Validación: sintaxis de los 7 pasos de shell y del script PASS (Git Bash); validación de entradas probada con valores buenos y malos; check-release, privacidad y runtime PASS en local. No verificado: la firma en la nube, el archivo y la subida (requieren los secretos y un runner macOS).
 Pendiente del usuario: clave API Team (Admin), Issuer ID, Team ID como secretos; acuerdo de apps de pago; DSA. Commit y push a main autorizados por el usuario.
+
+### CW-CL-089 — Publicar iPhone 0.9.9 (48) como 1.0
+Fecha: 2026-11-17, America/Bogota
+Agente: Claude
+Pedido del usuario: «haz todo para que se publique la versión iPhone 0.9.9 (build 48) como la 1.0»; lo que deba hacer él, paso a paso con enlaces.
+- Capturas: `test-ios-simulator.sh` acepta `COCO_SIMULATOR_NAME`; `apple-store-screens.yml` usa «Pro Max» (6,9", 1320×2868), el tamaño que exige App Store Connect. Selección probada con inventario simulado.
+- `scripts/asc_publish.py` (solo stdlib, token firmado con openssl, idempotente): ficha y textos en 7 idiomas más la variante del idioma principal, categorías, copyright, derechos de contenido (anuncios), cuestionario de edad (sin contenido sensible; anuncios sí; descarta atributos que Apple no acepte), contacto y notas de revisión, capturas, gratis, disponibilidad sin China, 3 compras (textos en `docs/appstore/in-app-purchases.json`, extraídos de su .md), precio USD, disponibilidad y captura de revisión; adjuntar build y envío solo con `submit`.
+- `.github/workflows/appstore-listing.yml` (manual, entorno `app-store`, ubuntu): descarga las capturas de la última ejecución correcta y ejecuta el script.
+- App Privacy no se puede rellenar por la API: respuestas para el usuario en `docs/appstore/PUBLICAR_1.0.md`, según `app-privacy.md` de Codex.
+Validación: JWT verificado con clave desechable; recorrido completo contra un App Store Connect simulado (8 locales, 32 capturas, 21 localizaciones de compras, precio, disponibilidad, envío) PASS; sintaxis de workflow y Python PASS. No verificado: API real (faltan secretos) ni el tipo de pantalla APP_IPHONE_67 para 6,9".
+Pendiente del usuario: acuerdo de pago, DSA, clave API y secretos, precios, App Privacy y confirmación final de envío.

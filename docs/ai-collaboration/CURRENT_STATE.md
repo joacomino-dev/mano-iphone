@@ -1,5 +1,12 @@
 # CocoWash — estado vigente
 
+## Claude CW-CL-089 — publicar 0.9.9 (48) como 1.0 (2026-11-17)
+
+Decisión del usuario. Capturas de tienda en 6,9" (Pro Max). Nuevo `appstore-listing.yml` con
+`scripts/asc_publish.py` (stdlib): ficha 7 idiomas, capturas, edad, gratis, disponibilidad, 3 compras y
+envío opcional. Probado contra API simulada; nada ejecutado contra Apple aún. Pasos del usuario y
+respuestas de App Privacy en `docs/appstore/PUBLICAR_1.0.md`.
+
 ## Claude CW-CL-088 — subida a TestFlight desde CI (2026-11-17)
 
 App «CocoWash» ya creada en App Store Connect (iOS 1.0). Nuevo workflow manual
