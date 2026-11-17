@@ -354,14 +354,15 @@ def step_price_and_availability(asc, app, excluded):
         log('  price: free')
     except APIError as error:
         log(f'  price not changed: {error}')
-    ids = [t for t in territories(asc) if t not in excluded]
+    # Apple wants every territory listed; excluded ones go in as available: false.
+    ids = territories(asc)
     try:
         asc.send('POST', '/v2/appAvailabilities', 'appAvailabilities', attributes={'availableInNewTerritories': True},
                  relationships={'app': rel('apps', app['id']), 'territoryAvailabilities': {
                      'data': [{'type': 'territoryAvailabilities', 'id': f'${{{t}}}'} for t in ids]}},
-                 included=[{'type': 'territoryAvailabilities', 'id': f'${{{t}}}', 'attributes': {'available': True},
+                 included=[{'type': 'territoryAvailabilities', 'id': f'${{{t}}}', 'attributes': {'available': t not in excluded},
                             'relationships': {'territory': rel('territories', t)}} for t in ids])
-        log(f'  available in {len(ids)} territories (excluded: {", ".join(sorted(excluded)) or "none"})')
+        log(f'  available in {len(ids) - len(excluded & set(ids))} territories (excluded: {", ".join(sorted(excluded)) or "none"})')
     except APIError as error:
         log(f'  availability not changed: {error}')
 
