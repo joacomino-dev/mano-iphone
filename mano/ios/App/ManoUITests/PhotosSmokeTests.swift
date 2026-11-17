@@ -526,9 +526,23 @@ final class PhotosSmokeTests: XCTestCase {
         finish.tap()
         let confirm=app.buttons.matching(NSPredicate(format:"label == %@ OR label BEGINSWITH %@","Eliminar 1","Eliminar 1 (")).firstMatch
         XCTAssertTrue(confirm.waitForExistence(timeout:20));confirm.tap()
+        // Photos' deletion confirmation is presented by the system, sometimes in SpringBoard and
+        // sometimes in the app's own process (iOS 17+): look in both for the same 30 s. Only
+        // looking in SpringBoard failed intermittently and cascaded into W, X and Z (gate runs
+        // since 42669952998; CW-CL-084).
+        let labels=["Cancel","Cancelar","Don't Allow","Don’t Allow","No permitir"]
         let system=XCUIApplication(bundleIdentifier:"com.apple.springboard")
-        let cancel=system.buttons.matching(NSPredicate(format:"label IN %@",["Cancel","Cancelar","Don't Allow","Don’t Allow","No permitir"])).firstMatch
-        XCTAssertTrue(cancel.waitForExistence(timeout:30),"A real Photos cancellation button must be offered")
+        var cancel:XCUIElement?
+        let offeredBy=Date().addingTimeInterval(30)
+        while cancel==nil && Date()<offeredBy {
+            for owner in [system,app] {
+                let candidate=owner.buttons.matching(NSPredicate(format:"label IN %@",labels)).firstMatch
+                if candidate.exists && candidate.isHittable { cancel=candidate;break }
+            }
+            if cancel==nil { Thread.sleep(forTimeInterval:0.25) }
+        }
+        XCTAssertNotNil(cancel,"A real Photos cancellation button must be offered")
+        guard let cancel else { return }
         cancel.tap()
         let retained=XCTNSPredicateExpectation(predicate:NSPredicate(format:"exists == true AND enabled == true"),object:confirm)
         XCTAssertEqual(XCTWaiter().wait(for:[retained],timeout:20),.completed,"Cancellation must preserve the queued item, never report deletion")
