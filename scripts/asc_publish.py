@@ -29,7 +29,7 @@ SCREENS = ['01-cards', '02-review', '03-filters', '04-settings']
 SCREEN_SIZES = {(1320, 2868), (1290, 2796), (1260, 2736)}  # 6.9" display slot
 EDITABLE = {'PREPARE_FOR_SUBMISSION', 'DEVELOPER_REJECTED', 'REJECTED', 'METADATA_REJECTED', 'INVALID_BINARY'}
 # Age rating: a photo organizer with no such content of its own. Ads (G-rated inventory)
-# and purchases exist; no chat, user-generated public content, web browsing or gambling.
+# and purchases exist; no chat, social media, user-generated public content, web browsing or gambling.
 AGE_RATING = {
     'alcoholTobaccoOrDrugUseOrReferences': 'NONE', 'contests': 'NONE', 'gamblingSimulated': 'NONE',
     'gunsOrOtherWeapons': 'NONE', 'horrorOrFearThemes': 'NONE', 'matureOrSuggestiveThemes': 'NONE',
@@ -39,7 +39,7 @@ AGE_RATING = {
     'violenceRealisticProlongedGraphicOrSadistic': 'NONE',
     'gambling': False, 'lootBox': False, 'unrestrictedWebAccess': False, 'messagingAndChat': False,
     'userGeneratedContent': False, 'advertising': True, 'parentalControls': False,
-    'ageAssurance': False, 'healthOrWellnessTopics': False,
+    'ageAssurance': False, 'healthOrWellnessTopics': False, 'socialMedia': False,
 }
 
 
