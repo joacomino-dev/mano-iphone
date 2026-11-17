@@ -57,10 +57,12 @@ class APIError(Exception):
             self.errors = []
 
     def bad_attributes(self):
+        """Attributes Apple does not know or does not allow here. Invalid or missing values are real errors."""
         names = []
         for error in self.errors:
             pointer = (error.get('source') or {}).get('pointer', '')
-            if pointer.startswith('/data/attributes/'):
+            code = error.get('code', '')
+            if pointer.startswith('/data/attributes/') and any(k in code for k in ('UNKNOWN', 'NOT_ALLOWED', 'NOT_EDITABLE')):
                 names.append(pointer.rsplit('/', 1)[-1])
         return names
 
@@ -162,7 +164,9 @@ class ASC:
                 if error.status not in (400, 409, 422) or not dropped:
                     raise
                 for name in dropped:
-                    log(f'  · Apple does not accept attribute {name} here; continuing without it')
+                    detail = next((e.get('detail', '') for e in error.errors
+                                   if (e.get('source') or {}).get('pointer', '').endswith('/' + name)), '')
+                    log(f'  · Apple does not accept attribute {name} here ({detail}); continuing without it')
                     attributes.pop(name)
 
 

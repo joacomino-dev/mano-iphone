@@ -108,10 +108,25 @@ jobs:
               -c 'Add :manageAppVersionAndBuildNumber bool false' "$plist" >/dev/null
             plutil -lint "$plist"
           done
-          xcodebuild -exportArchive -archivePath "$OUT/CocoWash.xcarchive" -exportPath "$OUT/export" \
-            -exportOptionsPlist "$OUT/ExportOptions-export.plist" -allowProvisioningUpdates \
-            -authenticationKeyPath "$ASC_KEY_PATH" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
-            > "$OUT/logs/export.log" 2>&1 || { tail -80 "$OUT/logs/export.log"; exit 1; }
+          # Apple's signing/upload services sometimes time out; retry only network-looking failures.
+          cat > "$OUT/export.sh" <<'SH'
+          dest=$1
+          for attempt in 1 2 3; do
+            rm -rf "$OUT/$dest"
+            if xcodebuild -exportArchive -archivePath "$OUT/CocoWash.xcarchive" -exportPath "$OUT/$dest" \
+                 -exportOptionsPlist "$OUT/ExportOptions-$dest.plist" -allowProvisioningUpdates \
+                 -authenticationKeyPath "$ASC_KEY_PATH" -authenticationKeyID "$ASC_KEY_ID" \
+                 -authenticationKeyIssuerID "$ASC_ISSUER_ID" > "$OUT/logs/$dest.log" 2>&1; then
+              exit 0
+            fi
+            echo "Attempt $attempt failed:"; tail -8 "$OUT/logs/$dest.log"
+            grep -qiE 'timed out|network|connection|could not connect|status code 5' "$OUT/logs/$dest.log" || break
+            sleep $((attempt * 45))
+          done
+          tail -80 "$OUT/logs/$dest.log"; exit 1
+          SH
+          echo "EXPORT_SH=$OUT/export.sh" >> "$GITHUB_ENV"
+          bash "$OUT/export.sh" export
       - name: Check the signed IPA
         run: |
           ipa=$(find "$OUT/export" -name '*.ipa' | head -1)
@@ -120,10 +135,7 @@ jobs:
           echo "IPA_SHA256=$(shasum -a 256 "$ipa" | cut -d' ' -f1)" >> "$GITHUB_ENV"
       - name: Upload to App Store Connect
         run: |
-          xcodebuild -exportArchive -archivePath "$OUT/CocoWash.xcarchive" -exportPath "$OUT/upload" \
-            -exportOptionsPlist "$OUT/ExportOptions-upload.plist" -allowProvisioningUpdates \
-            -authenticationKeyPath "$ASC_KEY_PATH" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
-            > "$OUT/logs/upload.log" 2>&1 || { tail -80 "$OUT/logs/upload.log"; exit 1; }
+          bash "$EXPORT_SH" upload
           tail -5 "$OUT/logs/upload.log"
           {
             echo "### Subida a App Store Connect"
