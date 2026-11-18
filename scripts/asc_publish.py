@@ -419,7 +419,12 @@ def step_purchases(asc, app, prices, review_screenshot, sources, excluded):
                          'inAppPurchase': rel('inAppPurchases', ident),
                          'availableTerritories': {'data': [{'type': 'territories', 'id': t} for t in all_territories]}})
             log(f'    available in {len(all_territories)} territories')
-        if review_screenshot and not asc.get_optional(f'/v2/inAppPurchases/{ident}/appStoreReviewScreenshot'):
+        current = asc.get_optional(f'/v2/inAppPurchases/{ident}/appStoreReviewScreenshot')
+        if review_screenshot and current and ((current['attributes'].get('assetDeliveryState') or {}).get('state') == 'FAILED'):
+            asc.call('DELETE', f'/v1/inAppPurchaseAppStoreReviewScreenshots/{current["id"]}')
+            log('    rejected review screenshot removed')
+            current = None
+        if review_screenshot and not current:
             upload_asset(asc, '/v1/inAppPurchaseAppStoreReviewScreenshots', 'inAppPurchaseAppStoreReviewScreenshots',
                          {'inAppPurchaseV2': rel('inAppPurchases', ident)}, pathlib.Path(review_screenshot))
             log('    review screenshot uploaded')
