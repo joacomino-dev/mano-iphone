@@ -198,12 +198,27 @@ def find_app(asc):
     return apps[0]
 
 
-def find_version(asc, app_id, version):
+def reopen_draft(asc, app_id, version_id):
+    """Take the version out of an unsent draft submission (READY_FOR_REVIEW) so it can be edited.
+    Submissions already sent to Apple (WAITING_FOR_REVIEW and later) are never touched."""
+    for draft in asc.get_all('/v1/reviewSubmissions', **{'filter[app]': app_id, 'filter[platform]': 'IOS',
+                                                         'filter[state]': 'READY_FOR_REVIEW'}):
+        for entry in asc.get_all(f'/v1/reviewSubmissions/{draft["id"]}/items', include='appStoreVersion'):
+            linked = ((entry.get('relationships') or {}).get('appStoreVersion') or {}).get('data') or {}
+            if linked.get('id') == version_id:
+                asc.call('DELETE', f'/v1/reviewSubmissionItems/{entry["id"]}')
+                log('  version taken out of the unsent draft submission')
+
+
+def find_version(asc, app_id, version, reopen=False):
     versions = asc.get_all(f'/v1/apps/{app_id}/appStoreVersions', **{'filter[platform]': 'IOS'})
     for item in versions:
         if item['attributes']['versionString'] == version:
             state = item['attributes'].get('appStoreState') or item['attributes'].get('appVersionState')
             log(f'Version {version}: {state}')
+            if state == 'READY_FOR_REVIEW' and reopen:
+                reopen_draft(asc, app_id, item['id'])
+                state = 'PREPARE_FOR_SUBMISSION'
             if state not in EDITABLE:
                 sys.exit(f'Version {version} is not editable ({state})')
             return item
@@ -517,7 +532,7 @@ def main():
     excluded = {t.strip() for t in args.exclude_territories.split(',') if t.strip()}
     app = find_app(asc)
     log(f'App {app["attributes"]["name"]} ({BUNDLE}), primary locale {app["attributes"]["primaryLocale"]}')
-    version = find_version(asc, app['id'], args.version)
+    version = find_version(asc, app['id'], args.version, reopen='attach' in steps)
     if 'metadata' in steps:
         step_metadata(asc, app, version, args.release_type, sources)
     if 'screenshots' in steps:
