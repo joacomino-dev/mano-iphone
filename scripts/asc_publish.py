@@ -503,7 +503,10 @@ def main():
         prices = {'work.joaquin.mano.noads.year': args.price_year, 'work.joaquin.mano.noads.lifetime': args.price_lifetime,
                   'work.joaquin.mano.coffee': args.price_coffee}
         folder = pathlib.Path(args.screens) if args.screens else None
-        review_shot = next((folder / n for n in ('es-05-support.png', 'es-04-settings.png') if folder and (folder / n).exists()), None)
+        # Only the Apoyo tab shows the purchases; without it the review screenshot waits for a later run.
+        review_shot = folder / 'es-05-support.png' if folder and (folder / 'es-05-support.png').exists() else None
+        if not review_shot:
+            log('  no es-05-support.png yet: purchases are created without their review screenshot')
         step_purchases(asc, app, prices, review_shot if review_shot and review_shot.exists() else None, sources, excluded)
     if 'submit' in steps:
         if not args.build:
