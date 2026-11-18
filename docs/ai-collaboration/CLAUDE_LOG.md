@@ -1168,3 +1168,10 @@ Pedido del usuario: enviar la versión aceptada en iPhone.
 - Ojo: ejecutar el paso `metadata` restaura el correo de `review-localizations.json`.
 Pendiente: resultado de la revisión; DSA (SMS sin llegar, UE); poder leer `cocowash@` (es el correo de la política de privacidad); vincular AdMob a la ficha y comprobar `app-ads.txt` tras publicar.
 
+### CW-CL-094 — CocoWash 1.0 aprobada y publicada en la App Store
+Fecha: 2026-11-18, America/Bogota
+Agente: Claude
+- App Store Connect muestra iOS 1.0 «Ready for Distribution» (captura del usuario). La consulta pública de Apple ya la devuelve en Ecuador, versión 1.0, gratis: https://apps.apple.com/ec/app/cocowash-limpiador-de-fotos/id6836020523 ; en US, MX, ES y DE aún no en el momento de consultar (propagación).
+- `https://joaquinmino.work/app-ads.txt` responde 200 con el editor de AdMob.
+- Caso de soporte de Apple abierto por el DSA; Play Console en alta por el usuario (cuenta personal).
+Pendiente: confirmar compras aprobadas e instaladas desde la tienda, vincular la app en AdMob, DSA para la UE y buzón `cocowash@`.

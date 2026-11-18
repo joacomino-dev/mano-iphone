@@ -1,5 +1,10 @@
 # CocoWash — estado vigente
 
+## Claude CW-CL-094 — CocoWash 1.0 publicada en la App Store (2026-11-18)
+
+iOS 1.0 (50) aprobada y visible en Ecuador; otros países en propagación. Pendiente: comprobar compras desde la
+tienda, vincular AdMob, DSA (UE; caso abierto con Apple), buzón `cocowash@` y alta en Google Play.
+
 ## Claude CW-CL-093 — 1.0 (50) enviada a revisión (2026-11-18)
 
 Versión 1.0 (50) y 3 compras enviadas a Apple por el usuario; se publica sola al aprobarse. Pendiente: resultado
