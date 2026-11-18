@@ -393,6 +393,7 @@ def step_purchases(asc, app, prices, review_screenshot, sources, excluded):
         if found:
             item = found[0]
             log(f'  {pid}: exists ({item["attributes"].get("state")})')
+            asc.send('PATCH', f'/v2/inAppPurchases/{item["id"]}', 'inAppPurchases', ident=item['id'], attributes={'reviewNote': iap['reviewNote']})
         else:
             attributes = {'name': product['referenceName'], 'productId': pid, 'inAppPurchaseType': product['type'],
                           'reviewNote': iap['reviewNote']}

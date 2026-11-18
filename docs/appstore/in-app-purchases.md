@@ -55,7 +55,7 @@ Apoyo con los tres sellos) y una nota; las dos van al final.
 
 ## Nota para la revisión (inglés, igual para los tres)
 
-> Settings › Support shows the three products. «A year without ads» is a non-renewing
+> The «Filters» button (top left) › «Support» tab shows the three products. «A year without ads» is a non-renewing
 > subscription: ads stop for one year from purchase and it never renews by itself; the
 > app computes the end date from the signed StoreKit transaction. «No ads, forever» is a
 > one-time non-consumable. «Buy me a coffee» is a consumable tip that unlocks nothing, as
