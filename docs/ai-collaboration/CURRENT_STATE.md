@@ -1,5 +1,12 @@
 # CocoWash — estado vigente
 
+## Claude CW-CL-091 — build 1.0 (49) con tres arreglos; envío pendiente del usuario (2026-11-18)
+
+Compras listas (`READY_TO_SUBMIT`), App Privacy y teléfono de revisión hechos. Arreglados: deshacer que
+perdía la carta, pellizco a cuadrícula que arrastraba la carta y arranque desincronizado. Build 49 en CI.
+Falta: probar 49 en TestFlight, adjuntarla y que el usuario envíe en la web (compras marcadas en la versión).
+DSA: SMS sin llegar, consultado con Apple.
+
 ## Claude CW-CL-090 — 1.0 (48) subida; ficha en App Store Connect (2026-11-17)
 
 Build subida (procesándose en Apple). Ficha 8 locales, nombre «CocoWash: Limpiador de fotos», edad,

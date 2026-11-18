@@ -1131,3 +1131,19 @@ Pedido del usuario: seguir hasta publicar; acompañarle en impuestos, banco y DS
 - Ficha: «CocoWash» está ocupado en es-ES por otra cuenta; el usuario eligió «CocoWash: Limpiador de fotos» + «Libera espacio deslizando» (7 idiomas en metadata.json). Edad (incluye `socialMedia`), gratis, 174 países sin China, 24 capturas 6,9" (APP_IPHONE_67). La 02 se excluye: muestra el anuncio de prueba «Test mode». La prueba de capturas añade 05-support (Apoyo) para la revisión de compras.
 - API: Apple devuelve 401 intermitentes; el script firma un token nuevo y reintenta con espera creciente.
 Pendiente: teléfono de revisión, App Privacy, compras (acuerdo activo), DSA, adjuntar build y envío (con confirmación del usuario).
+
+### CW-CL-091 — 1.0 casi enviada; tres bugs de iPhone corregidos (build 49)
+Fecha: 2026-11-18, America/Bogota
+Agente: Claude
+Pedido del usuario: publicar ya; luego, tras probar la build 48 desde TestFlight, corregir tres fallos antes de enviar.
+- App Store Connect: teléfono de revisión (secreto `ASC_REVIEW_PHONE`), App Privacy (usuario, 7 tipos), acuerdo de pago activo, 3 compras creadas (2,99/9,99/0,99 USD, 174 países) y `READY_TO_SUBMIT`. Causas de `MISSING_METADATA`: faltaba el idioma principal es-MX en las compras y la captura de revisión debe ser RGB y de tamaño de iPhone (1320×2868; RGBA o 1182×2560 → `IMAGE_INCORRECT_DIMENSIONS`). Captura de Apoyo tomada por el usuario desde TestFlight (`docs/appstore/review/iap-support-es.png`). La captura en simulador falló 4 veces (WebView en blanco al relanzar; reintento añadido; último intento agotó 60 min).
+- Envío: las primeras compras (consumible incluido) no se pueden enviar por API con la versión (`FIRST_CONSUMABLE_MUST_BE_SUBMITTED_ON_VERSION`): el usuario las marca en la página de la versión y envía desde la web. Build 48 adjunta; no se envió nada.
+- DSA: el SMS de Apple no llega a dos números de Ecuador; usuario pide ayuda a Apple. No bloquea fuera de la UE.
+- Canal de tienda: `DEVELOPER = false`; «Modo developer»/«Modo de prueba» no aparecen en la build de tienda (check-release, verify-release y verify-appstore-ipa). Lo que el usuario veía era la build de desarrollo; esa no carga productos de StoreKit.
+- Bugs (TDD, Playwright con Edge local; RED→GREEN):
+  - Deshacer durante el vuelo de salida (340 ms) reutilizaba la carta fuera de pantalla (378 px); ahora la carta recuperada es nueva. `tests/undo-card.spec.ts` (3).
+  - Pellizco a cuadrícula: un segundo dedo junto a la carta no contaba y el primero arrastraba (y podía decidir) la carta; la mesa recoge el segundo dedo, `touch-action:none`, umbral 8 % (antes 3 %) y el impulso solo abre con el gesto avanzado. `tests/pinch-grid.spec.ts` (5, con zoom y deslizar intactos).
+  - Arranque: Coqui (webp) aparecía después del logo (svg); ahora entran juntos tras decodificar ambos (máx. 1,5 s). Versión del arranque «1.0 (49)». `tests/splash-sync.spec.ts`.
+- Validación: 149 Node, runtime 28, build, build:native, check-release PASS. Build 1.0 (49) en CI (`appstore-testflight`).
+Pendiente: probar 49 en el iPhone (TestFlight), cambiar la build de la versión a 49 y que el usuario envíe con las compras marcadas; vincular AdMob tras publicar (anuncios en blanco = sin anuncios para app no publicada).
+
