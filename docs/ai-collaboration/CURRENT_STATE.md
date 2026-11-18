@@ -1,5 +1,10 @@
 # CocoWash — estado vigente
 
+## Claude CW-CL-092 — build 1.0 (50): repetir el pellizco a cuadrícula (2026-11-18)
+
+Al volver, la cuadrícula invisible seguía recibiendo toques; ya no. Falta probar 50 en TestFlight, adjuntarla
+y que el usuario envíe en la web con las 3 compras marcadas. DSA: pendiente de Apple.
+
 ## Claude CW-CL-091 — build 1.0 (49) con tres arreglos; envío pendiente del usuario (2026-11-18)
 
 Compras listas (`READY_TO_SUBMIT`), App Privacy y teléfono de revisión hechos. Arreglados: deshacer que

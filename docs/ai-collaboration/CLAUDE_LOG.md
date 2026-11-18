@@ -1147,3 +1147,12 @@ Pedido del usuario: publicar ya; luego, tras probar la build 48 desde TestFlight
 - Validación: 149 Node, runtime 28, build, build:native, check-release PASS. Build 1.0 (49) en CI (`appstore-testflight`).
 Pendiente: probar 49 en el iPhone (TestFlight), cambiar la build de la versión a 49 y que el usuario envíe con las compras marcadas; vincular AdMob tras publicar (anuncios en blanco = sin anuncios para app no publicada).
 
+### CW-CL-092 — Volver de la cuadrícula deja la pila como al principio (build 50)
+Fecha: 2026-11-18, America/Bogota
+Agente: Claude
+Pedido del usuario: tras probar la 49, el primer pellizco a cuadrícula va perfecto, pero al volver y repetirlo falla.
+- Causa: al cerrarse, `LibraryGrid` sigue montada e invisible sobre la pila hasta que termina el muelle; un pellizco caía en ella y saltaba a la cuadrícula completa, y deslizar no hacía nada. Solo se veía soltando a medio gesto (al separar del todo el cierre es instantáneo).
+- Arreglo: durante el cierre la cuadrícula no recibe toques, la carta y sus controles son tocables aunque invisibles, y el primer toque nuevo termina el cierre. Además: `pointercancel` asienta la cuadrícula (quedaba al 69 %), un primer dedo nuevo cierra un gesto que perdió su final, y un asentamiento antiguo ya no cierra una cuadrícula abierta después.
+- Pruebas: `tests/pinch-repeat.spec.ts` (RED a 150/350 ms, por pellizco y por botón; GREEN). 22 de gestos en Edge, 149 Node, runtime 28, build, build:native y check-release PASS.
+Pendiente: confirmar en iPhone (los toques reales no se pueden validar aquí), adjuntar 50 y envío del usuario desde la web.
+
