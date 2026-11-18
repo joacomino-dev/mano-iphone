@@ -506,6 +506,10 @@ def main():
         # Only the Apoyo tab shows the purchases; without it the review screenshot waits for a later run.
         review_shot = folder / 'es-05-support.png' if folder and (folder / 'es-05-support.png').exists() else None
         if not review_shot:
+            # Apoyo tab of build 1.0 (48) from TestFlight with sandbox prices (2026-11-18).
+            kept = pathlib.Path(__file__).resolve().parent.parent / 'docs/appstore/review/iap-support-es.png'
+            review_shot = kept if kept.exists() else None
+        if not review_shot:
             log('  no es-05-support.png yet: purchases are created without their review screenshot')
         step_purchases(asc, app, prices, review_shot if review_shot and review_shot.exists() else None, sources, excluded)
     if 'submit' in steps:
