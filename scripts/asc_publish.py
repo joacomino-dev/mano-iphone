@@ -388,14 +388,15 @@ def step_purchases(asc, app, prices, review_screenshot, sources, excluded):
             log(f'  {pid}: created ({product["type"]})')
         ident = item['id']
         existing = {i['attributes']['locale']: i for i in asc.get_all(f'/v2/inAppPurchases/{ident}/inAppPurchaseLocalizations')}
-        for locale, text in product['localizations'].items():
+        texts = localized(product['localizations'], app['attributes']['primaryLocale'])
+        for locale, text in texts.items():
             if locale in existing:
                 asc.send('PATCH', f'/v1/inAppPurchaseLocalizations/{existing[locale]["id"]}', 'inAppPurchaseLocalizations',
                          ident=existing[locale]['id'], attributes=text)
             else:
                 asc.send('POST', '/v1/inAppPurchaseLocalizations', 'inAppPurchaseLocalizations', attributes=dict(text, locale=locale),
                          relationships={'inAppPurchaseV2': rel('inAppPurchases', ident)})
-        log(f'    {len(product["localizations"])} localizations')
+        log(f'    {len(texts)} localizations')
         price = prices.get(pid)
         if price:
             points = asc.get_all(f'/v2/inAppPurchases/{ident}/pricePoints', **{'filter[territory]': 'USA'})
@@ -422,6 +423,10 @@ def step_purchases(asc, app, prices, review_screenshot, sources, excluded):
             upload_asset(asc, '/v1/inAppPurchaseAppStoreReviewScreenshots', 'inAppPurchaseAppStoreReviewScreenshots',
                          {'inAppPurchaseV2': rel('inAppPurchases', ident)}, pathlib.Path(review_screenshot))
             log('    review screenshot uploaded')
+        shot = asc.get_optional(f'/v2/inAppPurchases/{ident}/appStoreReviewScreenshot')
+        if shot:
+            state = (shot['attributes'].get('assetDeliveryState') or {})
+            log(f'    review screenshot: {state.get("state")} {state.get("errors") or ""}'.rstrip())
 
 
 def step_submit(asc, app, version, version_string, build_number):
