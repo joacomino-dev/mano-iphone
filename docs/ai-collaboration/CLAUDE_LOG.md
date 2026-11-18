@@ -1157,3 +1157,14 @@ Pedido del usuario: tras probar la 49, el primer pellizco a cuadrícula va perfe
 Resultado: build 1.0 (50) subida y adjunta a la versión; el usuario la probó en su iPhone con TestFlight y la aceptó («QUEDO»).
 Pendiente: envío del usuario desde la web con las 3 compras marcadas; DSA pendiente de Apple.
 
+
+### CW-CL-093 — CocoWash 1.0 (50) enviada a revisión de Apple
+Fecha: 2026-11-18, America/Bogota
+Agente: Claude
+Pedido del usuario: enviar la versión aceptada en iPhone.
+- El usuario envió desde la web 4 elementos: iOS 1.0 (build 50) y las 3 compras. Apple confirma «4 Items Submitted» (hasta 48 h). Publicación automática al aprobarse (`AFTER_APPROVAL`).
+- Antes del envío: la ficha dejó de mencionar a Memo (retirado de la app), las notas indican Filtros › Apoyo y el correo de contacto de revisión se cambió a mano en la web.
+- Flujo actual de Apple para las primeras compras: `Add for Review` desde cada compra (la de un año está en Subscriptions › Non-Renewing), todo en el mismo borrador junto con la versión; no se marcan en la página de la versión. Recogido en `docs/appstore/PUBLICAR_1.0.md`.
+- Ojo: ejecutar el paso `metadata` restaura el correo de `review-localizations.json`.
+Pendiente: resultado de la revisión; DSA (SMS sin llegar, UE); poder leer `cocowash@` (es el correo de la política de privacidad); vincular AdMob a la ficha y comprobar `app-ads.txt` tras publicar.
+
