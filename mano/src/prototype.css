@@ -279,7 +279,7 @@
 .access-indicator:after{content:'';position:absolute;inset:calc(-1*var(--cw-space-2))}
 
 /* ---------- Card stack ---------- */
-.hand-space{position:relative;flex:1;min-height:100px;margin-top:var(--cw-space-3);container-type:size}
+.hand-space{position:relative;flex:1;min-height:100px;margin-top:var(--cw-space-3);container-type:size;touch-action:none}
 .polaroid-stack{position:absolute;inset:0;isolation:isolate}
 /* The stage keeps the same air above (progress) and below (the heart's top):
    cards are centred in it at 50 %, so they sit midway between both. */

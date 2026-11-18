@@ -300,7 +300,7 @@ export function ManoApp() {
   const setNotice=useCallback((text:string)=>{if(!text){setNoticeState(null);return;}setNoticeState(previous=>previous?.text===text?{...previous}:{id:++noticeId.current,text});setSpoken(text.replace(/\n/g,' '));},[]); const [inspect,setInspect] = useState<Asset|null>(null);
   const [analyzing,setAnalyzing] = useState(false); const [progress,setProgress] = useState({done:0,total:0});
   const reduced = useReducedMotion(); const seed = useRef(saved?.seed??Math.floor(Math.random()*100000)); const [seedVersion,setSeedVersion]=useState(0);
-  const gesture = useRef<{x:number;y:number;t0:number;held:boolean;timer:ReturnType<typeof setTimeout>|null;id:string;review:boolean;element?:Element;asset?:Asset;pinch?:number;grid?:boolean;zone?:StampKind|'';followers:string[]}|null>(null);
+  const gesture = useRef<{x:number;y:number;t0:number;held:boolean;timer:ReturnType<typeof setTimeout>|null;id:string;review:boolean;element?:Element;asset?:Asset;pinch?:number;grid?:boolean;extra?:number;zone?:StampKind|'';followers:string[]}|null>(null);
   const pointers = useRef(new Map<number,{x:number;y:number}>());
   // Decision feedback without interruptions: a stamp over the stack and a
   // VoiceOver-only announcement (no visible notice after each swipe).
@@ -415,7 +415,8 @@ export function ManoApp() {
       onUpdate:value=>{const now=gridProgress.get(),next=to?Math.max(now,Math.min(1,value)):Math.min(now,Math.max(0,value));if(next!==now)gridProgress.set(next);}});
     void gridAnim.current.then(()=>{if(!to&&gridOpenNow.current&&gridProgress.get()<.001)gridUnmount();if(to&&gridProgress.get()>.999)setGridIn(true);});};
   // Let go: the nearer end, unless the fingers were clearly moving one way.
-  const gridRelease=()=>{const value=gridProgress.get(),speed=gridProgress.getVelocity();gridSettle(speed>.8?1:speed<-.8?0:value>.5?1:0,speed);};
+  // A fling opens it only once the pinch is under way: a small quick pinch no longer opens the grid.
+  const gridRelease=()=>{const value=gridProgress.get(),speed=gridProgress.getVelocity();gridSettle(speed>.8&&value>.2?1:speed<-.8?0:value>.5?1:0,speed);};
   const gridExit=()=>{haptic('light');gridSettle(0);};
   // The grid's selection can go to an album through the same sheet as the card in hand.
   const [albumIds,setAlbumIds]=useState<string[]|null>(null);const [gridAlbumDone,setGridAlbumDone]=useState(0);
@@ -628,7 +629,7 @@ export function ManoApp() {
   // when a busy main thread got round to the handler or a timer: under load
   // queued moves can run before a 380 ms timer, and a re-render between two taps
   // can push handler time past the double-tap window.
-  const HOLD_MS=380;
+  const HOLD_MS=380,GRID_PINCH=.92;
   const hold=(g:NonNullable<typeof gesture.current>)=>{if(g.held)return;if(g.timer){clearTimeout(g.timer);g.timer=null;}g.held=true;haptic(g.review?'selection':'medium');
     if(!g.review&&g.element&&g.asset){springBack(g.followers);setZone('');heldVideo.current=g.element.querySelector('video');inspectOrigin.current=windowOf(g.element);resetPeek();setPinnedInspect(false);hookHover.current=false;setOverHook(false);setInspect(g.asset);
       // Holding a photo that lives in iCloud is a reason to fetch the larger
@@ -638,13 +639,21 @@ export function ManoApp() {
   // button's click, while pointerdown still reaches the card: muting also toggled play
   // (user, 2026-11-09). A touch starting within 14 px of a card control is the control's.
   const nearControl=(e:PointerEvent)=>[...(e.currentTarget as HTMLElement).querySelectorAll('button')].some(b=>{const r=b.getBoundingClientRect();return r.width>0&&e.clientX>=r.left-14&&e.clientX<=r.right+14&&e.clientY>=r.top-14&&e.clientY<=r.bottom+14;});
+  /** Two fingers: the card stops following the first one and goes back to its place. */
+  const enterPinch=(g:NonNullable<typeof gesture.current>)=>{if(g.timer)clearTimeout(g.timer);g.timer=null;const [a,b]=[...pointers.current.values()];g.pinch=Math.max(1,Math.hypot(b.x-a.x,b.y-a.y));springBack(g.followers);if(g.zone){g.zone='';setZone('');}stampOpacity.set(0);};
+  /** A second finger landing beside the card (on the table) is part of the pinch too:
+   * before, only one on the card counted, and the other finger dragged the card around. */
+  const stageDown=(e:PointerEvent)=>{const g=gesture.current;if(!g||g.review||g.held||g.pinch||pointers.current.size!==1||pointers.current.has(e.pointerId)||(e.target as HTMLElement).closest('.photo-card,button'))return;
+    pointers.current.set(e.pointerId,{x:e.clientX,y:e.clientY});g.extra=e.pointerId;enterPinch(g);e.currentTarget.setPointerCapture(e.pointerId);};
+  const stageMove=(e:PointerEvent)=>{if(gesture.current?.extra===e.pointerId)move(e);};
+  const stageEnd=(e:PointerEvent)=>{if(gesture.current?.extra===e.pointerId)end(e);};
   const start=(e:PointerEvent,asset:Asset,review=false)=>{if(busy||(e.target as HTMLElement).closest('button')||nearControl(e))return;
     // A finger lifted while its card unmounted never reached end(): drop stale ids.
     if(!gesture.current)pointers.current.clear();
     pointers.current.set(e.pointerId,{x:e.clientX,y:e.clientY});
     const current=gesture.current;
     // Second finger on the top card: a pinch-out opens the anchored, zoomable view.
-    if(current&&!current.review&&!current.held&&pointers.current.size===2){if(current.timer)clearTimeout(current.timer);current.timer=null;const [a,b]=[...pointers.current.values()];current.pinch=Math.hypot(b.x-a.x,b.y-a.y);springBack(current.followers);setZone('');e.currentTarget.setPointerCapture(e.pointerId);return;}
+    if(current&&!current.review&&!current.held&&pointers.current.size===2){enterPinch(current);e.currentTarget.setPointerCapture(e.pointerId);return;}
     e.currentTarget.setPointerCapture(e.pointerId);
     // The card under the finger and any selected cards of the hand move together.
     const followers=review?[]:[...new Set([...(hand[0]?.id===asset.id?[asset.id]:[]),...targetIds])];
@@ -653,10 +662,11 @@ export function ManoApp() {
   const move=(e:PointerEvent)=>{const g=gesture.current;if(!g)return;if(pointers.current.has(e.pointerId))pointers.current.set(e.pointerId,{x:e.clientX,y:e.clientY});
     // Pinch out: the anchored view. Pinch in — zooming out, as in Photos — opens the Fototeca (user, 2026-11-13).
     if(g.pinch){const [a,b]=[...pointers.current.values()];const ratio=a&&b?Math.hypot(b.x-a.x,b.y-a.y)/g.pinch:1;
-      if(!g.grid&&ratio>1.25){const asset=hand.find(h=>h.id===g.id);gesture.current=null;if(asset)openPinned(asset,e.currentTarget);return;}
+      if(!g.grid&&ratio>1.25){const asset=hand.find(h=>h.id===g.id);gesture.current=null;if(asset)openPinned(asset,g.element??e.currentTarget);return;}
       // Fingers together: the grid comes in under them, step by step; apart again, the card returns.
-      if(!g.grid&&ratio<.97&&!gridOpenNow.current&&!deckAd&&assets.length){g.grid=true;void LibraryGrid.preload();setGridTop((document.querySelector('.archive-progress')?.getBoundingClientRect().bottom??0)+4);gridEnter.current=document.querySelector('.decision-bar')?.getBoundingClientRect();gridCard.current=cardTarget();gridTools.current={undo:document.querySelector('.archive-tools>button:first-child .tool-icon')?.getBoundingClientRect(),album:document.querySelector('#album-trigger .tool-icon')?.getBoundingClientRect()};gridProgress.set(0);setGridAds(money.grid());setGridOpen(true);}
-      if(g.grid){const mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2},held=gridFingers.get();gridFingers.set(held?{...held,x:mid.x,y:mid.y,ratio}:{x0:mid.x,y0:mid.y,x:mid.x,y:mid.y,ratio});gridScrub(Math.max(0,Math.min(.98,(1-ratio)/.45)));}return;}
+      // A clear pinch in (8 %) opens it: finger noise no longer flips between zoom and grid.
+      if(!g.grid&&ratio<GRID_PINCH&&!gridOpenNow.current&&!deckAd&&assets.length){g.grid=true;void LibraryGrid.preload();setGridTop((document.querySelector('.archive-progress')?.getBoundingClientRect().bottom??0)+4);gridEnter.current=document.querySelector('.decision-bar')?.getBoundingClientRect();gridCard.current=cardTarget();gridTools.current={undo:document.querySelector('.archive-tools>button:first-child .tool-icon')?.getBoundingClientRect(),album:document.querySelector('#album-trigger .tool-icon')?.getBoundingClientRect()};gridProgress.set(0);setGridAds(money.grid());setGridOpen(true);}
+      if(g.grid){const mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2},held=gridFingers.get();gridFingers.set(held?{...held,x:mid.x,y:mid.y,ratio}:{x0:mid.x,y0:mid.y,x:mid.x,y:mid.y,ratio});gridScrub(Math.max(0,Math.min(.98,(GRID_PINCH-ratio)/(GRID_PINCH-.55))));}return;}
     const x=e.clientX-g.x,y=e.clientY-g.y;
     if(!g.held&&Math.hypot(x,y)>10&&g.timer){
       // The finger stayed within slop for the whole hold time: it is a hold, even
@@ -811,7 +821,7 @@ export function ManoApp() {
     <header ref={noticeRoom} className="archive-header is-session">{filtersButton}{brand}<FinishButton pending={pending} busy={busy} announce={setSpoken} finish={()=>{if(gridOpen)gridUnmount();cancel();setError('');setSheet('review');haptic('light');}}/></header>
     {/* Second row: how far through the filtered pile (same calculation as before). */}
     <div className="archive-progress">{testMode&&<button className="access-indicator test-mode" onClick={()=>{setSheetTab('settings');setSheet('filters');}}>{t('Modo de prueba')}</button>}{limited&&<button className="access-indicator" onClick={()=>void manageLimited()}><InfoIcon size={14} weight="bold"/>{t('Acceso limitado')}</button>}{gridOpen&&<motion.span className="grid-exit-room" style={{width:exitRoom}}><motion.button type="button" className="grid-exit" data-testid="grid-exit" style={{opacity:exitShow,scale:exitScale}} onClick={gridExit} aria-label={t('Volver a las cartas')}><XIcon size={17} weight="bold"/></motion.button></motion.span>}<PileProgress reviewed={scope.reviewed} total={scope.total} count={<><AnimatedNumber value={scope.reviewed}/><span className="pile-slash">/</span><AnimatedNumber value={scope.total} className="is-total"/></>}/></div>
-    <motion.section ref={stage} style={{opacity:handFade}} inert={gridIn} className={`hand-space ${currentColor}`} aria-label={t('Pila de recuerdos')}>{alert}
+    <motion.section ref={stage} style={{opacity:handFade}} inert={gridIn} onPointerDown={stageDown} onPointerMove={stageMove} onPointerUp={stageEnd} onPointerCancel={stageEnd} className={`hand-space ${currentColor}`} aria-label={t('Pila de recuerdos')}>{alert}
       {deckAd?<motion.div key="deck-ad" className="ad-stage" initial={reduced?false:{opacity:0,y:16,scale:.96}} animate={{opacity:1,y:0,scale:1}} transition={{duration:.3,ease:[.2,.8,.2,1]}}><AdSlot where="deck" money={money}/></motion.div>:!connected?<div className="empty-state"><Character pose="coqui-wave" height={140} className="empty-character"/><h2>{t('Tu carrete, en tus manos.')}</h2><p>{t('Revisa, conserva y ordena tus recuerdos. Nada se borra sin tu confirmación.')}</p><button className="primary-empty" onClick={connect} disabled={loading}>{loading?t('Abriendo Fotos…'):t('Abrir mi biblioteca')}</button><small>{t('Todo se analiza en tu iPhone.')}</small></div>:!active?<div className="empty-state"><Character pose={scope.total?'coqui-calm':'coqui-wonder'} height={120} className="empty-character" motion="sway"/><h2>{favView&&!scope.total?t('Aún no hay favoritas.'):scope.total?t('Todo en su sitio.'):t('Nada con estos filtros.')}</h2><p>{favView&&!scope.total?t('Toca el corazón o desliza hacia arriba para guardar una.'):narrowed?t('Prueba con otros filtros o resetéalos.'):pending?t('Lo marcado para eliminar te espera al pulsar Terminar.'):scope.total?t('No quedan fotos pendientes con estos filtros.'):t('Prueba con otras fechas o con todo el contenido.')}</p><button className="primary-empty" onClick={()=>{setSheetTab('filters');setSheet('filters');}}>{t('Cambiar filtros')}</button>{narrowed&&<button className="secondary-empty" data-testid="reset-filters" onClick={resetFilters}><ArrowCounterClockwiseIcon size={18} weight="bold"/>{t('Resetear filtros')}</button>}{!demo&&<button className="text-button" onClick={connect}>{t('Actualizar biblioteca')}</button>}</div>:<div className="polaroid-stack" data-testid="photo-hand">
         <AnimatePresence>{bundleKey&&<motion.div className="bundle-arrival" key={bundleKey} initial={reduced?false:{opacity:0,scale:.94,y:-6}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0}} transition={{duration:.24,ease:[.2,.8,.2,1]}} role="status"><StackIcon size={15} weight="bold"/><span aria-hidden="true">{targetIds.length ? t('{n} de {total}',{n:targetIds.length,total:hand.length}) : tn('photos',hand.length)}</span><span className="sr-only">{targetIds.length ? t('{n} de {total} fotos seleccionadas',{n:targetIds.length,total:hand.length}) : tn('photos',hand.length)}</span></motion.div>}</AnimatePresence>
         {bundleKey&&!reduced&&<motion.div key={`flash-${bundleKey}`} className="bundle-flash" initial={{opacity:0}} animate={{opacity:[0,.14,0]}} transition={{duration:.5}}/>}
