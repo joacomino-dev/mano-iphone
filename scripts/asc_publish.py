@@ -446,11 +446,6 @@ def step_submit(asc, app, version, version_string, build_number):
         sys.exit(f'Build {build_number} is {build["attributes"].get("processingState")}; rerun when VALID')
     asc.call('PATCH', f'/v1/appStoreVersions/{version["id"]}/relationships/build', {'data': {'type': 'builds', 'id': build['id']}})
     log(f'  build {version_string} ({build_number}) attached')
-    for item in asc.get_all(f'/v1/apps/{app["id"]}/inAppPurchasesV2'):
-        if item['attributes'].get('state') == 'READY_TO_SUBMIT':
-            asc.send('POST', '/v1/inAppPurchaseSubmissions', 'inAppPurchaseSubmissions',
-                     relationships={'inAppPurchaseV2': rel('inAppPurchases', item['id'])})
-            log(f'  {item["attributes"]["productId"]}: submitted with this version')
     open_submissions = asc.get_all('/v1/reviewSubmissions', **{'filter[app]': app['id'], 'filter[platform]': 'IOS',
                                                                'filter[state]': 'READY_FOR_REVIEW'})
     submission = open_submissions[0] if open_submissions else asc.send(
@@ -464,6 +459,12 @@ def step_submit(asc, app, version, version_string, build_number):
         if error.status != 409:
             raise
         log(f'  version already in the submission or blocked: {error}')
+    # The first purchases must travel with the version: add them once it is in the open submission.
+    for item in asc.get_all(f'/v1/apps/{app["id"]}/inAppPurchasesV2'):
+        if item['attributes'].get('state') == 'READY_TO_SUBMIT':
+            asc.send('POST', '/v1/inAppPurchaseSubmissions', 'inAppPurchaseSubmissions',
+                     relationships={'inAppPurchaseV2': rel('inAppPurchases', item['id'])})
+            log(f'  {item["attributes"]["productId"]}: submitted with this version')
     asc.send('PATCH', f'/v1/reviewSubmissions/{submission["id"]}', 'reviewSubmissions', ident=submission['id'],
              attributes={'submitted': True})
     log('  SUBMITTED FOR REVIEW')
