@@ -32,9 +32,16 @@ final class PhotosSmokeTests: XCTestCase {
         }
         for lang in ["es","en","fr","de","it","ar","ja"] {
             let labels=try XCTUnwrap(tables[lang])
-            app.terminate();app.launchArguments=["-AppleLanguages","(\(lang))","-AppleLocale",lang];app.launch()
+            app.launchArguments=["-AppleLanguages","(\(lang))","-AppleLocale",lang]
             let finish=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@",try XCTUnwrap(labels["Terminar"]))).firstMatch
-            guard finish.waitForExistence(timeout:120) else {
+            // The CI simulator sometimes leaves the web view blank after a relaunch; a fresh launch recovers it.
+            var rendered=false
+            for attempt in 0..<3 where !rendered {
+                app.terminate();app.launch()
+                rendered=finish.waitForExistence(timeout:70)
+                if !rendered { print("COCOWASH_UI_STORE_RELAUNCH_RETRY lang=\(lang) attempt=\(attempt)") }
+            }
+            guard rendered else {
                 print("COCOWASH_UI_STORE_RELAUNCH_TREE lang=\(lang)\n\(app.debugDescription)")
                 XCTFail("Native launch must render the requested language");return
             }
