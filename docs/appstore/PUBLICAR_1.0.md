@@ -52,7 +52,9 @@ La versión se fija al compilar; el código fuente no cambia.
 
    Fuente y razones: [app-privacy.md](app-privacy.md). Pulsa *Publish* arriba a la derecha.
 8. Avisa a Claude con «listo». Claude sube la build, rellena la ficha y te enseña el resultado.
-9. Revisa la ficha en App Store Connect y, si te gusta, dile a Claude «envíala». Si falta el
-   teléfono de contacto, añádelo en la página de la versión (*App Review Information*).
+9. Envío (las primeras compras no se pueden enviar por API ni se marcan en la versión):
+   *In-App Purchases* → *Edit* → marca las compras → *Add for Review*; *Subscriptions* →
+   *Non-Renewing Subscriptions* → *Manage* → la compra de un año → *Add for Review*; página de la
+   versión → *Add for Review*. Todo en el mismo borrador (*Draft Submissions*) y *Submit for Review*.
 
 Con `AFTER_APPROVAL`, la app sale sola en cuanto Apple la apruebe (normalmente 1–3 días).

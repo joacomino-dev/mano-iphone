@@ -1,5 +1,10 @@
 # CocoWash — estado vigente
 
+## Claude CW-CL-093 — 1.0 (50) enviada a revisión (2026-11-18)
+
+Versión 1.0 (50) y 3 compras enviadas a Apple por el usuario; se publica sola al aprobarse. Pendiente: resultado
+de la revisión, DSA (UE), buzón `cocowash@` y, tras publicar, vincular AdMob a la ficha.
+
 ## Claude CW-CL-092 — build 1.0 (50): repetir el pellizco a cuadrícula (2026-11-18)
 
 Al volver, la cuadrícula invisible seguía recibiendo toques; ya no. Build 50 adjunta y aceptada por el usuario en
