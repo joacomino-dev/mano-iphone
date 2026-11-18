@@ -580,6 +580,9 @@ export function ManoApp() {
       haptic(action==='favorite'||action==='unfavorite'?'medium':action==='later'?'soft':'light');return true;
     }catch(e){haptic('error');await nativeFailed(e);return false;}finally{endOperation();}
   };
+  // A card brought back by «Deshacer» is dealt as a new card: the one still flying
+  // away finishes its exit, instead of being reused off-screen without its pose.
+  const revived=useRef(new Map<string,number>());
   const undoLast=async()=>{
     const last=recordNow.current.history.at(-1);if(!last||!startOperation())return;
     let missingIds:string[]=[];
@@ -591,6 +594,7 @@ export function ManoApp() {
       const previous=last.context;
       await persistRecord(undo(recordNow.current),{context:previous??context,filter:previous?.filter??filterSetting},favorite&&onAndroid()?favorite:undefined,nativeFavorite);
       const undone=last.action;haptic('soft');if(undone!=='unfavorite')setStats(p=>({...p,[undone]:Math.max(0,p[undone]-last.ids.length)}));
+      for(const id of last.ids)revived.current.set(id,(revived.current.get(id)??0)+1);
       setLock(restoreHand(previous,last.ids));setSelected(previous?.selected??[]);if(previous?.filter)setFilter(previous.filter);
       if(missingIds.length){setNotice(missingIds.length===last.ids.length?t('Ya no está\nen Fotos'):t('Algunas ya no\nestán en Fotos'));const gone=new Set(missingIds);setAssets(prev=>prev.filter(a=>!gone.has(a.id)));}
       setSpoken(t('Última decisión deshecha'));
@@ -813,7 +817,7 @@ export function ManoApp() {
         {bundleKey&&!reduced&&<motion.div key={`flash-${bundleKey}`} className="bundle-flash" initial={{opacity:0}} animate={{opacity:[0,.14,0]}} transition={{duration:.5}}/>}
         <AnimatePresence custom={lastDecision}>{[...hand].reverse().map(asset=>{const tape=asset.kind==='video';const {cardWidth,cardHeight}=cardBox(stageSize,asset,!display.photo.polaroid);const index=hand.indexOf(asset),picked=targetIds.includes(asset.id);
           const kindLabel=asset.kind==='video'?t('Vídeo'):asset.kind==='live'?'Live Photo':t('Foto');const lifting=index===0&&!!inspect&&inspect.id===asset.id;
-          return <HandCard key={asset.id} id={asset.id} index={index} follow={index===0||picked} reduced={!!reduced} register={register} inert={index!==0} data-testid={`card-${asset.id}`} className={`photo-card ${tape?'tape':'paper'} ${!tape&&!display.photo.polaroid?'is-plain':''} ${index===0?'front':''} ${picked?'picked':''} ${lifting?'is-lifted':''}`} style={{zIndex:20-index,width:cardWidth,height:cardHeight,left:`calc(50% - ${cardWidth/2}px)`,top:`calc(50% - ${cardHeight/2}px)`} as CSSProperties}
+          return <HandCard key={`${asset.id}~${revived.current.get(asset.id)??0}`} id={asset.id} index={index} follow={index===0||picked} reduced={!!reduced} register={register} inert={index!==0} data-testid={`card-${asset.id}`} className={`photo-card ${tape?'tape':'paper'} ${!tape&&!display.photo.polaroid?'is-plain':''} ${index===0?'front':''} ${picked?'picked':''} ${lifting?'is-lifted':''}`} style={{zIndex:20-index,width:cardWidth,height:cardHeight,left:`calc(50% - ${cardWidth/2}px)`,top:`calc(50% - ${cardHeight/2}px)`} as CSSProperties}
             initial={reduced?false:{opacity:0,scale:.97}} animate={{opacity:1,scale:1-index*.018}}
             variants={{leave:(decision?:Decision)=>cardExit(asset.id,decision,reduced)}} exit="leave"
             transition={reduced?{duration:0}:CARD_SPRING}
