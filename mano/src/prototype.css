@@ -1221,6 +1221,9 @@ input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;u
 .library-grid.is-flying .grid-dock,.library-grid.is-flying .grid-selection,.library-grid.is-flying .grid-review-from{pointer-events:none}
 /* While the grid is in, the pile's photo travels as the ghost and its bar as the dock's. */
 .session-content.is-gridding .photo-card.front,.session-content.is-gridding>.decision-bar,.session-content.is-gridding .archive-tools>button:not(.later){visibility:hidden}
+/* Closing: still unseen under the flight, but already touchable (hidden elements take no touches). */
+.library-grid.is-leaving{pointer-events:none}
+.session-content.is-grid-leaving .photo-card.front,.session-content.is-grid-leaving>.decision-bar,.session-content.is-grid-leaving .archive-tools>button:not(.later){visibility:visible;opacity:0!important}
 /* Deshacer and Álbum become the dock's (user, 2026-11-13): the pile's icon + label travel and
    gain their disc; the same buttons, moving. */
 .grid-dock-side{position:relative;isolation:isolate;overflow:visible;background:transparent!important;box-shadow:none!important;color:var(--cw-on-bg)}

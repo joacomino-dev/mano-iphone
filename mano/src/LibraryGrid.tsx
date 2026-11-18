@@ -55,6 +55,8 @@ type Props = {
    * ways (a pinch on the card, or spreading two fingers here at 3 columns); letting go
    * springs to the nearer end (`release`). Everything here is painted from it. */
   progress: MotionValue<number>; scrub: (value: number) => void; release: () => void;
+  /** On its way back to the card: still painted, but touches go to the pile underneath. */
+  leaving?: boolean;
   /** The fingers while they hold the photo; null once they let go. */
   fingers: MotionValue<Hold | null>;
   tools?: ToolSpots;
@@ -128,7 +130,7 @@ const Tile = memo(function Tile({ asset, index, x, y, side, size, visible, selec
   </button>;
 });
 
-export default function LibraryGrid({ assets, state, filter, filtersOn, current, busy, close, decide, undo, notice, open, openSet, enterFrom, cardFrom, ad, album, albumDone, share, reviewFrom, top, selected, setSelected, progress, scrub, release, cardTarget, fingers: grasp, tools }: Props) {
+export default function LibraryGrid({ leaving, assets, state, filter, filtersOn, current, busy, close, decide, undo, notice, open, openSet, enterFrom, cardFrom, ad, album, albumDone, share, reviewFrom, top, selected, setSelected, progress, scrub, release, cardTarget, fingers: grasp, tools }: Props) {
   const scroller = useRef<HTMLDivElement>(null), dock = useRef<HTMLDivElement>(null), bar = useRef<HTMLDivElement>(null);
   const section = useRef<HTMLElement>(null), body = useRef<HTMLDivElement>(null), paper = useRef<HTMLDivElement>(null), shade = useRef<HTMLDivElement>(null), ghost = useRef<HTMLDivElement>(null), ghostImg = useRef<HTMLImageElement>(null), ghostPaper = useRef<HTMLDivElement>(null), ghostCaption = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0), [height, setHeight] = useState(0), [offset, setOffset] = useState(0);
@@ -635,7 +637,7 @@ export default function LibraryGrid({ assets, state, filter, filtersOn, current,
   const count = targets.length;
   // Paint after every render too (first frame, scroll to the working photo, density).
   useLayoutEffect(() => { scheduleFlight(); });
-  return <section ref={section} className={`library-grid cols-${settled} ${flyingId ? 'is-flying' : ''}`} style={{ top }} data-count={items.length} role="region" aria-label={t('Fototeca')}>
+  return <section ref={section} className={`library-grid cols-${settled} ${flyingId ? 'is-flying' : ''} ${leaving ? 'is-leaving' : ''}`} style={{ top }} data-count={items.length} role="region" aria-label={t('Fototeca')}>
     <div ref={paper} className="grid-paper" style={{ opacity: 0 }}/>
     <div ref={body} className="grid-body">
       <div ref={scroller} className="grid-scroller" onScroll={onScroll}

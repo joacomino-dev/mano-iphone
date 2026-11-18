@@ -407,13 +407,19 @@ export function ManoApp() {
   const cardTarget=():CardShot|undefined=>{const w=document.querySelector('.photo-card.front .photo-window');if(!w)return undefined;const img=w.querySelector('img'),video=w.querySelector('video'),card=w.closest('.photo-card'),cap=card?.querySelector('.polaroid-caption');
     // The card's paper and caption go with the photo: the Polaroid travels as one (user, 2026-11-13).
     return {rect:w.getBoundingClientRect(),src:img?.currentSrc||img?.src||video?.poster||'',frame:card?.getBoundingClientRect(),paper:card?getComputedStyle(card).backgroundColor:undefined,caption:cap?{html:cap.innerHTML,className:cap.className}:undefined};};
-  const gridUnmount=()=>{gridAnim.current?.stop();gridProgress.stop();gridProgress.set(0);gridFingers.set(null);gridDetent.current=false;setGridIn(false);setGridOpen(false);setGridAds(false);money.release('grid');};
-  const gridScrub=(value:number)=>{gridAnim.current?.stop();gridProgress.stop();gridProgress.set(value);setGridIn(value>=1);const over=value>.5;if(over!==gridDetent.current){gridDetent.current=over;haptic('selection');}};
-  const gridSettle=(to:0|1,velocity=0)=>{gridDetent.current=to===1;if(!to)setGridIn(false);
+  // Closing, the grid is on its way out but still mounted: it no longer takes touches, and
+  // the first new touch ends it at once, so the pile is exactly as it was the first time.
+  const [gridLeaving,setGridLeaving]=useState(false),gridLeavingNow=useRef(false);
+  const markGridLeaving=(value:boolean)=>{if(gridLeavingNow.current!==value){gridLeavingNow.current=value;setGridLeaving(value);}};
+  const gridUnmount=()=>{gridAnim.current?.stop();gridAnim.current=null;gridProgress.stop();gridProgress.set(0);gridFingers.set(null);gridDetent.current=false;markGridLeaving(false);setGridIn(false);setGridOpen(false);setGridAds(false);money.release('grid');};
+  useEffect(()=>{if(!gridLeaving)return;const takeOver=()=>gridUnmount();window.addEventListener('pointerdown',takeOver,{capture:true,once:true});return()=>window.removeEventListener('pointerdown',takeOver,{capture:true});},[gridLeaving]);
+  const gridScrub=(value:number)=>{markGridLeaving(false);gridAnim.current?.stop();gridProgress.stop();gridProgress.set(value);setGridIn(value>=1);const over=value>.5;if(over!==gridDetent.current){gridDetent.current=over;haptic('selection');}};
+  const gridSettle=(to:0|1,velocity=0)=>{gridDetent.current=to===1;markGridLeaving(!to);if(!to)setGridIn(false);
     if(reducedMotionNow()){gridProgress.set(to);if(to)setGridIn(true);else gridUnmount();return;}
     const from=gridProgress.get();gridAnim.current?.stop();gridAnim.current=animate(from,to,{type:'spring',stiffness:260,damping:30,mass:1,velocity:Math.max(-4,Math.min(4,velocity)),restDelta:.001,restSpeed:.01,
       onUpdate:value=>{const now=gridProgress.get(),next=to?Math.max(now,Math.min(1,value)):Math.min(now,Math.max(0,value));if(next!==now)gridProgress.set(next);}});
-    void gridAnim.current.then(()=>{if(!to&&gridOpenNow.current&&gridProgress.get()<.001)gridUnmount();if(to&&gridProgress.get()>.999)setGridIn(true);});};
+    // Only the latest settle may finish: an older one must not close a grid opened since.
+    const run=gridAnim.current;void run.then(()=>{if(gridAnim.current!==run)return;if(!to&&gridOpenNow.current&&gridProgress.get()<.001)gridUnmount();if(to&&gridProgress.get()>.999)setGridIn(true);});};
   // Let go: the nearer end, unless the fingers were clearly moving one way.
   // A fling opens it only once the pinch is under way: a small quick pinch no longer opens the grid.
   const gridRelease=()=>{const value=gridProgress.get(),speed=gridProgress.getVelocity();gridSettle(speed>.8&&value>.2?1:speed<-.8?0:value>.5?1:0,speed);};
@@ -648,7 +654,9 @@ export function ManoApp() {
   const stageMove=(e:PointerEvent)=>{if(gesture.current?.extra===e.pointerId)move(e);};
   const stageEnd=(e:PointerEvent)=>{if(gesture.current?.extra===e.pointerId)end(e);};
   const start=(e:PointerEvent,asset:Asset,review=false)=>{if(busy||(e.target as HTMLElement).closest('button')||nearControl(e))return;
-    // A finger lifted while its card unmounted never reached end(): drop stale ids.
+    // A first finger means no other is down: a gesture still open lost its release
+    // (its element went away or stopped receiving touches). Close it, then drop stale ids.
+    const stale=gesture.current;if(stale&&e.isPrimary){if(stale.timer)clearTimeout(stale.timer);springBack(stale.followers);if(stale.grid){gridFingers.set(null);gridRelease();}gesture.current=null;}
     if(!gesture.current)pointers.current.clear();
     pointers.current.set(e.pointerId,{x:e.clientX,y:e.clientY});
     const current=gesture.current;
@@ -700,7 +708,7 @@ export function ManoApp() {
     // a pinch, a hold dragged to the dock, or the focusable «Anclar» button.
     // On a video card the tap pauses or plays it (videos never come in groups).
     if(Math.hypot(x,y)<10){if(hand[0]?.id===g.id){if(hand[0].kind==='video')videoControl.current?.toggle();else if(hand.length>1)cycle();}else select(g.id);}};
-  const cancel=()=>{const g=gesture.current;if(g?.timer)clearTimeout(g.timer);if(g){springBack(g.followers);if(g.review&&g.element)(g.element as HTMLElement).style.transform='';}gesture.current=null;pointers.current.clear();setPinnedInspect(false);setInspect(null);setZone('');resetPeek();hookHover.current=false;setOverHook(false);};
+  const cancel=()=>{const g=gesture.current;if(g?.timer)clearTimeout(g.timer);if(g?.grid){g.grid=false;gridFingers.set(null);gridRelease();}if(g){springBack(g.followers);if(g.review&&g.element)(g.element as HTMLElement).style.transform='';}gesture.current=null;pointers.current.clear();setPinnedInspect(false);setInspect(null);setZone('');resetPeek();hookHover.current=false;setOverHook(false);};
   const analyze=async(manual=false)=>{if(analysisRunning.current)return;analysisRunning.current=true;const snapshot=rawAssets,versions=analysisCoverage.begin(snapshot),epoch=analysisEpoch.current;setAnalyzing(true);if(manual)setError('');let listener:{remove():Promise<void>}|undefined;try{
     if(demo){if(manual)setNotice(t('Grupos de\ndemostración'));return;}listener=await Library.addListener('analysisProgress',value=>{if(epoch===analysisEpoch.current)setProgress(value);});
     // Photos only: videos are never stacked, so they are not compared either.
@@ -816,7 +824,7 @@ export function ManoApp() {
   else if(!allowed)screen=<AccessScreen status={permission} request={()=>void requestAccess()} openSettings={openSettings}/>;
   else if(loadError)screen=<LoadErrorScreen message={loadError} retry={()=>{initialLibrary.current=null;loadLibrary();}}/>;
   else if(!session)screen=showDone&&sheet==='review'?<div className="session-content">{doneHeader}<main className="status-screen is-quiet"><Character pose="coqui-review" height={120} motion="still"/><p className="status-line">{t('Una última mirada antes de terminar.')}</p></main></div>:showDone?<div className="session-content">{doneHeader}<SessionDone stats={stats} pending={pending} pendingBytes={reviewBytes.bytes} pendingPartial={reviewBytes.partial} again={()=>{money.clear();setShowDone(false);setNotice('');}} review={()=>{money.clear();setError('');setSheet('review');}} monetization={money.available&&(money.placement==='finish'||money.awaiting==='finish')&&<div className="finish-monetization">{money.placement==='finish'?<AdSlot where="finish" money={money}/>:<AdRoom where="finish"/>}</div>}/></div>:<PreparingScreen cancel={()=>{cancelWarmup();setShowDone(true);}}/>;
-  else screen=<div className={`session-content ${gridOpen?'is-gridding':''}`} inert={pinnedInspect}>
+  else screen=<div className={`session-content ${gridOpen?'is-gridding':''} ${gridLeaving?'is-grid-leaving':''}`} inert={pinnedInspect}>
     {/* «Terminar» ends the round: the summary keeps pending discards and offers the review. */}
     <header ref={noticeRoom} className="archive-header is-session">{filtersButton}{brand}<FinishButton pending={pending} busy={busy} announce={setSpoken} finish={()=>{if(gridOpen)gridUnmount();cancel();setError('');setSheet('review');haptic('light');}}/></header>
     {/* Second row: how far through the filtered pile (same calculation as before). */}
@@ -887,7 +895,7 @@ export function ManoApp() {
     {screen}
     <p className="sr-only" role="status" aria-live="polite">{spoken}</p>
     {splash&&<Splash done={()=>setSplash(false)}/>}
-    {gridOpen&&<Suspense fallback={null}><LibraryGrid assets={assets} state={state} filter={filterSetting} filtersOn={!filterSetting.off} cardFrom={gridCard.current} top={gridTop} selected={gridSelection} setSelected={setGridSelection} progress={gridProgress} scrub={gridScrub} release={gridRelease} cardTarget={cardTarget} fingers={gridFingers} tools={gridTools.current}
+    {gridOpen&&<Suspense fallback={null}><LibraryGrid leaving={gridLeaving} assets={assets} state={state} filter={filterSetting} filtersOn={!filterSetting.off} cardFrom={gridCard.current} top={gridTop} selected={gridSelection} setSelected={setGridSelection} progress={gridProgress} scrub={gridScrub} release={gridRelease} cardTarget={cardTarget} fingers={gridFingers} tools={gridTools.current}
       share={ids=>void shareMany(ids)} reviewFrom={asset=>{resumeContext.current=undefined;setFilter(f=>({...f,off:true,startAt:asset.date,startId:asset.id}));setSelected([]);setLock(NO_HAND);gridUnmount();setNotice(t('En orden desde esta foto'));}} current={hand[0]?.id} busy={busy} close={gridExit} decide={(action,ids)=>act(action,ids)} undo={()=>void undoLast()} notice={setNotice}
       album={onAndroid()?undefined:ids=>void openAlbums(ids)} albumDone={gridAlbumDone} enterFrom={gridEnter.current}
       openSet={(list,from,src)=>{gridPoster.current=src?{id:list[0]?.id,src}:null;rotating.current=false;heldVideo.current=null;inspectOrigin.current=from;resetPeek();setInspectSet(list.length>1?list:null);setInspectFromGrid(true);setPinnedInspect(true);setInspect(list[0]);haptic('rigid');}}
