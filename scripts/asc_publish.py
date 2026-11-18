@@ -435,6 +435,19 @@ def step_purchases(asc, app, prices, review_screenshot, sources, excluded):
             log(f'    review screenshot: {state.get("state")} {state.get("errors") or ""}'.rstrip())
 
 
+def step_attach(asc, app, version, version_string, build_number):
+    """Attach the processed build to the version; nothing is submitted."""
+    builds = asc.get('/v1/builds', **{'filter[app]': app['id'], 'filter[version]': build_number,
+                                      'filter[preReleaseVersion.version]': version_string}).get('data') or []
+    if not builds:
+        sys.exit(f'Build {version_string} ({build_number}) not found yet; wait for processing and rerun')
+    build = builds[0]
+    if build['attributes'].get('processingState') != 'VALID':
+        sys.exit(f'Build {build_number} is {build["attributes"].get("processingState")}; rerun when VALID')
+    asc.call('PATCH', f'/v1/appStoreVersions/{version["id"]}/relationships/build', {'data': {'type': 'builds', 'id': build['id']}})
+    log(f'\n== Build\n  build {version_string} ({build_number}) attached')
+
+
 def step_submit(asc, app, version, version_string, build_number):
     log('\n== Build and review submission')
     builds = asc.get('/v1/builds', **{'filter[app]': app['id'], 'filter[version]': build_number,
@@ -524,6 +537,8 @@ def main():
         if not review_shot:
             log('  no es-05-support.png yet: purchases are created without their review screenshot')
         step_purchases(asc, app, prices, review_shot if review_shot and review_shot.exists() else None, sources, excluded)
+    if 'attach' in steps:
+        step_attach(asc, app, version, args.version, args.build)
     if 'submit' in steps:
         if not args.build:
             sys.exit('--build is required to submit')

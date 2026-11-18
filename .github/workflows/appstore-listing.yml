@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       steps:
-        description: 'Pasos (metadata, screenshots, price, purchases, status)'
+        description: 'Pasos (metadata, screenshots, price, purchases, attach, status)'
         default: 'metadata,screenshots,price,purchases,status'
         required: true
       price_year:
