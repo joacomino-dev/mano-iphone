@@ -422,7 +422,8 @@ def step_purchases(asc, app, prices, review_screenshot, sources, excluded):
         current = asc.get_optional(f'/v2/inAppPurchases/{ident}/appStoreReviewScreenshot')
         if review_screenshot and current and ((current['attributes'].get('assetDeliveryState') or {}).get('state') == 'FAILED'):
             asc.call('DELETE', f'/v1/inAppPurchaseAppStoreReviewScreenshots/{current["id"]}')
-            log('    rejected review screenshot removed')
+            log(f'    rejected review screenshot removed: {current["attributes"].get("assetDeliveryState")} '
+                f'{current["attributes"].get("imageAsset")}')
             current = None
         if review_screenshot and not current:
             upload_asset(asc, '/v1/inAppPurchaseAppStoreReviewScreenshots', 'inAppPurchaseAppStoreReviewScreenshots',
