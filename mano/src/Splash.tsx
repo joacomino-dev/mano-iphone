@@ -3,9 +3,12 @@ import { motion, useReducedMotion } from 'motion/react';
 
 /** How long the launch mark stays before it fades (ms). The app loads behind it. */
 export const SPLASH_MS = 1500;
+/** Longest wait for Coqui and the logo to be decoded before the mark enters anyway. */
+const ART_WAIT_MS = 1500;
+const HERO = '/assets/characters/coqui-hero.webp', LOGO = '/assets/brand/cocowash-logo.svg';
 /** Shown faintly on the launch card; kept in step with scripts/configure-ios.mjs
  * (the bundle says 0.9.9: Apple allows three numbers; the fourth is ours). */
-export const APP_VERSION = '0.9.9.3 (47)';
+export const APP_VERSION = '1.0 (49)';
 
 /** Launch mark, like a studio card: the main Coqui (user's art, 2026-11-10, in
  * place of the retired «Coqui washing Memo») with «CocoWash» to the right, centred, and the maker's mark (Zángano's
@@ -19,17 +22,29 @@ export function Splash({ done }: { done: () => void }) {
   // without GPU (CI simulator) a full-screen fade may not settle, and an app that
   // never goes idle cannot be driven by UI tests (run 41491916425).
   const [leaving, setLeaving] = useState(false);
+  // Coqui (webp) decoded later than the logo (svg), so «CocoWash» entered alone and
+  // Coqui popped in after (user, 2026-11-18): the mark enters once both are ready.
+  const [ready, setReady] = useState(false);
   useEffect(() => {
+    let alive = true;
+    const decode = (src: string) => { const image = new Image(); image.src = src; return image.decode().catch(() => undefined); };
+    const show = () => { if (alive) setReady(true); };
+    const fallback = setTimeout(show, ART_WAIT_MS);
+    void Promise.all([decode(HERO), decode(LOGO)]).then(show);
+    return () => { alive = false; clearTimeout(fallback); };
+  }, []);
+  useEffect(() => {
+    if (!ready) return;
     const leave = setTimeout(() => setLeaving(true), SPLASH_MS);
     const end = setTimeout(done, SPLASH_MS + 280);
     return () => { clearTimeout(leave); clearTimeout(end); };
-  }, []);
+  }, [ready]);
   const ease = [.2, .8, .2, 1] as const;
   return <div className="splash" aria-hidden="true">
     <motion.div className="splash-lockup" initial={reduced ? { opacity: 0 } : { opacity: 0, scale: .94, y: 8 }}
-      animate={leaving ? { opacity: 0 } : { opacity: 1, scale: 1, y: 0 }} transition={{ duration: leaving ? .24 : reduced ? .2 : .55, ease }}>
-      <img className="splash-hero" src="/assets/characters/coqui-hero.webp" alt="" draggable={false}/>
-      <img className="splash-logo" src="/assets/brand/cocowash-logo.svg" alt="" draggable={false}/>
+      animate={leaving ? { opacity: 0 } : ready ? { opacity: 1, scale: 1, y: 0 } : undefined} transition={{ duration: leaving ? .24 : reduced ? .2 : .55, ease }}>
+      <img className="splash-hero" src={HERO} alt="" draggable={false}/>
+      <img className="splash-logo" src={LOGO} alt="" draggable={false}/>
     </motion.div>
     <motion.div className="splash-maker" initial={{ opacity: 0 }} animate={{ opacity: leaving ? 0 : 1 }} transition={{ delay: leaving || reduced ? 0 : .3, duration: leaving ? .24 : .4, ease }}>
       <img src="/assets/brand/zangano-isotipo.svg" alt="" draggable={false}/>
