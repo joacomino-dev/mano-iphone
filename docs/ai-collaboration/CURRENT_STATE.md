@@ -1,5 +1,12 @@
 # CocoWash — estado vigente
 
+## Claude CW-CL-095 — onboarding interactivo y trucos (2026-11-19, local)
+
+Onboarding de 3 pantallas: bienvenida → práctica (`Tutorial.tsx`, 6 pasos con gesto o botón,
+coach marks de `Coach.tsx`, «Saltar») → privacidad. Trucos de una sola vez sobre la pila
+(`ContextTips.tsx`, `tips.ts`) y «Ajustes › Trucos». Nada toca Fotos ni el registro de decisiones.
+XCTest pulsa «Saltar» (`ios/`, cambio mínimo). Pendiente: iPhone, CI macOS, arte `coqui-wink`, build.
+
 ## Claude CW-CL-094 — CocoWash 1.0 publicada en la App Store (2026-11-18)
 
 iOS 1.0 (50) aprobada y visible en Ecuador; otros países en propagación. Pendiente: comprobar compras desde la

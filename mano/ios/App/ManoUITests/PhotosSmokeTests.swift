@@ -96,8 +96,8 @@ final class PhotosSmokeTests: XCTestCase {
             add(screenshot)
         }
 
-        // First launch shows the onboarding cards; Photos is requested only on the
-        // last one, after the explanation. Every card must be passed (no skip).
+        // First launch shows the onboarding; Photos is requested only on the last
+        // card, after the explanation and the practice.
         let next = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Continuar")).firstMatch
         let allow = app.buttons["Permitir acceso a Fotos"].firstMatch
         // The first card waits for a cold simulator to start WebKit and load the
@@ -108,13 +108,22 @@ final class PhotosSmokeTests: XCTestCase {
             XCTFail("Onboarding card 1 did not offer Continuar.")
             return
         }
-        // Three cards precede the privacy card. Tap «Continuar» once it is enabled
-        // (the gestures card keeps it disabled for one ~4 s demo cycle, first visit
-        // only) until the privacy card appears. Run 41222676883 lost one of three
+        // Welcome and practice precede the privacy card. Tap «Continuar» (or the
+        // practice's «Saltar») until the privacy card appears. Run 41222676883 lost one of three
         // fixed taps and then looked for the privacy card one card too early, so a
         // tap that does not advance is simply repeated, at most 8 times.
+        // The second screen is the practice (learned by doing, no «Continuar»): its
+        // «Saltar» goes straight to the privacy card.
+        let skip = app.buttons["Saltar"].firstMatch
         var taps = 0
         while !allow.exists && taps < 8 {
+            if !skip.exists && !next.exists { _ = skip.waitForExistence(timeout: 5) }
+            if skip.exists {
+                skip.tap()
+                taps += 1
+                _ = allow.waitForExistence(timeout: 3)
+                continue
+            }
             guard next.waitForExistence(timeout: 30) else { break }
             // Standalone waiter: not registered with the test case, so the later
             // waitForExpectations(timeout:) never waits on it a second time.
@@ -234,8 +243,8 @@ final class PhotosSmokeTests: XCTestCase {
             add(screenshot)
         }
 
-        // First launch shows the onboarding cards; Photos is requested only on the
-        // last one, after the explanation. Every card must be passed (no skip).
+        // First launch shows the onboarding; Photos is requested only on the last
+        // card, after the explanation and the practice.
         let next = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Continuar")).firstMatch
         let allow = app.buttons["Permitir acceso a Fotos"].firstMatch
         // The first card waits for a cold simulator to start WebKit and load the
@@ -246,13 +255,22 @@ final class PhotosSmokeTests: XCTestCase {
             XCTFail("Onboarding card 1 did not offer Continuar.")
             return
         }
-        // Three cards precede the privacy card. Tap «Continuar» once it is enabled
-        // (the gestures card keeps it disabled for one ~4 s demo cycle, first visit
-        // only) until the privacy card appears. Run 41222676883 lost one of three
+        // Welcome and practice precede the privacy card. Tap «Continuar» (or the
+        // practice's «Saltar») until the privacy card appears. Run 41222676883 lost one of three
         // fixed taps and then looked for the privacy card one card too early, so a
         // tap that does not advance is simply repeated, at most 8 times.
+        // The second screen is the practice (learned by doing, no «Continuar»): its
+        // «Saltar» goes straight to the privacy card.
+        let skip = app.buttons["Saltar"].firstMatch
         var taps = 0
         while !allow.exists && taps < 8 {
+            if !skip.exists && !next.exists { _ = skip.waitForExistence(timeout: 5) }
+            if skip.exists {
+                skip.tap()
+                taps += 1
+                _ = allow.waitForExistence(timeout: 3)
+                continue
+            }
             guard next.waitForExistence(timeout: 30) else { break }
             // Standalone waiter: not registered with the test case, so the later
             // waitForExpectations(timeout:) never waits on it a second time.

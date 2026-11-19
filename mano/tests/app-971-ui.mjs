@@ -6,7 +6,7 @@ const base=process.env.COCOWASH_QA_URL??'http://127.0.0.1:4311';
 try {
  const page=await browser.newPage({viewport:{width:1100,height:1100}}),errors=[];
  page.on('pageerror',e=>errors.push(e.message));
- await page.addInitScript(()=>localStorage.setItem('cocowash-onboarding-v2','done'));
+ await page.addInitScript(()=>{localStorage.setItem('cocowash-onboarding-v2','done');localStorage.setItem('cocowash-tips-v1','{"seen":["stack","zoom","anchor","album"]}');});
  await page.goto(base);await page.locator('.hand-space article').first().waitFor();await page.waitForTimeout(1700);
  const read=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('cocowash-demo-session-v1')));
  const first=(await read()).context.handIds;

@@ -43,6 +43,7 @@ import { Stamp, DecisionStamp, DecisionIcon, withStars, type StampKind } from '.
 import { DecisionBar } from './DecisionBar';
 import { Wordmark, PileProgress, FilterSwitch } from './Chrome';
 import { Character } from './Characters';
+import { ContextTips } from './ContextTips';
 import { assignToAlbum, afterAlbum } from './album';
 import { cardBox, cardPixels, thumbPixels, setPreviewSizing, cloudDownloads, previewPolicyKey, subscribePreviewPolicy } from './preview';
 import '@fontsource/ibm-plex-mono/latin-500.css';
@@ -893,6 +894,8 @@ export function ManoApp() {
   const blockMenu=(e:MouseEvent)=>{if(!(e.target as HTMLElement).closest('input,textarea'))e.preventDefault();};
   return <div ref={root} className={`mano-app ${isNative?'on-device':''} ${session?'in-session':'on-screen'}`} onContextMenu={blockMenu}>
     {screen}
+    {/* «Trucos»: the advanced gestures, the first time each one helps (ContextTips.tsx). Presentation only. */}
+    {onboarded&&allowed&&session&&!showDone&&<ContextTips front={active?.id} history={state.history} moment={{calm:!!active&&!sheet&&!inspect&&!gridOpen&&!deckAd&&!busy&&!error&&!zone&&!splash,hand:hand.length,front:active?active.kind:null,albums:!onAndroid()}}/>}
     <p className="sr-only" role="status" aria-live="polite">{spoken}</p>
     {splash&&<Splash done={()=>setSplash(false)}/>}
     {gridOpen&&<Suspense fallback={null}><LibraryGrid leaving={gridLeaving} assets={assets} state={state} filter={filterSetting} filtersOn={!filterSetting.off} cardFrom={gridCard.current} top={gridTop} selected={gridSelection} setSelected={setGridSelection} progress={gridProgress} scrub={gridScrub} release={gridRelease} cardTarget={cardTarget} fingers={gridFingers} tools={gridTools.current}

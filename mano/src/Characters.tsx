@@ -22,6 +22,7 @@ export const POSES = {
 export const PENDING_ART = {
   'coqui-review': { stand: 'coqui-photos', where: '«Una última mirada» quiet screen behind the review sheet' },
   'coqui-wonder': { stand: 'coqui-shrug', where: 'Empty pile with nothing to show (was «Memo wondering»)' },
+  'coqui-wink': { stand: 'coqui-wave', where: 'First-launch practice, step 3 «Deshacer»: Coqui winks as the photo comes back' },
 } as const;
 export type Pose = keyof typeof POSES;
 export type ArtSlot = keyof typeof PENDING_ART;

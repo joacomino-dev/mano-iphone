@@ -274,6 +274,11 @@ Especificación del usuario (2026-11-07):
 Fallos en el Organizador y en Play Vitals, valoraciones, AdMob (relleno, consentimiento), revisión de
 textos con hablantes nativos, 1.0.1 para lo que salga.
 
+- **R-80 · Onboarding interactivo (reseñas: no se entiende deslizar hacia arriba) — En curso · CL.**
+  Hecho en local (CW-CL-095, 2026-11-19): bienvenida → práctica de 6 pasos → privacidad; trucos en
+  contexto y «Ajustes › Trucos». Pendiente: sensación en iPhone (gestos, háptica, 60 fps), XCTest en
+  CI macOS con el nuevo «Saltar», arte de Coqui guiñando (`coqui-wink`) y nueva build/versión.
+
 ## Registro de avance
 
 - 2026-11-17 · Claude · CW-CL-090 · R-30/R-32: build 1.0 (48) subida a App Store Connect (firma automática; la del archivo sin firmar dejaba GoogleMobileAds/UMP con firma de Google y Apple la rechazó). Ficha en 8 locales con nombre «CocoWash: Limpiador de fotos» (el nombre solo está ocupado en es-ES por otra cuenta), edad, gratis, 174 países sin China y 24 capturas 6,9" (sin la 02, que muestra un anuncio de prueba). Usuario: impuestos y banco enviados (acuerdo de pago pendiente de verificación), DSA pendiente del SMS. Faltan teléfono de revisión, App Privacy, compras (2,99/9,99/0,99 USD, cuando el acuerdo esté activo) y envío.
@@ -281,6 +286,7 @@ textos con hablantes nativos, 1.0.1 para lo que salga.
 - 2026-11-18 · Claude · CW-CL-092 · R-30/R-32: repetir el pellizco a cuadrícula tras volver ya funciona como la primera vez (la cuadrícula en cierre no recibe toques; gesto interrumpido se asienta). Build 1.0 (50) adjunta y aceptada por el usuario en iPhone (TestFlight); falta el envío por el usuario desde la web.
 - 2026-11-18 · Claude · CW-CL-093 · R-30/R-32: el usuario envió a revisión iOS 1.0 (50) con las 3 compras («4 Items Submitted»); publicación automática al aprobarse. Pendiente: resultado de Apple, DSA, buzón `cocowash@` y vincular AdMob tras publicar.
 - 2026-11-18 · Claude · CW-CL-094 · R-30/R-32: iOS 1.0 (50) aprobada («Ready for Distribution») y visible en la App Store de Ecuador; `app-ads.txt` responde. Pendiente: compras desde tienda, vincular AdMob, DSA y alta en Google Play (R-40).
+- 2026-11-19 · Claude · CW-CL-095 · R-80: práctica interactiva (6 pasos, coach marks, Coqui guía, «Saltar»), trucos en contexto (pila, ampliar, anclar, álbum) y «Ajustes › Trucos»; registro de pasos solo en el dispositivo. 162 Node, 34 Playwright Edge (4 nuevas), apple-readiness 19, runtime 28, builds y check-release PASS. Falta QA en iPhone y CI nativa.
 
 - 2026-11-17 · Claude · CW-CL-089 · R-16/R-30/R-32: el usuario decide publicar iPhone 0.9.9 (48) como 1.0. Capturas 6,9" (Pro Max) en CI; `appstore-listing.yml` + `scripts/asc_publish.py` rellenan ficha, capturas, edad, precio gratis, disponibilidad y 3 compras, y envían solo si se marca (recorrido completo PASS contra API simulada; API real pendiente de secretos). Pasos del usuario: `appstore/PUBLICAR_1.0.md`.
 

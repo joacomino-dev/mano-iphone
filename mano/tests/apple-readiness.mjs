@@ -163,13 +163,18 @@ try {
        }
      });
    }
-   await check('onboarding: four compact captures and reachable next control',async()=>{
+   await check('onboarding: welcome, practice and privacy compact captures with reachable controls',async()=>{
      const {page,errors}=await open({onboarded:false},{width:375,height:667});
-     for(let i=1;i<=4;i++) {
-       await page.waitForTimeout(450);
-       await page.screenshot({path:path.join(output,`se-onboarding-${i}.png`)});
-       if(i<4)await page.getByRole('button',{name:'Continuar',exact:true}).click();
-     }
+     await page.waitForTimeout(450);
+     await page.screenshot({path:path.join(output,'se-onboarding-1.png')});
+     await page.getByRole('button',{name:'Continuar',exact:true}).click();
+     await page.locator('.tutorial').waitFor();
+     await page.waitForTimeout(900);
+     await page.screenshot({path:path.join(output,'se-onboarding-2.png')});
+     await page.getByRole('button',{name:'Saltar',exact:true}).click();
+     await page.waitForTimeout(700);
+     await page.screenshot({path:path.join(output,'se-onboarding-3.png')});
+     assert.ok(await page.getByRole('button',{name:/^(Empezar|Permitir acceso a Fotos)$/}).isVisible());
      assert.deepEqual(errors,[]);
    });
  }

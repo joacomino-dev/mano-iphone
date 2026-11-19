@@ -147,11 +147,15 @@ export const ANDROID_TEXT: Record<string, Text> = {
     ja: '一部はギャラリーに\nもうありません',
   },
   // Android: hearts reach the gallery together when the round ends (one dialog).
-  'Se queda y se marca como favorita en Fotos.': {
-    es: 'Se queda y, al terminar, pasa a favoritas de tu galería.', en: 'It stays and joins your gallery’s favorites when you finish.',
-    fr: 'Elle reste et rejoint les favoris de ta galerie à la fin.', de: 'Es bleibt und wird am Ende ein Favorit in deiner Galerie.',
-    it: 'Resta e, alla fine, passa tra i preferiti della galleria.', ar: 'يبقى، وعند الانتهاء ينضم إلى مفضّلات معرضك.',
-    ja: '残して、終了時にギャラリーのお気に入りに加えます。',
+  'Guardada en Favoritas': {
+    es: 'Al terminar, irá a favoritas de tu galería', en: 'It’ll join your gallery’s favorites when you finish',
+    fr: 'Elle rejoindra les favoris de ta galerie à la fin', de: 'Sie wird am Ende ein Favorit in deiner Galerie',
+    it: 'Alla fine passerà tra i preferiti della galleria', ar: 'ستنضم إلى مفضلة المعرض عند الانتهاء',
+    ja: '終了時にギャラリーのお気に入りに加わります',
+  },
+  'Se queda en tu carrete': {
+    es: 'Se queda en tu galería', en: 'It stays in your gallery', fr: 'Elle reste dans ta galerie', de: 'Es bleibt in deiner Galerie',
+    it: 'Resta nella tua galleria', ar: 'تبقى في معرضك', ja: 'ギャラリーに残ります',
   },
   // «iPhone» → the phone.
   'Tus fotos no salen de tu iPhone.': {

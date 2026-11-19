@@ -60,3 +60,13 @@ Mencionan a Memo: `docs/apple-readiness/storefront/metadata.json` (texto promoci
 `docs/appstore/listing.md`, `docs/appstore/screenshots.md`, `docs/playstore/listing.md`,
 `docs/playstore/graphics.md`. Las 28+28 capturas de tienda ya generadas muestran a Memo y deberán
 regenerarse tras integrar el arte nuevo. Documentación histórica (`mano/AGENTS.md`, `brand/README.md`) se conserva.
+
+
+## 3. Espacio nuevo (2026-11-19, CW-CL-095)
+
+| Espacio | Dónde | Mientras tanto |
+|---|---|---|
+| `coqui-wink` — Coqui guiñando un ojo | Práctica del onboarding, paso 3 «Deshacer» (la foto vuelve) | `coqui-wave` |
+
+Para integrarlo: recortar a `mano/public/assets/characters/coqui-wink.webp`, añadirlo a `POSES` y
+quitar el espacio de `PENDING_ART` en `mano/src/Characters.tsx`.
