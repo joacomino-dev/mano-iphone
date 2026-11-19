@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { XIcon } from '@phosphor-icons/react';
-import { Bubble, Dim, Ring, screenRect, type Hole } from './Coach';
+import { Bubble, Spotlight, screenRect, shapesOf, type Hole, type Shape } from './Coach';
 import type { Pose } from './Characters';
 import { haptic } from './haptics';
 import { t } from './i18n';
@@ -25,7 +25,7 @@ const TARGET: Record<TipId, string> = { stack: '.photo-card.front', zoom: '.phot
 const SETTLE_MS = 700;
 const DECISIONS = ['keep', 'discard', 'favorite', 'later'];
 
-type Shown = { id: TipId; front?: string; target: Hole; bubble: Hole };
+type Shown = { id: TipId; front?: string; target: Hole; shapes: Shape[]; bubble: Hole };
 const union = (a: Hole | null, b: Hole | null): Hole | null => !a ? b : !b ? a : { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.max(a.x + a.w, b.x + b.w) - Math.min(a.x, b.x), h: Math.max(a.y + a.h, b.y + b.h) - Math.min(a.y, b.y), r: a.r };
 
 export function ContextTips({ moment, front, history }: { moment: PileMoment; front?: string; history: readonly { action: string }[] }) {
@@ -53,14 +53,16 @@ export function ContextTips({ moment, front, history }: { moment: PileMoment; fr
     const id = nextTip(tips.current, moment); if (!id) return;
     const timer = setTimeout(() => {
       const app = layer.current?.parentElement ?? null;
-      const target = screenRect(app?.querySelector(TARGET[id]) ?? null, layer.current, id === 'album' ? 6 : 10, id === 'album' ? 16 : 14);
+      const el = app?.querySelector(TARGET[id]) ?? null;
+      const target = screenRect(el, layer.current);
+      const shapes = shapesOf([el], layer.current, id === 'album' ? 6 : 3);
       // Coqui speaks over the controls for the photo's tips, over the header for «Álbum».
       const bubble = id === 'album'
         ? union(screenRect(app?.querySelector('.archive-header') ?? null, layer.current), screenRect(app?.querySelector('.archive-progress') ?? null, layer.current))
         : union(screenRect(app?.querySelector('.decision-bar') ?? null, layer.current), screenRect(app?.querySelector('.archive-tools') ?? null, layer.current));
-      if (!target || !bubble) return;
+      if (!target || !bubble || !shapes.length) return;
       save(markSeen(tips.current, id)); haptic('light');
-      setShown({ id, front, target, bubble });
+      setShown({ id, front, target, shapes, bubble });
     }, SETTLE_MS);
     return () => clearTimeout(timer);
   }, [shown, moment.calm, moment.hand, moment.front, moment.albums, front, version]);
@@ -97,11 +99,10 @@ export function ContextTips({ moment, front, history }: { moment: PileMoment; fr
   const hint = shown && { x: shown.target.x + shown.target.w / 2, y: shown.target.y + shown.target.h / 2 };
   return <div ref={layer} className="tip-layer">
     <AnimatePresence>{shown && <motion.div key={shown.id} className={`tip is-${shown.id}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: reduced ? .12 : .24 }}>
-      <Dim on holes={[shown.target]}/>
-      <Ring hole={shown.target} strong/>
+      <Spotlight on target={shown.shapes} travelKey={shown.id} strong/>
       {hint && <span className={`tip-hint is-${shown.id}`} style={{ left: hint.x, top: shown.id === 'anchor' ? shown.target.y + shown.target.h * .3 : hint.y }} aria-hidden="true"><i/><i/></span>}
       <div className="tip-bubble" style={{ left: shown.bubble.x, top: shown.bubble.y, width: shown.bubble.w, height: shown.bubble.h }} onClick={close} role="status">
-        <Bubble pose={POSE[shown.id]} text={LINE[shown.id]()} tone="ask"/>
+        <Bubble pose={POSE[shown.id]} title={LINE[shown.id]()} tone="ask"/>
         <button type="button" className="tip-close" onClick={e => { e.stopPropagation(); close(); }} aria-label={t('Cerrar aviso')}><XIcon size={16} weight="bold"/></button>
       </div>
     </motion.div>}</AnimatePresence>

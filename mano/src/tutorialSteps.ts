@@ -47,20 +47,21 @@ export function advance(state: TutorialState): TutorialState {
   return step >= STEP_COUNT ? { ...state, finished: true } : { step, phase: 'ask', misses: 0, finished: false };
 }
 
-/** The tutorial's own pile: which postcard is on top at each step and which waits
- * behind it. Each photo invites its gesture: a lovely beach to keep, an old chat
- * screenshot to delete, a birthday to love, a coffee to look at later. */
+/** The tutorial's own pile: which postcard is on top at each step. Each one invites
+ * its gesture (user, 2026-11-19): a lovely sunset to keep, a blurry photo of the floor
+ * taken by accident to delete, a birthday to love, a receipt you may still need to
+ * leave for later; at «Terminar», the photo marked for deletion is back on screen. */
 export const PHOTOS = {
-  beach: { src: '/assets/demo/postcard-1.svg', width: 200, height: 300 },
-  screenshot: { src: '/assets/demo/postcard-8.svg', width: 180, height: 390 },
-  birthday: { src: '/assets/demo/tutorial-birthday.svg', width: 200, height: 280 },
-  coffee: { src: '/assets/demo/postcard-4.svg', width: 240, height: 240 },
-  flowers: { src: '/assets/demo/postcard-6.svg', width: 200, height: 300 },
+  beach: { src: '/assets/demo/postcard-1.svg', width: 200, height: 300, marked: false },
+  floor: { src: '/assets/demo/tutorial-floor.svg', width: 200, height: 300, marked: false },
+  birthday: { src: '/assets/demo/tutorial-birthday.svg', width: 200, height: 280, marked: false },
+  ticket: { src: '/assets/demo/postcard-7.svg', width: 200, height: 300, marked: false },
+  marked: { src: '/assets/demo/tutorial-floor.svg', width: 200, height: 300, marked: true },
 } as const;
 export type PhotoId = keyof typeof PHOTOS;
-/** Order of the pile. The screenshot is deleted (step 2), comes back with «Deshacer»
- * (step 3) and goes back to the deletion queue, so step 6 has one marked photo to show. */
-export const PILE: readonly PhotoId[] = ['beach', 'screenshot', 'birthday', 'coffee', 'flowers'];
+/** Order of the pile. The floor photo is deleted (step 2), comes back with «Deshacer»
+ * (step 3) and goes back to the deletion queue, so step 6 shows it marked. */
+export const PILE: readonly PhotoId[] = ['beach', 'floor', 'birthday', 'ticket', 'marked'];
 
 /** Where each step's target lives on the replica of the main screen. */
 export const TARGET: Record<StepId, 'card' | 'undo' | 'finish'> = { keep: 'card', discard: 'card', undo: 'undo', favorite: 'card', later: 'card', finish: 'finish' };

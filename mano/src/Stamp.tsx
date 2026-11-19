@@ -99,7 +99,7 @@ export function Stamp({ kind, level, word = false, lettering = true, fresh = fal
  * favourite three hearts, a discard a little grey dust that falls (particles.ts, sober: no
  * celebration); «Más tarde» rocks like a postmark and emits nothing.
  * Reduce Motion: the same stamp fading in and out, no travel, scale or particles. */
-export function DecisionStamp({ kind, reduced, done, lettering = true, level }: { kind: StampKind; reduced: boolean; done: () => void; lettering?: boolean; level?: number }) {
+export function DecisionStamp({ kind, reduced, done, lettering = true, level, particles = true }: { kind: StampKind; reduced: boolean; done: () => void; lettering?: boolean; level?: number; particles?: boolean }) {
   const out = kind === 'keep' ? [0, 0, 0, 0, 96] : kind === 'discard' ? [0, 0, 0, 0, -96] : [0, 0, 0, 0, 0];
   const down = kind === 'later' ? [0, 0, 0, 0, 96] : kind === 'favorite' ? [0, 0, 0, 0, -96] : [0, 0, 0, 0, 0];
   const tilt = kind === 'keep' ? -10 : kind === 'discard' ? 8 : kind === 'later' ? -4 : 0;
@@ -108,7 +108,8 @@ export function DecisionStamp({ kind, reduced, done, lettering = true, level }: 
   const earned = kind === 'keep' && !!level && levelStars(level) > 0;
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (reduced) return;
+    // `particles: false`: the caller has its own (the first-launch practice).
+    if (reduced || !particles) return;
     // At the press (~80 ms): ink, hearts or a little grey dust from the stamp; the new star sparkles once it pops.
     const press = window.setTimeout(() => {
       const el = ref.current; if (!el || el.closest('.is-gridding')) return;

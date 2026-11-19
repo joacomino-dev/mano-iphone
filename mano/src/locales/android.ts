@@ -153,9 +153,14 @@ export const ANDROID_TEXT: Record<string, Text> = {
     it: 'Alla fine passerà tra i preferiti della galleria', ar: 'ستنضم إلى مفضلة المعرض عند الانتهاء',
     ja: '終了時にギャラリーのお気に入りに加わります',
   },
-  'Se queda en tu carrete': {
-    es: 'Se queda en tu galería', en: 'It stays in your gallery', fr: 'Elle reste dans ta galerie', de: 'Es bleibt in deiner Galerie',
-    it: 'Resta nella tua galleria', ar: 'تبقى في معرضك', ja: 'ギャラリーに残ります',
+  '¡Se queda en tu carrete!': {
+    es: '¡Se queda en tu galería!', en: 'It stays in your gallery!', fr: 'Elle reste dans ta galerie !', de: 'Es bleibt in deiner Galerie!',
+    it: 'Resta nella tua galleria!', ar: 'تبقى في معرضك!', ja: 'ギャラリーに残ります！',
+  },
+  'Desliza hacia arriba para guardarla en Favoritas': {
+    es: 'Desliza hacia arriba para marcarla como favorita', en: 'Swipe up to mark it as a favorite', fr: 'Glisse vers le haut pour la mettre en favori',
+    de: 'Wisch nach oben, um es als Favorit zu markieren', it: 'Scorri verso l’alto per segnarla come preferita', ar: 'اسحب للأعلى لتمييزها كمفضلة',
+    ja: '上にスワイプでお気に入りに印を付けます',
   },
   // «iPhone» → the phone.
   'Tus fotos no salen de tu iPhone.': {

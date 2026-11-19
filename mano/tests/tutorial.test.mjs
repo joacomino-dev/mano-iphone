@@ -55,7 +55,7 @@ test('the whole practice ends after «Terminar», and only then', () => {
 });
 
 test('the pile is the tutorial’s own postcards, never the person’s library', () => {
-  assert.deepEqual(PILE.slice(0, 2), ['beach', 'screenshot']);
+  assert.deepEqual(PILE, ['beach', 'floor', 'birthday', 'ticket', 'marked']);
   assert.equal(new Set(PILE).size, PILE.length);
 });
 

@@ -1,5 +1,11 @@
 # CocoWash — estado vigente
 
+## Claude CW-CL-096 — práctica del onboarding, segunda pasada (2026-11-19)
+
+Tras la QA del usuario en iPhone: capa de coach a pantalla completa (portal), recortes con la forma de
+cada objetivo que viajan entre pasos, globo de dos líneas, mano que arrastra la carta, fotos con
+sentido y textos acción + motivo. Pendiente: QA en iPhone de esta versión y CI nativa.
+
 ## Claude CW-CL-095 — onboarding interactivo y trucos (2026-11-19, local)
 
 Onboarding de 3 pantallas: bienvenida → práctica (`Tutorial.tsx`, 6 pasos con gesto o botón,

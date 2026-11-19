@@ -1308,6 +1308,7 @@ button.inspect-set{left:0;right:0;margin-inline:auto;width:fit-content;transform
 .cw-particle.is-heart{width:14px;height:13px;background:#EB4E69;clip-path:path('M7 13 C7 13 0 8.6 0 4.1 C0 1.8 1.8 0 4 0 C5.3 0 6.4 .6 7 1.6 C7.6 .6 8.7 0 10 0 C12.2 0 14 1.8 14 4.1 C14 8.6 7 13 7 13Z')}
 .cw-particle.is-sparkle{width:10px;height:10px;background:var(--cw-star,#F4B63F);clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%)}
 .cw-particle.is-paper{width:8px;height:5px;border-radius:1px}
+.cw-particle.is-glow{width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(158,224,215,.55) 0,rgba(158,224,215,.18) 45%,rgba(158,224,215,0) 70%)}
 .cw-particle.is-dust{width:5px;height:5px;border-radius:50%;background:#7C8B8C}
 .cw-particle.is-dust:nth-child(3n){width:4px;height:4px}
 .drag-stamp-ink{display:block;transform-origin:50% 50%}
@@ -1318,73 +1319,75 @@ button.inspect-set{left:0;right:0;margin-inline:auto;width:fit-content;transform
 .stamp-star.is-fresh{animation:cw-star-earn 200ms cubic-bezier(.3,1.25,.55,1) 220ms both}
 @keyframes cw-star-earn{from{scale:.4;opacity:0}to{scale:1;opacity:1}}
 @media (prefers-reduced-motion:reduce){.stamp-star.is-fresh{animation:cw-fade 160ms ease-out both}}
-/* ---------- First-launch practice and coach marks (user, 2026-11-19) ----------
-   Tutorial.tsx draws the real main screen; Coach.tsx dims it around what has to be
-   touched. The coach strip sits between the progress row and the pile, so Coqui never
-   covers the photo or the gesture; the card is painted above it when dragged up. */
+/* ---------- First-launch practice and coach marks (user, 2026-11-19; second pass) ----------
+   Tutorial.tsx draws the real main screen; Coach.tsx draws one layer over the whole app,
+   edge to edge: the dim with lit shapes, the hand, the track, the bubble and the
+   progress row. The screen keeps room for the progress row and the bubble. */
 .ob-practice,.ob-ghost-layer{position:absolute;inset:0;display:flex;flex-direction:column}
 .ob-practice{z-index:2}
 .tutorial{position:relative}
 .tutorial .tut-inert{display:contents}
-.tut-progress{gap:var(--cw-space-2)}
-.tut-steps{flex:1;display:grid;grid-template-columns:repeat(6,1fr);gap:5px;min-width:0}
-.tut-steps>span{height:8px;border-radius:var(--cw-radius-pill);background:var(--cw-track);overflow:hidden}
-.tut-steps>span.is-now{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--cw-turquoise) 55%,transparent)}
-.tut-steps i{display:block;height:100%;background:var(--cw-turquoise);border-radius:inherit;transform-origin:0 50%}
-.tut-count{flex-shrink:0;padding:4px 10px;border:1px solid var(--cw-line-on-bg);border-radius:var(--cw-radius-pill);background:var(--cw-surface);font:600 var(--cw-text-xs)/1.2 var(--cw-font-brand);color:var(--cw-ink);font-variant-numeric:tabular-nums;unicode-bidi:isolate}
-.tutorial .tut-progress{position:relative;z-index:71}
-.mano-app .tut-skip{flex-shrink:0;min-height:32px;padding:0 var(--cw-space-3);border:1px solid var(--cw-line-on-bg);border-radius:var(--cw-radius-pill);background:var(--cw-surface);color:var(--cw-on-bg-soft);font:600 var(--cw-text-xs)/1 var(--cw-font-brand)}
-.mano-app .tut-skip::before{content:'';position:absolute;inset:-6px -4px}
-.mano-app .tut-skip{position:relative}
-.mano-app .tut-skip:active{background:var(--cw-press)}
-.tut-coach{flex-shrink:0;height:76px;margin-top:var(--cw-space-2)}
-.coach-float{position:absolute;display:flex;align-items:center;pointer-events:none}
-.coach-float.is-low{align-items:flex-end;padding-bottom:2px;box-sizing:border-box}
+.tutorial .tut-progress{min-height:28px}
+.tut-coach{flex-shrink:0;height:78px;margin-top:var(--cw-space-2)}
 .tutorial .hand-space{margin-top:var(--cw-space-1)}
 .tutorial .photo-card.front{cursor:grab}
-.tutorial .photo-card.front:active{cursor:grabbing}
 .tutorial .archive-tools .tut-album{visibility:visible;opacity:.38}
-/* Coqui and his line: a speech bubble whose tail points at him. */
-.coach-bubble{display:flex;align-items:center;gap:var(--cw-space-2);width:100%;min-width:0}
-.coach-coqui{flex-shrink:0;display:grid;place-items:end center;width:70px;height:70px}
-.coach-coqui .character{max-width:70px;height:auto;max-height:66px;object-fit:contain;filter:drop-shadow(0 3px 5px rgba(18,45,46,.16))}
-.coach-line{position:relative;flex:1;min-width:0;margin:0;padding:10px 14px;border-radius:18px;background:var(--cw-paper-light);color:var(--cw-ink);
-  box-shadow:inset 0 0 0 2px var(--cw-outline,#122D2E),0 3px 0 var(--cw-outline,#122D2E);font:600 var(--cw-text-md)/1.25 var(--cw-font-brand);text-wrap:balance;transform-origin:0 50%}
-.coach-line::before{content:'';position:absolute;left:-8px;top:50%;width:14px;height:14px;margin-top:-7px;background:inherit;border-left:2px solid var(--cw-outline,#122D2E);border-bottom:2px solid var(--cw-outline,#122D2E);transform:rotate(45deg);border-radius:0 0 0 3px}
-[dir=rtl] .coach-line::before{left:auto;right:-8px;transform:rotate(-135deg)}
-[dir=rtl] .coach-line{transform-origin:100% 50%}
-.coach-bubble.is-done .coach-line{background:var(--cw-turquoise);color:var(--cw-cream)}
-.coach-bubble.is-missed .coach-line{background:color-mix(in srgb,var(--cw-pink) 30%,var(--cw-paper-light))}
-/* The dim, the rings and the hand: one layer over the screen that takes no touches. */
-.coach-layer{position:absolute;inset:0;z-index:70;pointer-events:none;overflow:hidden}
-.coach-dim{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-.coach-dim path{fill:rgba(7,27,29,.6)}
-.coach-ring{position:absolute;box-sizing:border-box;border:2.5px solid var(--cw-cream);box-shadow:0 0 0 2px rgba(7,27,29,.35),0 0 18px rgba(124,203,194,.55);pointer-events:none}
-.coach-ring.is-strong::after{content:'';position:absolute;inset:-3px;border-radius:inherit;border:2.5px solid var(--cw-turquoise-light);animation:coach-pulse 1.4s var(--cw-ease) infinite}
-@keyframes coach-pulse{from{transform:scale(1);opacity:.9}to{transform:scale(1.18);opacity:0}}
-.coach-hand{position:absolute;width:0;height:0;pointer-events:none;will-change:transform,opacity}
-.coach-touch{position:absolute;left:-17px;top:-17px;width:34px;height:34px;border-radius:50%;background:rgba(250,246,238,.42);box-shadow:0 0 0 2px rgba(250,246,238,.9),0 2px 10px rgba(7,27,29,.35)}
-.coach-hand-icon{position:absolute;left:-17px;top:-4px;color:var(--cw-cream);filter:drop-shadow(0 0 1.5px var(--cw-outline,#122D2E)) drop-shadow(0 0 1px var(--cw-outline,#122D2E)) drop-shadow(0 4px 6px rgba(7,27,29,.35))}
-.coach-arrow{position:absolute;left:-12px;top:-12px;width:24px;height:24px;border-top:4px solid var(--cw-cream);border-right:4px solid var(--cw-cream);border-radius:3px;filter:drop-shadow(0 0 1.5px var(--cw-outline,#122D2E))}
-.coach-arrow.is-right{transform:translateX(52px) rotate(45deg)}.coach-arrow.is-left{transform:translateX(-52px) rotate(-135deg)}
-.coach-arrow.is-up{transform:translateY(-58px) rotate(-45deg)}.coach-arrow.is-down{transform:translateY(58px) rotate(135deg)}
-/* Skipped: Coqui's short note above the privacy card. */
-.ob-skip-note{position:absolute;z-index:5;top:var(--cw-space-2);left:var(--cw-space-2);right:var(--cw-space-2);display:flex;align-items:center;gap:var(--cw-space-2);padding:8px 6px 8px 10px;border-radius:var(--cw-radius-lg);background:var(--cw-paper-light);color:var(--cw-ink);box-shadow:inset 0 0 0 1.5px var(--cw-line),0 12px 28px rgba(8,32,33,.22)}
-.ob-skip-note .character{flex-shrink:0;height:44px;width:auto}
-.ob-skip-note p{flex:1;margin:0;font-size:var(--cw-text-sm);line-height:1.35}
-.ob-skip-note button{flex-shrink:0;width:var(--cw-touch);height:var(--cw-touch);display:grid;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--cw-ink-soft)}
-@media (max-height:700px){.tut-coach{height:64px}.coach-coqui{width:56px;height:58px}.coach-coqui .character{max-height:54px}.coach-line{padding:8px 12px;font-size:var(--cw-text-sm)}}
-@media (prefers-reduced-motion:reduce){.coach-ring.is-strong::after{animation:none;opacity:.8;transform:scale(1.08)}}
-.coach-float.is-low .coach-coqui{width:58px;height:58px}.coach-float.is-low .coach-coqui .character{max-height:54px}
-.coach-float.is-low{z-index:5}
-/* «Trucos» on the pile (ContextTips.tsx): same coach marks, over the whole app. */
+/* Step 6: the photo marked for deletion, grey, with its ticket. */
+.photo-card.is-marked .photo-window{filter:saturate(.2) brightness(.9)}
+.tut-marked{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
+.tut-marked .stamp{width:168px;--stamp-fill:rgba(250,246,238,.94);transform:rotate(-6deg);filter:drop-shadow(0 4px 10px rgba(6,29,32,.3))}
+/* The coach layer: the whole app, edge to edge (safe areas included). */
+.coach-layer{position:absolute;inset:0;z-index:150;pointer-events:none;overflow:hidden}
+.coach-dim{position:absolute;inset:0;width:100%;height:100%}
+.coach-glow{opacity:.8}
+.coach-dim.is-strong .coach-glow{animation:coach-glow 1.2s var(--cw-ease) infinite alternate}
+@keyframes coach-glow{from{opacity:.45}to{opacity:1}}
+.coach-hand{position:absolute;width:0;height:0;will-change:transform,opacity}
+.coach-touch{position:absolute;left:-18px;top:-18px;width:36px;height:36px;border-radius:50%;background:rgba(250,246,238,.35);box-shadow:0 0 0 2.5px rgba(250,246,238,.95),0 0 0 4px rgba(7,27,29,.3)}
+.coach-hand-turn{position:absolute;left:0;top:0;transform-origin:0 0}
+.coach-hand-icon{position:absolute;left:-20px;top:-5px;color:var(--cw-cream);filter:drop-shadow(1.2px 0 0 #122D2E) drop-shadow(-1.2px 0 0 #122D2E) drop-shadow(0 1.2px 0 #122D2E) drop-shadow(0 -1.2px 0 #122D2E) drop-shadow(0 6px 8px rgba(5,22,24,.4))}
+/* The swipe's path: from where the finger lands to where it lets go, with an arrowhead. */
+.coach-track{position:absolute;height:0;transform-origin:0 0}
+.coach-track-line{position:absolute;left:0;right:16px;top:-6px;height:12px;border-radius:6px;background:linear-gradient(90deg,rgba(250,246,238,0),rgba(250,246,238,.9));box-shadow:0 0 0 1px rgba(18,45,46,.25)}
+.coach-track-head{position:absolute;right:0;top:-13px;width:0;height:0;border-left:20px solid var(--cw-cream);border-top:13px solid transparent;border-bottom:13px solid transparent;filter:drop-shadow(0 0 1px #122D2E) drop-shadow(0 2px 4px rgba(5,22,24,.35))}
+/* Coqui and his one bubble: action in bold, reason lighter; a soft shadow, a tail to him. */
+.coach-float{position:absolute;display:flex;align-items:center;box-sizing:border-box;pointer-events:none}
+.coach-float.is-low{align-items:flex-end}
+.coach-talk{display:flex;align-items:center;gap:8px;width:100%;min-width:0}
+.coach-coqui{flex-shrink:0;width:66px;height:68px;display:grid;place-items:end center}
+.coach-coqui-art{display:grid;place-items:end center;width:66px;height:68px;transform-origin:50% 100%}
+.coach-coqui .character{max-width:66px;max-height:66px;width:auto;height:auto;object-fit:contain;filter:drop-shadow(0 3px 6px rgba(5,22,24,.35))}
+.coach-bubble{position:relative;flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;padding:10px 14px 11px;border-radius:18px;background:var(--cw-paper-light);color:var(--cw-ink);box-shadow:0 10px 26px rgba(5,22,24,.28),0 2px 6px rgba(5,22,24,.14);transform-origin:0 50%}
+.coach-bubble::before{content:'';position:absolute;left:-6px;top:50%;width:14px;height:14px;margin-top:-7px;background:inherit;border-radius:3px;transform:rotate(45deg)}
+.coach-bubble strong{font:600 1.0625rem/1.2 var(--cw-font-brand);letter-spacing:-.005em}
+.coach-bubble span{font:400 var(--cw-text-sm)/1.35 var(--cw-font);color:var(--cw-ink-soft);text-wrap:pretty}
+.coach-talk.is-done .coach-bubble{background:var(--cw-turquoise);color:var(--cw-cream)}
+.coach-talk.is-done .coach-bubble span{color:rgba(250,246,238,.86)}
+.coach-talk.is-missed .coach-bubble{background:#FCE6E3}
+[dir=rtl] .coach-bubble::before{left:auto;right:-6px}
+[dir=rtl] .coach-bubble{transform-origin:100% 50%}
+/* Progress: six segments and a small 1/6; «Saltar» is there, quietly. */
+.tut-progress-float{position:absolute;display:flex;align-items:center;gap:10px;box-sizing:border-box;pointer-events:auto}
+.tut-steps{flex:1;display:grid;grid-template-columns:repeat(6,1fr);gap:4px;min-width:0}
+.tut-steps>span{height:6px;border-radius:3px;background:var(--cw-track);overflow:hidden}
+.tut-steps>span.is-now{background:color-mix(in srgb,var(--cw-turquoise) 30%,var(--cw-track))}
+.tut-steps i{display:block;height:100%;background:var(--cw-turquoise);border-radius:inherit;transform-origin:0 50%}
+.tut-count{flex-shrink:0;font:600 var(--cw-text-xs)/1 var(--cw-font-brand);color:var(--cw-on-bg-soft);font-variant-numeric:tabular-nums;unicode-bidi:isolate;direction:ltr}
+.mano-app .tut-skip{position:relative;flex-shrink:0;min-height:32px;padding:0 var(--cw-space-1);border:0;background:none;color:var(--cw-on-bg-soft);font:600 var(--cw-text-sm)/1 var(--cw-font-brand)}
+.mano-app .tut-skip::before{content:'';position:absolute;inset:-6px}
+.coach-layer.is-dim .tut-steps>span{background:rgba(250,246,238,.2)}
+.coach-layer.is-dim .tut-steps>span.is-now{background:rgba(158,224,215,.35)}
+.coach-layer.is-dim .tut-steps i{background:var(--cw-turquoise-light)}
+.coach-layer.is-dim .tut-count,.coach-layer.is-dim .tut-skip{color:rgba(250,246,238,.7)}
+@media (max-height:700px){.tut-coach{height:66px}.coach-coqui,.coach-coqui-art{width:56px;height:58px}.coach-coqui .character{max-width:56px;max-height:56px}.coach-bubble{padding:8px 12px 9px}.coach-bubble strong{font-size:1rem}.coach-bubble span{font-size:var(--cw-text-xs)}}
+/* «Trucos» on the pile (ContextTips.tsx): the same coach, over the whole app. */
 .tip-layer{position:absolute;inset:0;z-index:90;pointer-events:none}
 .tip{position:absolute;inset:0}
 .tip-bubble{position:absolute;display:flex;align-items:center;gap:var(--cw-space-1);padding:0 var(--cw-space-1);box-sizing:border-box;pointer-events:auto;cursor:pointer}
-.tip-bubble .coach-bubble{flex:1;min-width:0}
-.mano-app .tip-close{flex-shrink:0;width:36px;height:36px;display:grid;place-items:center;border:0;border-radius:50%;background:var(--cw-paper-light);color:var(--cw-ink);box-shadow:inset 0 0 0 1.5px var(--cw-line)}
+.tip-bubble .coach-talk{flex:1;min-width:0}
+.mano-app .tip-close{flex-shrink:0;width:36px;height:36px;display:grid;place-items:center;border:0;border-radius:50%;background:var(--cw-paper-light);color:var(--cw-ink);box-shadow:0 4px 12px rgba(5,22,24,.25)}
 .tip-hint{position:absolute;width:0;height:0;pointer-events:none}
-.tip-hint i{position:absolute;left:-17px;top:-17px;width:34px;height:34px;border-radius:50%;background:rgba(250,246,238,.45);box-shadow:0 0 0 2px rgba(250,246,238,.92),0 2px 10px rgba(7,27,29,.35)}
+.tip-hint i{position:absolute;left:-18px;top:-18px;width:36px;height:36px;border-radius:50%;background:rgba(250,246,238,.4);box-shadow:0 0 0 2.5px rgba(250,246,238,.95),0 2px 10px rgba(7,27,29,.35)}
 .tip-hint.is-stack i:last-child,.tip-hint.is-album i:last-child,.tip-hint.is-anchor i:last-child{display:none}
 .tip-hint.is-stack i,.tip-hint.is-album i{animation:tip-tap 1.6s var(--cw-ease) infinite}
 .tip-hint.is-zoom i:first-child{animation:tip-pinch-a 2s var(--cw-ease) infinite}.tip-hint.is-zoom i:last-child{animation:tip-pinch-b 2s var(--cw-ease) infinite}
@@ -1392,7 +1395,13 @@ button.inspect-set{left:0;right:0;margin-inline:auto;width:fit-content;transform
 @keyframes tip-tap{0%,60%,100%{transform:scale(1);opacity:1}15%{transform:scale(.7)}30%{transform:scale(1)}}
 @keyframes tip-pinch-a{0%,15%{transform:translate(-10px,10px)}60%,100%{transform:translate(-52px,52px)}85%,100%{opacity:0}}
 @keyframes tip-pinch-b{0%,15%{transform:translate(10px,-10px)}60%,100%{transform:translate(52px,-52px)}85%,100%{opacity:0}}
-@keyframes tip-anchor{0%{transform:translateY(0) scale(1);box-shadow:0 0 0 2px rgba(250,246,238,.92)}20%,40%{transform:translateY(0) scale(.82);box-shadow:0 0 0 10px rgba(124,203,194,.45)}80%{transform:translateY(170px) scale(.82);opacity:1}100%{transform:translateY(170px) scale(.82);opacity:0}}
+@keyframes tip-anchor{0%{transform:translateY(0) scale(1)}20%,40%{transform:translateY(0) scale(.82);box-shadow:0 0 0 10px rgba(124,203,194,.45)}80%{transform:translateY(170px) scale(.82);opacity:1}100%{transform:translateY(170px) scale(.82);opacity:0}}
+@media (prefers-reduced-motion:reduce){.coach-dim.is-strong .coach-glow{animation:none}}
+/* Skipped: a short note from Coqui above the privacy card. */
+.ob-skip-note{position:absolute;z-index:5;top:var(--cw-space-2);left:var(--cw-space-2);right:var(--cw-space-2);display:flex;align-items:center;gap:var(--cw-space-2);padding:8px 6px 8px 10px;border-radius:var(--cw-radius-lg);background:var(--cw-paper-light);color:var(--cw-ink);box-shadow:inset 0 0 0 1.5px var(--cw-line),0 12px 28px rgba(8,32,33,.22)}
+.ob-skip-note .character{flex-shrink:0;height:44px;width:auto}
+.ob-skip-note p{flex:1;margin:0;font-size:var(--cw-text-sm);line-height:1.35}
+.ob-skip-note button{flex-shrink:0;width:var(--cw-touch);height:var(--cw-touch);display:grid;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--cw-ink-soft)}
 /* Ajustes › Trucos */
 .tips-list{display:flex;flex-direction:column;gap:var(--cw-space-2);margin:0 0 var(--cw-space-3);padding:0;list-style:none}
 .tips-list li{display:grid;grid-template-columns:40px 1fr;align-items:center;gap:var(--cw-space-3)}

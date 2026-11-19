@@ -8,7 +8,7 @@
  * removed when done; a new burst on the same channel replaces the old one (no
  * queue); at most MAX_ACTIVE at once; nothing while the page is hidden or with
  * Reduce Motion; no React state per particle or frame. */
-type Kind = 'ink' | 'heart' | 'sparkle' | 'paper' | 'dust';
+type Kind = 'ink' | 'heart' | 'sparkle' | 'paper' | 'dust' | 'glow';
 type Live = { el: HTMLElement; anim: Animation; channel: string };
 
 const MAX_ACTIVE = 24;
@@ -52,6 +52,10 @@ function path(kind: Kind, i: number, count: number, rim: number) {
   if (kind === 'dust') {
     const x = (i - (count - 1) / 2) * 12 + r(-4, 4), bottom = rim * .8;
     return { keyframes: [{ x, y: bottom + r(-4, 4), s: 1, rot: 0 }, { x: x * 1.3, y: bottom + r(22, 40), s: .5, rot: 0 }], duration: r(380, 480), delay: r(0, 50) };
+  }
+  if (kind === 'glow') {
+    // A soft light that opens out from what was kept (the practice's «brillo»): rings, no travel.
+    return { keyframes: [{ x: 0, y: 0, s: .35 + i * .1, rot: 0 }, { x: 0, y: 0, s: 1.5 + i * .35, rot: 0 }], duration: 520 + i * 90, delay: i * 70 };
   }
   if (kind === 'sparkle') {
     const angle = -Math.PI / 2 + (i - (count - 1) / 2) * .9, d = r(12, 20);
