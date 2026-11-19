@@ -181,7 +181,10 @@ try{
  for(const asset of assets){const meta=await lab.call('metadata',{id:asset.id});assert.match(meta.filename??'',/^(cocowash-test-\d+\.png|Screenshot_cocowash-test\.png|cocowash-test\.mp4|e2e\.png|ad\.png)$/i,'Refused: unknown library ownership');ownedIds.add(asset.id);}
  report.initialAssetCount=assets.length;report.fixtureOwnershipVerified=true;
  await fs.writeFile(`${OUT}/native-cycle-processes.txt`,await adb('shell','dumpsys','activity','processes'));
- for(let i=0;i<10&&await lab.page(`return !!document.querySelector('.ob-next');`);i++){await click('.ob-next');await sleep(1200);}
+ // Onboarding: «Continuar» on the cards; the practice (second screen) is skipped with «Saltar».
+ // The pile's one-time tips are marked seen first, so they never cover a scripted touch.
+ await lab.page(`localStorage.setItem('cocowash-tips-v1','{"seen":["stack","zoom","anchor","album"]}');return true;`);
+ for(let i=0;i<10;i++){const at=await lab.page(`return document.querySelector('.tut-skip')?'skip':document.querySelector('.ob-sheet .ob-next')?'next':'';`);if(!at)break;await click(at==='skip'?'.tut-skip':'.ob-sheet .ob-next');await sleep(1200);}
  await wait(`!!document.querySelector('.photo-card.front')`,60000);
  // Prove R-44 on the actual debug APK without enabling synthetic test mode.
  await click('#filter-trigger');await click('.sheet-tabs button:nth-child(2)');await wait(`!!document.querySelector('.test-mode-field')`);await shot('developer-channel-native');
