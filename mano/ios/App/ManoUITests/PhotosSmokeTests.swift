@@ -650,6 +650,9 @@ final class PhotosSmokeTests: XCTestCase {
         app.buttons["Filtros"].firstMatch.tap()
         let settings=try XCTUnwrap(app.descendants(matching:.any).matching(NSPredicate(format:"label == %@","Ajustes")).allElementsBoundByIndex.filter{$0.isHittable}.last)
         settings.tap()
+        // Ajustes is a front page of rows (2026-11-20): the VHS options live in «Vídeos».
+        let videos=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","Vídeos")).allElementsBoundByIndex.filter{$0.isHittable}.last
+        try XCTUnwrap(videos,"Ajustes did not offer the Vídeos row").tap()
         let letters=app.switches["Letras VHS"].firstMatch
         guard letters.waitForExistence(timeout:10) else {
             attachScreenshot(app,"VHS setting missing")

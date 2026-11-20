@@ -1421,3 +1421,73 @@ button.inspect-set{left:0;right:0;margin-inline:auto;width:fit-content;transform
 .tips-icon{width:40px;height:40px;display:grid;place-items:center;border-radius:12px;background:color-mix(in srgb,var(--cw-turquoise) 14%,transparent);color:var(--cw-turquoise-deep)}
 .tips-list strong{display:block;font-size:var(--cw-text-md);font-weight:600;color:var(--cw-ink)}
 .tips-list li>span:last-child>span{display:block;margin-top:2px;font-size:var(--cw-text-sm);line-height:1.4;color:var(--cw-ink-soft)}
+
+/* ---------- Filtros y Ajustes, second design (user, 2026-11-20: «me abruma») ----------
+   One question per screen: intentions first, then «Afinar» rows that open their own
+   short screen; Ajustes is a short front page of rows. Chosen = a light turquoise tint
+   with a teal edge (no dark fills); section names are small grey capitals; one accent. */
+:root{--cw-pick:#E3F2EE;--cw-pick-edge:var(--cw-turquoise);--cw-row:#FFFFFF}
+.sheet-nav{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:var(--cw-space-2);min-height:40px;margin:0 0 var(--cw-space-2);background:inherit}
+.sheet-nav>span{flex:1}
+.mano-app .sheet-nav-link,.native-sheet .sheet-nav-link{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 var(--cw-space-3);border:0;border-radius:var(--cw-radius-pill);background:color-mix(in srgb,var(--cw-ink) 6%,transparent);color:var(--cw-ink);font:600 var(--cw-text-sm)/1 var(--cw-font-brand)}
+.sheet-nav-back,.detail-back{display:inline-flex;align-items:center;gap:4px;min-height:40px;padding:0 var(--cw-space-1);border:0;background:none;color:var(--cw-turquoise-deep);font:600 var(--cw-text-md)/1 var(--cw-font-brand)}
+.detail-back{margin:0 0 var(--cw-space-2) calc(-1*var(--cw-space-1));font-size:var(--cw-text-sm)}
+.list-label{margin:0 2px var(--cw-space-2);font:600 .72rem/1.2 var(--cw-font);letter-spacing:.08em;text-transform:uppercase;color:var(--cw-ink-soft)}
+.list-head{display:flex;align-items:center;justify-content:space-between}
+.list-head .list-label{margin-bottom:var(--cw-space-2)}
+.text-reset{display:inline-flex;align-items:center;gap:4px;min-height:32px;margin-bottom:var(--cw-space-1);padding:0 var(--cw-space-1);border:0;background:none;color:var(--cw-turquoise-deep);font:500 var(--cw-text-xs)/1 var(--cw-font)}
+.filters-panel{display:flex;flex-direction:column;gap:var(--cw-space-5);padding-top:var(--cw-space-1)}
+/* Intentions: one tap, with how many files each holds now. */
+.intent-list{display:flex;flex-direction:column;gap:var(--cw-space-2)}
+.intent-card{display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:var(--cw-space-3);min-height:60px;padding:var(--cw-space-2) var(--cw-space-3);border:0;border-radius:16px;background:var(--cw-row);box-shadow:inset 0 0 0 1px var(--cw-line);color:var(--cw-ink);text-align:start;transition:background-color var(--cw-base) var(--cw-ease),box-shadow var(--cw-base) var(--cw-ease),transform var(--cw-fast) var(--cw-ease)}
+.intent-card:active{transform:scale(.985)}
+.intent-card[aria-pressed=true]{background:var(--cw-pick);box-shadow:inset 0 0 0 2px var(--cw-pick-edge)}
+.intent-art{width:40px;height:40px;display:grid;place-items:center;border-radius:12px;color:#fff;background:var(--tone)}
+.intent-text{display:flex;flex-direction:column;gap:1px;min-width:0}
+.intent-text strong{font:600 var(--cw-text-md)/1.25 var(--cw-font-brand)}
+.intent-text span{font-size:var(--cw-text-xs);line-height:1.35;color:var(--cw-ink-soft)}
+.intent-count{font:600 1.05rem/1 var(--cw-font-brand);color:var(--cw-teal-800);font-variant-numeric:tabular-nums;unicode-bidi:isolate;direction:ltr}
+.tone-teal{--tone:#1E7470}.tone-amber{--tone:#C77D3B}.tone-blue{--tone:#5B7FA6}.tone-coffee{--tone:#8A4B2D}.tone-slate{--tone:#5F716D}.tone-pink{--tone:#D9627E}.tone-violet{--tone:#6E6A9E}
+/* «Afinar»: type inline, the rest as rows with their value. */
+.tune-group,.nav-group{display:flex;flex-direction:column;border-radius:16px;background:var(--cw-row);box-shadow:inset 0 0 0 1px var(--cw-line);overflow:hidden}
+.tune-inline{display:flex;flex-direction:column;gap:var(--cw-space-2);padding:var(--cw-space-3)}
+.tune-inline>span{font:500 var(--cw-text-md)/1.2 var(--cw-font)}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);padding:3px;border-radius:12px;background:color-mix(in srgb,var(--cw-ink) 6%,transparent)}
+.seg button{min-height:36px;padding:0 4px;border:0;border-radius:9px;background:transparent;color:var(--cw-ink-soft);font:500 var(--cw-text-sm)/1.1 var(--cw-font);transition:background-color var(--cw-base) var(--cw-ease),color var(--cw-base) var(--cw-ease)}
+.seg button[aria-pressed=true]{background:#fff;color:var(--cw-ink);font-weight:600;box-shadow:0 1px 3px rgba(18,45,46,.16)}
+.tune-row,.nav-row{display:flex;align-items:center;gap:var(--cw-space-3);min-height:52px;padding:0 var(--cw-space-3);border:0;border-top:1px solid var(--cw-line);background:transparent;color:var(--cw-ink);text-align:start;font:500 var(--cw-text-md)/1.25 var(--cw-font)}
+.nav-group .nav-row:first-child{border-top:0}
+.tune-row>span:first-child,.nav-title{flex:1;min-width:0}
+.tune-value,.nav-value{color:var(--cw-ink-soft);font-size:var(--cw-text-sm);text-align:end}
+.tune-row svg,.nav-row>svg{color:var(--cw-ink-faint);flex-shrink:0}
+.tune-row:active,.nav-row:active{background:color-mix(in srgb,var(--cw-ink) 5%,transparent)}
+.nav-icon{width:30px;height:30px;display:grid;place-items:center;border-radius:9px;color:#fff;background:var(--tone);flex-shrink:0}
+/* One decision per screen: rows with a check. */
+.detail-section{display:flex;flex-direction:column;gap:var(--cw-space-3)}
+.detail-section h3{margin:0;font:600 var(--cw-text-xl,1.25rem)/1.2 var(--cw-font-brand)}
+.pick-list{display:flex;flex-direction:column;border-radius:16px;background:var(--cw-row);box-shadow:inset 0 0 0 1px var(--cw-line);overflow:hidden}
+.pick-list button{display:flex;align-items:center;justify-content:space-between;gap:var(--cw-space-3);min-height:50px;padding:0 var(--cw-space-3);border:0;border-top:1px solid var(--cw-line);background:transparent;color:var(--cw-ink);text-align:start;font:400 var(--cw-text-md)/1.3 var(--cw-font)}
+.pick-list button:first-child{border-top:0}
+.pick-list button[aria-pressed=true]{background:var(--cw-pick);color:var(--cw-teal-800);font-weight:600}
+.pick-list button svg{color:var(--cw-turquoise)}
+/* Choices elsewhere (date formats, sizes, languages): the same light tint, no dark fill. */
+.filter-chips button[aria-pressed=true]{background:var(--cw-pick);border-color:var(--cw-pick-edge);color:var(--cw-teal-800);font-weight:600}
+/* Section names: small grey capitals, not a second brand colour. */
+.settings-title{margin:0 2px var(--cw-space-2);font:600 .72rem/1.2 var(--cw-font);letter-spacing:.08em;text-transform:uppercase;color:var(--cw-ink-soft)}
+.settings-title svg{display:none}
+.settings-panel{gap:var(--cw-space-5)}
+.settings-group{border-radius:16px;background:var(--cw-row)}
+/* Steady sheet: Filtros and Ajustes keep one height from screen to screen (no jump into a
+   detail), and «Aplicar filtros» stays at the bottom. */
+.native-sheet:has(.filters-panel,.settings-panel){height:90dvh}
+.native-sheet .mano-sheet-body:has(.filters-panel,.settings-panel){flex:1;display:flex;flex-direction:column}
+.mano-sheet-body .filters-panel{flex:1}
+.filters-panel>.filter-apply{margin-top:auto}
+/* The nav scrolls away with the page (it floated over the cards), and a detail screen
+   shows only its own way back. */
+.sheet-nav{position:static}
+.mano-sheet-body:has(.filters-panel.is-detail) .sheet-nav,.mano-sheet-body:has(.settings-panel.is-detail) .sheet-nav{display:none}
+/* Library actions read as rows of a group, like the rest of Ajustes. */
+.settings-panel .settings-actions{gap:0;border-radius:16px;background:var(--cw-row);box-shadow:inset 0 0 0 1px var(--cw-line);overflow:hidden}
+.settings-panel .settings-actions>.sheet-action{justify-content:flex-start;min-height:52px;margin:0;padding:0 var(--cw-space-3);border:0;border-top:1px solid var(--cw-line);border-radius:0;background:transparent;box-shadow:none;color:var(--cw-turquoise-deep);font:500 var(--cw-text-md)/1.25 var(--cw-font)}
+.settings-panel .settings-actions>.sheet-action:first-child{border-top:0}

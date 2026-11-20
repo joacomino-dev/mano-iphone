@@ -1,5 +1,10 @@
 # CocoWash — estado vigente
 
+## Claude CW-CL-099 — Filtros y Ajustes rediseñados (2026-11-20)
+
+Filtros: intenciones con su número y «Afinar» en filas con detalle. Ajustes: portada de filas y detalle.
+Sin pestañas; nombres accesibles conservados para pruebas y XCTest. Pendiente: QA en iPhone.
+
 ## Claude CW-CL-098 — práctica en 8 pasos y propuesta de Filtros/Ajustes (2026-11-20)
 
 Práctica: borrar por error, deshacer y conservar; la borrosa se borra de verdad antes de Terminar. Brillo de

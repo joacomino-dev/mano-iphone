@@ -1228,3 +1228,15 @@ Pedido del usuario (tras probar 8538cdf en iPhone; le gusta la fluidez y los tru
 - Gestos: la velocidad del gesto rápido se mide solo con los últimos 90 ms (un reposo previo ya no la diluye) y el umbral baja a 0,35 px/ms. La prueba del gesto rápido tiene 2 reintentos: con páginas en paralelo, Playwright entrega los movimientos con 60–140 ms de hueco (registrado); la regla está cubierta por pruebas unitarias.
 - Filtros y Ajustes: propuesta de tres direcciones con maquetas (artifact privado «Filtros y Ajustes de CocoWash»): A resumen y detalle, B chips con vista previa, C intenciones primero; Ajustes como lista agrupada fuera de las pestañas, selección en tinte claro. Recomendación C + listas de A. Sin implementar: espera la elección del usuario.
 
+### CW-CL-099 — Filtros y Ajustes rediseñados (intenciones primero, listas con detalle)
+Fecha: 2026-11-20, America/Bogota
+Agente: Claude
+Pedido del usuario: aplicar la recomendación de la propuesta (CW-CL-098): Filtros por intenciones, listas para afinar, Ajustes como lista agrupada.
+- Filtros (`Filters.tsx`): «¿Qué revisamos hoy?» con seis intenciones y su número (un poco de todo, lo que dejé para luego, capturas, borrosas u oscuras, tickets y documentos, repasar favoritas); «Afinar»: Tipo como segmentado en línea, y Fecha, Orden y Sellos como filas con su valor que abren una pantalla con una sola elección. «Aplicar filtros» abajo y fijo; «Restablecer» discreto junto a Afinar.
+- Hoja: sin pestañas. Desde Filtros, accesos «Apoyo» y «Ajustes»; desde ellos, «‹ Filtros». Altura fija para que no salte entre pantallas; cada detalle muestra solo su propia vuelta.
+- Ajustes (`DisplaySettings.tsx`): portada con filas (Cómo se ven tus fotos, Vídeos, Calidad e iCloud, Idioma), los interruptores de Experiencia, Biblioteca como filas, Ayuda y trucos, Apoyo; el resto vive en su pantalla de detalle.
+- Estilo: lo elegido en tinte turquesa claro con borde (sin rellenos verde oscuro), títulos de sección en gris pequeño en mayúsculas, iconos de color solo en las filas de portada.
+- Nombres accesibles conservados («Filtros», «Ajustes», «Apoyo», «Aplicar filtros», Tipo «Todo/Fotos/Vídeos/Live Photos», «Modo Geek», «Actualizar biblioteca») para pruebas y XCTest. «Letras VHS» ahora está en Ajustes › Vídeos: `vhs-eye-flow.mjs` y el XCTest de VHS (`ios/`, protegido, cambio mínimo, sin ejecutar: requiere CI macOS) tocan antes la fila «Vídeos». Las notas de App Review («Filtros › Apoyo» / «Ajustes › Apoyo») siguen siendo ciertas.
+- Validación: 166 Node, 18 baterías de flujos, apple-readiness 19, 41 Playwright (splash-sync y pinch-repeat fallaron solo con la máquina cargada; aislados 42/42), runtime 28 y builds PASS. Capturas SE/Pro Max revisadas (portada, detalle de fecha, Ajustes y detalle de fotos).
+Pendiente: verlo en iPhone; XCTest en CI macOS.
+

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { CameraIcon, FilmStripIcon, HandTapIcon, BooksIcon, ImageSquareIcon, CloudArrowDownIcon, GraduationCapIcon, PlayCircleIcon, LightbulbIcon, StackIcon, MagnifyingGlassPlusIcon, PushPinIcon, FolderSimplePlusIcon, ArrowCounterClockwiseIcon, FlaskIcon, TranslateIcon, LifebuoyIcon, QuestionIcon, ShieldCheckIcon } from '@phosphor-icons/react';
+import { CameraIcon, FilmStripIcon, HandTapIcon, BooksIcon, ImageSquareIcon, CloudArrowDownIcon, GraduationCapIcon, PlayCircleIcon, CaretLeftIcon, CaretRightIcon, CoffeeIcon, LightbulbIcon, StackIcon, MagnifyingGlassPlusIcon, PushPinIcon, FolderSimplePlusIcon, ArrowCounterClockwiseIcon, FlaskIcon, TranslateIcon, LifebuoyIcon, QuestionIcon, ShieldCheckIcon } from '@phosphor-icons/react';
 import { helpUrl, openLink, privacyUrl } from './links';
 import type { Asset } from './domain';
 import { DATE_FORMATS, formatDate, formatTime, polaroidCaption, type DateFormat, type DisplaySettings, type OsdSize } from './meta';
@@ -47,9 +47,11 @@ const dateOptions = (upper: boolean) => DATE_FORMATS.map(format => [format, form
 /** How information looks on cards. Applied live and saved; it never affects
  * which files the filters put in the pile. 9.8.5: grouped rows, one line of
  * help at most, the Polaroid and VHS previews as the only ornament. */
-export function DisplaySettingsPanel({ display, change, stampWordsAuto = true, geek, setGeek, library, replayIntro, testing }: {
+export function DisplaySettingsPanel({ display, change, stampWordsAuto = true, geek, setGeek, library, replayIntro, testing, support }: {
   display: DisplaySettings; change: (next: DisplaySettings) => void; stampWordsAuto?: boolean; geek: boolean; setGeek: (value: boolean) => void;
   library: ReactNode; replayIntro: () => void;
+  /** «Apoyo» (purchases), when the store is available. */
+  support?: () => void;
   /** iPhone only, until 1.0: «Modo de prueba» (testMode.ts). */
   testing?: { on: boolean; set: (on: boolean) => void; ads: boolean; setAds: (on: boolean) => void };
 }) {
@@ -58,7 +60,12 @@ export function DisplaySettingsPanel({ display, change, stampWordsAuto = true, g
   const setVideo = (patch: Partial<typeof video>) => change({ ...display, video: { ...video, ...patch } });
   const caption = polaroidCaption(SAMPLE, SAMPLE_PLACE, photo, locale);
   const language = languageChoice();
-  return <div className="settings-panel">
+  const [page, setPage] = useState<'home' | 'photos' | 'videos' | 'quality' | 'language' | 'help'>('home');
+  const go = (next: typeof page) => { haptic('selection'); setPage(next); };
+  // A short front page; each heavier group has its own screen (user, 2026-11-20).
+  if (page !== 'home') return <div className="settings-panel is-detail">
+    <button type="button" className="detail-back" onClick={() => go('home')}><CaretLeftIcon size={16} weight="bold" className="flip-rtl"/>{t('Volver a Ajustes')}</button>
+    {page === 'photos' && <>
     <Section icon={<CameraIcon size={18}/>} title={t('Fotos')}>
       <div className="setting-preview" aria-hidden="true"><div className={`mini-polaroid paper ${photo.polaroid ? '' : 'is-plain'}`}><img src={SAMPLE_PHOTO} alt="" draggable={false}/>
         {photo.polaroid && <span className="polaroid-caption"><span className="caption-where">{caption.where}</span>{caption.when && <span className="caption-when">{caption.when}</span>}</span>}</div></div>
@@ -74,6 +81,8 @@ export function DisplaySettingsPanel({ display, change, stampWordsAuto = true, g
         <Switch label={t('Mostrar el sello en las fotos')} checked={photo.seal} change={seal => setPhoto({ seal })}/>
       </div>
     </Section>
+    </>}
+    {page === 'videos' && <>
     <Section icon={<FilmStripIcon size={18}/>} title={t('Vídeos')}>
       {/* A true miniature: the tape is laid out at a real card's width (the OSD
           fit depends on it) and only drawn smaller. */}
@@ -92,6 +101,8 @@ export function DisplaySettingsPanel({ display, change, stampWordsAuto = true, g
         </>}
       </div>
     </Section>
+    </>}
+    {page === 'quality' && <>
     <Section icon={<ImageSquareIcon size={18}/>} title={t('Nitidez de las cartas')} note={QUALITY_COPY[display.quality][1]()}>
       <Choice label={t('Nitidez de las cartas')} value={display.quality} options={PREVIEW_QUALITIES.map(q => [q, QUALITY_COPY[q][0]()])} change={quality => change({ ...display, quality })}/>
     </Section>
@@ -101,25 +112,13 @@ export function DisplaySettingsPanel({ display, change, stampWordsAuto = true, g
         <Switch label={t('Ahorrar datos de iCloud')} hint={t('Solo descarga al anclar o ampliar.')} checked={display.cloud === 'save'} change={save => change({ ...display, cloud: save ? 'save' : 'always' })}/>
       </div>
     </Section>}
-    <Section icon={<HandTapIcon size={18}/>} title={t('Experiencia')}>
-      <div className="settings-group">
-        <Switch label={t('Vibración')} checked={display.haptics} change={haptics => change({ ...display, haptics })}/>
-        <Switch label={t('Palabras en los sellos')} hint={t('Al principio se ven; después queda solo el sello.')} checked={display.stampWords ?? stampWordsAuto} change={stampWords => change({ ...display, stampWords })}/>
-        <Switch label={t('Modo Geek')} hint={t('Al anclar una foto, muestra los datos del archivo.')} checked={geek} change={setGeek}/>
-      </div>
-    </Section>
+    </>}
+    {page === 'language' && <>
     <Section icon={<TranslateIcon size={18}/>} title={t('Idioma')} note={t('Al cambiarlo, CocoWash se reinicia.')}>
       <Choice<Lang | 'auto'> label={t('Idioma')} value={language} columns={2} options={[['auto', t('Automático')], ...LANGS.map(l => [l.id, l.name] as [Lang, string])]} change={setLanguage}/>
     </Section>
-    <Section icon={<BooksIcon size={18}/>} title={t('Biblioteca')}>
-      <div className="settings-actions">{library}</div>
-    </Section>
-    {testing && <Section icon={<FlaskIcon size={18}/>} title={t('Modo developer')} className="test-mode-field">
-      <div className="settings-group">
-        <Switch label={t('Modo de prueba')} hint={t('Postales de ejemplo: nada toca tu biblioteca. Anuncios de prueba frecuentes.')} checked={testing.on} change={testing.set}/>
-        <Switch label={t('Anuncios')} hint={t('Apágalos para ver la app como quien pagó por quitarlos.')} checked={testing.ads} change={testing.setAds}/>
-      </div>
-    </Section>}
+    </>}
+    {page === 'help' && <>
     <Section icon={<GraduationCapIcon size={18}/>} title={t('Introducción')}>
       <div className="settings-actions"><button className="sheet-action secondary replay-intro" onClick={replayIntro}><PlayCircleIcon size={20} weight="bold"/>{t('Ver la introducción de nuevo')}</button></div>
     </Section>
@@ -132,7 +131,44 @@ export function DisplaySettingsPanel({ display, change, stampWordsAuto = true, g
         <button type="button" className="text-button" onClick={() => void openLink(privacyUrl()).catch(() => {})}><ShieldCheckIcon size={16}/>{t('Política de privacidad')}</button>
       </div>
     </Section>
+    </>}
   </div>;
+  const languageName = language === 'auto' ? t('Automático') : LANGS.find(l => l.id === language)?.name ?? '';
+  return <div className="settings-panel">
+    <div className="nav-group">
+      <NavRow icon={<CameraIcon size={18} weight="bold"/>} tone="teal" title={t('Cómo se ven tus fotos')} open={() => go('photos')}/>
+      <NavRow icon={<FilmStripIcon size={18} weight="bold"/>} tone="blue" title={t('Vídeos')} open={() => go('videos')}/>
+      <NavRow icon={<ImageSquareIcon size={18} weight="bold"/>} tone="coffee" title={t('Calidad e iCloud')} value={QUALITY_COPY[display.quality][0]()} open={() => go('quality')}/>
+      <NavRow icon={<TranslateIcon size={18} weight="bold"/>} tone="violet" title={t('Idioma')} value={languageName} open={() => go('language')}/>
+    </div>
+    <Section icon={<HandTapIcon size={18}/>} title={t('Experiencia')}>
+      <div className="settings-group">
+        <Switch label={t('Vibración')} checked={display.haptics} change={haptics => change({ ...display, haptics })}/>
+        <Switch label={t('Palabras en los sellos')} hint={t('Al principio se ven; después queda solo el sello.')} checked={display.stampWords ?? stampWordsAuto} change={stampWords => change({ ...display, stampWords })}/>
+        <Switch label={t('Modo Geek')} hint={t('Al anclar una foto, muestra los datos del archivo.')} checked={geek} change={setGeek}/>
+      </div>
+    </Section>
+    <Section icon={<BooksIcon size={18}/>} title={t('Biblioteca')}>
+      <div className="settings-actions">{library}</div>
+    </Section>
+    <div className="nav-group">
+      <NavRow icon={<LifebuoyIcon size={18} weight="bold"/>} tone="pink" title={t('Ayuda y trucos')} open={() => go('help')}/>
+      {support && <NavRow icon={<CoffeeIcon size={18} weight="bold"/>} tone="amber" title={t('Apoyo')} open={support}/>}
+    </div>
+    {testing && <Section icon={<FlaskIcon size={18}/>} title={t('Modo developer')} className="test-mode-field">
+      <div className="settings-group">
+        <Switch label={t('Modo de prueba')} hint={t('Postales de ejemplo: nada toca tu biblioteca. Anuncios de prueba frecuentes.')} checked={testing.on} change={testing.set}/>
+        <Switch label={t('Anuncios')} hint={t('Apágalos para ver la app como quien pagó por quitarlos.')} checked={testing.ads} change={testing.setAds}/>
+      </div>
+    </Section>}
+  </div>;
+}
+
+/** A row of the front page: icon, name, current value, and a way into its screen. */
+function NavRow({ icon, tone, title, value, open }: { icon: ReactNode; tone: string; title: string; value?: string; open: () => void }) {
+  return <button type="button" className="nav-row" onClick={() => { haptic('selection'); open(); }}>
+    <span className={`nav-icon tone-${tone}`} aria-hidden="true">{icon}</span><span className="nav-title">{title}</span>{value && <span className="nav-value">{value}</span>}<CaretRightIcon size={14} weight="bold" className="flip-rtl" aria-hidden="true"/>
+  </button>;
 }
 
 /** Ajustes › Trucos: every advanced gesture in one place (the pile teaches each one the

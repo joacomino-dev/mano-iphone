@@ -41,6 +41,8 @@ for(const reducedMotion of ['no-preference','reduce']){
   assert.equal(await page.evaluate(()=>eyeVideo.muted),playback.muted);
   await page.getByRole('button',{name:'Filtros',exact:true}).click();
   await page.getByRole('button',{name:'Ajustes',exact:true}).click();
+  // Ajustes is a front page of rows since 2026-11-20: the VHS options live in «Vídeos».
+  await page.getByRole('button',{name:'Vídeos',exact:true}).click();
   const settings=page.locator('.settings-section').filter({has:page.getByRole('heading',{name:'Vídeos',exact:true})});
   const toggle=settings.getByRole('switch',{name:'Letras VHS',exact:true});
   assert.equal(await toggle.isChecked(),false);
