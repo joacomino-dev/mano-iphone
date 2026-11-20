@@ -14,7 +14,7 @@ import { locale, t } from './i18n';
 import { Bubble, Hand, Spotlight, Track, layoutRect, radiusOf, screenRect, shapesOf, type Hole, type Shape } from './Coach';
 import type { ArtSlot, Pose } from './Characters';
 import { releaseVelocity, type Sample } from './swipe';
-import { PHOTOS, PILE, STEP_COUNT, STEP_IDS, TARGET, advance, applyInput, armedZone, logTutorial, releasedSwipe, startTutorial, stepId, type PhotoId, type StepId, type SwipeKind, type TutorialInput } from './tutorialSteps';
+import { EXPECTS, PHOTOS, PILE, STEP_COUNT, STEP_IDS, TARGET, advance, applyInput, armedZone, logTutorial, releasedSwipe, startTutorial, stepId, type Action, type PhotoId, type StepId, type SwipeKind, type TutorialInput } from './tutorialSteps';
 
 /** First-launch practice (user, 2026-11-19; second pass the same day): the real main
  * screen — header with «Terminar» and its counter, the pile, the decision bar and the
@@ -27,37 +27,39 @@ import { PHOTOS, PILE, STEP_COUNT, STEP_IDS, TARGET, advance, applyInput, armedZ
 type Line = { title: () => string; body?: () => string };
 const ASK: Record<StepId, Line> = {
   keep: { title: () => t('Desliza a la derecha'), body: () => t('para conservar esta foto') },
-  discard: { title: () => t('¿Esta no te sirve?'), body: () => t('Desliza a la izquierda para borrarla') },
-  undo: { title: () => t('¿Te equivocaste?'), body: () => t('Toca Deshacer y la recuperas') },
+  mistake: { title: () => t('Ahora, a la izquierda'), body: () => t('Así se borra una foto. Pruébalo con esta') },
+  undo: { title: () => t('¡Uy! Esa era bonita'), body: () => t('Toca Deshacer y la recuperas') },
+  rescue: { title: () => t('Ahora sí'), body: () => t('Desliza a la derecha para conservarla') },
   favorite: { title: () => t('¿Una foto especial?'), body: () => t('Desliza hacia arriba para guardarla en Favoritas') },
   later: { title: () => t('¿No te decides?'), body: () => t('Desliza hacia abajo y la revisas después') },
+  discard: { title: () => t('Esta sí sobra'), body: () => t('Desliza a la izquierda para borrarla') },
   finish: { title: () => t('Toca Terminar'), body: () => t('para borrar lo marcado. Antes, nada se elimina') },
 };
 const DONE: Record<StepId, Line> = {
   keep: { title: () => t('¡Se queda en tu carrete!') },
-  discard: { title: () => t('Marcada para borrar'), body: () => t('Tranqui, aún no se elimina') },
+  mistake: { title: () => t('Marcada para borrar'), body: () => t('Tranqui, aún no se elimina') },
   undo: { title: () => t('¡De vuelta!') },
+  rescue: { title: () => t('¡A salvo en tu carrete!') },
   favorite: { title: () => t('Guardada en Favoritas') },
   later: { title: () => t('Te la guardo para luego') },
+  discard: { title: () => t('Marcada para borrar'), body: () => t('Se borra cuando toques Terminar') },
   finish: { title: () => t('¡Listo! Ya sabes lo básico') },
 };
-const MISS: Record<StepId, () => string> = {
+const MISS: Record<Action, () => string> = {
   keep: () => t('Prueba hacia la derecha'), discard: () => t('Prueba hacia la izquierda'), undo: () => t('Toca Deshacer'),
   favorite: () => t('Prueba hacia arriba'), later: () => t('Prueba hacia abajo'), finish: () => t('Toca Terminar'),
 };
 /** Coqui's face: one pose to ask each thing, another to celebrate it, a shrug to correct.
  * The wink for «Deshacer» waits for its art (Characters.PENDING_ART). */
-const ASK_POSE: Record<StepId, Pose | ArtSlot> = { keep: 'coqui-point', discard: 'coqui-shrug', undo: 'coqui-wave', favorite: 'coqui-photos', later: 'coqui-think', finish: 'coqui-point' };
-const DONE_POSE: Record<StepId, Pose | ArtSlot> = { keep: 'coqui-photos', discard: 'coqui-calm', undo: 'coqui-wink', favorite: 'coqui-cheer', later: 'coqui-think', finish: 'coqui-cheer' };
+const ASK_POSE: Record<StepId, Pose | ArtSlot> = { keep: 'coqui-point', mistake: 'coqui-point', undo: 'coqui-shrug', rescue: 'coqui-point', favorite: 'coqui-photos', later: 'coqui-think', discard: 'coqui-shrug', finish: 'coqui-point' };
+const DONE_POSE: Record<StepId, Pose | ArtSlot> = { keep: 'coqui-photos', mistake: 'coqui-calm', undo: 'coqui-wink', rescue: 'coqui-photos', favorite: 'coqui-cheer', later: 'coqui-think', discard: 'coqui-calm', finish: 'coqui-cheer' };
 /** How long each confirmation stays before the next step. */
-const DONE_MS: Record<StepId, number> = { keep: 1200, discard: 1700, undo: 1300, favorite: 1300, later: 1200, finish: 1900 };
-/** After «Deshacer», the floor photo goes back to the deletion queue (step 6 shows it marked). */
-const REQUEUE_MS = 650;
+const DONE_MS: Record<StepId, number> = { keep: 1100, mistake: 1500, undo: 1000, rescue: 1100, favorite: 1200, later: 1100, discard: 1500, finish: 1900 };
 /** No action for this long: the hand travels further and the glow pulses. */
 const NUDGE_MS = 4500;
 
-/** The equivalent control of each step (and, for «Terminar», its counter too). */
-const TARGETS: Record<StepId, string[]> = { keep: ['.bar-keep'], discard: ['.bar-discard'], favorite: ['.bar-heart'], later: ['.tut-later'], undo: ['.tut-undo'], finish: ['.header-action.finish', '.finish-count'] };
+/** The equivalent control of each action (and, for «Terminar», its counter too). */
+const TARGETS: Record<Action, string[]> = { keep: ['.bar-keep'], discard: ['.bar-discard'], favorite: ['.bar-heart'], later: ['.tut-later'], undo: ['.tut-undo'], finish: ['.header-action.finish', '.finish-count'] };
 const DIRECTION: Record<SwipeKind, { x: number; y: number }> = { keep: { x: 1, y: 0 }, discard: { x: -1, y: 0 }, favorite: { x: 0, y: -1 }, later: { x: 0, y: 1 } };
 const HAPTIC = { keep: 'soft', discard: 'rigid', favorite: 'success', later: 'light' } as const;
 
@@ -75,8 +77,8 @@ function exitFor(kind: SwipeKind | '', reduced: boolean) {
 type CardEntry = { photo: PhotoId; key: string; back?: boolean };
 /** Demo captions: own places and dates (nothing from the person's library). */
 const CAPTION: Record<PhotoId, { where: string; date: [number, number, number] }> = {
-  beach: { where: 'Montañita', date: [2025, 7, 14] }, floor: { where: '', date: [2025, 10, 3] }, birthday: { where: 'Cuenca', date: [2025, 9, 12] },
-  ticket: { where: 'Quito', date: [2025, 10, 2] }, marked: { where: '', date: [2025, 10, 3] },
+  beach: { where: 'Montañita', date: [2025, 7, 14] }, flowers: { where: 'Otavalo', date: [2025, 8, 20] }, birthday: { where: 'Cuenca', date: [2025, 9, 12] },
+  ticket: { where: 'Quito', date: [2025, 10, 2] }, floor: { where: '', date: [2025, 10, 3] },
 };
 let dateFormat: Intl.DateTimeFormat | null = null;
 const dateLabel = (d: [number, number, number]) => { try { dateFormat ??= new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }); return dateFormat.format(new Date(d[0], d[1], d[2])); } catch { return ''; } };
@@ -97,7 +99,7 @@ function TutorialCard({ entry, stage, reduced, register, drag, label }: { entry:
     return () => { a(); b(); };
   }, []);
   const caption = CAPTION[entry.photo];
-  return <motion.article data-testid={`tutorial-card-${entry.photo}`} className={`photo-card paper front ${photo.marked ? 'is-marked' : ''}`}
+  return <motion.article data-testid={`tutorial-card-${entry.photo}`} className="photo-card paper front"
     style={{ width: cardWidth, height: cardHeight, left: `calc(50% - ${cardWidth / 2}px)`, top: `calc(50% - ${cardHeight / 2}px)`, x, y, rotate, touchAction: 'none' }}
     initial={entry.back ? { opacity: reduced ? 0 : .4 } : reduced ? { opacity: 0 } : { opacity: 0, scale: .97 }} animate={{ opacity: 1, scale: 1 }}
     variants={{ leave: (kind: SwipeKind | '') => exitFor(kind, reduced) }} exit="leave" transition={reduced ? { duration: .14 } : CARD_SPRING}
@@ -105,8 +107,6 @@ function TutorialCard({ entry, stage, reduced, register, drag, label }: { entry:
     onPointerDown={drag?.down} onPointerMove={drag?.move} onPointerUp={drag?.up} onPointerCancel={drag?.up} onLostPointerCapture={drag?.up} onKeyDown={drag?.key}>
     <div className="photo-window"><img src={photo.src} alt="" draggable={false}/></div>
     <span className="polaroid-caption"><span className="caption-where">{caption.where}</span><span className="caption-when">{dateLabel(caption.date)}</span></span>
-    {/* Step 6: the photo marked for deletion, with its ticket — waiting for «Terminar». */}
-    {photo.marked && <span className="tut-marked" aria-hidden="true"><Stamp kind="discard" word lettering/></span>}
   </motion.article>;
 }
 
@@ -123,7 +123,7 @@ function useSpots(root: HTMLElement | null, layer: HTMLElement | null, step: Ste
     const cardEl = root.querySelector<HTMLElement>('.photo-card.front');
     const cardBoxed = local(cardEl, radiusOf(cardEl, 4));
     const card: Shape | null = cardBoxed && { kind: 'rect', box: { x: cardBoxed.x - 3, y: cardBoxed.y - 3, w: cardBoxed.w + 6, h: cardBoxed.h + 6, r: cardBoxed.r + 3 } };
-    const els = TARGETS[step].map(selector => root.querySelector(selector));
+    const els = TARGETS[EXPECTS[step]].map(selector => root.querySelector(selector));
     const target = shapesOf(els, layer, 6);
     const button = screenRect(els[0], layer);
     // The dim covers the coach layer (the whole app) from inside the practice's own box.
@@ -162,6 +162,8 @@ export function Tutorial({ done, skip }: { done: () => void; skip: (step: number
   const [touching, setTouching] = useState(false);
   const [nudge, setNudge] = useState(false);
   const exitKind = useRef<SwipeKind | ''>('');
+  /** The photo «Deshacer» brings back. */
+  const lastDeleted = useRef<PhotoId | null>(null);
   // Finished or skipped: the screen is on its way out and takes no more input.
   const leaving = useRef(false);
   const offsets = useRef(new Map<string, Offset>());
@@ -189,7 +191,8 @@ export function Tutorial({ done, skip }: { done: () => void; skip: (step: number
   const perform = (kind: TutorialInput['kind']) => {
     if (kind === 'undo') {
       revision.current++;
-      setPile(p => [{ photo: 'floor', key: `floor~${revision.current}`, back: true }, ...p]);
+      const back = lastDeleted.current ?? 'flowers';
+      setPile(p => [{ photo: back, key: `${back}~${revision.current}`, back: true }, ...p]);
       setPending(n => Math.max(0, n - 1)); haptic('light');
       return;
     }
@@ -204,6 +207,7 @@ export function Tutorial({ done, skip }: { done: () => void; skip: (step: number
     if (at && kind === 'favorite') burst('tutorial', { x: at.x, y: at.y - 40 }, 'sparkle', 7, 30);
     if (at && kind === 'discard') burst('tutorial', { x: at.x - 30, y: at.y }, 'dust', 12, 40);
     exitKind.current = kind;
+    if (kind === 'discard') lastDeleted.current = pileNow.current[0]?.photo ?? null;
     setPile(p => p.slice(1));
     setFlash({ kind, key: performance.now() });
     if (kind === 'discard') setPending(n => n + 1);
@@ -219,22 +223,14 @@ export function Tutorial({ done, skip }: { done: () => void; skip: (step: number
     springBack(); setNudge(true); haptic('warning');
     logTutorial({ type: 'miss', step: now.step });
   };
-  // After the confirmation: the next step (after «Deshacer», the floor photo goes back
-  // to the queue first), or the end.
+  // After the confirmation: the next step, or the end.
   useEffect(() => {
     if (tut.phase !== 'done') return;
-    let follow: ReturnType<typeof setTimeout> | undefined;
     const timer = setTimeout(() => {
       if (id === 'finish') { leaving.current = true; logTutorial({ type: 'complete' }); done(); return; }
-      if (id === 'undo') {
-        const at = cardCentre(); if (at) burst('tutorial', { x: at.x - 30, y: at.y }, 'dust', 8, 40);
-        exitKind.current = 'discard'; setPile(p => p.slice(1)); setPending(n => n + 1); setFlash({ kind: 'discard', key: performance.now() }); haptic('rigid');
-        follow = setTimeout(() => setTut(advance), REQUEUE_MS);
-        return;
-      }
       setTut(advance);
     }, DONE_MS[id]);
-    return () => { clearTimeout(timer); if (follow) clearTimeout(follow); };
+    return () => clearTimeout(timer);
   }, [tut.phase, tut.step]);
 
   /* The finger on the card. */
@@ -282,14 +278,15 @@ export function Tutorial({ done, skip }: { done: () => void; skip: (step: number
    * tilts and its stamp shows) and lets go; then again. On a button: it waits beside
    * it — never over its word — and pokes it. */
   const target = TARGET[id];
-  const way = target === 'card' ? DIRECTION[id as SwipeKind] : null;
+  const expects = EXPECTS[id];
+  const way = target === 'card' ? DIRECTION[expects as SwipeKind] : null;
   const distance = way ? (way.y ? 120 : 110) * (nudge ? 1.25 : 1) : 0;
   const hx = useMotionValue(0), hy = useMotionValue(0), ho = useMotionValue(0), hs = useMotionValue(1), hp = useMotionValue(1), track = useMotionValue(0);
   const cardBounds = spots.card?.box;
   const handAt = way && cardBounds ? { x: cardBounds.x + cardBounds.w / 2 - way.x * 26, y: cardBounds.y + cardBounds.h * .62 - way.y * 22 }
-    : spots.button ? id === 'undo' ? { x: spots.button.x + spots.button.w + 4, y: spots.button.y + spots.button.h / 2 } : { x: spots.button.x - 4, y: spots.button.y + spots.button.h / 2 } : null;
-  const turn = way ? 0 : id === 'undo' ? -90 : 90;
-  const poke = id === 'undo' ? -8 : 8;
+    : spots.button ? expects === 'undo' ? { x: spots.button.x + spots.button.w + 4, y: spots.button.y + spots.button.h / 2 } : { x: spots.button.x - 4, y: spots.button.y + spots.button.h / 2 } : null;
+  const turn = way ? 0 : expects === 'undo' ? -90 : 90;
+  const poke = expects === 'undo' ? -8 : 8;
   useEffect(() => {
     const show = asking && !touching && !!handAt;
     // A fade still running from the last run would win over the values set below.
@@ -312,7 +309,7 @@ export function Tutorial({ done, skip }: { done: () => void; skip: (step: number
           const o = frontOffset(); if (!o) return;
           const duration = nudge ? .8 : .66, ease = [.45, 0, .2, 1] as const;
           // The finger travels the real release distance; the card follows it as the pile does.
-          const arming = setTimeout(() => { if (alive && !grip.current) { zoneNow.current = id as SwipeKind; setZone(id as SwipeKind); } }, duration * 520);
+          const arming = setTimeout(() => { if (alive && !grip.current) { zoneNow.current = expects as SwipeKind; setZone(expects as SwipeKind); } }, duration * 520);
           await Promise.all([run(o.x, way.x * distance, { duration, ease }), run(o.y, way.y * distance, { duration, ease }), run(hx, way.x * distance, { duration, ease }), run(hy, way.y * distance, { duration, ease })]);
           clearTimeout(arming);
           if (!alive) return;
@@ -345,12 +342,12 @@ export function Tutorial({ done, skip }: { done: () => void; skip: (step: number
   }, [asking, touching, nudge, reduced, tut.step, tut.phase, !!handAt, pile[0]?.key]);
 
   const skipNow = () => { if (leaving.current) return; leaving.current = true; logTutorial({ type: 'skip', step: tut.step }); haptic('selection'); skip(tut.step); };
-  const line = tut.phase === 'done' ? DONE[id] : tut.phase === 'missed' ? { title: () => t('¡Casi!'), body: MISS[id] } : ASK[id];
+  const line = tut.phase === 'done' ? DONE[id] : tut.phase === 'missed' ? { title: () => t('¡Casi!'), body: MISS[expects] } : ASK[id];
   const pose: Pose | ArtSlot = tut.phase === 'done' ? DONE_POSE[id] : tut.phase === 'missed' ? 'coqui-shrug' : ASK_POSE[id];
   const front = pile[0];
   // Coqui's place: above the pile; for «hacia arriba» he waits over the tools row
   // (unused in that step), so the rising photo never runs into him.
-  const coachAt = id === 'favorite' ? spots.tools : spots.strip;
+  const coachAt = expects === 'favorite' ? spots.tools : spots.strip;
   const nowNumber = Math.min(tut.step + 1, STEP_COUNT);
   const locked = !asking;
   const lineText = `${line.title()}${line.body ? ` ${line.body()}` : ''}`;

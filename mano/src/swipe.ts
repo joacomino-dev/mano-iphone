@@ -13,7 +13,7 @@ export type SwipeKind = 'keep' | 'discard' | 'favorite' | 'later';
 /** Release distances (px): across, and up/down (vertical drags move the card at 55 %). */
 export const DECIDE_X = 56, DECIDE_Y = 64;
 /** A flick: at least this speed (px/ms) along the leading axis, over at least this distance. */
-export const FLICK_SPEED = .45, FLICK_MIN = 22;
+export const FLICK_SPEED = .35, FLICK_MIN = 22;
 /** The leading axis must beat the other by this factor. */
 const LEAD = 1.15;
 
@@ -45,9 +45,11 @@ export function swipeDecision(dx: number, dy: number, vx = 0, vy = 0): SwipeKind
 export type Sample = { t: number; x: number; y: number };
 export function releaseVelocity(samples: readonly Sample[], window = 90): { vx: number; vy: number } {
   if (samples.length < 2) return { vx: 0, vy: 0 };
+  // Only the last moments count: a finger that rests, then flicks, is a flick (the resting
+  // touch-down must not dilute the speed).
   const last = samples[samples.length - 1];
   let first = samples[samples.length - 2];
-  for (let i = samples.length - 2; i >= 0; i--) { first = samples[i]; if (last.t - samples[i].t >= window) break; }
+  for (let i = samples.length - 2; i >= 0; i--) { if (last.t - samples[i].t > window) break; first = samples[i]; }
   const dt = Math.max(1, last.t - first.t);
   return { vx: (last.x - first.x) / dt, vy: (last.y - first.y) / dt };
 }

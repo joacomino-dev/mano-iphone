@@ -157,6 +157,10 @@ export const ANDROID_TEXT: Record<string, Text> = {
     es: '¡Se queda en tu galería!', en: 'It stays in your gallery!', fr: 'Elle reste dans ta galerie !', de: 'Es bleibt in deiner Galerie!',
     it: 'Resta nella tua galleria!', ar: 'تبقى في معرضك!', ja: 'ギャラリーに残ります！',
   },
+  '¡A salvo en tu carrete!': {
+    es: '¡A salvo en tu galería!', en: 'Safe in your gallery!', fr: 'À l’abri dans ta galerie !', de: 'Sicher in deiner Galerie!',
+    it: 'Al sicuro nella tua galleria!', ar: 'في أمان في معرضك!', ja: 'ギャラリーに無事保存！',
+  },
   'Desliza hacia arriba para guardarla en Favoritas': {
     es: 'Desliza hacia arriba para marcarla como favorita', en: 'Swipe up to mark it as a favorite', fr: 'Glisse vers le haut pour la mettre en favori',
     de: 'Wisch nach oben, um es als Favorit zu markieren', it: 'Scorri verso l’alto per segnarla come preferita', ar: 'اسحب للأعلى لتمييزها كمفضلة',

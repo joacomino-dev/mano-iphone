@@ -24,6 +24,9 @@ test('release speed is read over the last moments of the drag', () => {
   const { vx } = releaseVelocity(samples);
   assert.ok(vx < -.4, `vx ${vx}`);
   assert.deepEqual(releaseVelocity([{ t: 0, x: 0, y: 0 }]), { vx: 0, vy: 0 });
+  // Rest 300 ms after touching down, then a 40 px flick in 30 ms: the rest does not dilute it.
+  const rested = releaseVelocity([{ t: 0, x: 0, y: 0 }, { t: 300, x: -2, y: 0 }, { t: 315, x: -20, y: 0 }, { t: 330, x: -42, y: 0 }]);
+  assert.ok(rested.vx < -1, `rested flick vx ${rested.vx}`);
 });
 
 test('a rest followed by a clear sideways travel is a swipe, a downward one stays a look', () => {

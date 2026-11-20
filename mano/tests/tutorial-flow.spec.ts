@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-// The first-launch practice (user, 2026-11-19): six steps learned by doing, each with
+// The first-launch practice (user, 2026-11-19; eight steps from 2026-11-20): learned by doing, each with
 // its gesture or its button, a gentle miss for the wrong way, the deletion counter on
 // «Terminar», «Saltar» always there, and nothing written to the decision record.
 test.setTimeout(60_000);
@@ -10,7 +10,7 @@ async function openPractice(page: Page) {
   await page.locator(".splash").waitFor({ state: "detached", timeout: 15_000 });
   await page.locator(".ob-next").click();
   await expect(page.locator(".tutorial")).toBeVisible();
-  await expect(step(page)).toHaveText("1/6");
+  await expect(step(page)).toHaveText("1/8");
 }
 const step = (page: Page) => page.locator(".tut-count");
 
@@ -30,26 +30,37 @@ test("every step waits for its own action, by gesture or by button, then the pri
   // Wrong way: the photo comes back and Coqui corrects; the step stays.
   await swipe(page, -140, 0);
   await expect(page.locator(".coach-talk.is-missed")).toBeVisible();
-  await expect(step(page)).toHaveText("1/6");
+  await expect(step(page)).toHaveText("1/8");
   await page.waitForTimeout(600); // the photo springs back from the wrong side first
   await swipe(page, 140, 0);
   await expect(page.locator(".coach-talk.is-done")).toBeVisible();
-  await expect(step(page)).toHaveText("2/6", { timeout: 4000 });
-  // Delete: the counter on «Terminar» goes up.
+  await expect(step(page)).toHaveText("2/8", { timeout: 4000 });
+  // Delete the flowers «by mistake»: the counter on «Terminar» goes up.
+  await expect(page.locator('[data-testid="tutorial-card-flowers"]')).toBeVisible();
   await swipe(page, -140, 0);
   await expect(page.locator(".finish-count")).toHaveText("1");
-  await expect(step(page)).toHaveText("3/6", { timeout: 4000 });
-  // Undo brings it back (counter gone), then it goes back to the queue.
+  await expect(step(page)).toHaveText("3/8", { timeout: 4000 });
+  // Undo brings them back (counter gone)...
   await page.locator(".tut-undo").click();
   await expect(page.locator(".finish-count")).toHaveCount(0);
-  await expect(page.locator('[data-testid="tutorial-card-floor"]')).toBeVisible();
-  await expect(step(page)).toHaveText("4/6", { timeout: 5000 });
-  await expect(page.locator(".finish-count")).toHaveText("1");
+  await expect(page.locator('[data-testid="tutorial-card-flowers"]')).toBeVisible();
+  await expect(step(page)).toHaveText("4/8", { timeout: 5000 });
+  // ...and they are kept this time.
+  await swipe(page, 140, 0);
+  await expect(step(page)).toHaveText("5/8", { timeout: 4000 });
+  await expect(page.locator(".finish-count")).toHaveCount(0);
   // Favourite with the gesture, «Más tarde» with its button.
   await swipe(page, 0, -170);
-  await expect(step(page)).toHaveText("5/6", { timeout: 4000 });
+  await expect(step(page)).toHaveText("6/8", { timeout: 4000 });
   await page.locator(".tut-later").click();
-  await expect(step(page)).toHaveText("6/6", { timeout: 4000 });
+  await expect(step(page)).toHaveText("7/8", { timeout: 4000 });
+  // The blurry floor photo is deleted for real, and is what «Terminar» shows marked.
+  await expect(page.locator('[data-testid="tutorial-card-floor"]')).toBeVisible();
+  await swipe(page, -140, 0);
+  await expect(page.locator(".finish-count")).toHaveText("1");
+  await expect(step(page)).toHaveText("8/8", { timeout: 4000 });
+  // Deleted means gone: the pile is empty and the marked photo waits in the counter.
+  await expect(page.locator(".tutorial .photo-card")).toHaveCount(0);
   await page.locator(".tutorial .header-action.finish").click();
   await expect(page.locator(".coach-talk.is-done")).toBeVisible();
   await expect(page.getByRole("button", { name: /^(Start|Allow access to Photos)$/ })).toBeVisible({ timeout: 5000 });
@@ -65,12 +76,12 @@ test("every step waits for its own action, by gesture or by button, then the pri
 test("«Saltar» goes to the privacy card with Coqui’s note, and the step is logged", async ({ page }) => {
   await openPractice(page);
   await swipe(page, 140, 0);
-  await expect(step(page)).toHaveText("2/6", { timeout: 4000 });
+  await expect(step(page)).toHaveText("2/8", { timeout: 4000 });
   await page.locator(".tut-skip").click();
   await expect(page.locator(".ob-skip-note")).toBeVisible();
   await expect(page.getByRole("button", { name: /^(Start|Allow access to Photos)$/ })).toBeVisible();
   const log = await page.evaluate(() => JSON.parse(localStorage.getItem("cocowash-tutorial-log-v1") || "{}"));
-  expect(log.skipped).toEqual([0, 1, 0, 0, 0, 0]);
+  expect(log.skipped).toEqual([0, 1, 0, 0, 0, 0, 0, 0]);
 });
 
 test("with Reduce Motion the hand stays still (with its arrow) and the practice completes with the buttons", async ({ page }) => {
@@ -78,7 +89,7 @@ test("with Reduce Motion the hand stays still (with its arrow) and the practice 
   await openPractice(page);
   await expect(page.locator(".coach-hand .coach-hand-icon")).toBeVisible();
   await expect(page.locator(".coach-track-head")).toBeVisible();
-  for (const [selector, next] of [[".bar-keep", "2/6"], [".bar-discard", "3/6"], [".tut-undo", "4/6"], [".bar-heart", "5/6"], [".tut-later", "6/6"]]) {
+  for (const [selector, next] of [[".bar-keep", "2/8"], [".bar-discard", "3/8"], [".tut-undo", "4/8"], [".bar-keep", "5/8"], [".bar-heart", "6/8"], [".tut-later", "7/8"], [".bar-discard", "8/8"]]) {
     await page.locator(`.tutorial ${selector}`).click();
     await expect(step(page)).toHaveText(next, { timeout: 5000 });
   }
@@ -100,7 +111,7 @@ test("a tap on the photo while the coach is showing the gesture never counts as 
   await page.mouse.down();
   await page.mouse.up();
   await page.waitForTimeout(1500);
-  await expect(step(page)).toHaveText("1/6");
+  await expect(step(page)).toHaveText("1/8");
   await expect(page.locator(".coach-talk.is-done")).toHaveCount(0);
 });
 
@@ -128,12 +139,12 @@ test("the dim covers the whole app edge to edge, the photo sits above it, and on
 test("on «Terminar» the hand waits beside the button and never covers its word", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await openPractice(page);
-  for (const [selector, next] of [[".bar-keep", "2/6"], [".bar-discard", "3/6"], [".tut-undo", "4/6"], [".bar-heart", "5/6"], [".tut-later", "6/6"]]) {
+  for (const [selector, next] of [[".bar-keep", "2/8"], [".bar-discard", "3/8"], [".tut-undo", "4/8"], [".bar-keep", "5/8"], [".bar-heart", "6/8"], [".tut-later", "7/8"], [".bar-discard", "8/8"]]) {
     await page.locator(`.tutorial ${selector}`).click();
     await expect(step(page)).toHaveText(next, { timeout: 5000 });
   }
   await expect(page.locator(".coach-hand .coach-hand-icon")).toBeVisible();
-  await expect(page.locator('[data-testid="tutorial-card-marked"]')).toBeVisible();
+  await expect(page.locator(".tutorial .photo-card")).toHaveCount(0);
   const overlap = await page.evaluate(() => {
     const word = document.querySelector(".tutorial .header-action.finish span")!.getBoundingClientRect();
     const hand = document.querySelector(".coach-hand .coach-hand-icon")!.getBoundingClientRect();

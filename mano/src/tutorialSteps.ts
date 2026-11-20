@@ -1,4 +1,4 @@
-/** The first-launch practice (user, 2026-11-19): six steps, each asking for one real
+/** The first-launch practice (user, 2026-11-19; eight steps from 2026-11-20): each asking for one real
  * action on the tutorial's own postcards, with the gesture or its button. Nothing here
  * touches Photos or the decision record: the deck, the counter and «Deshacer» are the
  * tutorial's own. Pure logic (state, swipe reading, the local step log) so the screen
@@ -6,12 +6,20 @@
 
 import { swipeDecision, swipeZone, type SwipeKind } from './swipe.ts';
 export type { SwipeKind };
-export type StepId = SwipeKind | 'undo' | 'finish';
+/** The actions a step can ask for. */
+export type Action = SwipeKind | 'undo' | 'finish';
 /** What the person did: a released swipe, or a press on one of the screen's buttons. */
-export type TutorialInput = { kind: SwipeKind | 'undo' | 'finish'; via: 'gesture' | 'button' };
+export type TutorialInput = { kind: Action; via: 'gesture' | 'button' };
 
-export const STEP_IDS: readonly StepId[] = ['keep', 'discard', 'undo', 'favorite', 'later', 'finish'];
+/** Eight steps (user, 2026-11-20): keep a good photo; delete a lovely one «by mistake»,
+ * get it back with «Deshacer» and keep it; love one; leave one for later; delete the
+ * photo that really is useless; and «Terminar», where it stays marked. Deleting is
+ * shown twice: once undone (nothing is lost), once for real (this is how it goes). */
+export type StepId = 'keep' | 'mistake' | 'undo' | 'rescue' | 'favorite' | 'later' | 'discard' | 'finish';
+export const STEP_IDS: readonly StepId[] = ['keep', 'mistake', 'undo', 'rescue', 'favorite', 'later', 'discard', 'finish'];
 export const STEP_COUNT = STEP_IDS.length;
+/** The action each step waits for. */
+export const EXPECTS: Record<StepId, Action> = { keep: 'keep', mistake: 'discard', undo: 'undo', rescue: 'keep', favorite: 'favorite', later: 'later', discard: 'discard', finish: 'finish' };
 
 /** The pile's own reading of a swipe (swipe.ts): the practice teaches exactly the gesture
  * the pile will read — the same distances, the same stamp, the same quick flick. */
@@ -29,7 +37,7 @@ export const stepId = (state: TutorialState): StepId => STEP_IDS[Math.min(state.
  * (the photo comes back, nothing is recorded). While a confirmation plays, input waits. */
 export function applyInput(state: TutorialState, input: TutorialInput): { state: TutorialState; accepted: boolean } {
   if (state.finished || state.phase === 'done') return { state, accepted: false };
-  if (input.kind === stepId(state)) return { state: { ...state, phase: 'done' }, accepted: true };
+  if (input.kind === EXPECTS[stepId(state)]) return { state: { ...state, phase: 'done' }, accepted: true };
   return { state: { ...state, phase: 'missed', misses: state.misses + 1 }, accepted: false };
 }
 /** After the confirmation: the next step, or the end. */
@@ -39,24 +47,24 @@ export function advance(state: TutorialState): TutorialState {
   return step >= STEP_COUNT ? { ...state, finished: true } : { step, phase: 'ask', misses: 0, finished: false };
 }
 
-/** The tutorial's own pile: which postcard is on top at each step. Each one invites
- * its gesture (user, 2026-11-19): a lovely sunset to keep, a blurry photo of the floor
- * taken by accident to delete, a birthday to love, a receipt you may still need to
- * leave for later; at «Terminar», the photo marked for deletion is back on screen. */
+/** The tutorial's own pile, in order. Each photo invites its gesture: a lovely sunset to
+ * keep, a field of flowers worth keeping (deleted by mistake, then rescued), a birthday
+ * to love, a receipt you may still need, and a blurry photo of the floor taken by
+ * accident — deleted for real. At «Terminar» the pile is empty: what was marked waits in the
+ * counter on «Terminar» (showing the deleted photo again read as if it had not gone; user, 2026-11-20). */
 export const PHOTOS = {
-  beach: { src: '/assets/demo/postcard-1.svg', width: 200, height: 300, marked: false },
-  floor: { src: '/assets/demo/tutorial-floor.svg', width: 200, height: 300, marked: false },
-  birthday: { src: '/assets/demo/tutorial-birthday.svg', width: 200, height: 280, marked: false },
-  ticket: { src: '/assets/demo/postcard-7.svg', width: 200, height: 300, marked: false },
-  marked: { src: '/assets/demo/tutorial-floor.svg', width: 200, height: 300, marked: true },
+  beach: { src: '/assets/demo/postcard-1.svg', width: 200, height: 300 },
+  flowers: { src: '/assets/demo/postcard-6.svg', width: 200, height: 300 },
+  birthday: { src: '/assets/demo/tutorial-birthday.svg', width: 200, height: 280 },
+  ticket: { src: '/assets/demo/postcard-7.svg', width: 200, height: 300 },
+  floor: { src: '/assets/demo/tutorial-floor.svg', width: 200, height: 300 },
 } as const;
 export type PhotoId = keyof typeof PHOTOS;
-/** Order of the pile. The floor photo is deleted (step 2), comes back with «Deshacer»
- * (step 3) and goes back to the deletion queue, so step 6 shows it marked. */
-export const PILE: readonly PhotoId[] = ['beach', 'floor', 'birthday', 'ticket', 'marked'];
+/** The flowers leave with the mistake and come back with «Deshacer» on top again. */
+export const PILE: readonly PhotoId[] = ['beach', 'flowers', 'birthday', 'ticket', 'floor'];
 
 /** Where each step's target lives on the replica of the main screen. */
-export const TARGET: Record<StepId, 'card' | 'undo' | 'finish'> = { keep: 'card', discard: 'card', undo: 'undo', favorite: 'card', later: 'card', finish: 'finish' };
+export const TARGET: Record<StepId, 'card' | 'undo' | 'finish'> = { keep: 'card', mistake: 'card', undo: 'undo', rescue: 'card', favorite: 'card', later: 'card', discard: 'card', finish: 'finish' };
 
 /* ---------- Step log: on this device only ----------
  * The project sends nothing anywhere (no telemetry: AGENTS.md), so «where do people

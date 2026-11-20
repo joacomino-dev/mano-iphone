@@ -165,7 +165,9 @@ export function Spotlight({ on, target, travelKey, strong = false }: { on: boole
           {shown.map((shape, i) => <ShapeMark key={i} shape={shape}/>)}
           {moving && <rect ref={traveler} fill="black"/>}
         </mask>
-        <filter id={`${id}glow`} x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter>
+        {/* In layer units: a region relative to the shapes' box ignores their strokes (the bar
+            pieces' outlines are strokes) and cut the glow in straight lines. */}
+        <filter id={`${id}glow`} filterUnits="userSpaceOnUse" x="0" y="0" width={size.w} height={size.h}><feGaussianBlur stdDeviation="3"/></filter>
       </defs>
       <rect width={size.w} height={size.h} fill={SCRIM} mask={`url(#${id}mask)`}/>
     </svg>

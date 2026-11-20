@@ -280,6 +280,8 @@ textos con hablantes nativos, 1.0.1 para lo que salga.
   CI macOS con el nuevo «Saltar», arte de Coqui guiñando (`coqui-wink`) y nueva build/versión.
 - **R-81 · Gestos de la pila que no se leían (usuarios, 2026-11-19) — Hecho en código · CL.** CW-CL-097:
   zona invisible de «Anclar», sello/decisión unificados, deslizamiento rápido y reposo. Pendiente: confirmación en iPhone.
+- **R-83 · Filtros y Ajustes abruman (usuario, 2026-11-20) — Propuesta · CL.** Tres direcciones con maquetas;
+  recomendación: intenciones primero + listas con detalle; Ajustes fuera de las pestañas. Espera elección.
 - **R-82 · Anuncios que no aparecen — Abierto · U + CL.** El código pide anuncios reales; falta llenado.
   Usuario: vincular la app con la ficha en AdMob y revisar su estado/política. Decisión pendiente: subir la
   categoría máxima de G a PG para más llenado. Código: huecos vacíos ya no se quedan (CW-CL-097).
@@ -294,6 +296,7 @@ textos con hablantes nativos, 1.0.1 para lo que salga.
 - 2026-11-19 · Claude · CW-CL-095 · R-80: práctica interactiva (6 pasos, coach marks, Coqui guía, «Saltar»), trucos en contexto (pila, ampliar, anclar, álbum) y «Ajustes › Trucos»; registro de pasos solo en el dispositivo. 162 Node, 34 Playwright Edge (4 nuevas), apple-readiness 19, runtime 28, builds y check-release PASS. Falta QA en iPhone y CI nativa.
 - 2026-11-19 · Claude · CW-CL-096 · R-80: segunda pasada tras QA en iPhone: oscurecido de borde a borde con recortes de forma exacta que viajan entre pasos, globo único de dos líneas, mano que arrastra la carta con estela, fotos con sentido y copy acción + motivo. 162 Node, 36 Playwright, apple-readiness 19 PASS. Falta QA en iPhone.
 - 2026-11-19 · Claude · CW-CL-097 · R-80/R-81/R-82: práctica fluida (oscurecido estático bajo la pila; la foto rota iluminada) y gestos fiables en la pila (zona invisible de «Anclar», sello y decisión unificados, deslizamiento rápido, reposo que no atrapa). Huecos de anuncio vacíos se cierran. Falta vincular la app en AdMob (usuario) y QA en iPhone.
+- 2026-11-20 · Claude · CW-CL-098 · R-80/R-83: práctica en 8 pasos (borrar por error → deshacer → conservar; la borrosa se borra de verdad), brillo de la barra sin cortes, aire bajo los botones del onboarding. R-83 abierto: rediseño de Filtros y Ajustes, propuesta de 3 opciones esperando elección.
 
 - 2026-11-17 · Claude · CW-CL-089 · R-16/R-30/R-32: el usuario decide publicar iPhone 0.9.9 (48) como 1.0. Capturas 6,9" (Pro Max) en CI; `appstore-listing.yml` + `scripts/asc_publish.py` rellenan ficha, capturas, edad, precio gratis, disponibilidad y 3 compras, y envían solo si se marca (recorrido completo PASS contra API simulada; API real pendiente de secretos). Pasos del usuario: `appstore/PUBLICAR_1.0.md`.
 
