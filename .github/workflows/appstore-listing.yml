@@ -1,14 +1,18 @@
 name: App Store · listing, purchases and submission
 # Run by hand only. Uses the same App Store Connect API key as appstore-testflight.yml
-# to fill version 1.0 from the repository (scripts/asc_publish.py): listing in seven
+# to fill a version (1.0, or an update created with the `create` step) from the repository (scripts/asc_publish.py): listing in seven
 # languages, 6.9" screenshots from the latest "Capture real iPhone store screens" run,
 # free price and availability, the three in-app purchases and the age rating.
 # It submits for review only when `submit` is ticked.
 on:
   workflow_dispatch:
     inputs:
+      version:
+        description: 'Versión de App Store (1.1 y siguientes: añade create y whatsnew a los pasos)'
+        default: '1.0'
+        required: true
       steps:
-        description: 'Pasos (metadata, screenshots, price, purchases, attach, status)'
+        description: 'Pasos (create, metadata, whatsnew, screenshots, price, purchases, attach, status)'
         default: 'metadata,screenshots,price,purchases,status'
         required: true
       price_year:
@@ -62,6 +66,7 @@ jobs:
       PRICE_COFFEE: ${{ inputs.price_coffee }}
       RELEASE_TYPE: ${{ inputs.release_type }}
       BUILD: ${{ inputs.build }}
+      VERSION: ${{ inputs.version }}
       SCREENS_RUN: ${{ inputs.screens_run }}
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -72,6 +77,7 @@ jobs:
         run: |
           [[ "$STEPS" =~ ^[a-z,]+$ ]] || { echo "Invalid steps: $STEPS"; exit 1; }
           [[ "$BUILD" =~ ^[1-9][0-9]*$ ]] || { echo "Invalid build: $BUILD"; exit 1; }
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]] || { echo "Invalid version: $VERSION"; exit 1; }
           for price in "$PRICE_YEAR" "$PRICE_LIFETIME" "$PRICE_COFFEE"; do
             [ -z "$price" ] || [[ "$price" =~ ^[0-9]+(\.[0-9]{1,2})?$ ]] || { echo "Invalid price: $price"; exit 1; }
           done
@@ -102,7 +108,7 @@ jobs:
       - name: Fill App Store Connect
         run: |
           set -o pipefail
-          args=(--version 1.0 --steps "$STEPS" --release-type "$RELEASE_TYPE" --build "$BUILD")
+          args=(--version "$VERSION" --steps "$STEPS" --release-type "$RELEASE_TYPE" --build "$BUILD")
           [ -z "${SCREENS:-}" ] || args+=(--screens "$SCREENS")
           [ -z "$PRICE_YEAR" ] || args+=(--price-year "$PRICE_YEAR")
           [ -z "$PRICE_LIFETIME" ] || args+=(--price-lifetime "$PRICE_LIFETIME")

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""App Store Connect API for CocoWash 1.0: listing, screenshots, purchases, price,
+"""App Store Connect API for CocoWash (1.0 and its updates): listing, «What's New», screenshots, purchases, price,
 availability and (only with --submit) the review submission.
 
 Stdlib only; the API token is signed with the system `openssl`. Every step reads the
@@ -210,8 +210,15 @@ def reopen_draft(asc, app_id, version_id):
                 log('  version taken out of the unsent draft submission')
 
 
-def find_version(asc, app_id, version, reopen=False):
+def find_version(asc, app_id, version, reopen=False, create=False):
     versions = asc.get_all(f'/v1/apps/{app_id}/appStoreVersions', **{'filter[platform]': 'IOS'})
+    if create and not any(v['attributes']['versionString'] == version for v in versions):
+        # An update (1.1 and later): Apple copies the live version's listing and screenshots into it.
+        created = asc.send('POST', '/v1/appStoreVersions', 'appStoreVersions',
+                           attributes={'platform': 'IOS', 'versionString': version},
+                           relationships={'app': rel('apps', app_id)})
+        log(f'Version {version}: created')
+        return created
     for item in versions:
         if item['attributes']['versionString'] == version:
             state = item['attributes'].get('appStoreState') or item['attributes'].get('appVersionState')
@@ -301,6 +308,21 @@ def step_metadata(asc, app, version, release_type, sources):
         log('  review contact SKIPPED: Apple requires a phone (+country code); set the ASC_REVIEW_PHONE secret')
         return
     log('  review contact and notes')
+
+
+def step_whats_new(asc, app, version, sources):
+    """«What's New» of an update, from releaseNotes in storefront/metadata.json (required after 1.0)."""
+    store, review, iap, listing = sources
+    locales = localized(listing, app['attributes']['primaryLocale'])
+    log("\n== What's New")
+    existing = {i['attributes']['locale']: i for i in asc.get_all(f'/v1/appStoreVersions/{version["id"]}/appStoreVersionLocalizations')}
+    for locale, text in locales.items():
+        if locale not in existing:
+            log(f'  {locale}: no localization on this version (run metadata first)')
+            continue
+        asc.send('PATCH', f'/v1/appStoreVersionLocalizations/{existing[locale]["id"]}', 'appStoreVersionLocalizations',
+                 ident=existing[locale]['id'], attributes={'whatsNew': text['releaseNotes']})
+        log(f"  {locale}: what's new")
 
 
 def png_size(path):
@@ -517,7 +539,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--version', default='1.0')
     parser.add_argument('--steps', default='metadata,screenshots,price,purchases,status',
-                        help='comma list: metadata, screenshots, price, purchases, submit, status')
+                        help='comma list: create, metadata, whatsnew, screenshots, price, purchases, attach, submit, status')
     parser.add_argument('--screens', help='folder with <lang>-<screen>.png')
     parser.add_argument('--display', default='APP_IPHONE_67', help='screenshot display type of the 6.9" slot')
     parser.add_argument('--release-type', default='AFTER_APPROVAL', choices=['AFTER_APPROVAL', 'MANUAL'])
@@ -533,9 +555,11 @@ def main():
     excluded = {t.strip() for t in args.exclude_territories.split(',') if t.strip()}
     app = find_app(asc)
     log(f'App {app["attributes"]["name"]} ({BUNDLE}), primary locale {app["attributes"]["primaryLocale"]}')
-    version = find_version(asc, app['id'], args.version, reopen='attach' in steps)
+    version = find_version(asc, app['id'], args.version, reopen='attach' in steps, create='create' in steps)
     if 'metadata' in steps:
         step_metadata(asc, app, version, args.release_type, sources)
+    if 'whatsnew' in steps:
+        step_whats_new(asc, app, version, sources)
     if 'screenshots' in steps:
         step_screenshots(asc, app, version, args.screens, args.display, sources)
     if 'price' in steps:

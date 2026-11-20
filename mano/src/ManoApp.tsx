@@ -27,7 +27,7 @@ import { haptic, setHapticsEnabled } from './haptics';
 import { AnimatedNumber, CocoLoader, Deferred } from './Loader';
 import { Splash } from './Splash';
 import { AccessScreen, PreparingScreen, LoadErrorScreen, SessionDone, EMPTY_STATS, readStats, type RoundStats } from './Screens';
-import { AdRoom, AdSlot, PurchaseOptions, useMonetization } from './Monetization';
+import { AdRoom, AdSlot, PurchaseOptions, TrackingAsk, useMonetization } from './Monetization';
 import { readTestMode, setTestMode, readTestRounds, saveTestRounds, readAdsOff, saveAdsOff } from './testMode';
 import { useSheetDrag } from './sheetDrag';
 import { useAndroidBack } from './androidBack';
@@ -906,7 +906,9 @@ export function ManoApp() {
   return <div ref={root} className={`mano-app ${isNative?'on-device':''} ${session?'in-session':'on-screen'}`} onContextMenu={blockMenu}>
     {screen}
     {/* «Trucos»: the advanced gestures, the first time each one helps (ContextTips.tsx). Presentation only. */}
-    {onboarded&&allowed&&session&&!showDone&&<ContextTips front={active?.id} history={state.history} moment={{calm:!!active&&!sheet&&!inspect&&!gridOpen&&!deckAd&&!busy&&!error&&!zone&&!splash,hand:hand.length,front:active?active.kind:null,albums:!onAndroid()}}/>}
+    {onboarded&&allowed&&session&&!showDone&&<ContextTips front={active?.id} history={state.history} moment={{calm:!money.askingTracking&&!!active&&!sheet&&!inspect&&!gridOpen&&!deckAd&&!busy&&!error&&!zone&&!splash,hand:hand.length,front:active?active.kind:null,albums:!onAndroid()}}/>}
+    {/* Before Apple's tracking alert: CocoWash's explainer, one «Continuar» (Monetization.tsx). */}
+    <TrackingAsk open={money.askingTracking} onContinue={money.continueTracking}/>
     <p className="sr-only" role="status" aria-live="polite">{spoken}</p>
     {splash&&<Splash done={()=>setSplash(false)}/>}
     {gridOpen&&<Suspense fallback={null}><LibraryGrid leaving={gridLeaving} assets={assets} state={state} filter={filterSetting} filtersOn={!filterSetting.off} cardFrom={gridCard.current} top={gridTop} selected={gridSelection} setSelected={setGridSelection} progress={gridProgress} scrub={gridScrub} release={gridRelease} cardTarget={cardTarget} fingers={gridFingers} tools={gridTools.current}

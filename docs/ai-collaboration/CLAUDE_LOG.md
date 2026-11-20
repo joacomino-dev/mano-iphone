@@ -1241,3 +1241,15 @@ Pedido del usuario: aplicar la recomendación de la propuesta (CW-CL-098): Filtr
 - Corrección tras CI: el script del emulador Android (`android-native-cycles.mjs`) aún tocaba `.sheet-tabs`; ahora usa el segmentado de Tipo y el acceso «Ajustes». Igual en tres scripts QA manuales; `sheetDrag` arrastra desde `.sheet-nav` y se quitó CSS muerto de pestañas.
 Pendiente: verlo en iPhone; XCTest en CI macOS.
 
+### CW-CL-100 — Pantalla de Coqui antes de la pregunta de rastreo; versión 1.1
+Fecha: 2026-11-20, America/Bogota
+Agente: Claude
+Pedido del usuario: que el aviso de rastreo tenga la estética de CocoWash; luego push y subir la nueva versión a la App Store («no pares hasta que esté todo listo»). Autoriza tocar el nativo protegido de anuncios.
+- Diagnóstico: el aviso «gratis… rastreo» era de Google (UMP, mensaje explicativo del IDFA); la alerta de Apple solo admite su frase. Se sustituye el de Google por uno propio.
+- Nativo (`CocoMonetization.swift`): tras el consentimiento de Google, si Apple aún no ha preguntado, `prepare` devuelve `askTracking` sin iniciar anuncios; nuevo método `askTracking` abre la alerta de Apple. Si el mensaje de Google sigue activo en AdMob, Google pregunta antes y la pantalla propia no aparece (nunca salen dos).
+- Pantalla (`TrackingAsk` en `Monetization.tsx`, `monetization.css`): hoja de papel sobre fondo oscurecido, Coqui saludando sobre el borde, «CocoWash es gratis gracias a los anuncios», una frase, dos datos (las fotos no salen del iPhone; elijas lo que elijas, todo funciona igual) y un único «Continuar». Reglas de App Review: sin cerrar, sin tocar fuera, sin «Ahora no», sin premio, sin imitar la alerta. 7 idiomas. Nota para App Review añadida.
+- Pruebas: `tracking-ask-flow.mjs` (aparece, no se descarta con Escape ni tocando fuera, «Continuar» pregunta a Apple una vez y los anuncios vuelven a prepararse; no aparece si Apple ya preguntó; cabe en SE). Fixture con `trackingStatus`. XCTest de anuncios toca «Continuar» antes de la alerta (sin ejecutar aquí: CI macOS).
+- Publicación: 1.0 está a la venta; la actualización es 1.1. `asc_publish.py` crea la versión (`create`) y escribe «Novedades» (`whatsnew`, desde `releaseNotes`, 7 idiomas + es-MX); `appstore-listing.yml` acepta `version`. Ensayo contra un App Store Connect falso: PASS.
+- Validación: 166 Node, 18 flujos, apple-readiness, check-release, privacidad, runtime 28 y builds PASS.
+Pendiente: el usuario despublica el mensaje IDFA de Google en AdMob si existe; QA en iPhone (TestFlight).
+

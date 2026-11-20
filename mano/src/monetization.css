@@ -82,3 +82,23 @@
 /* 9.8.2: «para siempre» as a soft gold stamp (champagne, not brassy). */
 .support-stamp.tone-forever { --face: linear-gradient(140deg, var(--cw-gold-100), var(--cw-gold-300) 55%, var(--cw-gold-400)); --face-ink: var(--cw-gold-ink); --face-soft: var(--cw-gold-ink-soft); --frame: var(--cw-gold-700); --art-bg: var(--cw-gold-50); }
 .support-stamp.tone-forever .stamp-face { background: var(--face); box-shadow: inset 0 0 0 1.5px var(--frame), inset 0 0 0 4px var(--cw-gold-200), inset 0 0 0 5px color-mix(in srgb, var(--cw-gold-700) 45%, transparent); }
+
+/* Before Apple's tracking alert (1.1): a paper card rising over a dimmed screen, Coqui
+   waving above its edge, one button. Not dismissible: the only way on is Apple's alert. */
+.tracking-ask { position: fixed; inset: 0; z-index: 210; display: flex; align-items: flex-end; justify-content: center;
+  padding: 0 var(--cw-space-3) calc(env(safe-area-inset-bottom) + var(--cw-space-3)); background: rgba(8, 32, 33, .55);
+  touch-action: none; overscroll-behavior: contain; }
+.tracking-ask-card { position: relative; width: min(100%, 420px); display: flex; flex-direction: column; align-items: center;
+  gap: var(--cw-space-3); padding: 72px var(--cw-space-5) var(--cw-space-6); border-radius: var(--cw-radius-xl);
+  box-shadow: 0 -2px 0 rgba(255, 255, 255, .5) inset, 0 24px 48px rgba(8, 32, 33, .32); color: var(--cw-ink); text-align: center; }
+.tracking-ask-coqui { position: absolute; top: -56px; left: 50%; translate: -50% 0; width: auto;
+  filter: drop-shadow(0 6px 10px rgba(18, 45, 46, .2)); pointer-events: none; }
+.tracking-ask h2 { margin: 0; max-width: 18ch; font: 600 1.4rem/1.2 var(--cw-font-brand); text-wrap: balance; }
+.tracking-ask p { margin: 0; max-width: 34ch; font: 400 var(--cw-text-md)/1.45 var(--cw-font); color: var(--cw-ink-soft); text-wrap: pretty; }
+.tracking-ask-facts { list-style: none; margin: var(--cw-space-1) 0 0; padding: var(--cw-space-1) var(--cw-space-3); width: 100%;
+  border-radius: 16px; background: var(--cw-row, #fff); box-shadow: inset 0 0 0 1px var(--cw-line); text-align: start; }
+.tracking-ask-facts li { display: flex; align-items: center; gap: var(--cw-space-3); min-height: 48px; font: 500 var(--cw-text-sm)/1.3 var(--cw-font); }
+.tracking-ask-facts li + li { border-top: 1px solid var(--cw-line); }
+.tracking-ask-icon { width: 30px; height: 30px; flex: none; display: grid; place-items: center; border-radius: 9px; background: var(--cw-pick, #E3F2EE); color: var(--cw-turquoise-deep, #1E7470); }
+.tracking-ask-next { width: 100%; flex: none; margin-top: var(--cw-space-3); }
+@media (max-height: 640px) { .tracking-ask-card { padding-top: 60px; gap: var(--cw-space-2); } .tracking-ask-coqui { top: -46px; height: 96px !important; } .tracking-ask h2 { font-size: 1.25rem; } }

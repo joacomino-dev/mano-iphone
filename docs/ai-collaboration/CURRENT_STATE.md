@@ -1,5 +1,10 @@
 # CocoWash — estado vigente
 
+## Claude CW-CL-100 — pantalla antes de la pregunta de rastreo, versión 1.1 (2026-11-20)
+
+Coqui explica los anuncios y abre la alerta de Apple con un único «Continuar» (nativo `askTracking`).
+1.1 = intro jugable, Filtros/Ajustes nuevos y esta pantalla; el script de App Store crea la versión y sus notas.
+
 ## Claude CW-CL-099 — Filtros y Ajustes rediseñados (2026-11-20)
 
 Filtros: intenciones con su número y «Afinar» en filas con detalle. Ajustes: portada de filas y detalle.

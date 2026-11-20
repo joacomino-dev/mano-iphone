@@ -520,5 +520,10 @@ const table: Record<string, string> = {
   'Volver a los filtros': 'フィルタに戻る',
   '¿Qué revisamos hoy?': '今日は何を整理する？',
   'Afinar': '絞り込む',
+  // Tracking explainer before Apple's alert (1.1, 2026-11-20)
+  'CocoWash es gratis gracias a los anuncios': 'CocoWashは広告のおかげで無料です',
+  'Tus fotos no salen de tu iPhone': '写真がiPhoneの外に出ることはありません',
+  'Apple te preguntará ahora si los anuncios pueden usar tu identificador para ajustarse a tus gustos.': 'このあとAppleから、広告が識別子を使ってあなたの好みに合わせてよいか確認されます。',
+  'Elijas lo que elijas, todo funciona igual': 'どちらを選んでも使い勝手は同じです',
 };
 export default table;

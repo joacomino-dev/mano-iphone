@@ -9,7 +9,7 @@ import UserMessagingPlatform
 final class CocoMonetizationPlugin: CAPPlugin, CAPBridgedPlugin, NativeAdLoaderDelegate {
     let identifier = "CocoMonetizationPlugin"
     let jsName = "CocoMonetization"
-    let pluginMethods: [CAPPluginMethod] = ["status", "catalog", "buy", "restore", "prepare", "show", "hide", "privacy"]
+    let pluginMethods: [CAPPluginMethod] = ["status", "catalog", "buy", "restore", "prepare", "askTracking", "show", "hide", "privacy"]
         .compactMap { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
 
     private static let annual = "work.joaquin.mano.noads.year"
@@ -168,6 +168,18 @@ final class CocoMonetizationPlugin: CAPPlugin, CAPBridgedPlugin, NativeAdLoaderD
 
     @MainActor private var tracking: Bool { ATTrackingManager.trackingAuthorizationStatus == .authorized }
 
+    /// Apple's tracking alert, asked only from CocoWash's explainer («Continuar»).
+    @objc func askTracking(_ call: CAPPluginCall) {
+        Task { @MainActor in
+            if ATTrackingManager.trackingAuthorizationStatus == .notDetermined,
+               UIApplication.shared.applicationState == .active {
+                _ = await ATTrackingManager.requestTrackingAuthorization()
+            }
+            let status = ATTrackingManager.trackingAuthorizationStatus
+            call.resolve(["asked": status != .notDetermined, "allowed": status == .authorized])
+        }
+    }
+
     @objc func prepare(_ call: CAPPluginCall) {
         Task { @MainActor in
             let entitlement = await entitlements()
@@ -202,13 +214,15 @@ final class CocoMonetizationPlugin: CAPPlugin, CAPBridgedPlugin, NativeAdLoaderD
                     call.resolve(["ready": false])
                     return
                 }
-                // Apple's tracking prompt, once, after Google's consent form and before the
-                // first ad request (the order Google recommends). If the AdMob IDFA
-                // explainer is turned on, UMP has already asked and this is skipped.
-                // Without permission every request stays non-personalized (npa=1 below).
-                if ATTrackingManager.trackingAuthorizationStatus == .notDetermined,
-                   UIApplication.shared.applicationState == .active {
-                    _ = await ATTrackingManager.requestTrackingAuthorization()
+                // Apple's tracking prompt comes after Google's consent form and before the
+                // first ad request (the order Google recommends). 1.1 (user, 2026-11-20):
+                // the page first shows CocoWash's own explainer (Coqui, one «Continuar»
+                // that always leads to Apple's alert), then calls askTracking and prepares
+                // again. If the AdMob IDFA explainer is on, UMP has already asked and this
+                // is skipped. Without permission requests stay non-personalized (npa=1).
+                if ATTrackingManager.trackingAuthorizationStatus == .notDetermined {
+                    call.resolve(["ready": false, "askTracking": true])
+                    return
                 }
                 // Family-safe ads only (G), whatever the AdMob console says.
                 MobileAds.shared.requestConfiguration.maxAdContentRating = .general

@@ -285,6 +285,9 @@ textos con hablantes nativos, 1.0.1 para lo que salga.
 - **R-82 · Anuncios que no aparecen — Abierto · U + CL.** El código pide anuncios reales; falta llenado.
   Usuario: vincular la app con la ficha en AdMob y revisar su estado/política. Decisión pendiente: subir la
   categoría máxima de G a PG para más llenado. Código: huecos vacíos ya no se quedan (CW-CL-097).
+- **R-84 · Pantalla propia antes de la pregunta de rastreo de Apple (usuario, 2026-11-20) — Hecho en código · CL.**
+  CW-CL-100: Coqui explica por qué hay anuncios y abre la alerta de Apple con un único «Continuar». Sale como 1.1.
+  Usuario: despublicar en AdMob el «Mensaje explicativo del IDFA» si existe (si sigue, Google pregunta y la pantalla no sale).
 
 ## Registro de avance
 
@@ -298,6 +301,7 @@ textos con hablantes nativos, 1.0.1 para lo que salga.
 - 2026-11-19 · Claude · CW-CL-097 · R-80/R-81/R-82: práctica fluida (oscurecido estático bajo la pila; la foto rota iluminada) y gestos fiables en la pila (zona invisible de «Anclar», sello y decisión unificados, deslizamiento rápido, reposo que no atrapa). Huecos de anuncio vacíos se cierran. Falta vincular la app en AdMob (usuario) y QA en iPhone.
 - 2026-11-20 · Claude · CW-CL-098 · R-80/R-83: práctica en 8 pasos (borrar por error → deshacer → conservar; la borrosa se borra de verdad), brillo de la barra sin cortes, aire bajo los botones del onboarding. R-83 abierto: rediseño de Filtros y Ajustes, propuesta de 3 opciones esperando elección.
 - 2026-11-20 · Claude · CW-CL-099 · R-83: Filtros por intenciones con «Afinar» en filas y detalle; Ajustes como portada de filas; selección en tinte claro. Flujos 18, apple-readiness 19, Playwright y unitarias PASS. Falta verlo en iPhone.
+- 2026-11-20 · Claude · CW-CL-100 · R-84: pantalla de Coqui antes de la alerta ATT (nativo: `prepare` devuelve `askTracking`; `askTracking` pregunta a Apple). Flujo tracking-ask, 18 flujos, unitarias, runtime y builds PASS. Versión 1.1 preparada (notas en 7 idiomas, script crea la versión).
 
 - 2026-11-17 · Claude · CW-CL-089 · R-16/R-30/R-32: el usuario decide publicar iPhone 0.9.9 (48) como 1.0. Capturas 6,9" (Pro Max) en CI; `appstore-listing.yml` + `scripts/asc_publish.py` rellenan ficha, capturas, edad, precio gratis, disponibilidad y 3 compras, y envían solo si se marca (recorrido completo PASS contra API simulada; API real pendiente de secretos). Pasos del usuario: `appstore/PUBLICAR_1.0.md`.
 

@@ -533,5 +533,10 @@ const table: Record<string, string> = {
   'Volver a los filtros': 'Back to filters',
   '¿Qué revisamos hoy?': 'What shall we go through today?',
   'Afinar': 'Fine-tune',
+  // Tracking explainer before Apple's alert (1.1, 2026-11-20)
+  'CocoWash es gratis gracias a los anuncios': 'CocoWash is free thanks to ads',
+  'Tus fotos no salen de tu iPhone': 'Your photos never leave your iPhone',
+  'Apple te preguntará ahora si los anuncios pueden usar tu identificador para ajustarse a tus gustos.': 'Apple will now ask whether ads may use your identifier to match what you like.',
+  'Elijas lo que elijas, todo funciona igual': 'Whatever you choose, it all works the same',
 };
 export default table;

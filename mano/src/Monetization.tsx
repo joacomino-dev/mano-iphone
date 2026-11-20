@@ -1,6 +1,7 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { useEffect, useRef, useState } from 'react';
-import { ArrowCounterClockwiseIcon, CalendarCheckIcon, CoffeeIcon, InfinityIcon, ShieldCheckIcon } from '@phosphor-icons/react';
+import { ArrowCounterClockwiseIcon, CalendarCheckIcon, CaretRightIcon, CoffeeIcon, InfinityIcon, ShieldCheckIcon, SmileyIcon } from '@phosphor-icons/react';
+import { motion, useReducedMotion } from 'motion/react';
 import { AdCadence, DEFAULT_RULES, TEST_RULES, INTRO_MS } from './adCadence';
 import { Character } from './Characters';
 import { t, locale } from './i18n';
@@ -19,7 +20,8 @@ const Store = registerPlugin<{
   catalog(): Promise<Status>;
   buy(input: { id: string }): Promise<Status & { outcome: Outcome }>;
   restore(): Promise<Status>;
-  prepare(): Promise<{ ready: boolean }>;
+  prepare(): Promise<{ ready: boolean; askTracking?: boolean }>;
+  askTracking(): Promise<{ asked: boolean; allowed: boolean }>;
   show(input: { x: number; y: number; width: number; height: number; deck: boolean; style: 'deck' | 'inline'; hidden: boolean; labels: Record<string, string> }): Promise<{ shown: boolean; retry?: boolean }>;
   hide(): Promise<void>;
   privacy(): Promise<void>;
@@ -49,6 +51,8 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
   const nextAttempt = useRef(0);
   const current = useRef<Placement | undefined>(undefined);
   const [loadedTime, setLoadedTime] = useState(false);
+  // 1.1: Apple's tracking question waits behind CocoWash's own explainer (TrackingAsk).
+  const [askingTracking, setAskingTracking] = useState(false);
 
   /** A fixed letter asked for before an ad was ready: shown as soon as one is. */
   const wanted = useRef<Placement | undefined>(undefined);
@@ -110,10 +114,11 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
       last = now;
       // 9.8.3: the next letter may load while a fixed one is on screen (the review
       // letter, then the summary one); only the pile letter waits for its turn.
-      if (off || document.hidden || !status || status.adFree || (activeMs.current < PRELOAD_MS && !wanted.current) || ready.current || loading.current || current.current === 'deck' || now < nextAttempt.current) return;
+      if (askingTracking || off || document.hidden || !status || status.adFree || (activeMs.current < PRELOAD_MS && !wanted.current) || ready.current || loading.current || current.current === 'deck' || now < nextAttempt.current) return;
       loading.current = true;
       nextAttempt.current = now + 30_000;
       void Store.prepare().then(value => {
+        if (value.askTracking) { if (wanted.current) stopWaiting(); nextAttempt.current = 0; setAskingTracking(true); return; }
         ready.current = value.ready;
         lastEmpty.current = !value.ready;
         if (value.ready) nextAttempt.current = 0;
@@ -123,7 +128,7 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
       }).catch(() => {}).finally(() => { loading.current = false; });
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [available, cleaning, warm, loadedTime, status, placement, off]);
+  }, [available, cleaning, warm, loadedTime, status, placement, off, askingTracking]);
 
   useEffect(() => {
     if (!available || !off) return;
@@ -139,6 +144,9 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
   };
   return {
     available, placement, awaiting, status, setStatus, clear,
+    /** CocoWash's explainer is on screen; «Continuar» opens Apple's alert, then ads prepare again. */
+    askingTracking,
+    continueTracking: () => Store.askTracking().catch(() => undefined).finally(() => { nextAttempt.current = 0; setAskingTracking(false); }),
     review(ids: string[]) {
       if (!available || off || status?.adFree) return;
       cadence.review(ids);
@@ -343,4 +351,33 @@ export function PurchaseOptions({ money }: { money: Monetization }) {
     </div>
     <p className="setting-note" aria-live="polite">{message}</p>
   </section>;
+}
+
+/** Before Apple's tracking alert (1.1, user 2026-11-20): Coqui says why CocoWash shows ads
+ * and that nothing changes either way. App Review rules for a pre-permission screen: one
+ * button that always leads to Apple's alert (no close, no backdrop tap, no «Not now»), no
+ * reward, no imitation of the system alert and no «Permitir» wording. */
+export function TrackingAsk({ open, onContinue }: { open: boolean; onContinue: () => Promise<unknown> }) {
+  const reduced = useReducedMotion();
+  const button = useRef<HTMLButtonElement>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { if (open) { setBusy(false); window.setTimeout(() => button.current?.focus(), 350); } }, [open]);
+  if (!open) return null;
+  const go = () => { if (busy) return; setBusy(true); void onContinue(); };
+  return <motion.div className="tracking-ask" role="dialog" aria-modal="true" aria-labelledby="tracking-ask-title" aria-describedby="tracking-ask-text"
+    initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduced ? .12 : .24 }}>
+    <motion.section className="tracking-ask-card paper" initial={reduced ? { opacity: 0 } : { opacity: 0, y: 48 }} animate={{ opacity: 1, y: 0 }}
+      transition={reduced ? { duration: .12 } : { type: 'spring', stiffness: 320, damping: 30, delay: .06 }}>
+      <Character pose="coqui-wave" height={112} className="tracking-ask-coqui" delay={.25}/>
+      <h2 id="tracking-ask-title">{t('CocoWash es gratis gracias a los anuncios')}</h2>
+      <p id="tracking-ask-text">{t('Apple te preguntará ahora si los anuncios pueden usar tu identificador para ajustarse a tus gustos.')}</p>
+      <ul className="tracking-ask-facts">
+        <li><span className="tracking-ask-icon"><ShieldCheckIcon size={18} weight="bold"/></span>{t('Tus fotos no salen de tu iPhone')}</li>
+        <li><span className="tracking-ask-icon"><SmileyIcon size={18} weight="bold"/></span>{t('Elijas lo que elijas, todo funciona igual')}</li>
+      </ul>
+      <button ref={button} type="button" className="ob-next tracking-ask-next" onClick={go} aria-busy={busy}>
+        <span className="ob-next-label">{t('Continuar')}<CaretRightIcon size={18} weight="bold" className="flip-rtl"/></span>
+      </button>
+    </motion.section>
+  </motion.div>;
 }

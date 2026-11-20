@@ -410,3 +410,12 @@ Plan and the user's notes: `docs/ai-handoff/NEXT_0.9.5_PROMPT.md`.
   `public/assets/stamps/{kind}.webp` (icon) and `{kind}-word.webp` (icon + word).
 - Tour (rows and demo): icon only, no word. Cards (drag and decision stamps): icon + word on a
   cream plate so it reads over photos. A kept item's seal level (I–VIII) stays the drawn seal.
+
+## CocoWash 1.1 — tracking explainer (20 November 2026, user request, CW-CL-100)
+
+- Before Apple's tracking alert the app shows its own screen (Coqui, «CocoWash es gratis gracias a
+  los anuncios», one sentence, two facts, one «Continuar»), not Google's IDFA explainer. It is never
+  dismissible and has no other button: «Continuar» always opens Apple's alert (App Review rule for
+  pre-permission screens). No rewards, no «Permitir» wording, no imitation of the system alert.
+- Order: Google's consent form (where required) → this screen → Apple's alert → first ad request.
+

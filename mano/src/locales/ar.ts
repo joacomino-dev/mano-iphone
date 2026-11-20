@@ -520,5 +520,10 @@ const table: Record<string, string> = {
   'Volver a los filtros': 'العودة إلى الفلاتر',
   '¿Qué revisamos hoy?': 'ماذا نراجع اليوم؟',
   'Afinar': 'تخصيص',
+  // Tracking explainer before Apple's alert (1.1, 2026-11-20)
+  'CocoWash es gratis gracias a los anuncios': 'CocoWash مجاني بفضل الإعلانات',
+  'Tus fotos no salen de tu iPhone': 'صورك لا تغادر جهاز iPhone',
+  'Apple te preguntará ahora si los anuncios pueden usar tu identificador para ajustarse a tus gustos.': 'ستسألك Apple الآن إن كان بإمكان الإعلانات استخدام معرّفك لتناسب اهتماماتك.',
+  'Elijas lo que elijas, todo funciona igual': 'مهما اخترت، يعمل كل شيء كما هو',
 };
 export default table;

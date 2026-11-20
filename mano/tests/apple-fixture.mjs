@@ -14,7 +14,7 @@ export function installAppleFixture({ onboarded = true, status = 'authorized', l
   const methods = ['authorize','permissionStatus','assets','libraryVersion','thumbnail','diagnostic','haptic','place','sizes','classify',
     'cancelClassify','analyze','cancelAnalysis','deleteAssets','albums','createAlbum','addToAlbum','favorite',
     'cancelThumbnailPreparation','cacheThumbnails','cancelVideoPreparation','releasePreparedVideos','metadata','manageLimitedAccess','preview','share','shareMany','openSettings','openLink'];
-  const storeMethods = ['status','catalog','buy','restore','prepare','show','hide','privacy'];
+  const storeMethods = ['status','catalog','buy','restore','prepare','askTracking','show','hide','privacy'];
   window.Capacitor = {
     PluginHeaders: [ { name: 'PhotoLibrary', methods: [...methods.map(name => ({ name, rtype: 'promise' })), {name:'addListener',rtype:'callback'}, {name:'removeListener',rtype:'promise'}] },
       { name: 'CocoMonetization', methods: [...storeMethods.map(name => ({ name, rtype: 'promise' })), {name:'addListener',rtype:'callback'}, {name:'removeListener',rtype:'promise'}] } ],
@@ -30,6 +30,10 @@ export function installAppleFixture({ onboarded = true, status = 'authorized', l
           if(outcome==='purchased'&&args.id!=='work.joaquin.mano.coffee')fixture.adFree=true;
           return {adFree:fixture.adFree??true,products:fixture.products??[],outcome};
         }
+        // Apple's tracking question (1.1): set trackingStatus 'notDetermined' to see CocoWash's explainer first;
+        // trackingAnswer is what the person picks in Apple's alert.
+        if(method==='prepare'&&fixture.trackingStatus==='notDetermined')return { ready: false, askTracking: true };
+        if(method==='askTracking'){ if(fixture.trackingStatus==='notDetermined')fixture.trackingStatus=fixture.trackingAnswer??'denied'; return { asked: fixture.trackingStatus!=='notDetermined', allowed: fixture.trackingStatus==='authorized' }; }
         return { adFree: fixture.adFree ?? true, products: fixture.products ?? [], ready: fixture.adReady ?? false, shown: fixture.adReady ?? false };
       }
       switch (method) {

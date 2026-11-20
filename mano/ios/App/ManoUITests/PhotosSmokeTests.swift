@@ -192,9 +192,17 @@ final class PhotosSmokeTests: XCTestCase {
         print("COCOWASH_UI_AUTHORIZED_SESSION_OK")
 
 
+        // 1.1: CocoWash's own explainer comes first; its single «Continuar» opens Apple's alert.
+        let explainer=app.staticTexts["CocoWash es gratis gracias a los anuncios"].firstMatch
+        guard explainer.waitForExistence(timeout:75) else {
+            attachScreenshot(app,"Tracking explainer unavailable")
+            XCTFail("No CocoWash tracking explainer after the existing UMP flow")
+            return
+        }
+        app.buttons["Continuar"].firstMatch.tap()
         let system=XCUIApplication(bundleIdentifier:"com.apple.springboard")
         let deny=system.buttons.matching(NSPredicate(format:"label CONTAINS[c] 'Not to Track' OR label CONTAINS[c] 'no rastre'")).firstMatch
-        guard deny.waitForExistence(timeout:75) else {
+        guard deny.waitForExistence(timeout:30) else {
             attachScreenshot(app,"ATT research prompt unavailable")
             XCTFail("No real ATT prompt after the existing UMP flow; cannot claim either state was tested")
             return

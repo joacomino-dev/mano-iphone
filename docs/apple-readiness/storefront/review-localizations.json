@@ -9,7 +9,7 @@
     },
     "en": {
       "photosPermission": "CocoWash reads the photos and videos you allow to display them, organize albums and manage favorites. Deletion requires review and confirmation in Photos. Analysis runs on the device.",
-      "reviewNotes": "No account or login is required. Complete onboarding and grant full or limited access to a test library. Discard only queues items; review and confirm in Photos to delete. Undo corrects decisions before confirmed deletion. Google provides ads and consent. Purchases remove ads for one year (one-time, no automatic renewal) or forever; the coffee tip does not remove ads. Test purchases and restoration in sandbox."
+      "reviewNotes": "No account or login is required. Complete onboarding and grant full or limited access to a test library. Discard only queues items; review and confirm in Photos to delete. Undo corrects decisions before confirmed deletion. Google provides ads and consent. Before Apple's App Tracking Transparency prompt the app shows one short explanation whose only button, Continue, always opens the system prompt; the app works the same whatever the choice. Purchases remove ads for one year (one-time, no automatic renewal) or forever; the coffee tip does not remove ads. Test purchases and restoration in sandbox."
     },
     "fr": {
       "photosPermission": "CocoWash lit les photos et vidéos autorisées pour les afficher, organiser les albums et gérer les favoris. La suppression exige une révision puis la confirmation dans Photos. L’analyse reste sur l’appareil.",
