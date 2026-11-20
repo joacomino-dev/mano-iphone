@@ -4,6 +4,7 @@
 
 Coqui explica los anuncios y abre la alerta de Apple con un único «Continuar» (nativo `askTracking`).
 1.1 = intro jugable, Filtros/Ajustes nuevos y esta pantalla; el script de App Store crea la versión y sus notas.
+Enviada a revisión: 1.1 (51), WAITING_FOR_REVIEW; se publica sola al aprobarse.
 
 ## Claude CW-CL-099 — Filtros y Ajustes rediseñados (2026-11-20)
 
