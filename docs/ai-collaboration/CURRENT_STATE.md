@@ -1,5 +1,11 @@
 # CocoWash — estado vigente
 
+## Claude CW-CL-097 — gestos fiables, práctica fluida, anuncios (2026-11-19)
+
+Pila: deslizamientos que se perdían (zona invisible de «Anclar», sello a 45 px pero decisión a 65 px,
+sin velocidad, reposo que atrapaba) corregidos con pruebas. Práctica sin repintado de máscara por
+fotograma; la foto rota iluminada. Anuncios: el código pide bien; falta vincular la app en AdMob (usuario).
+
 ## Claude CW-CL-096 — práctica del onboarding, segunda pasada (2026-11-19)
 
 Tras la QA del usuario en iPhone: capa de coach a pantalla completa (portal), recortes con la forma de

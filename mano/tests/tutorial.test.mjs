@@ -12,17 +12,16 @@ test('six steps in the order the user asked for: keep, delete, undo, favourite, 
   for (const id of ['keep', 'discard', 'favorite', 'later']) assert.equal(TARGET[id], 'card');
 });
 
-test('the practice reads swipes with the pile’s own distances', () => {
-  assert.equal(releasedSwipe(66, 0), 'keep');
-  assert.equal(releasedSwipe(-66, 10), 'discard');
-  assert.equal(releasedSwipe(64, 0), null, 'below 65 px across nothing is decided');
-  assert.equal(releasedSwipe(0, -71), 'favorite');
-  assert.equal(releasedSwipe(0, 71), 'later');
-  assert.equal(releasedSwipe(0, -69), null);
-  assert.equal(releasedSwipe(80, -90), 'favorite', 'the leading axis wins');
-  assert.equal(armedZone(46, 0), 'keep');
-  assert.equal(armedZone(0, -46), 'favorite');
-  assert.equal(armedZone(40, 40), '');
+test('the practice reads swipes exactly as the pile does (swipe.ts)', () => {
+  assert.equal(releasedSwipe(57, 0), 'keep');
+  assert.equal(releasedSwipe(-57, 10), 'discard');
+  assert.equal(releasedSwipe(50, 0), null, 'below the release distance, a slow drag decides nothing');
+  assert.equal(releasedSwipe(-40, 0, -.8, 0), 'discard', 'a quick flick decides');
+  assert.equal(releasedSwipe(0, -65), 'favorite');
+  assert.equal(releasedSwipe(0, 65), 'later');
+  assert.equal(armedZone(57, 0), 'keep');
+  assert.equal(armedZone(50, 0), '', 'no stamp where letting go would not decide');
+  assert.equal(armedZone(70, 70), '', 'no leading axis, no stamp');
 });
 
 test('each step waits for its own action; anything else is a gentle miss that keeps the step', () => {

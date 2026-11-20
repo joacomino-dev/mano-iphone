@@ -13,6 +13,7 @@ import { onAndroid } from './locales/android';
 import { locale, t } from './i18n';
 import { Bubble, Hand, Spotlight, Track, layoutRect, radiusOf, screenRect, shapesOf, type Hole, type Shape } from './Coach';
 import type { ArtSlot, Pose } from './Characters';
+import { releaseVelocity, type Sample } from './swipe';
 import { PHOTOS, PILE, STEP_COUNT, STEP_IDS, TARGET, advance, applyInput, armedZone, logTutorial, releasedSwipe, startTutorial, stepId, type PhotoId, type StepId, type SwipeKind, type TutorialInput } from './tutorialSteps';
 
 /** First-launch practice (user, 2026-11-19; second pass the same day): the real main
@@ -77,7 +78,8 @@ const CAPTION: Record<PhotoId, { where: string; date: [number, number, number] }
   beach: { where: 'Montañita', date: [2025, 7, 14] }, floor: { where: '', date: [2025, 10, 3] }, birthday: { where: 'Cuenca', date: [2025, 9, 12] },
   ticket: { where: 'Quito', date: [2025, 10, 2] }, marked: { where: '', date: [2025, 10, 3] },
 };
-const dateLabel = (d: [number, number, number]) => { try { return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(d[0], d[1], d[2])); } catch { return ''; } };
+let dateFormat: Intl.DateTimeFormat | null = null;
+const dateLabel = (d: [number, number, number]) => { try { dateFormat ??= new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }); return dateFormat.format(new Date(d[0], d[1], d[2])); } catch { return ''; } };
 /** The demo tilts the card a touch more than the pile so the direction reads at a glance. */
 const TILT = .045;
 
@@ -96,7 +98,7 @@ function TutorialCard({ entry, stage, reduced, register, drag, label }: { entry:
   }, []);
   const caption = CAPTION[entry.photo];
   return <motion.article data-testid={`tutorial-card-${entry.photo}`} className={`photo-card paper front ${photo.marked ? 'is-marked' : ''}`}
-    style={{ zIndex: 20, width: cardWidth, height: cardHeight, left: `calc(50% - ${cardWidth / 2}px)`, top: `calc(50% - ${cardHeight / 2}px)`, x, y, rotate, touchAction: 'none' }}
+    style={{ width: cardWidth, height: cardHeight, left: `calc(50% - ${cardWidth / 2}px)`, top: `calc(50% - ${cardHeight / 2}px)`, x, y, rotate, touchAction: 'none' }}
     initial={entry.back ? { opacity: reduced ? 0 : .4 } : reduced ? { opacity: 0 } : { opacity: 0, scale: .97 }} animate={{ opacity: 1, scale: 1 }}
     variants={{ leave: (kind: SwipeKind | '') => exitFor(kind, reduced) }} exit="leave" transition={reduced ? { duration: .14 } : CARD_SPRING}
     tabIndex={0} aria-label={label}
@@ -109,8 +111,8 @@ function TutorialCard({ entry, stage, reduced, register, drag, label }: { entry:
 }
 
 /* ---------- Where things are, in the coach layer's coordinates ---------- */
-type Spots = { card: Shape | null; target: Shape[]; button: Hole | null; strip: Hole | null; tools: Hole | null; progress: Hole | null };
-const NO_SPOTS: Spots = { card: null, target: [], button: null, strip: null, tools: null, progress: null };
+type Spots = { frame: Hole | null; card: Shape | null; target: Shape[]; button: Hole | null; strip: Hole | null; tools: Hole | null; progress: Hole | null };
+const NO_SPOTS: Spots = { frame: null, card: null, target: [], button: null, strip: null, tools: null, progress: null };
 function useSpots(root: HTMLElement | null, layer: HTMLElement | null, step: StepId, watch: unknown[]) {
   const [spots, setSpots] = useState<Spots>(NO_SPOTS);
   const measure = useCallback(() => {
@@ -124,7 +126,9 @@ function useSpots(root: HTMLElement | null, layer: HTMLElement | null, step: Ste
     const els = TARGETS[step].map(selector => root.querySelector(selector));
     const target = shapesOf(els, layer, 6);
     const button = screenRect(els[0], layer);
-    const next: Spots = { card, target, button, strip: local(root.querySelector('.tut-coach')), tools: local(root.querySelector('.archive-tools')), progress: local(root.querySelector('.tut-progress')) };
+    // The dim covers the coach layer (the whole app) from inside the practice's own box.
+    const frame = origin && { x: -origin.x, y: -origin.y, w: layer.offsetWidth, h: layer.offsetHeight, r: 0 };
+    const next: Spots = { frame, card, target, button, strip: local(root.querySelector('.tut-coach')), tools: local(root.querySelector('.archive-tools')), progress: local(root.querySelector('.tut-progress')) };
     setSpots(s => JSON.stringify(s) === JSON.stringify(next) ? s : next);
   }, [root, layer, step]);
   useLayoutEffect(() => { measure(); const a = setTimeout(measure, 120), b = setTimeout(measure, 480); return () => { clearTimeout(a); clearTimeout(b); }; }, [measure, ...watch]);
@@ -234,7 +238,7 @@ export function Tutorial({ done, skip }: { done: () => void; skip: (step: number
   }, [tut.phase, tut.step]);
 
   /* The finger on the card. */
-  const grip = useRef<{ id: number; x: number; y: number; ox: number; oy: number } | null>(null);
+  const grip = useRef<{ id: number; x: number; y: number; ox: number; oy: number; samples: Sample[] } | null>(null);
   const stopCoach = useRef<() => boolean>(() => false);
   const down = (e: PointerEvent) => {
     if (!asking || leaving.current || grip.current || e.button > 0) return;
@@ -245,7 +249,7 @@ export function Tutorial({ done, skip }: { done: () => void; skip: (step: number
     // back home and only the finger's own travel counts (a tap never decides).
     const demo = stopCoach.current(); o.x.stop(); o.y.stop();
     if (demo && !reduced) { animate(o.x, 0, CARD_SPRING); animate(o.y, 0, CARD_SPRING); }
-    grip.current = { id: e.pointerId, x: e.clientX, y: e.clientY, ox: demo ? 0 : o.x.get(), oy: demo ? 0 : o.y.get() };
+    grip.current = { id: e.pointerId, x: e.clientX, y: e.clientY, ox: demo ? 0 : o.x.get(), oy: demo ? 0 : o.y.get(), samples: [{ t: e.timeStamp, x: e.clientX, y: e.clientY }] };
     if (demo && reduced) { o.x.set(0); o.y.set(0); }
     setTouching(true);
   };
@@ -253,6 +257,7 @@ export function Tutorial({ done, skip }: { done: () => void; skip: (step: number
     const g = grip.current; if (!g || g.id !== e.pointerId) return;
     const o = frontOffset(); if (!o) return;
     const dx = g.ox + e.clientX - g.x, dy = g.oy + e.clientY - g.y;
+    g.samples.push({ t: e.timeStamp, x: e.clientX, y: e.clientY }); if (g.samples.length > 10) g.samples.shift();
     o.x.stop(); o.y.stop(); o.x.set(dx); o.y.set(dy);
     const next = armedZone(dx, dy);
     if (next !== zoneNow.current) { zoneNow.current = next; setZone(next); if (next) haptic('selection'); }
@@ -262,7 +267,9 @@ export function Tutorial({ done, skip }: { done: () => void; skip: (step: number
     grip.current = null; setTouching(false);
     zoneNow.current = ''; setZone('');
     // Decided by the finger's travel from where the card was taken (as the pile does).
-    const kind = e.type === 'pointercancel' || e.type === 'lostpointercapture' ? null : releasedSwipe(g.ox + e.clientX - g.x, g.oy + e.clientY - g.y);
+    g.samples.push({ t: e.timeStamp, x: e.clientX, y: e.clientY });
+    const { vx, vy } = releaseVelocity(g.samples);
+    const kind = e.type === 'pointercancel' || e.type === 'lostpointercapture' ? null : releasedSwipe(g.ox + e.clientX - g.x, g.oy + e.clientY - g.y, vx, vy);
     if (kind) act({ kind, via: 'gesture' }); else springBack();
   };
   // Keyboard: the arrows are the four swipes on the focused card.
@@ -344,13 +351,11 @@ export function Tutorial({ done, skip }: { done: () => void; skip: (step: number
   // Coqui's place: above the pile; for «hacia arriba» he waits over the tools row
   // (unused in that step), so the rising photo never runs into him.
   const coachAt = id === 'favorite' ? spots.tools : spots.strip;
-  const follow = target === 'card' && front ? offsets.current.get(front.key) : undefined;
   const nowNumber = Math.min(tut.step + 1, STEP_COUNT);
   const locked = !asking;
   const lineText = `${line.title()}${line.body ? ` ${line.body()}` : ''}`;
 
   const coach = layer && <>
-    <Spotlight on={asking} card={target === 'card' && spots.card && follow ? { shape: spots.card, x: follow.x, y: follow.y, ky: .55 } : null} target={spots.target} travelKey={id} strong={nudge}/>
     {way && handAt && <Track from={handAt} dx={way.x * distance} dy={way.y * distance} opacity={track}/>}
     {handAt && asking && <Hand at={handAt} x={hx} y={hy} opacity={ho} scale={hs} press={hp} turn={turn}/>}
     {coachAt && <motion.div className={`coach-float ${coachAt === spots.tools ? 'is-low' : ''}`} initial={false} animate={{ left: coachAt.x, top: coachAt.y, width: coachAt.w, height: coachAt.h }}
@@ -366,7 +371,12 @@ export function Tutorial({ done, skip }: { done: () => void; skip: (step: number
     </div>}
   </>;
 
-  return <div ref={setRoot} className={`session-content tutorial ${tut.phase === 'done' ? 'is-celebrating' : ''}`} aria-roledescription={t('Práctica')}>
+  return <div ref={setRoot} className={`session-content tutorial ${tut.phase === 'done' ? 'is-celebrating' : ''} ${asking ? 'is-asking' : ''} ${target === 'card' ? 'is-card-step' : ''}`} aria-roledescription={t('Práctica')}>
+    {/* The dim lives here, under the pile: on a gesture step the pile sits above it, so the
+        card stays lit wherever the finger takes it (and rotates with it) at no cost. */}
+    {spots.frame && <div className="tut-dim" style={{ left: spots.frame.x, top: spots.frame.y, width: spots.frame.w, height: spots.frame.h }}>
+      <Spotlight on={asking} target={spots.target} travelKey={id} strong={nudge}/>
+    </div>}
     <header className="archive-header is-session">
       <span className="tut-inert" inert><FilterSwitch on toggle={() => {}} edit={() => {}}/></span>
       <h1 className="header-brand"><div className="brand-status"><span className="brand-wordmark" aria-hidden="true"><Wordmark/></span><span className="sr-only">CocoWash</span></div></h1>

@@ -104,18 +104,20 @@ test("a tap on the photo while the coach is showing the gesture never counts as 
   await expect(page.locator(".coach-talk.is-done")).toHaveCount(0);
 });
 
-test("the coach covers the whole app edge to edge and lights only the step's target, inside the screen", async ({ page }) => {
+test("the dim covers the whole app edge to edge, the photo sits above it, and only the step's button is cut out, inside the screen", async ({ page }) => {
   await openPractice(page);
   await page.waitForTimeout(700);
   const geometry = await page.evaluate(() => {
     const app = document.querySelector(".mano-app")!.getBoundingClientRect();
-    const dim = document.querySelector(".coach-layer .coach-dim")!.getBoundingClientRect();
-    const lit = [...document.querySelectorAll(".coach-layer .coach-glow > *")].map(el => (el as SVGGraphicsElement).getBoundingClientRect());
-    return { app: [app.left, app.top, app.width, app.height], dim: [dim.left, dim.top, dim.width, dim.height], lit: lit.map(b => [b.left, b.top, b.right, b.bottom]) };
+    const dim = document.querySelector(".tut-dim .coach-dim")!.getBoundingClientRect();
+    const lit = [...document.querySelectorAll(".tut-dim .coach-glow g > *")].map(el => (el as SVGGraphicsElement).getBoundingClientRect());
+    const pile = getComputedStyle(document.querySelector(".tutorial .hand-space")!).zIndex, under = getComputedStyle(document.querySelector(".tut-dim")!).zIndex;
+    return { app: [app.left, app.top, app.width, app.height], dim: [dim.left, dim.top, dim.width, dim.height], lit: lit.map(b => [b.left, b.top, b.right, b.bottom]), pile: Number(pile), under: Number(under) };
   });
   geometry.dim.forEach((v, i) => expect(Math.abs(v - geometry.app[i])).toBeLessThan(1));
-  // Two lit shapes on step 1: the photo and «Conservar», both inside the screen.
-  expect(geometry.lit.length).toBe(2);
+  // The photo is lit by sitting above the dim (so it rotates with the finger); «Conservar» is cut out.
+  expect(geometry.pile).toBeGreaterThan(geometry.under);
+  expect(geometry.lit.length).toBe(1);
   for (const [l, t, r, b] of geometry.lit) {
     // The glow is drawn just outside each lit edge: allow its few pixels.
     expect(l).toBeGreaterThanOrEqual(geometry.app[0] - 4); expect(t).toBeGreaterThanOrEqual(geometry.app[1] - 4);

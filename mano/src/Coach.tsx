@@ -98,92 +98,83 @@ function ShapeMark({ shape, glow = 0, fill = 'black' }: { shape: Shape; glow?: n
   return <path d={shape.d} transform={`translate(${shape.dx} ${shape.dy})`} fill={fill} stroke={fill} strokeWidth={(shape.grow + glow) * 2} strokeLinejoin="round"/>;
 }
 
-/** The dimmed screen and its lit shapes. `card`: a lit card that follows the finger
- * (moved by writing a transform, no render per frame; `ky` damps its vertical travel
- * as the pile does). `target` (the step's button or element) travels to its next
- * place and shape when `travelKey` changes. `strong` pulses the glow. */
-export function Spotlight({ on, card, target, travelKey, strong = false }: {
-  on: boolean; card?: { shape: Shape; x: MotionValue<number>; y: MotionValue<number>; ky?: number } | null; target: Shape[]; travelKey: string; strong?: boolean;
-}) {
+/** The dimmed screen and its lit shapes, drawn once per step: nothing in it changes while
+ * a card is dragged (a full-screen SVG mask repainted every frame was what made the
+ * practice stutter on the iPhone). A card that must stay lit while it moves sits above
+ * the dim instead (Tutorial.tsx). `target` travels to its next place and shape when
+ * `travelKey` changes (~350 ms, the only time the mask is redrawn); `strong` pulses the
+ * glow, an opacity animation on its own layer. */
+export function Spotlight({ on, target, travelKey, strong = false }: { on: boolean; target: Shape[]; travelKey: string; strong?: boolean }) {
   const reduced = useReducedMotion();
   const id = useId().replace(/[^a-zA-Z0-9]/g, '');
-  const svg = useRef<SVGSVGElement>(null);
+  const box = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   useEffect(() => {
-    const el = svg.current?.parentElement; if (!el) return;
+    const el = box.current; if (!el) return;
     const read = () => setSize(s => s.w === el.offsetWidth && s.h === el.offsetHeight ? s : { w: el.offsetWidth, h: el.offsetHeight });
     read(); const observer = new ResizeObserver(read); observer.observe(el);
     return () => observer.disconnect();
   }, []);
-  // The card's lit shape rides with the card.
-  const follow = useRef<(SVGGElement | null)[]>([]);
-  useEffect(() => {
-    if (!card) return;
-    const move = () => { const t = `translate(${card.x.get()} ${card.y.get() * (card.ky ?? 1)})`; follow.current.forEach(g => g?.setAttribute('transform', t)); };
-    move();
-    const a = card.x.on('change', move), b = card.y.on('change', move);
-    return () => { a(); b(); };
-  }, [card?.x, card?.y, card?.shape]);
   // From one target to the next: a rounded box slides and reshapes, then the exact outline
   // shows. A new key arrives a render before its target is measured, so the travel waits
   // for the new target's box, then runs to it (and follows it if it is measured again).
   const lastKey = useRef(travelKey), lastBox = useRef<Hole | null>(boundsOf(target));
   const from = useRef<Hole | null>(null);
   const [moving, setMoving] = useState<{ from: Hole; to: Hole } | null>(null);
-  const travelers = useRef<(SVGRectElement | null)[]>([]);
+  const traveler = useRef<SVGRectElement | null>(null);
   const progress = useMotionValue(0);
   const run = useRef<ReturnType<typeof animate> | null>(null);
   useEffect(() => {
-    const box = boundsOf(target);
+    const next = boundsOf(target);
     if (travelKey !== lastKey.current) { lastKey.current = travelKey; from.current = lastBox.current; }
     const start = from.current;
-    if (start && box && (Math.abs(start.x - box.x) > 1 || Math.abs(start.y - box.y) > 1 || Math.abs(start.w - box.w) > 1)) {
+    if (start && next && (Math.abs(start.x - next.x) > 1 || Math.abs(start.y - next.y) > 1 || Math.abs(start.w - next.w) > 1)) {
       from.current = null;
       run.current?.stop();
-      if (reduced) setMoving(null);
+      if (reduced || !on) setMoving(null);
       else {
-        setMoving({ from: start, to: box });
+        setMoving({ from: start, to: next });
         progress.set(0);
         const travel = animate(progress, 1, TRAVEL);
         run.current = travel;
         travel.then(() => { if (run.current === travel) { run.current = null; setMoving(null); } });
       }
-    } else if (box) setMoving(m => m && (m.to.x !== box.x || m.to.y !== box.y || m.to.w !== box.w || m.to.h !== box.h) ? { ...m, to: box } : m);
-    if (box) lastBox.current = box;
+    } else if (next) setMoving(m => m && (m.to.x !== next.x || m.to.y !== next.y || m.to.w !== next.w || m.to.h !== next.h) ? { ...m, to: next } : m);
+    if (next) lastBox.current = next;
   }, [travelKey, target]);
   useEffect(() => () => run.current?.stop(), []);
   useEffect(() => {
     if (!moving) return;
     const draw = () => {
+      const el = traveler.current; if (!el) return;
       const t = progress.get(), m = (a: number, b: number) => a + (b - a) * t;
-      const x = m(moving.from.x, moving.to.x), y = m(moving.from.y, moving.to.y), w = m(moving.from.w, moving.to.w), h = m(moving.from.h, moving.to.h);
-      const r = Math.min(m(moving.from.r, moving.to.r), h / 2);
-      travelers.current.forEach((el, i) => { if (!el) return; const g = i ? 3 : 0; el.setAttribute('x', String(x - g)); el.setAttribute('y', String(y - g)); el.setAttribute('width', String(Math.max(0, w + g * 2))); el.setAttribute('height', String(Math.max(0, h + g * 2))); el.setAttribute('rx', String(r + g)); });
+      const h = m(moving.from.h, moving.to.h);
+      el.setAttribute('x', String(m(moving.from.x, moving.to.x))); el.setAttribute('y', String(m(moving.from.y, moving.to.y)));
+      el.setAttribute('width', String(Math.max(0, m(moving.from.w, moving.to.w)))); el.setAttribute('height', String(Math.max(0, h)));
+      el.setAttribute('rx', String(Math.min(m(moving.from.r, moving.to.r), h / 2)));
     };
     draw();
     return progress.on('change', draw);
   }, [moving]);
-  const clamp = (s: Shape): Shape => s.kind === 'rect' ? { ...s, box: clampBox(s.box, size.w, size.h) } : s;
-  const shown = moving ? [] : target.map(clamp);
-  const lit = (glow: number, fill: string) => <>
-    {card && <g ref={el => { follow.current[glow ? 1 : 0] = el; }}><ShapeMark shape={card.shape} glow={glow} fill={fill}/></g>}
-    {shown.map((s, i) => <ShapeMark key={i} shape={s} glow={glow} fill={fill}/>)}
-    {moving && <rect ref={el => { travelers.current[glow ? 1 : 0] = el; }} fill={glow ? 'none' : fill} stroke={glow ? fill : undefined} strokeWidth={glow ? 6 : undefined}/>}
-  </>;
-  return <motion.svg ref={svg} className={`coach-dim ${strong ? 'is-strong' : ''}`} aria-hidden="true" width={size.w} height={size.h} viewBox={`0 0 ${size.w || 1} ${size.h || 1}`}
-    initial={false} animate={{ opacity: on ? 1 : 0 }} transition={{ duration: reduced ? .12 : on ? .3 : .2, ease: [.2, .8, .2, 1] }}>
-    <defs>
-      <filter id={`${id}soft`} x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="1.1"/></filter>
-      <filter id={`${id}glow`} x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter>
-      <mask id={`${id}mask`} maskUnits="userSpaceOnUse" x="0" y="0" width={size.w} height={size.h}>
-        <rect width={size.w} height={size.h} fill="white"/>
-        <g filter={`url(#${id}soft)`}>{lit(0, 'black')}</g>
-      </mask>
-    </defs>
-    <rect width={size.w} height={size.h} fill={SCRIM} mask={`url(#${id}mask)`}/>
-    {/* The glow sits just outside each lit edge (masked), never over the lit element. */}
-    <g className="coach-glow" mask={`url(#${id}mask)`} filter={`url(#${id}glow)`}>{lit(3, GLOW)}</g>
-  </motion.svg>;
+  const shown = moving ? [] : target.map(s => s.kind === 'rect' ? { ...s, box: clampBox(s.box, size.w, size.h) } : s);
+  return <motion.div ref={box} className="coach-spot" aria-hidden="true" initial={false} animate={{ opacity: on ? 1 : 0 }} transition={{ duration: reduced ? .12 : on ? .3 : .2, ease: [.2, .8, .2, 1] }}>
+    <svg className="coach-dim" width={size.w} height={size.h} viewBox={`0 0 ${size.w || 1} ${size.h || 1}`}>
+      <defs>
+        <mask id={`${id}mask`} maskUnits="userSpaceOnUse" x="0" y="0" width={size.w} height={size.h}>
+          <rect width={size.w} height={size.h} fill="white"/>
+          {shown.map((shape, i) => <ShapeMark key={i} shape={shape}/>)}
+          {moving && <rect ref={traveler} fill="black"/>}
+        </mask>
+        <filter id={`${id}glow`} x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter>
+      </defs>
+      <rect width={size.w} height={size.h} fill={SCRIM} mask={`url(#${id}mask)`}/>
+    </svg>
+    {/* The glow sits just outside each lit edge (masked), never over the lit element; it is
+        static and on its own layer, so pulsing it costs no repaint. Hidden while travelling. */}
+    {!moving && shown.length > 0 && <svg className={`coach-glow ${strong ? 'is-strong' : ''}`} width={size.w} height={size.h} viewBox={`0 0 ${size.w || 1} ${size.h || 1}`}>
+      <g mask={`url(#${id}mask)`} filter={`url(#${id}glow)`}>{shown.map((shape, i) => <ShapeMark key={i} shape={shape} glow={3} fill={GLOW}/>)}</g>
+    </svg>}
+  </motion.div>;
 }
 
 /** The hand that shows the gesture: an opaque, outlined pointing hand whose fingertip is

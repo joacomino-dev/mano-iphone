@@ -4,7 +4,8 @@
  * tutorial's own. Pure logic (state, swipe reading, the local step log) so the screen
  * (Tutorial.tsx) only draws it. */
 
-export type SwipeKind = 'keep' | 'discard' | 'favorite' | 'later';
+import { swipeDecision, swipeZone, type SwipeKind } from './swipe.ts';
+export type { SwipeKind };
 export type StepId = SwipeKind | 'undo' | 'finish';
 /** What the person did: a released swipe, or a press on one of the screen's buttons. */
 export type TutorialInput = { kind: SwipeKind | 'undo' | 'finish'; via: 'gesture' | 'button' };
@@ -12,19 +13,10 @@ export type TutorialInput = { kind: SwipeKind | 'undo' | 'finish'; via: 'gesture
 export const STEP_IDS: readonly StepId[] = ['keep', 'discard', 'undo', 'favorite', 'later', 'finish'];
 export const STEP_COUNT = STEP_IDS.length;
 
-/** The same distances as the pile (ManoApp: zoneOf / end): the stamp arms at 45 px and a
- * release decides past 65 px across or 70 px up/down, whichever axis leads. The
- * practice teaches exactly the gesture the pile will read. */
-export const ARM_AT = 45;
-export function armedZone(dx: number, dy: number): SwipeKind | '' {
-  return dx > ARM_AT ? 'keep' : dx < -ARM_AT ? 'discard' : dy < -ARM_AT ? 'favorite' : dy > ARM_AT ? 'later' : '';
-}
-export function releasedSwipe(dx: number, dy: number): SwipeKind | null {
-  if (Math.abs(dx) > 65 && Math.abs(dx) > Math.abs(dy)) return dx > 0 ? 'keep' : 'discard';
-  if (dy < -70 && Math.abs(dy) > Math.abs(dx)) return 'favorite';
-  if (dy > 70 && Math.abs(dy) > Math.abs(dx)) return 'later';
-  return null;
-}
+/** The pile's own reading of a swipe (swipe.ts): the practice teaches exactly the gesture
+ * the pile will read — the same distances, the same stamp, the same quick flick. */
+export const armedZone = swipeZone;
+export const releasedSwipe = (dx: number, dy: number, vx = 0, vy = 0) => swipeDecision(dx, dy, vx, vy);
 
 /** `ask`: waiting for the action. `done`: the step's confirmation is on screen.
  * `missed`: a different action came; the step stays and Coqui corrects. */

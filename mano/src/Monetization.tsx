@@ -29,6 +29,9 @@ const key = 'cocowash-ad-active-ms-v1';
 /** The next letter starts loading a few seconds into sorting (not after the
  * one-minute intro), so «Terminar» and the summary find it ready: no pop. */
 const PRELOAD_MS = 8_000;
+/** How long a fixed letter keeps its room open for an ad still loading (the load itself
+ * gives up at 8 s natively). */
+const WAIT_MS = 5_000;
 
 /** testing: «Modo de prueba» — same placements, much shorter cadence, separate counters.
  * `cleaning` counts active sorting time; `warm` also lets the next letter load
@@ -51,7 +54,18 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
   const wanted = useRef<Placement | undefined>(undefined);
   // Mirrors `wanted` for rendering: the screen keeps the letter's room meanwhile.
   const [awaiting, setAwaiting] = useState<Placement>();
-  const want = (where: Placement) => { wanted.current = where; setAwaiting(where); };
+  // The last request came back empty (no fill): a fixed letter then reserves no room —
+  // an empty white letter that never fills is worse than none (users, 2026-11-19).
+  const lastEmpty = useRef(false);
+  const giveUp = useRef<number | undefined>(undefined);
+  const stopWaiting = () => { window.clearTimeout(giveUp.current); wanted.current = undefined; setAwaiting(undefined); };
+  const want = (where: Placement) => {
+    if (lastEmpty.current && !loading.current) return;
+    wanted.current = where; setAwaiting(where);
+    // Still nothing after a few seconds: the room closes (the letter may still come next time).
+    window.clearTimeout(giveUp.current);
+    giveUp.current = window.setTimeout(() => { if (wanted.current === where && !current.current) stopWaiting(); }, WAIT_MS);
+  };
   const clear = () => {
     wanted.current = undefined;
     setAwaiting(undefined);
@@ -101,9 +115,11 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
       nextAttempt.current = now + 30_000;
       void Store.prepare().then(value => {
         ready.current = value.ready;
+        lastEmpty.current = !value.ready;
         if (value.ready) nextAttempt.current = 0;
+        else if (wanted.current) stopWaiting();
         const pending = wanted.current;
-        if (value.ready && pending && !current.current) { wanted.current = undefined; setAwaiting(undefined); offer(pending); }
+        if (value.ready && pending && !current.current) { stopWaiting(); offer(pending); }
       }).catch(() => {}).finally(() => { loading.current = false; });
     }, 1000);
     return () => window.clearInterval(timer);

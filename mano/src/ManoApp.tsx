@@ -44,6 +44,7 @@ import { DecisionBar } from './DecisionBar';
 import { Wordmark, PileProgress, FilterSwitch } from './Chrome';
 import { Character } from './Characters';
 import { ContextTips } from './ContextTips';
+import { swipeZone, swipeDecision, releaseVelocity, holdBecomesSwipe, type Sample } from './swipe';
 import { assignToAlbum, afterAlbum } from './album';
 import { cardBox, cardPixels, thumbPixels, setPreviewSizing, cloudDownloads, previewPolicyKey, subscribePreviewPolicy } from './preview';
 import '@fontsource/ibm-plex-mono/latin-500.css';
@@ -301,7 +302,7 @@ export function ManoApp() {
   const setNotice=useCallback((text:string)=>{if(!text){setNoticeState(null);return;}setNoticeState(previous=>previous?.text===text?{...previous}:{id:++noticeId.current,text});setSpoken(text.replace(/\n/g,' '));},[]); const [inspect,setInspect] = useState<Asset|null>(null);
   const [analyzing,setAnalyzing] = useState(false); const [progress,setProgress] = useState({done:0,total:0});
   const reduced = useReducedMotion(); const seed = useRef(saved?.seed??Math.floor(Math.random()*100000)); const [seedVersion,setSeedVersion]=useState(0);
-  const gesture = useRef<{x:number;y:number;t0:number;held:boolean;timer:ReturnType<typeof setTimeout>|null;id:string;review:boolean;element?:Element;asset?:Asset;pinch?:number;grid?:boolean;extra?:number;zone?:StampKind|'';followers:string[]}|null>(null);
+  const gesture = useRef<{x:number;y:number;t0:number;held:boolean;timer:ReturnType<typeof setTimeout>|null;id:string;review:boolean;element?:Element;asset?:Asset;pinch?:number;grid?:boolean;extra?:number;zone?:StampKind|'';followers:string[];samples:Sample[]}|null>(null);
   const pointers = useRef(new Map<number,{x:number;y:number}>());
   // Decision feedback without interruptions: a stamp over the stack and a
   // VoiceOver-only announcement (no visible notice after each swipe).
@@ -631,7 +632,8 @@ export function ManoApp() {
     const distance=Math.hypot(Math.max(box.left-clientX,0,clientX-box.right),Math.max(box.top-clientY,0,clientY-box.bottom));
     anchor.set(dragY>16?Math.max(0,Math.min(1,1-Math.max(0,distance-64)/200)):0);return dragY>64&&distance<=64;};
   // In «Favoritas» a drag left arms nothing: favourites are never queued for deletion.
-  const zoneOf=(x:number,y:number):StampKind|''=>x>45?'keep':x< -45?(favView?'':'discard'):y< -45?'favorite':y>45?'later':'';
+  // The stamp arms exactly where letting go decides (swipe.ts).
+  const zoneOf=(x:number,y:number):StampKind|''=>{const zone=swipeZone(x,y);return favView&&zone==='discard'?'':zone;};
   // Gesture timing uses each event's own timeStamp (when the finger acted), not
   // when a busy main thread got round to the handler or a timer: under load
   // queued moves can run before a 380 ms timer, and a re-render between two taps
@@ -645,7 +647,10 @@ export function ManoApp() {
   // iOS retargets a tap that lands just outside a small button (mute, VHS letters) to that
   // button's click, while pointerdown still reaches the card: muting also toggled play
   // (user, 2026-11-09). A touch starting within 14 px of a card control is the control's.
-  const nearControl=(e:PointerEvent)=>[...(e.currentTarget as HTMLElement).querySelectorAll('button')].some(b=>{const r=b.getBoundingClientRect();return r.width>0&&e.clientX>=r.left-14&&e.clientX<=r.right+14&&e.clientY>=r.top-14&&e.clientY<=r.bottom+14;});
+  // Only controls that can be touched count: the focus-only «Anclar» is invisible and takes no
+  // touches, yet its box at the lower right swallowed swipes started there (users, 2026-11-19).
+  const touchable=(b:HTMLElement)=>{const s=getComputedStyle(b);return s.pointerEvents!=='none'&&s.visibility!=='hidden'&&Number(s.opacity)>.05;};
+  const nearControl=(e:PointerEvent)=>[...(e.currentTarget as HTMLElement).querySelectorAll('button')].some(b=>{const r=b.getBoundingClientRect();return r.width>0&&e.clientX>=r.left-14&&e.clientX<=r.right+14&&e.clientY>=r.top-14&&e.clientY<=r.bottom+14&&touchable(b);});
   /** Two fingers: the card stops following the first one and goes back to its place. */
   const enterPinch=(g:NonNullable<typeof gesture.current>)=>{if(g.timer)clearTimeout(g.timer);g.timer=null;const [a,b]=[...pointers.current.values()];g.pinch=Math.max(1,Math.hypot(b.x-a.x,b.y-a.y));springBack(g.followers);if(g.zone){g.zone='';setZone('');}stampOpacity.set(0);};
   /** A second finger landing beside the card (on the table) is part of the pinch too:
@@ -666,7 +671,7 @@ export function ManoApp() {
     e.currentTarget.setPointerCapture(e.pointerId);
     // The card under the finger and any selected cards of the hand move together.
     const followers=review?[]:[...new Set([...(hand[0]?.id===asset.id?[asset.id]:[]),...targetIds])];
-    const g:NonNullable<typeof gesture.current>={x:e.clientX,y:e.clientY,t0:e.timeStamp,held:false,timer:null,id:asset.id,review,element:e.currentTarget,asset,followers};
+    const g:NonNullable<typeof gesture.current>={x:e.clientX,y:e.clientY,t0:e.timeStamp,held:false,timer:null,id:asset.id,review,element:e.currentTarget,asset,followers,samples:[{t:e.timeStamp,x:e.clientX,y:e.clientY}]};
     g.timer=setTimeout(()=>{g.timer=null;hold(g);},HOLD_MS);gesture.current=g;};
   const move=(e:PointerEvent)=>{const g=gesture.current;if(!g)return;if(pointers.current.has(e.pointerId))pointers.current.set(e.pointerId,{x:e.clientX,y:e.clientY});
     // Pinch out: the anchored view. Pinch in — zooming out, as in Photos — opens the Fototeca (user, 2026-11-13).
@@ -677,6 +682,10 @@ export function ManoApp() {
       if(!g.grid&&ratio<GRID_PINCH&&!gridOpenNow.current&&!deckAd&&assets.length){g.grid=true;void LibraryGrid.preload();setGridTop((document.querySelector('.archive-progress')?.getBoundingClientRect().bottom??0)+4);gridEnter.current=document.querySelector('.decision-bar')?.getBoundingClientRect();gridCard.current=cardTarget();gridTools.current={undo:document.querySelector('.archive-tools>button:first-child .tool-icon')?.getBoundingClientRect(),album:document.querySelector('#album-trigger .tool-icon')?.getBoundingClientRect()};gridProgress.set(0);setGridAds(money.grid());setGridOpen(true);}
       if(g.grid){const mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2},held=gridFingers.get();gridFingers.set(held?{...held,x:mid.x,y:mid.y,ratio}:{x0:mid.x,y0:mid.y,x:mid.x,y:mid.y,ratio});gridScrub(Math.max(0,Math.min(.98,(GRID_PINCH-ratio)/(GRID_PINCH-.55))));}return;}
     const x=e.clientX-g.x,y=e.clientY-g.y;
+    g.samples.push({t:e.timeStamp,x:e.clientX,y:e.clientY});if(g.samples.length>10)g.samples.shift();
+    // Rested past the hold time, then travelled clearly sideways: it was a slow swipe, not a
+    // look (the anchored view is reached downward). Close the peek and let the card follow.
+    if(g.held&&!g.review&&!hookHover.current&&holdBecomesSwipe(x,y)){g.held=false;resetPeek();setPinnedInspect(false);setInspect(null);setOverHook(false);}
     if(!g.held&&Math.hypot(x,y)>10&&g.timer){
       // The finger stayed within slop for the whole hold time: it is a hold, even
       // if the timer has not run yet. Otherwise this is the start of a swipe.
@@ -697,7 +706,9 @@ export function ManoApp() {
     gesture.current=null;if(g.zone)setZone('');resetPeek();if(g.held&&!g.review&&hookHover.current){setPinnedInspect(true);haptic('rigid');}else if(g.held){setPinnedInspect(false);setInspect(null);}
     if(hookHover.current){hookHover.current=false;setOverHook(false);}
     if(g.review){if(g.element)(g.element as HTMLElement).style.transform='';if(g.held&&x>65)void recoverDecision(g.id);return;}if(g.held)return;
-    const decision:Action|null=Math.abs(x)>65&&Math.abs(x)>Math.abs(y)?(x>0?'keep':'discard'):y< -70&&Math.abs(y)>Math.abs(x)?'favorite':y>70&&Math.abs(y)>Math.abs(x)?'later':null;
+    // By distance (as the stamp showed) or a quick flick (swipe.ts).
+    g.samples.push({t:e.timeStamp,x:e.clientX,y:e.clientY});const {vx,vy}=releaseVelocity(g.samples);
+    const decision:Action|null=e.type==='pointercancel'?null:swipeDecision(x,y,vx,vy);
     if(decision){
       // Decided cards leave from where the finger let go; the others spring back
       // (also the decided ones if the decision did not happen).
