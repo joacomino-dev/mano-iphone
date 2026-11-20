@@ -36,7 +36,7 @@ async function previewRun(device) {
 
   await page.getByRole('button', { name: /^Filtros/ }).first().click(); await wait(page, 900);
   await phone(page, `${device}-02-filters`, 'Filtros');
-  await page.locator('.sheet-tabs button').nth(1).click(); await wait(page, 700);
+  await page.locator('.sheet-nav-link').last().click(); await wait(page, 700);
   await phone(page, `${device}-03-settings`, 'Ajustes');
   await page.keyboard.press('Escape'); await wait(page, 800);
 
@@ -91,8 +91,8 @@ async function supportRun(platform) {
   await page.locator('article.front').first().waitFor({ timeout: 20_000 }).catch(() => {});
   await wait(page, 3500);
   await page.getByRole('button', { name: /^Filtros/ }).first().click(); await wait(page, 900);
-  const tab = page.locator('.sheet-tabs button').nth(2);
-  if (await tab.count()) { await tab.click(); await wait(page, 1200); }
+  const tab = page.locator('.sheet-nav-link');
+  if (await tab.count() > 1) { await tab.click(); await wait(page, 1200); }
   await page.screenshot({ path: `${out}/${platform}-07-support.png` });
   index.push({ name: `${platform}-07-support`, note: 'Apoyo (compras), plugins simulados' });
   await page.close();

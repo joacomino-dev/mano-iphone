@@ -47,7 +47,7 @@ async function open(opts, viewport = { width: 390, height: 844 }) {
 async function shot(page, name, note) { await page.screenshot({ path: `${out}/${name}.png` }); index.push({ name, note }); }
 const ready = async page => { await page.locator('.hand-space article.front').first().waitFor({ timeout: 20000 }); await page.locator('.splash').waitFor({ state: 'detached', timeout: 15000 }).catch(() => {}); await page.waitForTimeout(900); };
 const scrollSheet = (page, y) => page.locator('.native-sheet .mano-sheet-body').first().evaluate((e, y) => { e.scrollTop = y; }, y).catch(() => {});
-const tab = (page, n) => page.locator('.sheet-tabs button').nth(n).click();
+const tab = async (page, n) => { const back = page.locator('.sheet-nav-back'); if (await back.count()) await back.click(); const links = page.locator('.sheet-nav-link'); await (n === 2 ? links.first() : links.last()).click(); }; // 1 Ajustes, 2 Apoyo
 
 for (const lang of langs) {
   // Splash with the version under Zángano.

@@ -716,10 +716,6 @@
 .done-stats .is-keep dd{color:var(--cw-turquoise-deep)}.done-stats .is-discard dd{color:var(--cw-graphite)}.done-stats .is-favorite dd{color:var(--cw-pink-deep)}
 
 /* ---------- Filters & settings sheet ---------- */
-.sheet-tabs{position:sticky;top:0;z-index:3;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:2px;margin:0 0 var(--cw-space-2);padding:3px;border-radius:var(--cw-radius-pill);background:var(--cw-paper-dim)}
-.sheet-tabs button{min-height:var(--cw-touch);border:0;border-radius:var(--cw-radius-pill);background:transparent;color:var(--cw-ink);font-size:var(--cw-text-sm);font-weight:500;transition:background var(--cw-base) var(--cw-ease),color var(--cw-base) var(--cw-ease),box-shadow var(--cw-base) var(--cw-ease)}
-.sheet-tabs button[aria-pressed=true]{background:var(--cw-sheet);color:var(--cw-ink);font-weight:600;box-shadow:0 1px 3px rgba(18,45,46,.18)}
-.native-sheet .sheet-tabs button[aria-pressed=true]{background:#fff}
 .settings-panel fieldset{min-width:0;margin:0;padding:var(--cw-space-5) 0;border:0;border-bottom:1px solid var(--cw-line)}
 .settings-panel fieldset:last-child{border-bottom:0}
 .settings-panel legend{float:left;width:100%;display:flex;align-items:center;gap:var(--cw-space-2);padding:0;margin-bottom:var(--cw-space-2);font-size:var(--cw-text-lg);font-weight:600}
@@ -1057,11 +1053,7 @@ input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;u
    their lower edge: a backing in the sheet's colour fills around the pill. */
 /* 0.9.9.1 (36): the backing spans exactly the sheet's side padding and the body
    never scrolls sideways (it overhung by 4 px and Ajustes panned horizontally). */
-.sheet-tabs::before{content:'';position:absolute;z-index:-1;left:calc(-1 * var(--cw-space-5));right:calc(-1 * var(--cw-space-5));top:-200px;bottom:0;background:var(--cw-sheet)}
 .native-sheet .mano-sheet-body{overflow-x:hidden;overflow-y:auto;overscroll-behavior-x:none}
-.native-sheet .sheet-tabs::before{background:var(--cw-sheet-native)}
-.sheet-tabs{background:transparent}
-.sheet-tabs::after{content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;background:var(--cw-paper-dim)}
 
 /* 0.9.9.1 (37): help and privacy links at the end of Ajustes (the privacy policy
    must be reachable inside the app). Same quiet links as Apoyo. */
@@ -1091,7 +1083,7 @@ input:not([type=checkbox]):not([type=range]),textarea{-webkit-user-select:text;u
    grabber says so; the header and the tabs take the drag instead of scrolling. */
 .sheet-grabber{position:absolute;top:6px;left:50%;z-index:2;width:36px;height:5px;margin-left:-18px;border-radius:3px;background:color-mix(in srgb,var(--cw-ink) 22%,transparent)}
 .sheet-grabber::after{content:'';position:absolute;inset:-6px -40px -10px}
-.native-sheet>header,.sheet-grabber,.native-sheet .sheet-tabs{touch-action:none}
+.native-sheet>header,.sheet-grabber,.native-sheet .sheet-nav{touch-action:none}
 
 /* 0.9.9.1 (40): the summary after «Eliminar», redesigned. One headline — the
    amount, in the brand's rounded face, number large and unit small — under

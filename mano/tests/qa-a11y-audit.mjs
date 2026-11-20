@@ -41,7 +41,7 @@ async function screen(name, opts, go) {
   report[name] = await page.evaluate(audit);
   await page.close();
 }
-const tab = (page, n) => page.locator('.sheet-tabs button').nth(n).click();
+const tab = async (page, n) => { const back = page.locator('.sheet-nav-back'); if (await back.count()) await back.click(); const links = page.locator('.sheet-nav-link'); await (n === 2 ? links.first() : links.last()).click(); }; // 1 Ajustes, 2 Apoyo
 await screen('pile', { test: true });
 await screen('filters', { test: true }, async p => { await p.locator('#filter-trigger').click(); await p.waitForTimeout(600); });
 await screen('settings', { test: true }, async p => { await p.locator('#filter-trigger').click(); await tab(p, 1); await p.waitForTimeout(600); });

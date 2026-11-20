@@ -33,8 +33,7 @@ async function pendingSurvivesTermination(){
 }
 async function inlineFullscreen(){
  const before=(await lab.call('assets')).assets.map(a=>a.id).sort();
- await click('#filter-trigger');await click('.sheet-tabs button:first-child');
- await click('.filter-chips.lead-row button:nth-child(3)');
+ await click('#filter-trigger');await click('.seg button:nth-child(3)');
  await click('.filter-apply button');await wait(`!!document.querySelector('.photo-card.front video')`,45000);
  await click('.photo-card.front .zoom-access');await wait(`!!document.querySelector('.inspection video')`,30000);
  await wait(`document.querySelector('.inspection video')?.readyState>=2`,30000);
@@ -74,8 +73,7 @@ async function inlineFullscreen(){
  assert.equal(returned.muted,original.muted,'Leaving fullscreen must preserve the sound setting');assert.equal(returned.volume,original.volume);
  await adb('shell','input','keyevent','4');await wait(`!document.querySelector('.inspection')`,15000);
  assert.deepEqual((await lab.call('assets')).assets.map(a=>a.id).sort(),before,'Fullscreen must not mutate MediaStore');
- await click('#filter-trigger');await click('.sheet-tabs button:first-child');
- await click('.filter-chips.lead-row button:first-child');
+ await click('#filter-trigger');await click('.seg button:first-child');
  await click('.filter-apply button');await wait(`!!document.querySelector('.photo-card.front')`,30000);
  report.inlineFullscreen={playingBeforeFullscreen:true,samePlayer:true,backReturnsToInspector:true,soundPreserved:true,galleryUnchanged:true};
 }
@@ -187,7 +185,7 @@ try{
  for(let i=0;i<10;i++){const at=await lab.page(`return document.querySelector('.tut-skip')?'skip':document.querySelector('.ob-sheet .ob-next')?'next':'';`);if(!at)break;await click(at==='skip'?'.tut-skip':'.ob-sheet .ob-next');await sleep(1200);}
  await wait(`!!document.querySelector('.photo-card.front')`,60000);
  // Prove R-44 on the actual debug APK without enabling synthetic test mode.
- await click('#filter-trigger');await click('.sheet-tabs button:nth-child(2)');await wait(`!!document.querySelector('.test-mode-field')`);await shot('developer-channel-native');
+ await click('#filter-trigger');await click('.sheet-nav-link:last-child');await wait(`!!document.querySelector('.test-mode-field')`);await shot('developer-channel-native');
  report.developerControlsVisible=true;await adb('shell','input','keyevent','4');await wait(`!document.querySelector('.native-sheet')`);report.nativeBackClosesSheet=true;
  await favoriteRefreshAndUndo();
  await inlineFullscreen();

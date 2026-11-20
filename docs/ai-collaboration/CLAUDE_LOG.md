@@ -1238,5 +1238,6 @@ Pedido del usuario: aplicar la recomendación de la propuesta (CW-CL-098): Filtr
 - Estilo: lo elegido en tinte turquesa claro con borde (sin rellenos verde oscuro), títulos de sección en gris pequeño en mayúsculas, iconos de color solo en las filas de portada.
 - Nombres accesibles conservados («Filtros», «Ajustes», «Apoyo», «Aplicar filtros», Tipo «Todo/Fotos/Vídeos/Live Photos», «Modo Geek», «Actualizar biblioteca») para pruebas y XCTest. «Letras VHS» ahora está en Ajustes › Vídeos: `vhs-eye-flow.mjs` y el XCTest de VHS (`ios/`, protegido, cambio mínimo, sin ejecutar: requiere CI macOS) tocan antes la fila «Vídeos». Las notas de App Review («Filtros › Apoyo» / «Ajustes › Apoyo») siguen siendo ciertas.
 - Validación: 166 Node, 18 baterías de flujos, apple-readiness 19, 41 Playwright (splash-sync y pinch-repeat fallaron solo con la máquina cargada; aislados 42/42), runtime 28 y builds PASS. Capturas SE/Pro Max revisadas (portada, detalle de fecha, Ajustes y detalle de fotos).
+- Corrección tras CI: el script del emulador Android (`android-native-cycles.mjs`) aún tocaba `.sheet-tabs`; ahora usa el segmentado de Tipo y el acceso «Ajustes». Igual en tres scripts QA manuales; `sheetDrag` arrastra desde `.sheet-nav` y se quitó CSS muerto de pestañas.
 Pendiente: verlo en iPhone; XCTest en CI macOS.
 

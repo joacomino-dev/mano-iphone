@@ -16,7 +16,7 @@ export function useSheetDrag(sheet: HTMLElement | null, open: boolean, close: ()
     const shade = sheet.previousElementSibling instanceof HTMLElement && sheet.previousElementSibling.classList.contains('native-shade') ? sheet.previousElementSibling : null;
     let start: { x: number; y: number; id: number } | null = null;
     let dragging = false, dy = 0, lastY = 0, lastT = 0, speed = 0, swallow = 0, leaving = 0;
-    const zone = (target: EventTarget | null) => target instanceof Element && !!target.closest('.sheet-grabber, .native-sheet>header, .sheet-tabs');
+    const zone = (target: EventTarget | null) => target instanceof Element && !!target.closest('.sheet-grabber, .native-sheet>header, .sheet-nav');
     const place = (y: number, animate: boolean) => {
       sheet.style.transition = animate && !reduced ? 'transform .24s cubic-bezier(.2,.8,.2,1)' : 'none';
       sheet.style.transform = y ? `translateY(${y}px)` : '';
