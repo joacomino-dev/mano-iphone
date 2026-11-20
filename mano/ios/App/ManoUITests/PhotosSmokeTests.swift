@@ -193,7 +193,7 @@ final class PhotosSmokeTests: XCTestCase {
 
 
         // 1.1: CocoWash's own explainer comes first; its single «Continuar» opens Apple's alert.
-        let explainer=app.staticTexts["CocoWash es gratis gracias a los anuncios"].firstMatch
+        let explainer=app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "CocoWash es gratis gracias a los anuncios")).firstMatch
         guard explainer.waitForExistence(timeout:75) else {
             attachScreenshot(app,"Tracking explainer unavailable")
             XCTFail("No CocoWash tracking explainer after the existing UMP flow")
@@ -345,6 +345,7 @@ final class PhotosSmokeTests: XCTestCase {
         // The shell independently requires the native prepareVideo bytes marker.
         // Do not invoke native bridge methods or bypass the real session UI here.
         print("COCOWASH_UI_AUTHORIZED_SESSION_OK")
+        passTrackingExplainer(app, wait: 25)
 
         // Safe native mutation: a new album containing only simulator fixtures.
         // No discard, delete, favorites or real-device operations are performed.
@@ -549,6 +550,7 @@ final class PhotosSmokeTests: XCTestCase {
             close.tap();print("COCOWASH_UI_STALE_INTENT_ACKNOWLEDGED")
             XCTAssertEqual(XCTWaiter().wait(for:[XCTNSPredicateExpectation(predicate:NSPredicate(format:"exists == false"),object:stale)],timeout:10),.completed)
         }
+        passTrackingExplainer(app,wait:12)
         guard app.buttons["Terminar"].firstMatch.waitForExistence(timeout:20) else {
             attachScreenshot(app,"Safety fixture has an unexpected existing pending decision")
             throw NSError(domain:"CocoWashFixtureQA",code:3,userInfo:[NSLocalizedDescriptionKey:"Refused to reuse a pending decision from an earlier failed test"])
@@ -1060,6 +1062,22 @@ final class PhotosSmokeTests: XCTestCase {
     /// session is usable again. A system interruption handled mid-tap invalidates
     /// a targeted element and fails the test outright (run 41166497344); a
     /// coordinate tap is re-aimed on each attempt and the result is checked.
+    /// 1.1: CocoWash's explainer before Apple's tracking alert shows once per install, a few
+    /// seconds into the first session once an ad is prepared; while it is up it is modal and
+    /// hides the session from accessibility. Pass it like a person: «Continuar», then Apple's
+    /// «Ask App Not to Track». Returns at once when it does not appear within `wait`.
+    @MainActor private func passTrackingExplainer(_ app: XCUIApplication, wait: TimeInterval) {
+        let explainer = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "CocoWash es gratis gracias a los anuncios")).firstMatch
+        guard explainer.waitForExistence(timeout: wait) else { return }
+        app.buttons["Continuar"].firstMatch.tap()
+        let system = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let deny = system.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'Not to Track' OR label CONTAINS[c] 'no rastre'")).firstMatch
+        if deny.waitForExistence(timeout: 20) { deny.tap() }
+        let gone = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: explainer)
+        XCTAssertEqual(XCTWaiter().wait(for: [gone], timeout: 15), .completed, "The tracking explainer must leave after Apple's alert")
+        print("COCOWASH_UI_TRACKING_EXPLAINER_PASSED")
+    }
+
     @MainActor private func closeOverlay(_ app: XCUIApplication, until session: XCUIElement) -> Bool {
         for attempt in 1...3 {
             let close = app.buttons["Cerrar"].firstMatch
