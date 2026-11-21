@@ -287,7 +287,7 @@ textos con hablantes nativos, 1.0.1 para lo que salga.
   categoría máxima de G a PG para más llenado. Código: huecos vacíos ya no se quedan (CW-CL-097).
 - **R-84 · Pantalla propia antes de la pregunta de rastreo de Apple (usuario, 2026-11-20) — Hecho en código · CL.**
   CW-CL-100: Coqui explica por qué hay anuncios y abre la alerta de Apple con un único «Continuar». 1.1 (51) enviada
-  a revisión el 2026-11-20 (WAITING_FOR_REVIEW, publicación automática al aprobarse).
+  a revisión el 2026-11-20 y aprobada el 2026-11-21 (correo de App Store Review); publicación automática.
   Usuario: despublicar en AdMob el «Mensaje explicativo del IDFA» si existe (si sigue, Google pregunta y la pantalla no sale).
 
 ## Registro de avance

@@ -1252,6 +1252,7 @@ Pedido del usuario: que el aviso de rastreo tenga la estética de CocoWash; lueg
 - Publicación: 1.0 está a la venta; la actualización es 1.1. `asc_publish.py` crea la versión (`create`) y escribe «Novedades» (`whatsnew`, desde `releaseNotes`, 7 idiomas + es-MX); `appstore-listing.yml` acepta `version`. Ensayo contra un App Store Connect falso: PASS.
 - Validación: 166 Node, 18 flujos, apple-readiness, check-release, privacidad, runtime 28 y builds PASS.
 - Publicado: TestFlight 1.1 (51) desde `b9c4276` (firma `automatic`; `unsigned` falló en la firma de los frameworks de Google, como antes de 1.0). Versión 1.1 creada en App Store Connect (capturas copiadas, «Novedades» en 8 locales, compras aprobadas), build 51 adjunta y **enviada a revisión: WAITING_FOR_REVIEW**, publicación automática al aprobarse.
+- Aprobada: App Store Review completó la revisión de 1.1 (51) el 2026-11-21 00:05 UTC («eligible for distribution»); sale sola (AFTER_APPROVAL). A las 00:16 UTC la API seguía en IN_REVIEW.
 - XCTest: el humo del simulador perdía «Revisados»/«Álbum» detrás de la pantalla modal (44792122098); `passTrackingExplainer` la pasa como una persona (`36611a6`) y el humo pasa (44798754091).
 Pendiente: el usuario despublica el mensaje IDFA de Google en AdMob si existe; QA en iPhone (TestFlight).
 
