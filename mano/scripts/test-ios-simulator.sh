@@ -323,6 +323,14 @@ report_ui_failure() {
   grep -a 'COCOWASH_JS_ERROR' "$log_file" | tail -n 20 || true
   echo '--- ui-test.log tail ---'
   tail -n 40 "$smoke_dir/ui-test.log"
+  # Store run: keep whatever screens (and zz-* diagnostics) were captured before the failure.
+  if [ "${COCO_STORE_SCREENS:-0}" = 1 ]; then
+    local runner_app runner_bundle runner_data
+    runner_app="$smoke_dir/DerivedData/Build/Products/Release-iphonesimulator/ManoUITests-Runner.app"
+    runner_bundle="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$runner_app/Info.plist" 2>/dev/null)" || return 0
+    runner_data="$(bounded 30 xcrun simctl get_app_container "$simulator_id" "$runner_bundle" data 2>/dev/null)" || return 0
+    cp -R "$runner_data/Documents/StoreScreens" "$smoke_dir/store-screens" 2>/dev/null || true
+  fi
 }
 run_ui_test() {
   # Run 41497571357 (attempt 2): the test passed in 590 s, but launching the

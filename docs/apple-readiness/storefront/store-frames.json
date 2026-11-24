@@ -1,0 +1,60 @@
+{
+  "purpose": "Headlines for the five App Store screenshots (marketing plan v2, 2026-11-24). The screen under each headline is the real app, captured by testStoreScreensSevenLanguages.",
+  "order": ["01-hero", "02-filters", "03-review", "04-done", "05-pier"],
+  "words": {
+    "es": {"stamp": "Eliminar", "free": "Gratis"},
+    "en": {"stamp": "Delete", "free": "Free"},
+    "fr": {"stamp": "Supprimer", "free": "Gratuit"},
+    "de": {"stamp": "Löschen", "free": "Gratis"},
+    "it": {"stamp": "Elimina", "free": "Gratis"},
+    "ar": {"stamp": "حذف", "free": "مجاني"},
+    "ja": {"stamp": "削除", "free": "無料"}
+  },
+  "frames": {
+    "01-hero": {
+      "es": ["¿iPhone lleno? Desliza y libera espacio", "Izquierda, fuera. Derecha, se queda."],
+      "en": ["Phone full? Swipe to free up space", "Left, it goes. Right, it stays."],
+      "fr": ["iPhone plein ? Balaie et libère de l’espace", "À gauche, ça part. À droite, ça reste."],
+      "de": ["iPhone voll? Wisch und schaff Platz", "Links weg. Rechts bleibt."],
+      "it": ["iPhone pieno? Scorri e libera spazio", "A sinistra via. A destra resta."],
+      "ar": ["جهاز iPhone ممتلئ؟ اسحب وحرّر المساحة", "اسحب للحذف أو للاحتفاظ."],
+      "ja": ["iPhoneがいっぱい？スワイプで空きを", "左で削除、右で残す。"]
+    },
+    "02-filters": {
+      "es": ["Empieza por lo que sobra", "Capturas, fotos borrosas y tickets, en un toque."],
+      "en": ["Start with the clutter", "Screenshots, blurry shots and receipts, one tap away."],
+      "fr": ["Commence par le superflu", "Captures, photos floues et tickets, en un geste."],
+      "de": ["Fang mit dem Überflüssigen an", "Screenshots, unscharfe Fotos und Belege mit einem Tipp."],
+      "it": ["Parti da ciò che avanza", "Screenshot, foto mosse e scontrini, in un tocco."],
+      "ar": ["ابدأ بما لا تحتاجه", "لقطات الشاشة والصور المهزوزة والإيصالات بلمسة واحدة."],
+      "ja": ["いらないものから始めよう", "スクショ、ブレた写真、レシートをワンタップで。"]
+    },
+    "03-review": {
+      "es": ["Nada se borra sin tu OK", "Revisa, recupera y confirma. Tus favoritas, a salvo."],
+      "en": ["Nothing goes without your OK", "Review, recover, confirm. Favorites stay safe."],
+      "fr": ["Rien ne part sans ton accord", "Vérifie, récupère, confirme. Tes favoris restent."],
+      "de": ["Nichts geht ohne dein OK", "Prüfen, zurückholen, bestätigen. Favoriten bleiben."],
+      "it": ["Niente sparisce senza il tuo OK", "Rivedi, recupera, conferma. Le preferite restano."],
+      "ar": ["لا يُحذف شيء دون موافقتك", "راجع واسترجع وأكّد. مفضلاتك في أمان."],
+      "ja": ["あなたのOKなしでは消えません", "見直して、戻して、確定。お気に入りは安全。"]
+    },
+    "04-done": {
+      "es": ["Libera espacio, conserva recuerdos", "Lo que importa, se queda."],
+      "en": ["Free up space, keep the memories", "What matters, stays."],
+      "fr": ["Libère de l’espace, garde les souvenirs", "Ce qui compte reste."],
+      "de": ["Platz schaffen, Erinnerungen behalten", "Was zählt, bleibt."],
+      "it": ["Libera spazio, tieni i ricordi", "Ciò che conta resta."],
+      "ar": ["حرّر المساحة واحتفظ بالذكريات", "ما يهمّ يبقى."],
+      "ja": ["容量を空けて、思い出は残す", "大切なものは残る。"]
+    },
+    "05-pier": {
+      "es": ["Gratis y en tu iPhone", "Sin suscripciones. Tus fotos no salen de tu iPhone."],
+      "en": ["Free, and it stays on your iPhone", "No subscriptions. Your photos never leave your iPhone."],
+      "fr": ["Gratuit, et tout reste sur ton iPhone", "Sans abonnement. Tes photos ne quittent pas ton iPhone."],
+      "de": ["Kostenlos und nur auf deinem iPhone", "Kein Abo. Deine Fotos verlassen dein iPhone nicht."],
+      "it": ["Gratis, e tutto resta sull’iPhone", "Nessun abbonamento. Le tue foto non lasciano il tuo iPhone."],
+      "ar": ["مجاني ويبقى على جهاز iPhone", "بلا اشتراكات. صورك لا تغادر جهاز iPhone."],
+      "ja": ["無料。すべてiPhoneの中で", "サブスクなし。写真がiPhoneの外に出ることはありません。"]
+    }
+  }
+}

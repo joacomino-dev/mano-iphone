@@ -74,11 +74,18 @@ final class PhotosSmokeTests: XCTestCase {
             XCTAssertTrue(order.waitForExistence(timeout:15),"Filters must offer the order row")
             Thread.sleep(forTimeInterval:lang=="es" ? 15 : 4) // on-device analysis fills the counts
             try capture(lang,"02-filters")
-            XCTAssertTrue(hittable(order,10));order.tap()
+            // Taps on the web view are occasionally lost on a busy simulator: tap until the detail opens.
             let newest=app.buttons[try label("Más recientes")].firstMatch
-            XCTAssertTrue(hittable(newest,10),"Order must offer «Newest»");newest.tap()
+            guard hittable(order,10),tap(order,until:{ newest.exists },"order") else {
+                try? capture(lang,"zz-order");XCTFail("Order must offer «Newest»");return
+            }
+            if !hittable(newest,5) { app.swipeUp() }
+            guard hittable(newest,5) else { try? capture(lang,"zz-newest");XCTFail("«Newest» must be reachable");return }
+            newest.tap();Thread.sleep(forTimeInterval:1)
             let apply=app.buttons[try label("Aplicar filtros")].firstMatch
-            XCTAssertTrue(hittable(apply,10));apply.tap()
+            guard hittable(apply,10),tap(apply,until:{ !apply.exists },"apply") else {
+                try? capture(lang,"zz-apply");XCTFail("«Apply filters» must close the filters");return
+            }
             if !hittable(finish,8) {
                 let close=app.buttons[try label("Cerrar")].firstMatch
                 if close.exists { close.tap() }
@@ -93,7 +100,7 @@ final class PhotosSmokeTests: XCTestCase {
                 if index == 8 { try capture(lang,"05-pier") }
                 let control=try XCTUnwrap(controls[decision])
                 guard hittable(control,25),control.isEnabled else {
-                    attachScreenshot(app,"Store decision \(index) \(decision) unavailable in \(lang)")
+                    try? capture(lang,"zz-decision-\(index)")
                     XCTFail("Decision \(index) (\(decision)) must be available");return
                 }
                 control.tap()
@@ -103,7 +110,7 @@ final class PhotosSmokeTests: XCTestCase {
             XCTAssertTrue(hittable(finish,15));finish.tap()
             let confirm=app.buttons.matching(NSPredicate(format:"label MATCHES %@",countPattern(try label("Eliminar {n}")))).firstMatch
             guard confirm.waitForExistence(timeout:30) else {
-                attachScreenshot(app,"Store review missing in \(lang)")
+                try? capture(lang,"zz-review")
                 XCTFail("Finishing must open the review with its delete button");return
             }
             Thread.sleep(forTimeInterval:4) // thumbnails and the measured size
@@ -111,13 +118,13 @@ final class PhotosSmokeTests: XCTestCase {
             try capture(lang,"03-review")
             confirm.tap()
             guard let removed=tapSystemButton(app,["Delete","Eliminar"],timeout:45,searchApp:false) else {
-                XCTFail("No recognized Photos deletion confirmation; never dismiss an unknown alert");return
+                try? capture(lang,"zz-delete");XCTFail("No recognized Photos deletion confirmation; never dismiss an unknown alert");return
             }
             print("COCOWASH_UI_SYSTEM_DELETE lang=\(lang) via=\(removed)")
             // 04 · the reward: space freed by the real deletion.
             let again=app.buttons[try label("Seguir revisando")].firstMatch
             guard again.waitForExistence(timeout:60) else {
-                attachScreenshot(app,"Store done screen missing in \(lang)")
+                try? capture(lang,"zz-done")
                 XCTFail("A confirmed deletion must reach the done screen");return
             }
             Thread.sleep(forTimeInterval:3)
