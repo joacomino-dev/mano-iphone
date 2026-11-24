@@ -48,8 +48,9 @@ final class PhotosSmokeTests: XCTestCase {
         func countPattern(_ template:String) -> String {
             "^"+template.components(separatedBy:"{n}").map{NSRegularExpression.escapedPattern(for:$0)}.joined(separator:"[\\p{Nd}\\s.,]+")+".*$"
         }
-        // One copy, newest first: docs/apple-readiness/storefront/library/manifest.json.
-        let plan=["favorite","discard","discard","discard","favorite","keep","discard","discard","keep","discard","discard","discard","keep","discard","discard"]
+        // One copy, newest first: docs/apple-readiness/storefront/library/manifest.json. Thirteen
+        // decisions before the review; the pier and the yard dog wait for «Keep reviewing».
+        let plan=["keep","discard","favorite","discard","discard","keep","discard","discard","discard","discard","discard","discard","discard"]
         for lang in ["es","en","fr","de","it","ar","ja"] {
             let labels=try XCTUnwrap(tables[lang])
             func label(_ key:String) throws -> String { try XCTUnwrap(labels[key],"missing store label \(key)") }
@@ -66,14 +67,11 @@ final class PhotosSmokeTests: XCTestCase {
                 print("COCOWASH_UI_STORE_RELAUNCH_TREE lang=\(lang)\n\(app.debugDescription)")
                 XCTFail("Native launch must render the requested language");return
             }
-            // 02 · «What do we review today?» with the library's real counts; then «Newest»,
-            // which puts this language's copy on top of the pile.
+            // «Newest» puts this language's copy on top of the pile.
             let filters=app.buttons[try label("Filtros")].firstMatch
             XCTAssertTrue(hittable(filters,20));filters.tap()
             let order=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@",try label("Orden"))).firstMatch
             XCTAssertTrue(order.waitForExistence(timeout:15),"Filters must offer the order row")
-            Thread.sleep(forTimeInterval:lang=="es" ? 15 : 4) // on-device analysis fills the counts
-            try capture(lang,"02-filters")
             // Taps on the web view are occasionally lost on a busy simulator: tap until the detail opens.
             let newest=app.buttons[try label("Más recientes")].firstMatch
             guard hittable(order,10),tap(order,until:{ newest.exists },"order") else {
@@ -92,12 +90,12 @@ final class PhotosSmokeTests: XCTestCase {
             }
             XCTAssertTrue(hittable(finish,20),"Applying the filters must return to the pile")
             Thread.sleep(forTimeInterval:2)
-            // 01 · the pile opens on the hero dog.
-            try capture(lang,"01-hero")
             let controls=["keep":app.buttons[try label("Conservar")].firstMatch,"discard":app.buttons[try label("Eliminar")].firstMatch,"favorite":app.buttons[try label("Añadir a Favoritas")].firstMatch]
             for (index,decision) in plan.enumerated() {
-                // 05 · the friends on the pier on top, for «Free and on your iPhone».
-                if index == 8 { try capture(lang,"05-pier") }
+                // Each frame draws the card that just left; the capture is the pile right after it.
+                // 01 · the beach dog was kept: the pocket shot waits. 02 · the pocket shot left: the cookies wait.
+                if index == 1 { try capture(lang,"01-keep") }
+                if index == 2 { try capture(lang,"02-delete") }
                 let control=try XCTUnwrap(controls[decision])
                 guard hittable(control,25),control.isEnabled else {
                     try? capture(lang,"zz-decision-\(index)")
@@ -129,6 +127,17 @@ final class PhotosSmokeTests: XCTestCase {
             }
             Thread.sleep(forTimeInterval:3)
             try capture(lang,"04-done")
+            // 05 · «Keep reviewing»: the pier goes up to Favorites and the yard dog waits in the pile.
+            guard tap(again,until:{ finish.exists && finish.isHittable },"again") else {
+                try? capture(lang,"zz-again");XCTFail("«Keep reviewing» must return to the pile");return
+            }
+            let favorite=try XCTUnwrap(controls["favorite"]),keep=try XCTUnwrap(controls["keep"])
+            guard hittable(favorite,25) else { try? capture(lang,"zz-pier");XCTFail("The pier photo must be next");return }
+            favorite.tap();Thread.sleep(forTimeInterval:1.6)
+            try capture(lang,"05-favorite")
+            // The yard dog is kept too, so the next language opens on its own copy.
+            guard hittable(keep,25) else { try? capture(lang,"zz-yard");XCTFail("The yard dog must be next");return }
+            keep.tap();Thread.sleep(forTimeInterval:1.2)
         }
         print("COCOWASH_UI_NATIVE_STORE_SCREENS_OK count=35")
     }

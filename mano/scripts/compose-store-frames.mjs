@@ -20,6 +20,8 @@ const library = name => uri(path.join(root, 'docs/apple-readiness/storefront/lib
 const W = 1320, H = 2868;
 // The capture is 1320 px for a 440 pt screen (3x); shown 1000 px wide (whole screen visible) it is 2.27 px per point.
 const SHOT = 1000, PT = SHOT / 440;
+// The pile card (236 pt wide) and the drag stamp (~130 pt) at the screen's scale.
+const CARD = Math.round(236 * PT), STAMP = Math.round(130 * PT);
 
 const css = `
 @font-face{font-family:Fredoka;src:url(${asset('fonts/fredoka-latin-600.woff2', 'font/woff2')}) format('woff2');font-weight:600}
@@ -43,7 +45,10 @@ p{font-family:var(--text);font-weight:500;font-size:46px;line-height:1.28;color:
 .card{position:absolute;padding:${Math.round(8 * PT)}px ${Math.round(8 * PT)}px ${Math.round(32 * PT)}px;border-radius:${Math.round(3 * PT)}px;background:var(--paper-light);
   box-shadow:0 0 0 2px rgba(18,45,46,.07),0 5px 10px rgba(18,45,46,.10),0 26px 60px rgba(18,45,46,.22)}
 .card img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover}
+.card.is-keep{outline:${Math.round(3 * PT)}px solid var(--teal)}
 .card.is-discard{outline:${Math.round(3 * PT)}px solid #4E5A68}
+.card.is-favorite{outline:${Math.round(3 * PT)}px solid #B8444B}
+.card .stamp img{aspect-ratio:auto;object-fit:contain}
 .card time{position:absolute;inset-inline-end:${Math.round(10 * PT)}px;bottom:${Math.round(9 * PT)}px;font:400 ${Math.round(13 * PT)}px/1 "IBM Plex Mono",ui-monospace,Consolas,monospace;color:var(--ink-soft);letter-spacing:.04em}
 .stamp{position:absolute;width:300px;display:flex;flex-direction:column;align-items:center;gap:6px}
 .stamp img{width:100%;filter:drop-shadow(0 14px 22px rgba(18,45,46,.22))}
@@ -64,13 +69,18 @@ function frame(lang, screen, raw) {
   const words = copy.words[lang];
   const shot = raw ? `<img src="${raw}" alt="">` : `<img class="pending" src="${standInFor(screen) ?? ''}" alt="">`;
   let extra = '', coqui = false;
-  // As the pile draws a card dragged LEFT (swipe.ts: left = discard): tilted the way it travels,
-  // a graphite edge, and the discard stamp with its word beside it, not on the card.
-  if (screen === '01-hero') extra = `
-    <div class="card is-discard" style="left:-170px;top:1200px;width:${Math.round(236 * PT)}px;rotate:-9deg"><img src="${library('k1-beach-dog-blurry.webp')}" alt=""><time>${day(lang, '2026-11-22')}</time></div>
-    <div class="stamp" style="left:420px;top:1420px;width:${Math.round(140 * PT)}px"><img src="${asset('stamps/discard.webp')}" alt=""><span style="rotate:3deg">${words.discard}</span></div>
-    <div class="pill" style="right:86px;top:540px;rotate:4deg">${words.free}</div>`;
-  if (screen === '05-pier') { coqui = true; extra = `<img class="coqui" src="${asset('characters/coqui-safe.webp')}" alt="">`; }
+  const card = (kind, photo, iso, style, stamp = '') => `<div class="card is-${kind}" style="width:${CARD}px;${style}"><img src="${library(photo)}" alt=""><time>${day(lang, iso)}</time>${stamp}</div>`;
+  const stamp = (kind, word, style, tilt) => `<div class="stamp" style="width:${STAMP}px;${style}"><img src="${asset(`stamps/${kind}.webp`)}" alt=""><span style="rotate:${tilt}deg">${word}</span></div>`;
+  // Each frame draws the card that just left, the way the pile draws a drag (swipe.ts: right
+  // keeps, left discards, up favorites): its coloured edge, its tilt, and the stamp with the
+  // app's own word. The capture under it is the pile right after, with the next photo waiting.
+  if (screen === '01-keep') extra = card('keep', 'k1-beach-dog.webp', '2026-11-22', 'left:744px;top:1130px;rotate:6deg')
+    + stamp('keep', words.keep, 'left:300px;top:1390px', -4)
+    + `<div class="pill" style="right:86px;top:540px;rotate:4deg">${words.free}</div>`;
+  if (screen === '02-delete') extra = card('discard', 'd1-pocket.webp', '2026-11-22', 'left:40px;top:1130px;rotate:-6deg')
+    + stamp('discard', words.discard, 'left:720px;top:1390px', 4);
+  if (screen === '05-favorite') extra = card('favorite', 'k3-pier-friends.webp', '2026-11-15', `left:${Math.round((W - CARD) / 2)}px;top:780px`,
+    stamp('favorite', words.favorite, `left:50%;top:${Math.round(CARD * .62)}px;translate:-50% -50%`, 0));
   return `<!doctype html><html lang="${lang}" dir="${lang === 'ar' ? 'rtl' : 'ltr'}"><head><meta charset="utf-8"><style>${css}</style></head>
     <body class="${coqui ? 'has-coqui' : ''}"><div class="copy"><h1>${headline}</h1><p>${sub}</p></div>
     <div class="screen">${shot}</div>${extra}</body></html>`;

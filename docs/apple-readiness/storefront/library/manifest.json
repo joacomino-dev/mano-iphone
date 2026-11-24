@@ -10,20 +10,43 @@
     {
       "file": "k1-beach-dog.webp",
       "role": "keep",
-      "decision": "favorite",
-      "capturedAt": "2026-11-22T18:41:07",
+      "decision": "keep",
+      "capturedAt": "2026-11-22T18:41:09",
+      "screens": [
+        1
+      ],
+      "note": "Screen 1: the good photo, kept (leaves right). Best of a three-photo burst.",
+      "kind": "photo"
+    },
+    {
+      "file": "d1-pocket.webp",
+      "role": "delete",
+      "decision": "discard",
+      "capturedAt": "2026-11-22T17:02:00",
       "screens": [
         1,
+        2,
         3
       ],
-      "note": "Hero card. The best of a three-photo burst.",
+      "note": "Waits under screen 1; leaves left on screen 2.",
+      "kind": "photo"
+    },
+    {
+      "file": "k2-cookies-hands.webp",
+      "role": "keep",
+      "decision": "favorite",
+      "capturedAt": "2026-11-22T10:15:22",
+      "screens": [
+        2
+      ],
+      "note": "Waits under screen 2.",
       "kind": "photo"
     },
     {
       "file": "k1-beach-dog-look-away.webp",
       "role": "similar",
       "decision": "discard",
-      "capturedAt": "2026-11-22T18:41:06",
+      "capturedAt": "2026-11-21T18:41:06",
       "screens": [
         3
       ],
@@ -34,35 +57,11 @@
       "file": "k1-beach-dog-blurry.webp",
       "role": "similar",
       "decision": "discard",
-      "capturedAt": "2026-11-22T18:41:05",
-      "screens": [
-        1,
-        3
-      ],
-      "note": "Same burst, motion blur. Flies left in screen 1.",
-      "kind": "photo"
-    },
-    {
-      "file": "d1-pocket.webp",
-      "role": "delete",
-      "decision": "discard",
-      "capturedAt": "2026-11-22T12:03:44",
-      "screens": [
-        2,
-        3
-      ],
-      "note": "Accidental pocket shot.",
-      "kind": "photo"
-    },
-    {
-      "file": "k2-cookies-hands.webp",
-      "role": "keep",
-      "decision": "favorite",
-      "capturedAt": "2026-11-21T10:15:22",
+      "capturedAt": "2026-11-21T18:41:05",
       "screens": [
         3
       ],
-      "note": "Favorite kept safe. Flour bag label: check it reads as packaging, not text.",
+      "note": "Same burst, motion blur.",
       "kind": "photo"
     },
     {
@@ -70,10 +69,8 @@
       "role": "keep",
       "decision": "keep",
       "capturedAt": "2026-11-20T14:02:10",
-      "screens": [
-        5
-      ],
-      "note": "Pair with its twin: the classic double shot.",
+      "screens": [],
+      "note": "The classic double shot: this one stays.",
       "kind": "photo"
     },
     {
@@ -93,21 +90,9 @@
       "decision": "discard",
       "capturedAt": "2026-11-19T23:48:31",
       "screens": [
-        2,
         3
       ],
-      "note": "Underexposed; should land in 'Fotos borrosas u oscuras'.",
-      "kind": "photo"
-    },
-    {
-      "file": "k3-pier-friends.webp",
-      "role": "keep",
-      "decision": "keep",
-      "capturedAt": "2026-11-18T19:27:55",
-      "screens": [
-        5
-      ],
-      "note": "Friends from behind; one profile is partly visible, not identifiable.",
+      "note": "Underexposed.",
       "kind": "photo"
     },
     {
@@ -116,19 +101,9 @@
       "decision": "discard",
       "capturedAt": "2026-11-18T09:12:03",
       "screens": [
-        2,
         3
       ],
       "note": "Accidental photo of the pavement.",
-      "kind": "photo"
-    },
-    {
-      "file": "k5-yard-dog-ball.webp",
-      "role": "keep",
-      "decision": "keep",
-      "capturedAt": "2026-11-16T16:30:40",
-      "screens": [],
-      "note": "Same dog at home; fills the stack and the video.",
       "kind": "photo"
     },
     {
@@ -139,10 +114,9 @@
       "decision": "discard",
       "capturedAt": "2026-11-17T08:20:00",
       "screens": [
-        2,
         3
       ],
-      "note": "Fictional boarding pass screenshot, made by scripts/apple-fixtures/make-store-media.swift."
+      "note": "Fictional boarding pass screenshot (make-store-media.swift)."
     },
     {
       "file": "s2-route.png",
@@ -152,7 +126,6 @@
       "decision": "discard",
       "capturedAt": "2026-11-17T08:10:00",
       "screens": [
-        2,
         3
       ],
       "note": "Fictional route screenshot."
@@ -163,7 +136,7 @@
       "kind": "video",
       "role": "delete",
       "decision": "discard",
-      "capturedAt": "2026-11-15T21:05:00",
+      "capturedAt": "2026-11-16T21:05:00",
       "screens": [
         3,
         4
@@ -176,14 +149,37 @@
       "kind": "video",
       "role": "delete",
       "decision": "discard",
-      "capturedAt": "2026-11-15T21:00:00",
+      "capturedAt": "2026-11-16T21:00:00",
       "screens": [
         3,
         4
       ],
       "note": "Second pocket recording (same file, own date)."
+    },
+    {
+      "file": "k3-pier-friends.webp",
+      "role": "keep",
+      "decision": "favorite",
+      "capturedAt": "2026-11-15T19:27:55",
+      "screens": [
+        5
+      ],
+      "note": "After «Keep reviewing»: swiped up to Favorites on screen 5.",
+      "kind": "photo"
+    },
+    {
+      "file": "k5-yard-dog-ball.webp",
+      "role": "keep",
+      "decision": "keep",
+      "capturedAt": "2026-11-14T16:30:40",
+      "screens": [
+        5
+      ],
+      "note": "Waits under screen 5: the same dog, at home. Kept afterwards so the next language starts clean.",
+      "kind": "photo"
     }
   ],
   "copies": 7,
-  "copiesNote": "One copy per screenshot language (es, en, fr, de, it, ar, ja). Each language decides and really deletes its own copy; copy N is dated N x 30 days earlier."
+  "copiesNote": "One copy per screenshot language (es, en, fr, de, it, ar, ja). Each language decides and really deletes its own copy; copy N is dated N x 30 days earlier.",
+  "story": "Newest first, one copy per language: keep the good beach photo (1), delete the pocket shot (2), decide the rest, review (3), delete for real (4), then «Keep reviewing»: the pier goes up to Favorites with the yard dog waiting underneath (5)."
 }
