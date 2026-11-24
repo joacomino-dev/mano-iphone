@@ -43,6 +43,7 @@ p{font-family:var(--text);font-weight:500;font-size:46px;line-height:1.28;color:
 .card{position:absolute;padding:${Math.round(8 * PT)}px ${Math.round(8 * PT)}px ${Math.round(32 * PT)}px;border-radius:${Math.round(3 * PT)}px;background:var(--paper-light);
   box-shadow:0 0 0 2px rgba(18,45,46,.07),0 5px 10px rgba(18,45,46,.10),0 26px 60px rgba(18,45,46,.22)}
 .card img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover}
+.card.is-discard{outline:${Math.round(3 * PT)}px solid #4E5A68}
 .card time{position:absolute;inset-inline-end:${Math.round(10 * PT)}px;bottom:${Math.round(9 * PT)}px;font:400 ${Math.round(13 * PT)}px/1 "IBM Plex Mono",ui-monospace,Consolas,monospace;color:var(--ink-soft);letter-spacing:.04em}
 .stamp{position:absolute;width:300px;display:flex;flex-direction:column;align-items:center;gap:6px}
 .stamp img{width:100%;filter:drop-shadow(0 14px 22px rgba(18,45,46,.22))}
@@ -63,13 +64,12 @@ function frame(lang, screen, raw) {
   const words = copy.words[lang];
   const shot = raw ? `<img src="${raw}" alt="">` : `<img class="pending" src="${standInFor(screen) ?? ''}" alt="">`;
   let extra = '', coqui = false;
+  // As the pile draws a card dragged LEFT (swipe.ts: left = discard): tilted the way it travels,
+  // a graphite edge, and the discard stamp with its word beside it, not on the card.
   if (screen === '01-hero') extra = `
-    <div class="card" style="left:-150px;top:1180px;width:${Math.round(236 * PT)}px;rotate:-14deg"><img src="${library('k1-beach-dog-blurry.webp')}" alt=""><time>${day(lang, '2026-11-22')}</time></div>
-    <div class="stamp" style="left:150px;top:1080px;rotate:-8deg"><img src="${asset('stamps/discard.webp')}" alt=""><span>${words.discard}</span></div>
+    <div class="card is-discard" style="left:-170px;top:1200px;width:${Math.round(236 * PT)}px;rotate:-9deg"><img src="${library('k1-beach-dog-blurry.webp')}" alt=""><time>${day(lang, '2026-11-22')}</time></div>
+    <div class="stamp" style="left:420px;top:1420px;width:${Math.round(140 * PT)}px"><img src="${asset('stamps/discard.webp')}" alt=""><span style="rotate:3deg">${words.discard}</span></div>
     <div class="pill" style="right:86px;top:540px;rotate:4deg">${words.free}</div>`;
-  if (screen === '03-review') extra = `
-    <div class="card" style="right:-200px;top:1720px;width:${Math.round(236 * PT)}px;rotate:9deg"><img src="${library('k2-cookies-hands.webp')}" alt=""><time>${day(lang, '2026-11-21')}</time></div>
-    <div class="stamp" style="right:110px;top:1560px;width:280px;rotate:7deg"><img src="${asset('stamps/favorite.webp')}" alt=""><span>${words.favorite}</span></div>`;
   if (screen === '05-pier') { coqui = true; extra = `<img class="coqui" src="${asset('characters/coqui-safe.webp')}" alt="">`; }
   return `<!doctype html><html lang="${lang}" dir="${lang === 'ar' ? 'rtl' : 'ltr'}"><head><meta charset="utf-8"><style>${css}</style></head>
     <body class="${coqui ? 'has-coqui' : ''}"><div class="copy"><h1>${headline}</h1><p>${sub}</p></div>
