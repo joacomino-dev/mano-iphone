@@ -5,10 +5,10 @@ from pathlib import Path
 import struct
 import sys
 
-def verify(folder,platform):
+def verify(folder,platform,langs=('es','en','fr','de','it','ar','ja')):
     folder=Path(folder);screens=[]
     allowed={(1179,2556),(1206,2622),(1260,2736),(1290,2796),(1320,2868)} if platform=='ios' else {(1080,1920)}
-    for lang in ['es','en','fr','de','it','ar','ja']:
+    for lang in langs:
         for screen in (['01-keep','02-delete','03-review','04-done','05-favorite'] if platform=='ios' else ['01-cards','02-review','03-filters','04-settings','05-support']):
             name=f'{lang}-{screen}.png';data=(folder/name).read_bytes()
             assert data[:8]==b'\x89PNG\r\n\x1a\n','Actual PNG required'
@@ -19,4 +19,4 @@ def verify(folder,platform):
     return {'status':'PASS','platform':platform,'screens':screens,'boundary':'File validation only; source execution and visual review are separate evidence.'}
 
 if __name__=='__main__':
-    report=verify(sys.argv[1],sys.argv[2]);Path(sys.argv[1],'files.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report))
+    report=verify(sys.argv[1],sys.argv[2],*([sys.argv[3].split(',')] if len(sys.argv)>3 else []));Path(sys.argv[1],'files.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report))

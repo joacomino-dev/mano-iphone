@@ -58,6 +58,7 @@ cleanup() {
     ( cd ..; COCO_FIXTURE_OUTPUT="$smoke_dir/fixtures" python3 scripts/apple-fixtures/probe.py --seed-existing "$simulator_id" --audit ) > "$smoke_dir/fixture-cleanup-audit.log" 2>&1
   fi
   if [ -n "$collector_pid" ]; then kill -TERM "$collector_pid" 2>/dev/null; fi
+  if [ -n "${watch_pid:-}" ]; then kill -TERM "$watch_pid" 2>/dev/null; fi
   if [ -n "$log_pid" ]; then
     kill -TERM "$log_pid" 2>/dev/null
     wait "$log_pid" 2>/dev/null
@@ -138,7 +139,7 @@ if [ "${COCO_NATIVE_LAB:-0}" = 1 ] || [ "${COCO_AD_TRAFFIC:-none}" != none ] || 
   python3 - "$simulator_id" <<'PYCONTRACT'
 import json,os,sys
 from pathlib import Path
-Path('ios/App/ManoUITests/native-lab-contract.json').write_text(json.dumps({'enabled':True,'run':os.environ['GITHUB_RUN_ID'],'simulator':sys.argv[1],'adTraffic':os.environ.get('COCO_AD_TRAFFIC','none'),'storeScreens':os.environ.get('COCO_STORE_SCREENS')=='1','liveOnly':os.environ.get('COCO_NATIVE_LIVE_ONLY')=='1'}))
+Path('ios/App/ManoUITests/native-lab-contract.json').write_text(json.dumps({'enabled':True,'run':os.environ['GITHUB_RUN_ID'],'simulator':sys.argv[1],'adTraffic':os.environ.get('COCO_AD_TRAFFIC','none'),'storeScreens':os.environ.get('COCO_STORE_SCREENS')=='1','storeLanguages':os.environ.get('COCO_STORE_LANGS','es').split(','),'liveOnly':os.environ.get('COCO_NATIVE_LIVE_ONLY')=='1'}))
 PYCONTRACT
   if [ "${COCO_STORE_SCREENS:-0}" = 1 ]; then
     node --experimental-strip-types ../scripts/apple-fixtures/store-labels.mjs ios/App/ManoUITests/native-lab-contract.json
@@ -359,6 +360,26 @@ run_ui_test() {
   printf '%s\n' "$test_code" > "$smoke_dir/ui-test-exit-code.txt"
   return "$test_code"
 }
+# Store screens: the test holds a swipe mid-drag and drops <lang>-<screen>.request in its
+# Documents/StoreScreens; XCTest cannot screenshot during a gesture, so the host does it here.
+store_watch() {
+  local runner_app runner_bundle runner_data dir request
+  runner_app="$smoke_dir/DerivedData/Build/Products/Release-iphonesimulator/ManoUITests-Runner.app"
+  runner_bundle="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$runner_app/Info.plist")"
+  until runner_data="$(xcrun simctl get_app_container "$simulator_id" "$runner_bundle" data 2>/dev/null)"; do sleep 2; done
+  dir="$runner_data/Documents/StoreScreens"
+  while :; do
+    for request in "$dir"/*.request; do
+      [ -e "$request" ] || continue
+      sleep 1.8
+      xcrun simctl io "$simulator_id" screenshot "${request%.request}.png" >/dev/null 2>&1 && echo "HOST_HELD_SHOT $(basename "${request%.request}")"
+      rm -f "$request"; : > "${request%.request}.done"
+    done
+    sleep 0.2
+  done
+}
+watch_pid=''
+if [ "${COCO_STORE_SCREENS:-0}" = 1 ]; then store_watch > "$smoke_dir/store-watch.log" 2>&1 & watch_pid=$!; fi
 collector_pid=''
 if [ "${COCO_NATIVE_LAB:-0}" = 1 ] && [ "${COCO_NATIVE_LIVE_ONLY:-0}" != 1 ]; then
   runner_app="$smoke_dir/DerivedData/Build/Products/Release-iphonesimulator/ManoUITests-Runner.app"
@@ -402,7 +423,7 @@ if [ "${COCO_STORE_SCREENS:-0}" = 1 ]; then
   cp -R "$runner_data/Documents/StoreScreens" "$smoke_dir/store-screens"
   bounded 300 xcrun swiftc ../scripts/apple-fixtures/screens-rgb.swift -o "$smoke_dir/screens-rgb"
   "$smoke_dir/screens-rgb" "$smoke_dir/store-screens/"*.png
-  python3 ../scripts/verify-store-screens.py "$smoke_dir/store-screens" ios
+  python3 ../scripts/verify-store-screens.py "$smoke_dir/store-screens" ios "${COCO_STORE_LANGS:-es}"
 fi
 if [ "${COCO_AD_TRAFFIC:-none}" != none ]; then
   grep -q COCOWASH_UI_AD_HOST_RESEARCH_OK "$smoke_dir/ui-test.log"

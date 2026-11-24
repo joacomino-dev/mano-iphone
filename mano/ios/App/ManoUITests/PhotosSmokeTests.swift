@@ -18,8 +18,10 @@ final class PhotosSmokeTests: XCTestCase {
         XCTFail("Store fixture capture refuses physical libraries");return
         #endif
         XCTAssertEqual(contract["simulator"] as? String,ProcessInfo.processInfo.environment["SIMULATOR_UDID"])
-        // Seven languages, each deciding and really deleting its own copy of the demo roll.
-        executionTimeAllowance = 2700
+        // Each language runs in its own simulator with one copy of the demo roll (the workflow's
+        // matrix): identical copies in one library would stack as look-alikes.
+        executionTimeAllowance = 1500
+        let languages=(contract["storeLanguages"] as? [String]) ?? ["es"]
         let tables=try XCTUnwrap(contract["storeScreenLabels"] as? [String:[String:String]])
         let directory=FileManager.default.urls(for:.documentDirectory,in:.userDomainMask)[0].appendingPathComponent("StoreScreens")
         try FileManager.default.createDirectory(at:directory,withIntermediateDirectories:true)
@@ -44,14 +46,30 @@ final class PhotosSmokeTests: XCTestCase {
             while Date()<deadline { if element.exists && element.isHittable { return true };Thread.sleep(forTimeInterval:0.25) }
             return false
         }
+        /// A swipe as the person sees it: the card held mid-drag with its stamp. XCTest cannot
+        /// screenshot during a gesture, so the test asks the host (test-ios-simulator.sh) through a
+        /// request file and holds the drag while `simctl io` takes the shot; releasing decides.
+        func heldSwipe(_ lang:String,_ screen:String,dx:CGFloat,dy:CGFloat) throws {
+            let request=directory.appendingPathComponent("\(lang)-\(screen).request"),done=directory.appendingPathComponent("\(lang)-\(screen).done")
+            try? FileManager.default.removeItem(at:done)
+            try Data().write(to:request)
+            let start=app.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.45))
+            start.press(forDuration:0.2,thenDragTo:start.withOffset(CGVector(dx:dx,dy:dy)),withVelocity:.slow,thenHoldForDuration:5)
+            let deadline=Date().addingTimeInterval(10)
+            while !FileManager.default.fileExists(atPath:done.path) && Date()<deadline { Thread.sleep(forTimeInterval:0.2) }
+            guard FileManager.default.fileExists(atPath:done.path) else { throw NSError(domain:"CocoStore",code:1,userInfo:[NSLocalizedDescriptionKey:"Host did not capture the held swipe \(screen)"]) }
+            print("COCOWASH_UI_STORE_SCREEN lang=\(lang) screen=\(screen) held=1")
+            Thread.sleep(forTimeInterval:1.2)
+        }
         /// «Eliminar {n}» (and «Eliminar {n} ({size})») in any language, with any digits.
         func countPattern(_ template:String) -> String {
             "^"+template.components(separatedBy:"{n}").map{NSRegularExpression.escapedPattern(for:$0)}.joined(separator:"[\\p{Nd}\\s.,]+")+".*$"
         }
-        // One copy, newest first: docs/apple-readiness/storefront/library/manifest.json. Thirteen
-        // decisions before the review; the pier and the yard dog wait for «Keep reviewing».
-        let plan=["keep","discard","favorite","discard","discard","keep","discard","discard","discard","discard","discard","discard","discard"]
-        for lang in ["es","en","fr","de","it","ar","ja"] {
+        // Newest first: docs/apple-readiness/storefront/library/manifest.json. Thirteen decisions
+        // before the review; the pier and the yard dog wait for «Keep reviewing». «held» ones are
+        // swiped by hand and captured mid-drag (right keeps, left discards, up favorites: swipe.ts).
+        let plan:[(String,String?)]=[("keep","01-keep"),("discard",nil),("discard",nil),("discard","02-delete"),("favorite",nil),("keep",nil),("discard",nil),("discard",nil),("discard",nil),("discard",nil),("discard",nil),("discard",nil),("discard",nil)]
+        for lang in languages {
             let labels=try XCTUnwrap(tables[lang])
             func label(_ key:String) throws -> String { try XCTUnwrap(labels[key],"missing store label \(key)") }
             app.launchArguments=["-AppleLanguages","(\(lang))","-AppleLocale",lang]
@@ -72,6 +90,13 @@ final class PhotosSmokeTests: XCTestCase {
             XCTAssertTrue(hittable(filters,20));filters.tap()
             let order=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@",try label("Orden"))).firstMatch
             XCTAssertTrue(order.waitForExistence(timeout:15),"Filters must offer the order row")
+            // On the iPhone the «Order» row sits under the pinned «Apply filters» footer (run
+            // 45476472393: the tap landed on the footer and closed the sheet). Scroll it into view first.
+            let apply=app.buttons[try label("Aplicar filtros")].firstMatch
+            for _ in 0..<4 where order.exists && apply.exists && order.frame.maxY > apply.frame.minY - 24 {
+                app.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.62)).press(forDuration:0.05,thenDragTo:app.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0.32)))
+                Thread.sleep(forTimeInterval:0.8)
+            }
             // Taps on the web view are occasionally lost on a busy simulator: tap until the detail opens.
             let newest=app.buttons[try label("Más recientes")].firstMatch
             guard hittable(order,10),tap(order,until:{ newest.exists },"order") else {
@@ -80,7 +105,6 @@ final class PhotosSmokeTests: XCTestCase {
             if !hittable(newest,5) { app.swipeUp() }
             guard hittable(newest,5) else { try? capture(lang,"zz-newest");XCTFail("«Newest» must be reachable");return }
             newest.tap();Thread.sleep(forTimeInterval:1)
-            let apply=app.buttons[try label("Aplicar filtros")].firstMatch
             guard hittable(apply,10),tap(apply,until:{ !apply.exists },"apply") else {
                 try? capture(lang,"zz-apply");XCTFail("«Apply filters» must close the filters");return
             }
@@ -91,11 +115,13 @@ final class PhotosSmokeTests: XCTestCase {
             XCTAssertTrue(hittable(finish,20),"Applying the filters must return to the pile")
             Thread.sleep(forTimeInterval:2)
             let controls=["keep":app.buttons[try label("Conservar")].firstMatch,"discard":app.buttons[try label("Eliminar")].firstMatch,"favorite":app.buttons[try label("Añadir a Favoritas")].firstMatch]
-            for (index,decision) in plan.enumerated() {
-                // Each frame draws the card that just left; the capture is the pile right after it.
-                // 01 · the beach dog was kept: the pocket shot waits. 02 · the pocket shot left: the cookies wait.
-                if index == 1 { try capture(lang,"01-keep") }
-                if index == 2 { try capture(lang,"02-delete") }
+            for (index,(decision,held)) in plan.enumerated() {
+                // 01 · the best beach photo, held to the right with its look-alikes stacked behind.
+                // 02 · the pocket shot, held to the left.
+                if let held {
+                    try heldSwipe(lang,held,dx:decision=="keep" ? 150:-150,dy:-6)
+                    continue
+                }
                 let control=try XCTUnwrap(controls[decision])
                 guard hittable(control,25),control.isEnabled else {
                     try? capture(lang,"zz-decision-\(index)")
@@ -127,19 +153,15 @@ final class PhotosSmokeTests: XCTestCase {
             }
             Thread.sleep(forTimeInterval:3)
             try capture(lang,"04-done")
-            // 05 · «Keep reviewing»: the pier goes up to Favorites and the yard dog waits in the pile.
+            // 05 · «Keep reviewing»: the pier, held upwards on its way to Favorites.
             guard tap(again,until:{ finish.exists && finish.isHittable },"again") else {
                 try? capture(lang,"zz-again");XCTFail("«Keep reviewing» must return to the pile");return
             }
-            let favorite=try XCTUnwrap(controls["favorite"]),keep=try XCTUnwrap(controls["keep"])
-            guard hittable(favorite,25) else { try? capture(lang,"zz-pier");XCTFail("The pier photo must be next");return }
-            favorite.tap();Thread.sleep(forTimeInterval:1.6)
-            try capture(lang,"05-favorite")
-            // The yard dog is kept too, so the next language opens on its own copy.
-            guard hittable(keep,25) else { try? capture(lang,"zz-yard");XCTFail("The yard dog must be next");return }
-            keep.tap();Thread.sleep(forTimeInterval:1.2)
+            guard hittable(try XCTUnwrap(controls["favorite"]),25) else { try? capture(lang,"zz-pier");XCTFail("The pier photo must be next");return }
+            Thread.sleep(forTimeInterval:1.5)
+            try heldSwipe(lang,"05-favorite",dx:0,dy:-170)
         }
-        print("COCOWASH_UI_NATIVE_STORE_SCREENS_OK count=35")
+        print("COCOWASH_UI_NATIVE_STORE_SCREENS_OK count=\(languages.count*5)")
     }
 
     @MainActor

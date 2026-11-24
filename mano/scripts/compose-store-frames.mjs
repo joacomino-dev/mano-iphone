@@ -68,19 +68,10 @@ function frame(lang, screen, raw) {
   const [headline, sub] = copy.frames[screen][lang];
   const words = copy.words[lang];
   const shot = raw ? `<img src="${raw}" alt="">` : `<img class="pending" src="${standInFor(screen) ?? ''}" alt="">`;
+  // Nothing of the app is drawn here: the swipes on screens 1, 2 and 5 are real captures of a
+  // card held mid-drag (the stamp, its edge and the empty paper behind are the app's own).
   let extra = '', coqui = false;
-  const card = (kind, photo, iso, style, stamp = '') => `<div class="card is-${kind}" style="width:${CARD}px;${style}"><img src="${library(photo)}" alt=""><time>${day(lang, iso)}</time>${stamp}</div>`;
-  const stamp = (kind, word, style, tilt) => `<div class="stamp" style="width:${STAMP}px;${style}"><img src="${asset(`stamps/${kind}.webp`)}" alt=""><span style="rotate:${tilt}deg">${word}</span></div>`;
-  // Each frame draws the card that just left, the way the pile draws a drag (swipe.ts: right
-  // keeps, left discards, up favorites): its coloured edge, its tilt, and the stamp with the
-  // app's own word. The capture under it is the pile right after, with the next photo waiting.
-  if (screen === '01-keep') extra = card('keep', 'k1-beach-dog.webp', '2026-11-22', 'left:744px;top:1130px;rotate:6deg')
-    + stamp('keep', words.keep, 'left:300px;top:1390px', -4)
-    + `<div class="pill" style="right:86px;top:540px;rotate:4deg">${words.free}</div>`;
-  if (screen === '02-delete') extra = card('discard', 'd1-pocket.webp', '2026-11-22', 'left:40px;top:1130px;rotate:-6deg')
-    + stamp('discard', words.discard, 'left:720px;top:1390px', 4);
-  if (screen === '05-favorite') extra = card('favorite', 'k3-pier-friends.webp', '2026-11-15', `left:${Math.round((W - CARD) / 2)}px;top:780px`,
-    stamp('favorite', words.favorite, `left:50%;top:${Math.round(CARD * .62)}px;translate:-50% -50%`, 0));
+  if (screen === '01-keep') extra = `<div class="pill" style="right:86px;top:540px;rotate:4deg">${words.free}</div>`;
   return `<!doctype html><html lang="${lang}" dir="${lang === 'ar' ? 'rtl' : 'ltr'}"><head><meta charset="utf-8"><style>${css}</style></head>
     <body class="${coqui ? 'has-coqui' : ''}"><div class="copy"><h1>${headline}</h1><p>${sub}</p></div>
     <div class="screen">${shot}</div>${extra}</body></html>`;
