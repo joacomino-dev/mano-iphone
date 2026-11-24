@@ -25,8 +25,10 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 API = os.environ.get('ASC_API_BASE', 'https://api.appstoreconnect.apple.com')  # override only in tests
 BUNDLE = 'work.joaquin.mano'
 MARKETING_URL = 'https://joaquinmino.work/cocowash/'
-# 02-review is left out: the CI build shows Google's «Test mode» ad there, which App Review rejects.
-SCREENS = ['01-cards', '03-filters', '04-settings']
+# The five store frames (docs/apple-readiness/storefront/store-frames.json, composed by
+# mano/scripts/compose-store-frames.mjs): keep, delete, favorite, review, result.
+SCREENS = ['01-keep', '02-delete', '03-favorite', '04-review', '05-done']
+SCREENS_DIR = pathlib.Path(__file__).resolve().parents[1] / 'docs/apple-readiness/storefront/screens'
 SCREEN_SIZES = {(1320, 2868), (1290, 2796), (1260, 2736)}  # 6.9" display slot
 EDITABLE = {'PREPARE_FOR_SUBMISSION', 'DEVELOPER_REJECTED', 'REJECTED', 'METADATA_REJECTED', 'INVALID_BINARY'}
 # Age rating: a photo organizer with no such content of its own. Ads (G-rated inventory)
@@ -326,9 +328,26 @@ def step_whats_new(asc, app, version, sources):
 
 
 def png_size(path):
-    data = path.read_bytes()[:26]
-    assert data[:8] == b'\x89PNG\r\n\x1a\n', f'{path.name} is not a PNG'
-    return struct.unpack('>II', data[16:24])
+    data = path.read_bytes()
+    if data[:8] == b'\x89PNG\r\n\x1a\n':
+        return struct.unpack('>II', data[16:24])
+    assert data[:2] == b'\xff\xd8', f'{path.name} is neither PNG nor JPEG'
+    i = 2  # JPEG: walk the segments to the frame header (SOF0-SOF3)
+    while i < len(data):
+        marker, length = data[i + 1], struct.unpack('>H', data[i + 2:i + 4])[0]
+        if 0xC0 <= marker <= 0xC3:
+            h, w = struct.unpack('>HH', data[i + 5:i + 9])
+            return (w, h)
+        i += 2 + length
+    sys.exit(f'{path.name}: no JPEG frame header')
+
+
+def screen_file(folder, lang, screen):
+    for ext in ('jpg', 'png'):
+        path = folder / f'{lang}-{screen}.{ext}'
+        if path.exists():
+            return path
+    sys.exit(f'Missing screenshot {lang}-{screen} in {folder}')
 
 
 def upload_asset(asc, create_path, kind, relationship, path):
@@ -352,7 +371,7 @@ def step_screenshots(asc, app, version, folder, display, sources):
     folder = pathlib.Path(folder)
     log(f'\n== Screenshots {display} from {folder}')
     for locale, text in locales.items():
-        files = [folder / f'{text["lang"]}-{screen}.png' for screen in SCREENS]
+        files = [screen_file(folder, text['lang'], screen) for screen in SCREENS]
         for path in files:
             size = png_size(path)
             if size not in SCREEN_SIZES:
@@ -371,7 +390,7 @@ def step_screenshots(asc, app, version, folder, display, sources):
             asc.call('DELETE', f'/v1/appScreenshots/{old["id"]}')
         for screen in SCREENS:
             upload_asset(asc, '/v1/appScreenshots', 'appScreenshots',
-                         {'appScreenshotSet': rel('appScreenshotSets', target['id'])}, folder / f'{text["lang"]}-{screen}.png')
+                         {'appScreenshotSet': rel('appScreenshotSets', target['id'])}, screen_file(folder, text['lang'], screen))
         log(f'  {locale}: {len(SCREENS)} screenshots')
 
 
@@ -561,7 +580,7 @@ def main():
     if 'whatsnew' in steps:
         step_whats_new(asc, app, version, sources)
     if 'screenshots' in steps:
-        step_screenshots(asc, app, version, args.screens, args.display, sources)
+        step_screenshots(asc, app, version, args.screens or SCREENS_DIR, args.display, sources)
     if 'price' in steps:
         step_price_and_availability(asc, app, excluded)
     if 'purchases' in steps:

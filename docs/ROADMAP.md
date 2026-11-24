@@ -285,6 +285,10 @@ textos con hablantes nativos, 1.0.1 para lo que salga.
 - **R-82 · Anuncios que no aparecen — Abierto · U + CL.** El código pide anuncios reales; falta llenado.
   Usuario: vincular la app con la ficha en AdMob y revisar su estado/política. Decisión pendiente: subir la
   categoría máxima de G a PG para más llenado. Código: huecos vacíos ya no se quedan (CW-CL-097).
+- **R-85 · Capturas de la App Store que explican la app (usuario, 2026-11-24) — En publicación · CL.**
+  CW-CL-101: 5 pantallas (conservar, eliminar, favorita, revisión, espacio liberado) con carrete realista y la carta
+  sostenida fuera del teléfono, en 7 idiomas; publicadas con la 1.1.1. Pendiente: vídeo (App Preview) y, si se quiere,
+  sustituirlas por la captura nativa del iPhone (`apple-store-screens.yml`, por terminar).
 - **R-84 · Pantalla propia antes de la pregunta de rastreo de Apple (usuario, 2026-11-20) — Hecho en código · CL.**
   CW-CL-100: Coqui explica por qué hay anuncios y abre la alerta de Apple con un único «Continuar». 1.1 (51) enviada
   a revisión el 2026-11-20 y aprobada el 2026-11-21 (correo de App Store Review); publicación automática.
@@ -472,3 +476,4 @@ Ya resuelto: responsable legal/contacto, mantener monetización, dos hosts de tr
 - 2026-11-08 · CW-CX-051: diario R-61 local y revisión integrada PASS; [evidencia](apple-readiness/evidence/strategic/r61-local-journal.json). No se cierra el P0 sin prueba nativa.
 
 - 2026-11-08 · CW-CX-053: R-63 nativo acotado PASS; R-47 implementado con revisión y contratos ES/AR. Compilación y fullscreen nativos pendientes.
+- 2026-11-24 · Claude · CW-CL-101 · R-85: plan de marketing, carrete demo, compositor con carta despegada y colores por acción, captura nativa por idioma (en curso), 1.1.1 con capturas de la versión web por decisión del usuario.

@@ -83,8 +83,10 @@ jobs:
           done
           [[ "$ASC_KEY_ID" =~ ^[A-Z0-9]{10}$ ]] || { echo 'ASC_KEY_ID missing or not 10 characters'; exit 1; }
           [[ "$ASC_ISSUER_ID" =~ ^[0-9a-f-]{36}$ ]] || { echo 'ASC_ISSUER_ID missing or not a UUID'; exit 1; }
+      # The listing's screenshots are the composed frames in docs/apple-readiness/storefront/screens
+      # (the publisher's default); this download only feeds the purchases' review screenshot.
       - name: Download the 6.9" store screenshots
-        if: contains(env.STEPS, 'screenshots') || contains(env.STEPS, 'purchases')
+        if: contains(env.STEPS, 'purchases')
         run: |
           run="$SCREENS_RUN"
           if [ -z "$run" ]; then

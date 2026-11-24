@@ -106,7 +106,10 @@ async function lift({ held, photo, stampArt, word, date, aspect, screenPt }) {
   let TL, u, r, w, h;
   if (held.kind === 'favorite') {
     r = [(br[0] - bl[0]) / len(bl, br), (br[1] - bl[1]) / len(bl, br)]; u = [-r[1], r[0]];
-    w = len(bl, br); h = (w - 16 * s) / aspect + 40 * s; TL = [bl[0] - u[0] * h, bl[1] - u[1] * h];
+    // The top edge shows between the header pills: measure the height instead of assuming it.
+    let topY = Infinity;
+    for (let y = y0; y < y1; y += 1) { for (let x = Math.round(bl[0]) + 40; x < br[0] - 40; x += 3) if (near((y * iw + x) * 4, held.edge, 14)) { topY = y; break; } if (topY < Infinity) break; }
+    w = len(bl, br); h = topY < bl[1] - 100 ? bl[1] - topY : (w - 16 * s) / aspect + 40 * s; TL = [bl[0] - u[0] * h, bl[1] - u[1] * h];
   } else {
     const [top, bottom] = side;
     u = [(bottom[0] - top[0]) / len(top, bottom), (bottom[1] - top[1]) / len(top, bottom)]; r = [u[1], -u[0]];
@@ -160,7 +163,10 @@ fs.mkdirSync(outDir, { recursive: true });
 // A design-only stand-in (the web demo's pile) may fill missing captures while drafting:
 // STORE_STAND_IN=<dir with <screen>.png>. Files made that way are named DRAFT-… and never published.
 const standIn = process.env.STORE_STAND_IN;
-const standInFor = screen => { if (!standIn) return null; const file = path.join(standIn, `${screen}.png`); return fs.existsSync(file) ? uri(file, 'image/png') : null; };
+const standInFor = (lang, screen) => { if (!standIn) return null; const file = [path.join(standIn, lang, `${screen}.png`), path.join(standIn, `${screen}.png`)].find(f => fs.existsSync(f)); return file ? uri(file, 'image/png') : null; };
+// STORE_STAND_IN_FINAL=1: the owner approved the web-app captures for the listing (2026-11-24),
+// so they are written under their final names instead of DRAFT-….
+const standInFinal = process.env.STORE_STAND_IN_FINAL === '1';
 const browser = await chromium.launch({ channel: process.env.STORE_BROWSER_CHANNEL || (process.platform === 'win32' ? 'msedge' : undefined) });
 const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
 let made = 0, pending = 0;
@@ -168,7 +174,7 @@ for (const lang of langs) for (const screen of copy.order) {
   const file = path.join(rawDir, `${lang}-${screen}.png`);
   const raw = fs.existsSync(file) ? uri(file, 'image/png') : null;
   if (!raw) pending++;
-  await page.setContent(frame(lang, screen, raw, standInFor(screen)), { waitUntil: 'load' });
+  await page.setContent(frame(lang, screen, raw, standInFor(lang, screen)), { waitUntil: 'load' });
   await page.evaluate(async () => {
     await document.fonts.ready;
     const h1 = document.querySelector('h1');
@@ -187,7 +193,7 @@ for (const lang of langs) for (const screen of copy.order) {
     console.log(`  ${lang}-${screen}: ${JSON.stringify(result)}`);
     if (!result.ok) throw new Error(`${lang}-${screen}: ${result.reason}`);
   }
-  const name = raw ? `${lang}-${screen}.jpg` : `DRAFT-${lang}-${screen}.jpg`;
+  const name = raw || standInFinal ? `${lang}-${screen}.jpg` : `DRAFT-${lang}-${screen}.jpg`;
   await page.screenshot({ path: path.join(outDir, name), type: 'jpeg', quality: 92 });
   made++;
 }
