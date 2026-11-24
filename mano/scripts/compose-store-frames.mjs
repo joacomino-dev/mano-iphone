@@ -44,7 +44,11 @@ p{font-family:var(--text);font-weight:500;font-size:46px;line-height:1.28;color:
   box-shadow:0 0 0 2px rgba(18,45,46,.07),0 5px 10px rgba(18,45,46,.10),0 26px 60px rgba(18,45,46,.22)}
 .card img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover}
 .card time{position:absolute;inset-inline-end:${Math.round(10 * PT)}px;bottom:${Math.round(9 * PT)}px;font:400 ${Math.round(13 * PT)}px/1 "IBM Plex Mono",ui-monospace,Consolas,monospace;color:var(--ink-soft);letter-spacing:.04em}
-.stamp{position:absolute;width:300px;filter:drop-shadow(0 14px 22px rgba(18,45,46,.22))}
+.stamp{position:absolute;width:300px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.stamp img{width:100%;filter:drop-shadow(0 14px 22px rgba(18,45,46,.22))}
+/* prototype.css .stamp-lettering, scaled with the screen */
+.stamp span{padding:${Math.round(5 * PT)}px ${Math.round(16 * PT)}px ${Math.round(6 * PT)}px;border-radius:${Math.round(14 * PT)}px;background:rgba(250,246,238,.96);box-shadow:inset 0 0 0 3px rgba(46,24,14,.18),0 10px 20px rgba(18,45,46,.16);
+  font:600 ${Math.round(24 * PT)}px/1.1 var(--brand);color:#3B1E10;white-space:nowrap}
 /* The decision bar's «Conservar» pill: teal, ink outline, cream ring, Patua One capitals */
 .pill{position:absolute;padding:20px 54px 24px;border-radius:999px;background:var(--teal);border:8px solid var(--ink);box-shadow:inset 0 0 0 7px var(--paper-light),0 18px 36px rgba(18,45,46,.22);
   font:400 64px/1 'Patua One',var(--brand);letter-spacing:.03em;text-transform:uppercase;color:var(--paper-light)}
@@ -57,15 +61,15 @@ const day = (lang, iso) => new Date(`${iso}T12:00:00`).toLocaleDateString(lang, 
 function frame(lang, screen, raw) {
   const [headline, sub] = copy.frames[screen][lang];
   const words = copy.words[lang];
-  const shot = raw ? `<img src="${raw}" alt="">` : `<img class="pending" src="${copy.standIn ?? ''}" alt="">`;
+  const shot = raw ? `<img src="${raw}" alt="">` : `<img class="pending" src="${standInFor(screen) ?? ''}" alt="">`;
   let extra = '', coqui = false;
   if (screen === '01-hero') extra = `
-    <div class="card" style="left:-6px;top:1330px;width:430px;rotate:-13deg"><img src="${library('k1-beach-dog-blurry.webp')}" alt=""><time>${day(lang, '2026-11-22')}</time></div>
-    <img class="stamp" src="${asset('stamps/discard.webp')}" style="left:250px;top:1215px;rotate:-9deg" alt="">
+    <div class="card" style="left:-150px;top:1180px;width:${Math.round(236 * PT)}px;rotate:-14deg"><img src="${library('k1-beach-dog-blurry.webp')}" alt=""><time>${day(lang, '2026-11-22')}</time></div>
+    <div class="stamp" style="left:150px;top:1080px;rotate:-8deg"><img src="${asset('stamps/discard.webp')}" alt=""><span>${words.discard}</span></div>
     <div class="pill" style="right:86px;top:540px;rotate:4deg">${words.free}</div>`;
   if (screen === '03-review') extra = `
-    <div class="card" style="right:-10px;top:1270px;width:420px;rotate:8deg"><img src="${library('k2-cookies-hands.webp')}" alt=""><time>${day(lang, '2026-11-21')}</time></div>
-    <img class="stamp" src="${asset('stamps/favorite.webp')}" style="right:250px;top:1150px;width:270px;rotate:-7deg" alt="">`;
+    <div class="card" style="right:-200px;top:1720px;width:${Math.round(236 * PT)}px;rotate:9deg"><img src="${library('k2-cookies-hands.webp')}" alt=""><time>${day(lang, '2026-11-21')}</time></div>
+    <div class="stamp" style="right:110px;top:1560px;width:280px;rotate:7deg"><img src="${asset('stamps/favorite.webp')}" alt=""><span>${words.favorite}</span></div>`;
   if (screen === '05-pier') { coqui = true; extra = `<img class="coqui" src="${asset('characters/coqui-safe.webp')}" alt="">`; }
   return `<!doctype html><html lang="${lang}" dir="${lang === 'ar' ? 'rtl' : 'ltr'}"><head><meta charset="utf-8"><style>${css}</style></head>
     <body class="${coqui ? 'has-coqui' : ''}"><div class="copy"><h1>${headline}</h1><p>${sub}</p></div>
@@ -76,7 +80,7 @@ fs.mkdirSync(outDir, { recursive: true });
 // A design-only stand-in (the web demo's pile) may fill missing captures while drafting:
 // STORE_STAND_IN=<png>. It is labelled as such in the file name and never published.
 const standIn = process.env.STORE_STAND_IN;
-if (standIn) copy.standIn = uri(standIn, 'image/png');
+const standInFor = screen => { if (!standIn) return null; const file = fs.statSync(standIn).isDirectory() ? path.join(standIn, `${screen}.png`) : standIn; return fs.existsSync(file) ? uri(file, 'image/png') : null; };
 const browser = await chromium.launch({ channel: process.env.STORE_BROWSER_CHANNEL || (process.platform === 'win32' ? 'msedge' : undefined) });
 const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
 let made = 0, pending = 0;

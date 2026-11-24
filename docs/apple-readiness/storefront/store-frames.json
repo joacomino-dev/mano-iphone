@@ -1,60 +1,199 @@
 {
-  "purpose": "Headlines for the five App Store screenshots (marketing plan v2, 2026-11-24; copy revised the same day). The screen under each headline is the real app, captured by testStoreScreensSevenLanguages. <em> marks the one phrase set in the logo's coffee colour.",
-  "order": ["01-hero", "02-filters", "03-review", "04-done", "05-pier"],
+  "purpose": "Headlines for the five App Store screenshots (marketing plan v2, 2026-11-24; copy revised the same day). The screen under each headline is the real app, captured by testStoreScreensSevenLanguages. Stamp words are the app's own (Stamp.tsx WORDS). <em> marks the one phrase set in the logo's coffee colour.",
+  "order": [
+    "01-hero",
+    "02-filters",
+    "03-review",
+    "04-done",
+    "05-pier"
+  ],
   "words": {
-    "es": {"free": "Gratis"},
-    "en": {"free": "Free"},
-    "fr": {"free": "Gratuit"},
-    "de": {"free": "Gratis"},
-    "it": {"free": "Gratis"},
-    "ar": {"free": "مجاني"},
-    "ja": {"free": "無料"}
+    "es": {
+      "free": "Gratis",
+      "discard": "Eliminar",
+      "favorite": "Favorita"
+    },
+    "en": {
+      "free": "Free",
+      "discard": "Delete",
+      "favorite": "Favorite"
+    },
+    "fr": {
+      "free": "Gratuit",
+      "discard": "Supprimer",
+      "favorite": "Favori"
+    },
+    "de": {
+      "free": "Gratis",
+      "discard": "Löschen",
+      "favorite": "Favorit"
+    },
+    "it": {
+      "free": "Gratis",
+      "discard": "Elimina",
+      "favorite": "Preferita"
+    },
+    "ar": {
+      "free": "مجاني",
+      "discard": "حذف",
+      "favorite": "مفضلة"
+    },
+    "ja": {
+      "free": "無料",
+      "discard": "削除",
+      "favorite": "お気に入り"
+    }
   },
   "frames": {
     "01-hero": {
-      "es": ["¿iPhone lleno? <em>Desliza</em> y libera espacio", "Desliza a la izquierda para borrar y a la derecha para conservar."],
-      "en": ["Phone full? <em>Swipe</em> to free up space", "Swipe left to delete, right to keep."],
-      "fr": ["iPhone plein ? <em>Glisse</em> pour libérer de l’espace", "Glisse à gauche pour supprimer, à droite pour garder."],
-      "de": ["iPhone voll? <em>Wisch</em> dir Platz frei", "Nach links zum Löschen, nach rechts zum Behalten."],
-      "it": ["iPhone pieno? <em>Scorri</em> e libera spazio", "Scorri a sinistra per eliminare, a destra per tenere."],
-      "ar": ["جهاز iPhone ممتلئ؟ <em>اسحب</em> وحرّر المساحة", "اسحب الصورة لتحذفها أو لتحتفظ بها."],
-      "ja": ["iPhoneがいっぱい？<em>スワイプ</em>で空きを", "左にスワイプで削除、右で残す。"]
+      "es": [
+        "¿iPhone lleno? <em>Desliza</em> y libera espacio",
+        "Desliza a la izquierda para borrar y a la derecha para conservar."
+      ],
+      "en": [
+        "Phone full? <em>Swipe</em> to free up space",
+        "Swipe left to delete, right to keep."
+      ],
+      "fr": [
+        "iPhone plein ? <em>Glisse</em> pour libérer de l’espace",
+        "Glisse à gauche pour supprimer, à droite pour garder."
+      ],
+      "de": [
+        "iPhone voll? <em>Wisch</em> dir Platz frei",
+        "Nach links zum Löschen, nach rechts zum Behalten."
+      ],
+      "it": [
+        "iPhone pieno? <em>Scorri</em> e libera spazio",
+        "Scorri a sinistra per eliminare, a destra per tenere."
+      ],
+      "ar": [
+        "جهاز iPhone ممتلئ؟ <em>اسحب</em> وحرّر المساحة",
+        "اسحب الصورة لتحذفها أو لتحتفظ بها."
+      ],
+      "ja": [
+        "iPhoneがいっぱい？<em>スワイプ</em>で空きを",
+        "左にスワイプで削除、右で残す。"
+      ]
     },
     "02-filters": {
-      "es": ["Empieza por <em>lo que sobra</em>", "Capturas, fotos borrosas y tickets: elige uno y empieza."],
-      "en": ["Start with <em>the clutter</em>", "Screenshots, blurry shots or receipts: pick one and go."],
-      "fr": ["Commence par <em>le superflu</em>", "Captures, photos floues ou tickets : choisis et commence."],
-      "de": ["Fang mit dem <em>Überflüssigen</em> an", "Screenshots, unscharfe Fotos oder Belege: wählen und loslegen."],
-      "it": ["Parti da <em>ciò che avanza</em>", "Screenshot, foto mosse o scontrini: scegli e inizia."],
-      "ar": ["ابدأ بما <em>لا تحتاجه</em>", "لقطات الشاشة أو الصور المهزوزة أو الإيصالات: اختر وابدأ."],
-      "ja": ["<em>いらないもの</em>から始めよう", "スクショ、ブレた写真、レシートから選んでスタート。"]
+      "es": [
+        "Empieza por <em>lo que sobra</em>",
+        "Capturas, fotos borrosas y tickets: elige uno y empieza."
+      ],
+      "en": [
+        "Start with <em>the clutter</em>",
+        "Screenshots, blurry shots or receipts: pick one and go."
+      ],
+      "fr": [
+        "Commence par <em>le superflu</em>",
+        "Captures, photos floues ou tickets : choisis et commence."
+      ],
+      "de": [
+        "Fang mit dem <em>Überflüssigen</em> an",
+        "Screenshots, unscharfe Fotos oder Belege: wählen und loslegen."
+      ],
+      "it": [
+        "Parti da <em>ciò che avanza</em>",
+        "Screenshot, foto mosse o scontrini: scegli e inizia."
+      ],
+      "ar": [
+        "ابدأ بما <em>لا تحتاجه</em>",
+        "لقطات الشاشة أو الصور المهزوزة أو الإيصالات: اختر وابدأ."
+      ],
+      "ja": [
+        "<em>いらないもの</em>から始めよう",
+        "スクショ、ブレた写真、レシートから選んでスタート。"
+      ]
     },
     "03-review": {
-      "es": ["Nada se borra <em>sin tu OK</em>", "Revisas los descartes y recuperas lo que quieras antes de borrar."],
-      "en": ["Nothing goes <em>without your OK</em>", "Check your discards and get back anything before deleting."],
-      "fr": ["Rien ne part <em>sans ton accord</em>", "Tu revois tes rejets et récupères ce que tu veux avant de supprimer."],
-      "de": ["Nichts geht <em>ohne dein OK</em>", "Du prüfst alles und holst zurück, was du willst, bevor gelöscht wird."],
-      "it": ["Niente sparisce <em>senza il tuo OK</em>", "Rivedi gli scarti e recuperi quello che vuoi prima di eliminare."],
-      "ar": ["لا يُحذف شيء <em>دون موافقتك</em>", "تراجع ما استبعدته وتسترجع ما تريد قبل الحذف."],
-      "ja": ["<em>あなたのOK</em>なしでは消えません", "削除する前に見直して、残したい写真は戻せます。"]
+      "es": [
+        "Nada se borra <em>sin tu OK</em>",
+        "Revisas los descartes y recuperas lo que quieras antes de borrar."
+      ],
+      "en": [
+        "Nothing goes <em>without your OK</em>",
+        "Check your discards and get back anything before deleting."
+      ],
+      "fr": [
+        "Rien ne part <em>sans ton accord</em>",
+        "Tu revois tes rejets et récupères ce que tu veux avant de supprimer."
+      ],
+      "de": [
+        "Nichts geht <em>ohne dein OK</em>",
+        "Du prüfst alles und holst zurück, was du willst, bevor gelöscht wird."
+      ],
+      "it": [
+        "Niente sparisce <em>senza il tuo OK</em>",
+        "Rivedi gli scarti e recuperi quello che vuoi prima di eliminare."
+      ],
+      "ar": [
+        "لا يُحذف شيء <em>دون موافقتك</em>",
+        "تراجع ما استبعدته وتسترجع ما تريد قبل الحذف."
+      ],
+      "ja": [
+        "<em>あなたのOK</em>なしでは消えません",
+        "削除する前に見直して、残したい写真は戻せます。"
+      ]
     },
     "04-done": {
-      "es": ["Mira cuánto espacio <em>recuperaste</em>", "Lo que importa, se queda."],
-      "en": ["See how much space <em>you got back</em>", "What matters, stays."],
-      "fr": ["Vois combien d’espace <em>tu as récupéré</em>", "Ce qui compte reste."],
-      "de": ["Sieh, wie viel Platz du <em>zurückhast</em>", "Was zählt, bleibt."],
-      "it": ["Guarda quanto spazio <em>hai liberato</em>", "Ciò che conta resta."],
-      "ar": ["شاهد كم من المساحة <em>استعدت</em>", "ما يهمّ يبقى."],
-      "ja": ["どれだけ空いたか、<em>ひと目で</em>", "大切なものは残る。"]
+      "es": [
+        "Mira cuánto espacio <em>recuperaste</em>",
+        "Lo que importa, se queda."
+      ],
+      "en": [
+        "See how much space <em>you got back</em>",
+        "What matters, stays."
+      ],
+      "fr": [
+        "Vois combien d’espace <em>tu as récupéré</em>",
+        "Ce qui compte reste."
+      ],
+      "de": [
+        "Sieh, wie viel Platz du <em>zurückhast</em>",
+        "Was zählt, bleibt."
+      ],
+      "it": [
+        "Guarda quanto spazio <em>hai liberato</em>",
+        "Ciò che conta resta."
+      ],
+      "ar": [
+        "شاهد كم من المساحة <em>استعدت</em>",
+        "ما يهمّ يبقى."
+      ],
+      "ja": [
+        "どれだけ空いたか、<em>ひと目で</em>",
+        "大切なものは残る。"
+      ]
     },
     "05-pier": {
-      "es": ["Gratis y <em>en tu iPhone</em>", "Tus fotos no salen de tu iPhone y no hay suscripciones."],
-      "en": ["Free, and <em>on your iPhone</em>", "Your photos never leave your iPhone, and there are no subscriptions."],
-      "fr": ["Gratuit, et <em>sur ton iPhone</em>", "Tes photos ne quittent pas ton iPhone, et il n’y a pas d’abonnement."],
-      "de": ["Kostenlos und <em>auf deinem iPhone</em>", "Deine Fotos verlassen dein iPhone nicht, und es gibt kein Abo."],
-      "it": ["Gratis e <em>sul tuo iPhone</em>", "Le tue foto non lasciano il tuo iPhone e non ci sono abbonamenti."],
-      "ar": ["مجاني <em>وعلى جهاز iPhone</em>", "صورك لا تغادر جهاز iPhone ولا توجد اشتراكات."],
-      "ja": ["無料。<em>iPhoneの中だけで</em>", "写真はiPhoneの外に出ません。サブスクもありません。"]
+      "es": [
+        "Gratis y <em>en tu iPhone</em>",
+        "Tus fotos no salen de tu iPhone y no hay suscripciones."
+      ],
+      "en": [
+        "Free, and <em>on your iPhone</em>",
+        "Your photos never leave your iPhone, and there are no subscriptions."
+      ],
+      "fr": [
+        "Gratuit, et <em>sur ton iPhone</em>",
+        "Tes photos ne quittent pas ton iPhone, et il n’y a pas d’abonnement."
+      ],
+      "de": [
+        "Kostenlos und <em>auf deinem iPhone</em>",
+        "Deine Fotos verlassen dein iPhone nicht, und es gibt kein Abo."
+      ],
+      "it": [
+        "Gratis e <em>sul tuo iPhone</em>",
+        "Le tue foto non lasciano il tuo iPhone e non ci sono abbonamenti."
+      ],
+      "ar": [
+        "مجاني <em>وعلى جهاز iPhone</em>",
+        "صورك لا تغادر جهاز iPhone ولا توجد اشتراكات."
+      ],
+      "ja": [
+        "無料。<em>iPhoneの中だけで</em>",
+        "写真はiPhoneの外に出ません。サブスクもありません。"
+      ]
     }
   }
 }
