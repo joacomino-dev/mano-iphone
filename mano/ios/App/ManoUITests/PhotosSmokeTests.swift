@@ -98,7 +98,8 @@ final class PhotosSmokeTests: XCTestCase {
                 Thread.sleep(forTimeInterval:0.8)
             }
             // Taps on the web view are occasionally lost on a busy simulator: tap until the detail opens.
-            let newest=app.buttons[try label("Más recientes")].firstMatch
+            // The order options are exposed by their text, not always as buttons (run 45504450116).
+            let newest=app.descendants(matching:.any).matching(NSPredicate(format:"label == %@",try label("Más recientes"))).firstMatch
             guard hittable(order,10),tap(order,until:{ newest.exists },"order") else {
                 try? capture(lang,"zz-order");XCTFail("Order must offer «Newest»");return
             }
