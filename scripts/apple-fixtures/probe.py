@@ -15,6 +15,7 @@ assert os.environ.get('GITHUB_ACTIONS') == 'true' and os.environ.get('RUNNER_ENV
 parser=argparse.ArgumentParser()
 parser.add_argument('--seed-existing')
 parser.add_argument('--audit',action='store_true')
+parser.add_argument('--store',action='store_true',help='seed the generated store demo roll (docs/apple-readiness/storefront/library)')
 args=parser.parse_args()
 out = Path(os.environ.get('COCO_FIXTURE_OUTPUT','work/fixtures')).resolve()
 out.mkdir(parents=True, exist_ok=True)
@@ -29,13 +30,35 @@ def run(*args, timeout=120):
 
 app = out/'FixtureSeeder.app'
 app.mkdir(exist_ok=args.audit)
-if not (out/'generated/key-photo.jpg').exists():
+if args.store:
+    # Store demo roll: converted photos, two fictional screenshots and a long pocket
+    # video, plus a manifest with each item's date. Nothing personal is ever imported.
+    import calendar
+    from datetime import datetime
+    library=Path('docs/apple-readiness/storefront/library')
+    store=out/'store';store.mkdir(parents=True,exist_ok=True)
+    run('xcrun','swiftc','-O','-swift-version','5','scripts/apple-fixtures/make-store-media.swift','-o',str(out/'make-store-media'),timeout=300)
+    print(run(str(out/'make-store-media'),str(store),'45',timeout=1200))
+    manifest=json.loads((library/'manifest.json').read_text())
+    items=[]
+    for item in manifest['items']:
+        name=item['file']
+        if name.endswith('.webp'):
+            name=name[:-5]+'.jpg'
+            run('sips','-s','format','jpeg','-s','formatOptions','92',str(library/item['file']),'--out',str(store/name))
+        assert (store/name).exists(), 'missing store media '+name
+        items.append({'file':name,'kind':item.get('kind','photo'),'epoch':calendar.timegm(datetime.fromisoformat(item['capturedAt']).timetuple())})
+    (store/'store-manifest.json').write_text(json.dumps({'copies':manifest['copies'],'items':items}))
+elif not (out/'generated/key-photo.jpg').exists():
     run('xcrun','swiftc','-swift-version','5','scripts/apple-fixtures/make-live.swift','-o',str(out/'make-live'),timeout=300)
     run(str(out/'make-live'),'mano/scripts/fixtures/postcard-fixture.png',str(out/'generated'))
 bundle = 'work.joaquin.coco.fixtureseeder'
 (app/'Info.plist').write_bytes(plistlib.dumps({'CFBundleIdentifier':bundle,'CFBundleExecutable':'FixtureSeeder','CFBundleName':'FixtureSeeder','CFBundlePackageType':'APPL','CFBundleShortVersionString':'1.0','CFBundleVersion':'1','MinimumOSVersion':'17.0','UIDeviceFamily':[1],'LSRequiresIPhoneOS':True,'NSPhotoLibraryUsageDescription':'Create and verify synthetic CocoWash CI fixtures only.','NSPhotoLibraryAddUsageDescription':'Create synthetic fixture photos only.','UISupportedInterfaceOrientations':['UIInterfaceOrientationPortrait'],'UIApplicationSceneManifest':{'UIApplicationSupportsMultipleScenes':False,'UISceneConfigurations':{'UIWindowSceneSessionRoleApplication':[{'UISceneConfigurationName':'Fixture','UISceneDelegateClassName':'FixtureSceneDelegate'}]}}}))
-for name in ['key-photo.jpg','paired-motion.mov']:
-    shutil.copy2(out/'generated'/name,app/name)
+if args.store:
+    for media in (out/'store').iterdir(): shutil.copy2(media,app/media.name)
+else:
+    for name in ['key-photo.jpg','paired-motion.mov']:
+        shutil.copy2(out/'generated'/name,app/name)
 sdk = run('xcrun','--sdk','iphonesimulator','--show-sdk-path')
 arch = run('uname','-m')
 run('xcrun','--sdk','iphonesimulator','swiftc','-swift-version','5','-sdk',sdk,'-target',arch+'-apple-ios17.0-simulator','-parse-as-library','scripts/apple-fixtures/Seeder.swift','-o',str(app/'FixtureSeeder'),timeout=300)
@@ -64,9 +87,9 @@ try:
     container = Path(run('xcrun','simctl','get_app_container',identifier,bundle,'data'))
     # Seeder only; CocoWash's real Photos authorization stays in the UI smoke.
     run('xcrun','simctl','privacy',identifier,'grant','photos',bundle)
-    console = subprocess.Popen(['xcrun','simctl','launch','--terminate-running-process','--console',identifier,bundle]+(['--audit'] if args.audit else []),stdout=(out/'seeder-console.log').open('w'),stderr=subprocess.STDOUT,start_new_session=True)
+    console = subprocess.Popen(['xcrun','simctl','launch','--terminate-running-process','--console',identifier,bundle]+(['--audit'] if args.audit else [])+(['--store'] if args.store else []),stdout=(out/'seeder-console.log').open('w'),stderr=subprocess.STDOUT,start_new_session=True)
     report = container/('Documents/audit-report.json' if args.audit else 'Documents/fixture-report.json')
-    deadline = time.monotonic()+240
+    deadline = time.monotonic()+(1200 if args.store else 240)
     while not report.exists() and time.monotonic() < deadline:
         assert console.poll() is None, 'seeder process exited; inspect seeder-console.log'
         time.sleep(1)

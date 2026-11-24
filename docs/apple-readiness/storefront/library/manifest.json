@@ -1,0 +1,189 @@
+{
+  "purpose": "Generated demo camera roll for App Store screenshots and the App Preview. Imported only into the disposable CI simulator; never into a personal library.",
+  "source": "Generated with Google image models from the prompts in the store plan (2026-11-24). No real people, no personal photos.",
+  "pending": [
+    "Higher-resolution originals: these files are 765x1024 (chat upload); the hero cards need at least 1536 px on the long side.",
+    "r1-receipt and r2-parking: real photos taken by the owner, no personal data."
+  ],
+  "order": "Newest first. capturedAt (UTC) becomes the Photos creation date, so with 'Newest' each language's session opens on k1-beach-dog.",
+  "items": [
+    {
+      "file": "k1-beach-dog.webp",
+      "role": "keep",
+      "decision": "favorite",
+      "capturedAt": "2026-11-22T18:41:07",
+      "screens": [
+        1,
+        3
+      ],
+      "note": "Hero card. The best of a three-photo burst.",
+      "kind": "photo"
+    },
+    {
+      "file": "k1-beach-dog-look-away.webp",
+      "role": "similar",
+      "decision": "discard",
+      "capturedAt": "2026-11-22T18:41:06",
+      "screens": [
+        3
+      ],
+      "note": "Same burst, dog looks away.",
+      "kind": "photo"
+    },
+    {
+      "file": "k1-beach-dog-blurry.webp",
+      "role": "similar",
+      "decision": "discard",
+      "capturedAt": "2026-11-22T18:41:05",
+      "screens": [
+        1,
+        3
+      ],
+      "note": "Same burst, motion blur. Flies left in screen 1.",
+      "kind": "photo"
+    },
+    {
+      "file": "d1-pocket.webp",
+      "role": "delete",
+      "decision": "discard",
+      "capturedAt": "2026-11-22T12:03:44",
+      "screens": [
+        2,
+        3
+      ],
+      "note": "Accidental pocket shot.",
+      "kind": "photo"
+    },
+    {
+      "file": "k2-cookies-hands.webp",
+      "role": "keep",
+      "decision": "favorite",
+      "capturedAt": "2026-11-21T10:15:22",
+      "screens": [
+        3
+      ],
+      "note": "Favorite kept safe. Flour bag label: check it reads as packaging, not text.",
+      "kind": "photo"
+    },
+    {
+      "file": "k4-pasta.webp",
+      "role": "keep",
+      "decision": "keep",
+      "capturedAt": "2026-11-20T14:02:10",
+      "screens": [
+        5
+      ],
+      "note": "Pair with its twin: the classic double shot.",
+      "kind": "photo"
+    },
+    {
+      "file": "k4-pasta-twin.webp",
+      "role": "similar",
+      "decision": "discard",
+      "capturedAt": "2026-11-20T14:02:08",
+      "screens": [
+        3
+      ],
+      "note": "Near duplicate of k4-pasta.",
+      "kind": "photo"
+    },
+    {
+      "file": "d2-dark-room.webp",
+      "role": "delete",
+      "decision": "discard",
+      "capturedAt": "2026-11-19T23:48:31",
+      "screens": [
+        2,
+        3
+      ],
+      "note": "Underexposed; should land in 'Fotos borrosas u oscuras'.",
+      "kind": "photo"
+    },
+    {
+      "file": "k3-pier-friends.webp",
+      "role": "keep",
+      "decision": "keep",
+      "capturedAt": "2026-11-18T19:27:55",
+      "screens": [
+        5
+      ],
+      "note": "Friends from behind; one profile is partly visible, not identifiable.",
+      "kind": "photo"
+    },
+    {
+      "file": "d3-ground.webp",
+      "role": "delete",
+      "decision": "discard",
+      "capturedAt": "2026-11-18T09:12:03",
+      "screens": [
+        2,
+        3
+      ],
+      "note": "Accidental photo of the pavement.",
+      "kind": "photo"
+    },
+    {
+      "file": "k5-yard-dog-ball.webp",
+      "role": "keep",
+      "decision": "keep",
+      "capturedAt": "2026-11-16T16:30:40",
+      "screens": [],
+      "note": "Same dog at home; fills the stack and the video.",
+      "kind": "photo"
+    },
+    {
+      "file": "s1-boarding-pass.png",
+      "generated": true,
+      "kind": "photo",
+      "role": "delete",
+      "decision": "discard",
+      "capturedAt": "2026-11-17T08:20:00",
+      "screens": [
+        2,
+        3
+      ],
+      "note": "Fictional boarding pass screenshot, made by scripts/apple-fixtures/make-store-media.swift."
+    },
+    {
+      "file": "s2-route.png",
+      "generated": true,
+      "kind": "photo",
+      "role": "delete",
+      "decision": "discard",
+      "capturedAt": "2026-11-17T08:10:00",
+      "screens": [
+        2,
+        3
+      ],
+      "note": "Fictional route screenshot."
+    },
+    {
+      "file": "v1-pocket.mp4",
+      "generated": true,
+      "kind": "video",
+      "role": "delete",
+      "decision": "discard",
+      "capturedAt": "2026-11-15T21:05:00",
+      "screens": [
+        3,
+        4
+      ],
+      "note": "45 s dark pocket recording (~225 MB): the freed space is real."
+    },
+    {
+      "file": "v1-pocket.mp4",
+      "generated": true,
+      "kind": "video",
+      "role": "delete",
+      "decision": "discard",
+      "capturedAt": "2026-11-15T21:00:00",
+      "screens": [
+        3,
+        4
+      ],
+      "note": "Second pocket recording (same file, own date)."
+    }
+  ],
+  "copies": 7,
+  "copiesNote": "One copy per screenshot language (es, en, fr, de, it, ar, ja). Each language decides and really deletes its own copy; copy N is dated N x 30 days earlier."
+}

@@ -18,22 +18,43 @@ final class PhotosSmokeTests: XCTestCase {
         XCTFail("Store fixture capture refuses physical libraries");return
         #endif
         XCTAssertEqual(contract["simulator"] as? String,ProcessInfo.processInfo.environment["SIMULATOR_UDID"])
-        // Real onboarding, Photos prompt, album and native metadata assertions.
-        try testFullPhotosAuthorizationStartsSession()
+        // Seven languages, each deciding and really deleting its own copy of the demo roll.
+        executionTimeAllowance = 2700
         let tables=try XCTUnwrap(contract["storeScreenLabels"] as? [String:[String:String]])
         let directory=FileManager.default.urls(for:.documentDirectory,in:.userDomainMask)[0].appendingPathComponent("StoreScreens")
         try FileManager.default.createDirectory(at:directory,withIntermediateDirectories:true)
         let app=XCUIApplication()
+        app.resetAuthorizationStatus(for:.photos)
+        app.launchArguments=["-AppleLanguages","(es)","-AppleLocale","es_ES"]
+        addUIInterruptionMonitor(withDescription:"System alert") { alert in
+            print("COCOWASH_UI_INTERRUPTION label=\(alert.label) buttons=\(alert.buttons.allElementsBoundByIndex.map(\.label))")
+            return false
+        }
+        app.launch()
+        // Real onboarding and Photos prompt, without the smoke test's album and Geek mode.
+        guard storeAuthorizedSession(app) != nil else { return }
         func capture(_ lang:String,_ screen:String) throws {
             Thread.sleep(forTimeInterval:1)
             let image=XCUIScreen.main.screenshot()
             try image.pngRepresentation.write(to:directory.appendingPathComponent("\(lang)-\(screen).png"),options:.atomic)
             print("COCOWASH_UI_STORE_SCREEN lang=\(lang) screen=\(screen)")
         }
+        func hittable(_ element:XCUIElement,_ seconds:TimeInterval) -> Bool {
+            let deadline=Date().addingTimeInterval(seconds)
+            while Date()<deadline { if element.exists && element.isHittable { return true };Thread.sleep(forTimeInterval:0.25) }
+            return false
+        }
+        /// «Eliminar {n}» (and «Eliminar {n} ({size})») in any language, with any digits.
+        func countPattern(_ template:String) -> String {
+            "^"+template.components(separatedBy:"{n}").map{NSRegularExpression.escapedPattern(for:$0)}.joined(separator:"[\\p{Nd}\\s.,]+")+".*$"
+        }
+        // One copy, newest first: docs/apple-readiness/storefront/library/manifest.json.
+        let plan=["favorite","discard","discard","discard","favorite","keep","discard","discard","keep","discard","discard","discard","keep","discard","discard"]
         for lang in ["es","en","fr","de","it","ar","ja"] {
             let labels=try XCTUnwrap(tables[lang])
+            func label(_ key:String) throws -> String { try XCTUnwrap(labels[key],"missing store label \(key)") }
             app.launchArguments=["-AppleLanguages","(\(lang))","-AppleLocale",lang]
-            let finish=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@",try XCTUnwrap(labels["Terminar"]))).firstMatch
+            let finish=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@",try label("Terminar"))).firstMatch
             // The CI simulator sometimes leaves the web view blank after a relaunch; a fresh launch recovers it.
             var rendered=false
             for attempt in 0..<3 where !rendered {
@@ -45,22 +66,62 @@ final class PhotosSmokeTests: XCTestCase {
                 print("COCOWASH_UI_STORE_RELAUNCH_TREE lang=\(lang)\n\(app.debugDescription)")
                 XCTFail("Native launch must render the requested language");return
             }
-            let filters=app.buttons[try XCTUnwrap(labels["Filtros"])].firstMatch
-            XCTAssertTrue(filters.isHittable);try capture(lang,"01-cards")
-            let discard=app.buttons[try XCTUnwrap(labels["Eliminar"])].firstMatch
-            XCTAssertTrue(discard.isEnabled && discard.isHittable);discard.tap();finish.tap()
-            let recover=app.buttons[try XCTUnwrap(labels["Recuperar"])].firstMatch
-            XCTAssertTrue(recover.waitForExistence(timeout:20));XCTAssertTrue(recover.isHittable);try capture(lang,"02-review");recover.tap()
-            let close=app.buttons[try XCTUnwrap(labels["Cerrar"])].firstMatch
-            XCTAssertTrue(close.isHittable);close.tap();XCTAssertTrue(filters.isHittable);filters.tap()
-            let filterTab=app.descendants(matching:.any).matching(NSPredicate(format:"label == %@",try XCTUnwrap(labels["Filtros"]))).allElementsBoundByIndex.filter{$0.isHittable}.last
-            try XCTUnwrap(filterTab).tap();try capture(lang,"03-filters")
-            let settings=app.descendants(matching:.any).matching(NSPredicate(format:"label == %@",try XCTUnwrap(labels["Ajustes"]))).allElementsBoundByIndex.filter{$0.isHittable}.last
-            try XCTUnwrap(settings).tap();try capture(lang,"04-settings")
-            // Support tab with the three purchases: App Review screenshot for the in-app purchases.
-            let support=app.descendants(matching:.any).matching(NSPredicate(format:"label == %@",try XCTUnwrap(labels["Apoyo"]))).allElementsBoundByIndex.filter{$0.isHittable}.last
-            try XCTUnwrap(support).tap();try capture(lang,"05-support")
-            XCTAssertTrue(close.isHittable);close.tap()
+            // 02 · «What do we review today?» with the library's real counts; then «Newest»,
+            // which puts this language's copy on top of the pile.
+            let filters=app.buttons[try label("Filtros")].firstMatch
+            XCTAssertTrue(hittable(filters,20));filters.tap()
+            let order=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@",try label("Orden"))).firstMatch
+            XCTAssertTrue(order.waitForExistence(timeout:15),"Filters must offer the order row")
+            Thread.sleep(forTimeInterval:lang=="es" ? 15 : 4) // on-device analysis fills the counts
+            try capture(lang,"02-filters")
+            XCTAssertTrue(hittable(order,10));order.tap()
+            let newest=app.buttons[try label("Más recientes")].firstMatch
+            XCTAssertTrue(hittable(newest,10),"Order must offer «Newest»");newest.tap()
+            let apply=app.buttons[try label("Aplicar filtros")].firstMatch
+            XCTAssertTrue(hittable(apply,10));apply.tap()
+            if !hittable(finish,8) {
+                let close=app.buttons[try label("Cerrar")].firstMatch
+                if close.exists { close.tap() }
+            }
+            XCTAssertTrue(hittable(finish,20),"Applying the filters must return to the pile")
+            Thread.sleep(forTimeInterval:2)
+            // 01 · the pile opens on the hero dog.
+            try capture(lang,"01-hero")
+            let controls=["keep":app.buttons[try label("Conservar")].firstMatch,"discard":app.buttons[try label("Eliminar")].firstMatch,"favorite":app.buttons[try label("Añadir a Favoritas")].firstMatch]
+            for (index,decision) in plan.enumerated() {
+                // 05 · the friends on the pier on top, for «Free and on your iPhone».
+                if index == 8 { try capture(lang,"05-pier") }
+                let control=try XCTUnwrap(controls[decision])
+                guard hittable(control,25),control.isEnabled else {
+                    attachScreenshot(app,"Store decision \(index) \(decision) unavailable in \(lang)")
+                    XCTFail("Decision \(index) (\(decision)) must be available");return
+                }
+                control.tap()
+                Thread.sleep(forTimeInterval:1.2)
+            }
+            // 03 · «One last look»: this copy's ten discards and the real size they free.
+            XCTAssertTrue(hittable(finish,15));finish.tap()
+            let confirm=app.buttons.matching(NSPredicate(format:"label MATCHES %@",countPattern(try label("Eliminar {n}")))).firstMatch
+            guard confirm.waitForExistence(timeout:30) else {
+                attachScreenshot(app,"Store review missing in \(lang)")
+                XCTFail("Finishing must open the review with its delete button");return
+            }
+            Thread.sleep(forTimeInterval:4) // thumbnails and the measured size
+            print("COCOWASH_UI_STORE_REVIEW lang=\(lang) button=\(confirm.label)")
+            try capture(lang,"03-review")
+            confirm.tap()
+            guard let removed=tapSystemButton(app,["Delete","Eliminar"],timeout:45,searchApp:false) else {
+                XCTFail("No recognized Photos deletion confirmation; never dismiss an unknown alert");return
+            }
+            print("COCOWASH_UI_SYSTEM_DELETE lang=\(lang) via=\(removed)")
+            // 04 · the reward: space freed by the real deletion.
+            let again=app.buttons[try label("Seguir revisando")].firstMatch
+            guard again.waitForExistence(timeout:60) else {
+                attachScreenshot(app,"Store done screen missing in \(lang)")
+                XCTFail("A confirmed deletion must reach the done screen");return
+            }
+            Thread.sleep(forTimeInterval:3)
+            try capture(lang,"04-done")
         }
         print("COCOWASH_UI_NATIVE_STORE_SCREENS_OK count=35")
     }
@@ -1066,6 +1127,107 @@ final class PhotosSmokeTests: XCTestCase {
     /// seconds into the first session once an ad is prepared; while it is up it is modal and
     /// hides the session from accessibility. Pass it like a person: «Continuar», then Apple's
     /// «Ask App Not to Track». Returns at once when it does not appear within `wait`.
+    /// Store screenshots only: the smoke test's fresh-install onboarding → Photos full access →
+    /// tracking explainer, without its album and Geek-mode side effects. nil after an XCTFail.
+    @MainActor private func storeAuthorizedSession(_ app: XCUIApplication) -> XCUIElement? {
+        // First launch shows the onboarding; Photos is requested only on the last
+        // card, after the explanation and the practice.
+        let next = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Continuar")).firstMatch
+        let allow = app.buttons["Permitir acceso a Fotos"].firstMatch
+        // The first card waits for a cold simulator to start WebKit and load the
+        // bundle: run 41168418401 (CoreSimulator needed >180 s to answer simctl
+        // list) missed 120 s with unchanged app code. Same bound as Photos (240 s).
+        guard next.waitForExistence(timeout: 240) else {
+            attachScreenshot(app, "Onboarding card 1 missing")
+            XCTFail("Onboarding card 1 did not offer Continuar.")
+            return nil
+        }
+        // Welcome and practice precede the privacy card. Tap «Continuar» (or the
+        // practice's «Saltar») until the privacy card appears. Run 41222676883 lost one of three
+        // fixed taps and then looked for the privacy card one card too early, so a
+        // tap that does not advance is simply repeated, at most 8 times.
+        // The second screen is the practice (learned by doing, no «Continuar»): its
+        // «Saltar» goes straight to the privacy card.
+        let skip = app.buttons["Saltar"].firstMatch
+        var taps = 0
+        while !allow.exists && taps < 8 {
+            if !skip.exists && !next.exists { _ = skip.waitForExistence(timeout: 5) }
+            if skip.exists {
+                skip.tap()
+                taps += 1
+                _ = allow.waitForExistence(timeout: 3)
+                continue
+            }
+            guard next.waitForExistence(timeout: 30) else { break }
+            // Standalone waiter: not registered with the test case, so the later
+            // waitForExpectations(timeout:) never waits on it a second time.
+            let enabled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: next)
+            guard XCTWaiter().wait(for: [enabled], timeout: 30) == .completed else {
+                attachScreenshot(app, "Onboarding Continuar stayed disabled")
+                XCTFail("Continuar stayed disabled on the onboarding.")
+                return nil
+            }
+            next.tap()
+            taps += 1
+            _ = allow.waitForExistence(timeout: 2)
+        }
+        print("COCOWASH_UI_ONBOARDING taps=\(taps)")
+        guard allow.waitForExistence(timeout: 15) else {
+            attachScreenshot(app, "Privacy card missing")
+            XCTFail("The privacy card did not offer the Photos request.")
+            return nil
+        }
+        // Grant the real OS prompt. This prompt is an expected step: address
+        // SpringBoard directly rather than an interruption monitor or simulated response.
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let fullAccess = springboard.buttons.matching(NSPredicate(format:
+            "(label CONTAINS[c] 'Full Access' OR label CONTAINS[c] 'All Photos' OR " +
+            "label CONTAINS[c] 'todas las fotos' OR label CONTAINS[c] 'acceso completo' OR " +
+            "label CONTAINS[c] 'acceso total') AND NOT (label CONTAINS[c] 'Limited' OR " +
+            "label CONTAINS[c] 'Select' OR label BEGINSWITH[c] 'No ' OR " +
+            "label BEGINSWITH[c] %@ OR label BEGINSWITH[c] %@)", "Don’t", "Don't"
+        )).firstMatch
+        // A tap that started the request turns the button into «Esperando permiso…».
+        // Run 41231549707 tapped once and the request never started (no prompt in
+        // 240 s), like the lost onboarding tap of run 41222676883: repeat a tap
+        // that did not take, at most 3 times, before waiting for the prompt.
+        var requested = false
+        for attempt in 1...3 {
+            if allow.exists { allow.tap() }
+            let deadline = Date().addingTimeInterval(12)
+            while Date() < deadline {
+                if !allow.exists || fullAccess.exists { requested = true; break }
+                Thread.sleep(forTimeInterval: 0.5)
+            }
+            if requested { break }
+            print("COCOWASH_UI_ALLOW_RETRY \(attempt)")
+        }
+        // No debugDescription in failure paths: dumping the WebView hierarchy kept
+        // xcodebuild busy until its 900 s limit (runs 41162917606, 41231549707).
+        guard fullAccess.waitForExistence(timeout: 240) else {
+            attachScreenshot(app, "Photos prompt missing")
+            XCTFail("A FULL Photos authorization button was not offered (request started: \(requested)).")
+            return nil
+        }
+        fullAccess.tap()
+
+        // No landing page: once authorized the session prepares and opens by itself.
+        // Session header «Terminar» (#review-trigger); its label may append a hidden
+        // discard count, and the review sheet's «Terminar …» buttons are not mounted yet.
+        let finish = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Terminar")).firstMatch
+        guard finish.waitForExistence(timeout: 90) else {
+            attachScreenshot(app, "Session did not open")
+            XCTFail("Full Photos authorization and bounded media warmup did not open the real review session.")
+            return nil
+        }
+        XCTAssertTrue(finish.isHittable, "Session toolbar must be usable after media warmup finishes.")
+        // The shell independently requires the native prepareVideo bytes marker.
+        // Do not invoke native bridge methods or bypass the real session UI here.
+        print("COCOWASH_UI_AUTHORIZED_SESSION_OK")
+        passTrackingExplainer(app, wait: 25)
+        return finish
+    }
+
     @MainActor private func passTrackingExplainer(_ app: XCUIApplication, wait: TimeInterval) {
         let explainer = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "CocoWash es gratis gracias a los anuncios")).firstMatch
         guard explainer.waitForExistence(timeout: wait) else { return }

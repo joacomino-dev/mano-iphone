@@ -7,7 +7,7 @@ jobs:
   capture:
     if: github.event.repository.private == false
     runs-on: xcode-27
-    timeout-minutes: 60
+    timeout-minutes: 150
     env:
       DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
       COCO_SIMULATOR_MODE: standard
@@ -25,6 +25,15 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci --no-audit --no-fund
+      # Google's ads and consent servers are unreachable for this run only: store screenshots
+      # must not show the SDK's «Test mode» ad (App Review rejected that) or its consent form.
+      - name: Keep Google ad and consent servers out of the screenshots
+        run: |
+          for host in googleads.g.doubleclick.net pagead2.googlesyndication.com tpc.googlesyndication.com                       securepubads.g.doubleclick.net fundingchoicesmessages.google.com googleadservices.com                       www.googleadservices.com admob-gmats.uc.r.appspot.com; do
+            echo "0.0.0.0 $host" | sudo tee -a /etc/hosts > /dev/null
+          done
+          sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder || true
+          tail -n 8 /etc/hosts
       - name: Execute real Photos session and capture native screenshots
         run: bash scripts/validate-apple-native.sh --simulator-smoke
       - name: Require actual executed screenshot case and complete files

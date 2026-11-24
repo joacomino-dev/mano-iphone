@@ -24,7 +24,7 @@ import Photos
         PHPhotoLibrary.requestAuthorization(for:.readWrite) { status in
             NSLog("FIXTURE_AUTH_RESULT status=%ld",status.rawValue)
             guard status == .authorized else { self.finish(["status":"FAIL","stage":"authorization","authorization":status.rawValue]);return }
-            self.seed()
+            if CommandLine.arguments.contains("--store") { self.seedStore(copy:0,manifest:nil) } else { self.seed() }
         }
     }
     private var reportURL: URL { FileManager.default.urls(for:.documentDirectory,in:.userDomainMask)[0].appendingPathComponent("fixture-report.json") }
@@ -49,6 +49,50 @@ import Photos
         catch { NSLog("SEED_REPORT_WRITE_FAIL") }
         DispatchQueue.main.async { self.label.text = result["status"] as? String == "PASS" ? "FIXTURES_READY" : "FIXTURES_FAILED" }
     }
+    /// Store screenshots: the generated demo camera roll (docs/apple-readiness/storefront/library),
+    /// imported once per screenshot language. Copy N is dated N×30 days earlier, so with «Newest»
+    /// each language's session opens on its own copy after the previous one was decided and deleted.
+    private func seedStore(copy:Int,manifest:[String:Any]?) {
+        var loaded=manifest
+        if loaded == nil {
+            NSLog("FIXTURE_STORE_IMPORT_BEGIN")
+            let preloaded=PHAsset.fetchAssets(with:nil)
+            guard preloaded.count<=6 else { finish(["status":"FAIL","stage":"unexpectedFreshRuntimeLibrary","preloadedCount":preloaded.count]);return }
+            var demo:[String]=[]
+            preloaded.enumerateObjects { asset,_,_ in demo.append(asset.localIdentifier) }
+            try? JSONEncoder().encode(demo).write(to:runtimeDemoURL,options:.atomic)
+            guard let url=Bundle.main.url(forResource:"store-manifest",withExtension:"json"),let data=try? Data(contentsOf:url),
+                  let parsed=try? JSONSerialization.jsonObject(with:data) as? [String:Any] else { finish(["status":"FAIL","stage":"storeManifest"]);return }
+            loaded=parsed
+        }
+        guard let manifest=loaded,let items=manifest["items"] as? [[String:Any]],let copies=manifest["copies"] as? Int else { finish(["status":"FAIL","stage":"storeManifest"]);return }
+        if copy == copies {
+            let assets=PHAsset.fetchAssets(withLocalIdentifiers:created,options:nil)
+            var videos=0,screenshots=0
+            assets.enumerateObjects { item,_,_ in
+                if item.mediaType == .video { videos += 1 }
+                if item.mediaSubtypes.contains(.photoScreenshot) { screenshots += 1 }
+            }
+            try? JSONEncoder().encode(created).write(to:ownershipURL,options:.atomic)
+            finish(["status":assets.count == copies*items.count ? "PASS":"FAIL","mode":"store","createdCount":assets.count,"copies":copies,"perCopy":items.count,"videoCount":videos,"screenshotCount":screenshots])
+            return
+        }
+        PHPhotoLibrary.shared().performChanges({
+            for item in items {
+                guard let name=item["file"] as? String,let epoch=item["epoch"] as? Double,
+                      let file=Bundle.main.url(forResource:(name as NSString).deletingPathExtension,withExtension:(name as NSString).pathExtension) else { continue }
+                let request=PHAssetCreationRequest.forAsset()
+                request.creationDate=Date(timeIntervalSince1970:epoch-Double(copy)*30*86400)
+                request.addResource(with:(item["kind"] as? String) == "video" ? .video : .photo,fileURL:file,options:nil)
+                if let id=request.placeholderForCreatedAsset?.localIdentifier { self.created.append(id) }
+            }
+        }) { success,error in
+            NSLog("FIXTURE_STORE_COPY copy=%ld success=%d code=%ld",copy,success ? 1:0,(error as NSError?)?.code ?? 0)
+            guard success else { self.finish(["status":"FAIL","stage":"storeCopy","copy":copy,"errorCode":(error as NSError?)?.code ?? -1]);return }
+            self.seedStore(copy:copy+1,manifest:manifest)
+        }
+    }
+
     private func seed() {
         NSLog("FIXTURE_IMPORT_BEGIN")
         guard let photo = Bundle.main.url(forResource:"key-photo",withExtension:"jpg"),
