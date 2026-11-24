@@ -119,7 +119,7 @@ final class PhotosSmokeTests: XCTestCase {
                 // 01 · the best beach photo, held to the right with its look-alikes stacked behind.
                 // 02 · the pocket shot, held to the left.
                 if let held {
-                    try heldSwipe(lang,held,dx:decision=="keep" ? 150:-150,dy:-6)
+                    try heldSwipe(lang,held,dx:decision=="keep" ? 90:-90,dy:-6) // 90 pt arms the stamp (56) and keeps the lifted card inside the frame
                     continue
                 }
                 let control=try XCTUnwrap(controls[decision])
@@ -130,7 +130,7 @@ final class PhotosSmokeTests: XCTestCase {
                 control.tap()
                 Thread.sleep(forTimeInterval:1.2)
             }
-            // 03 · «One last look»: this copy's ten discards and the real size they free.
+            // 04 · «One last look»: this copy's ten discards and the real size they free.
             XCTAssertTrue(hittable(finish,15));finish.tap()
             let confirm=app.buttons.matching(NSPredicate(format:"label MATCHES %@",countPattern(try label("Eliminar {n}")))).firstMatch
             guard confirm.waitForExistence(timeout:30) else {
@@ -139,27 +139,27 @@ final class PhotosSmokeTests: XCTestCase {
             }
             Thread.sleep(forTimeInterval:4) // thumbnails and the measured size
             print("COCOWASH_UI_STORE_REVIEW lang=\(lang) button=\(confirm.label)")
-            try capture(lang,"03-review")
+            try capture(lang,"04-review")
             confirm.tap()
             guard let removed=tapSystemButton(app,["Delete","Eliminar"],timeout:45,searchApp:false) else {
                 try? capture(lang,"zz-delete");XCTFail("No recognized Photos deletion confirmation; never dismiss an unknown alert");return
             }
             print("COCOWASH_UI_SYSTEM_DELETE lang=\(lang) via=\(removed)")
-            // 04 · the reward: space freed by the real deletion.
+            // 05 · the reward: space freed by the real deletion.
             let again=app.buttons[try label("Seguir revisando")].firstMatch
             guard again.waitForExistence(timeout:60) else {
                 try? capture(lang,"zz-done")
                 XCTFail("A confirmed deletion must reach the done screen");return
             }
             Thread.sleep(forTimeInterval:3)
-            try capture(lang,"04-done")
-            // 05 · «Keep reviewing»: the pier, held upwards on its way to Favorites.
+            try capture(lang,"05-done")
+            // 03 · after «Keep reviewing»: the pier, held upwards on its way to Favorites.
             guard tap(again,until:{ finish.exists && finish.isHittable },"again") else {
                 try? capture(lang,"zz-again");XCTFail("«Keep reviewing» must return to the pile");return
             }
             guard hittable(try XCTUnwrap(controls["favorite"]),25) else { try? capture(lang,"zz-pier");XCTFail("The pier photo must be next");return }
             Thread.sleep(forTimeInterval:1.5)
-            try heldSwipe(lang,"05-favorite",dx:0,dy:-170)
+            try heldSwipe(lang,"03-favorite",dx:0,dy:-170)
         }
         print("COCOWASH_UI_NATIVE_STORE_SCREENS_OK count=\(languages.count*5)")
     }

@@ -181,5 +181,5 @@
   ],
   "copies": 1,
   "copiesNote": "One copy per simulator: each language runs in its own job. Identical copies in one library would stack as look-alikes (the pile groups similar photos), which a real camera roll would not do.",
-  "story": "Newest first: keep the best beach photo, held mid-swipe right (1); delete its two look-alikes; the pocket shot, held mid-swipe left (2); decide the rest; review (3); delete for real (4); «Keep reviewing»: the pier, held mid-swipe up to Favorites (5)."
+  "story": "Newest first: keep the best beach photo, held mid-swipe right (1); delete its two look-alikes; the pocket shot, held mid-swipe left (2); decide the rest; review (4); delete for real (5); «Keep reviewing»: the pier, held mid-swipe up to Favorites (3; captured last)."
 }
