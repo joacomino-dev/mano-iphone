@@ -1,60 +1,206 @@
 {
-  "purpose": "Headlines for the five App Store screenshots (revised 2026-11-24). Order: keep, delete, favorite, review, result. Each headline names the gesture and its result, and the highlighted phrase (<em>) takes the action's colour: turquoise keeps, graphite deletes, pink favorites, coffee for review and result. Screens 1–3 are real captures of a card held mid-swipe, lifted out of the phone by the composer; 4–5 are plain captures. Stamp words are the app's own (Stamp.tsx WORDS).",
-  "order": ["01-keep", "02-delete", "03-favorite", "04-review", "05-done"],
+  "purpose": "Headlines for the five App Store screenshots (revised 2026-11-24). Order: keep, delete, favorite, review, result. Each headline is the action and its gesture («Conserva deslizando a la derecha»), the subtitle what happens to the photo, and the highlighted phrase (<em>) takes the action's colour: turquoise keeps, graphite deletes, pink favorites, coffee for review and result. Screens 1–3 are real captures of a card held mid-swipe, lifted out of the phone by the composer; 4–5 are plain captures. Stamp words are the app's own (Stamp.tsx WORDS).",
+  "order": [
+    "01-keep",
+    "02-delete",
+    "03-favorite",
+    "04-review",
+    "05-done"
+  ],
   "words": {
-    "es": {"free": "Gratis", "keep": "Conservar", "discard": "Eliminar", "favorite": "Favorita"},
-    "en": {"free": "Free", "keep": "Keep", "discard": "Delete", "favorite": "Favorite"},
-    "fr": {"free": "Gratuit", "keep": "Garder", "discard": "Supprimer", "favorite": "Favori"},
-    "de": {"free": "Gratis", "keep": "Behalten", "discard": "Löschen", "favorite": "Favorit"},
-    "it": {"free": "Gratis", "keep": "Tieni", "discard": "Elimina", "favorite": "Preferita"},
-    "ar": {"free": "مجاني", "keep": "احتفاظ", "discard": "حذف", "favorite": "مفضلة"},
-    "ja": {"free": "無料", "keep": "残す", "discard": "削除", "favorite": "お気に入り"}
+    "es": {
+      "free": "Gratis",
+      "keep": "Conservar",
+      "discard": "Eliminar",
+      "favorite": "Favorita"
+    },
+    "en": {
+      "free": "Free",
+      "keep": "Keep",
+      "discard": "Delete",
+      "favorite": "Favorite"
+    },
+    "fr": {
+      "free": "Gratuit",
+      "keep": "Garder",
+      "discard": "Supprimer",
+      "favorite": "Favori"
+    },
+    "de": {
+      "free": "Gratis",
+      "keep": "Behalten",
+      "discard": "Löschen",
+      "favorite": "Favorit"
+    },
+    "it": {
+      "free": "Gratis",
+      "keep": "Tieni",
+      "discard": "Elimina",
+      "favorite": "Preferita"
+    },
+    "ar": {
+      "free": "مجاني",
+      "keep": "احتفاظ",
+      "discard": "حذف",
+      "favorite": "مفضلة"
+    },
+    "ja": {
+      "free": "無料",
+      "keep": "残す",
+      "discard": "削除",
+      "favorite": "お気に入り"
+    }
   },
   "frames": {
     "01-keep": {
-      "es": ["Lo bueno, <em>a la derecha</em>", "Desliza a la derecha y la foto se queda en tu carrete."],
-      "en": ["The good ones, <em>to the right</em>", "Swipe right and the photo stays in your library."],
-      "fr": ["Le meilleur, <em>à droite</em>", "Glisse à droite et la photo reste dans ta photothèque."],
-      "de": ["Das Gute <em>nach rechts</em>", "Nach rechts wischen, und das Foto bleibt in deiner Mediathek."],
-      "it": ["Il meglio, <em>a destra</em>", "Scorri a destra e la foto resta nella tua libreria."],
-      "ar": ["الصور الجميلة <em>إلى اليمين</em>", "اسحب لليمين فتبقى الصورة في مكتبتك."],
-      "ja": ["いい写真は<em>右へ</em>", "右にスワイプで、写真はライブラリに残ります。"]
+      "es": [
+        "<em>Conserva</em> deslizando a la derecha",
+        "La foto se queda en tu carrete y no vuelve a salir en un tiempo."
+      ],
+      "en": [
+        "<em>Keep</em> by swiping right",
+        "The photo stays in your library and won’t come back for a while."
+      ],
+      "fr": [
+        "<em>Garde</em> en glissant à droite",
+        "La photo reste dans ta photothèque et ne revient pas avant un moment."
+      ],
+      "de": [
+        "Nach rechts wischen zum <em>Behalten</em>",
+        "Das Foto bleibt in deiner Mediathek und kommt eine Weile nicht wieder."
+      ],
+      "it": [
+        "<em>Tieni</em> scorrendo a destra",
+        "La foto resta nella tua libreria e non ricompare per un po’."
+      ],
+      "ar": [
+        "<em>احتفظ</em> بالسحب إلى اليمين",
+        "تبقى الصورة في مكتبتك ولا تظهر مجددًا لفترة."
+      ],
+      "ja": [
+        "右にスワイプで<em>残す</em>",
+        "写真はライブラリに残り、しばらくは出てきません。"
+      ]
     },
     "02-delete": {
-      "es": ["Lo que sobra, <em>a la izquierda</em>", "La del bolsillo, la borrosa, la captura vieja. Se apartan hasta que confirmes."],
-      "en": ["The clutter, <em>to the left</em>", "The pocket shot, the blurry one, the old screenshot. Set aside until you confirm."],
-      "fr": ["Le superflu, <em>à gauche</em>", "La photo de poche, la floue, la vieille capture. Mises de côté jusqu’à ta confirmation."],
-      "de": ["Was weg kann, <em>nach links</em>", "Das Taschenfoto, das unscharfe, der alte Screenshot. Beiseite, bis du bestätigst."],
-      "it": ["Il superfluo, <em>a sinistra</em>", "La foto in tasca, quella mossa, il vecchio screenshot. Da parte finché non confermi."],
-      "ar": ["ما لا تحتاجه <em>إلى اليسار</em>", "صورة الجيب، والمهزوزة، ولقطة الشاشة القديمة. تُنحّى جانبًا حتى تؤكد."],
-      "ja": ["いらない写真は<em>左へ</em>", "ポケットの写真、ブレた写真、古いスクショ。確定するまで消えません。"]
+      "es": [
+        "<em>Elimina</em> deslizando a la izquierda",
+        "Todavía no se borra: queda apartada hasta que confirmes."
+      ],
+      "en": [
+        "<em>Delete</em> by swiping left",
+        "Nothing is deleted yet: it waits until you confirm."
+      ],
+      "fr": [
+        "<em>Supprime</em> en glissant à gauche",
+        "Rien n’est supprimé tout de suite : elle attend ta confirmation."
+      ],
+      "de": [
+        "Nach links wischen zum <em>Löschen</em>",
+        "Noch wird nichts gelöscht: Es wartet, bis du bestätigst."
+      ],
+      "it": [
+        "<em>Elimina</em> scorrendo a sinistra",
+        "Non si elimina ancora: aspetta la tua conferma."
+      ],
+      "ar": [
+        "<em>احذف</em> بالسحب إلى اليسار",
+        "لا يُحذف شيء بعد: تنتظر حتى تؤكد."
+      ],
+      "ja": [
+        "左にスワイプで<em>削除</em>",
+        "まだ削除されません。確定するまで待機します。"
+      ]
     },
     "03-favorite": {
-      "es": ["Lo que más quieres, <em>arriba</em>", "Desliza hacia arriba y se guarda en tus Favoritas de Fotos."],
-      "en": ["What you love, <em>up top</em>", "Swipe up and it’s saved to your Favorites in Photos."],
-      "fr": ["Ce que tu aimes, <em>en haut</em>", "Glisse vers le haut : elle rejoint tes favoris dans Photos."],
-      "de": ["Was du liebst, <em>nach oben</em>", "Nach oben wischen, und es landet in deinen Favoriten in Fotos."],
-      "it": ["Ciò che ami, <em>in alto</em>", "Scorri verso l’alto e finisce tra le preferite di Foto."],
-      "ar": ["ما تحبه <em>إلى الأعلى</em>", "اسحب للأعلى فتُحفظ في المفضلة في الصور."],
-      "ja": ["大好きな写真は<em>上へ</em>", "上にスワイプで、写真アプリのお気に入りに。"]
+      "es": [
+        "<em>Añade a Favoritas</em> deslizando hacia arriba",
+        "Se guarda en las Favoritas de tu app Fotos."
+      ],
+      "en": [
+        "<em>Add to Favorites</em> by swiping up",
+        "It’s saved to Favorites in your Photos app."
+      ],
+      "fr": [
+        "<em>Ajoute aux favoris</em> en glissant vers le haut",
+        "Elle rejoint les favoris de ton app Photos."
+      ],
+      "de": [
+        "Nach oben wischen für <em>Favoriten</em>",
+        "Es landet in den Favoriten deiner Fotos-App."
+      ],
+      "it": [
+        "<em>Aggiungi alle preferite</em> scorrendo in alto",
+        "Finisce tra le preferite dell’app Foto."
+      ],
+      "ar": [
+        "<em>أضف إلى المفضلة</em> بالسحب للأعلى",
+        "تُحفظ في المفضلة في تطبيق الصور."
+      ],
+      "ja": [
+        "上にスワイプで<em>お気に入り</em>",
+        "写真アプリのお気に入りに保存されます。"
+      ]
     },
     "04-review": {
-      "es": ["Nada se borra <em>sin tu OK</em>", "Antes de borrar, revisas lo apartado y recuperas lo que quieras."],
-      "en": ["Nothing goes <em>without your OK</em>", "Before deleting, you look through what you set aside and get back anything."],
-      "fr": ["Rien ne part <em>sans ton accord</em>", "Avant de supprimer, tu revois ce que tu as mis de côté et récupères ce que tu veux."],
-      "de": ["Nichts geht <em>ohne dein OK</em>", "Vor dem Löschen siehst du alles noch einmal an und holst zurück, was du willst."],
-      "it": ["Niente sparisce <em>senza il tuo OK</em>", "Prima di eliminare, rivedi ciò che hai messo da parte e recuperi quello che vuoi."],
-      "ar": ["لا يُحذف شيء <em>دون موافقتك</em>", "قبل الحذف، تراجع ما نحّيته وتسترجع ما تريد."],
-      "ja": ["<em>あなたのOK</em>なしでは消えません", "削除の前に見直して、残したい写真は戻せます。"]
+      "es": [
+        "Nada se borra <em>sin tu OK</em>",
+        "Antes de borrar, revisas lo apartado y recuperas lo que quieras."
+      ],
+      "en": [
+        "Nothing goes <em>without your OK</em>",
+        "Before deleting, you look through what you set aside and get back anything."
+      ],
+      "fr": [
+        "Rien ne part <em>sans ton accord</em>",
+        "Avant de supprimer, tu revois ce que tu as mis de côté et récupères ce que tu veux."
+      ],
+      "de": [
+        "Nichts geht <em>ohne dein OK</em>",
+        "Vor dem Löschen siehst du alles noch einmal an und holst zurück, was du willst."
+      ],
+      "it": [
+        "Niente sparisce <em>senza il tuo OK</em>",
+        "Prima di eliminare, rivedi ciò che hai messo da parte e recuperi quello che vuoi."
+      ],
+      "ar": [
+        "لا يُحذف شيء <em>دون موافقتك</em>",
+        "قبل الحذف، تراجع ما نحّيته وتسترجع ما تريد."
+      ],
+      "ja": [
+        "<em>あなたのOK</em>なしでは消えません",
+        "削除の前に見直して、残したい写真は戻せます。"
+      ]
     },
     "05-done": {
-      "es": ["Mira cuánto espacio <em>liberaste</em>", "Gratis, y tus fotos nunca salen de tu iPhone."],
-      "en": ["See how much space <em>you freed</em>", "Free, and your photos never leave your iPhone."],
-      "fr": ["Vois combien d’espace <em>tu as libéré</em>", "Gratuit, et tes photos ne quittent jamais ton iPhone."],
-      "de": ["Sieh, wie viel Platz du <em>frei hast</em>", "Kostenlos, und deine Fotos verlassen nie dein iPhone."],
-      "it": ["Guarda quanto spazio <em>hai liberato</em>", "Gratis, e le tue foto non lasciano mai il tuo iPhone."],
-      "ar": ["شاهد كم من المساحة <em>حرّرت</em>", "مجاني، وصورك لا تغادر جهاز iPhone أبدًا."],
-      "ja": ["どれだけ<em>空いたか</em>、ひと目で", "無料。写真がiPhoneの外に出ることはありません。"]
+      "es": [
+        "Mira cuánto espacio <em>liberaste</em>",
+        "Gratis, y tus fotos nunca salen de tu iPhone. En CocoWash odiamos las suscripciones mensuales."
+      ],
+      "en": [
+        "See how much space <em>you freed</em>",
+        "Free, and your photos never leave your iPhone. At CocoWash we hate monthly subscriptions."
+      ],
+      "fr": [
+        "Vois combien d’espace <em>tu as libéré</em>",
+        "Gratuit, et tes photos ne quittent jamais ton iPhone. Chez CocoWash, on déteste les abonnements mensuels."
+      ],
+      "de": [
+        "Sieh, wie viel Platz du <em>frei hast</em>",
+        "Kostenlos, und deine Fotos verlassen nie dein iPhone. Bei CocoWash hassen wir Monatsabos."
+      ],
+      "it": [
+        "Guarda quanto spazio <em>hai liberato</em>",
+        "Gratis, e le tue foto non lasciano mai il tuo iPhone. Da CocoWash odiamo gli abbonamenti mensili."
+      ],
+      "ar": [
+        "شاهد كم من المساحة <em>حرّرت</em>",
+        "مجاني، وصورك لا تغادر جهاز iPhone أبدًا. في CocoWash نكره الاشتراكات الشهرية."
+      ],
+      "ja": [
+        "どれだけ<em>空いたか</em>、ひと目で",
+        "無料。写真がiPhoneの外に出ることはありません。CocoWashは月額サブスクが大嫌いです。"
+      ]
     }
   }
 }

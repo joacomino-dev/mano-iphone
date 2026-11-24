@@ -44,7 +44,7 @@ body{background:var(--paper) url(${asset('paper-cotton.webp')}) 0 0/${Math.round
 .copy{position:absolute;inset-inline:104px;top:150px;display:flex;flex-direction:column;gap:26px}
 h1{font-family:var(--brand);font-weight:600;font-size:108px;line-height:1.02;letter-spacing:-.012em;text-wrap:balance}
 h1 em{font-style:normal;color:var(--accent,var(--coffee))}
-p{font-family:var(--text);font-weight:500;font-size:46px;line-height:1.28;color:var(--ink-soft);text-wrap:pretty;max-width:1000px}
+p{font-family:var(--text);font-weight:500;font-size:56px;line-height:1.26;color:var(--ink-soft);text-wrap:pretty;max-width:1000px}
 .screen{position:absolute;left:${SCREEN_X - 16}px;top:${SCREEN_Y - 16}px;padding:16px;border-radius:${Math.round(55 * PT) + 16}px;background:var(--ink);
   box-shadow:0 2px 0 rgba(255,255,255,.35) inset,0 44px 90px rgba(18,45,46,.24),0 10px 24px rgba(18,45,46,.14)}
 .screen img{display:block;width:${SHOT}px;height:${Math.round(SHOT * H / W)}px;border-radius:${Math.round(55 * PT)}px}
@@ -174,6 +174,11 @@ for (const lang of langs) for (const screen of copy.order) {
     const h1 = document.querySelector('h1');
     let size = 108;
     while (h1.getBoundingClientRect().height > size * 1.02 * 2 + 6 && size > 76) { size -= 4; h1.style.fontSize = size + 'px'; }
+    // Longer subtitles push the phone down (it may run off the bottom edge, never into the text).
+    const bottom = document.querySelector('.copy').getBoundingClientRect().bottom, screen = document.querySelector('.screen');
+    const top = Math.max(screen.getBoundingClientRect().top, bottom + 44);
+    screen.style.top = top + 'px';
+    const pill = document.querySelector('.pill'); if (pill) pill.style.top = (top - 74) + 'px';
   });
   const held = HELD[screen];
   if (held) {
