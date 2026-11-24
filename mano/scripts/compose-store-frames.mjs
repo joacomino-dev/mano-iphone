@@ -1,5 +1,7 @@
-// Composes the five App Store screenshots per language: headline + brand ground + the REAL
-// app capture from testStoreScreensSevenLanguages (never a mock-up of the UI).
+// Composes the five App Store screenshots per language: a headline on CocoWash's own cotton
+// paper, around the REAL app capture from testStoreScreensSevenLanguages (never a UI mock-up).
+// Every material comes from the app: paper texture, palette, Fredoka/Patua One, the stamps,
+// Coqui, and the photo card's proportions (prototype.css .photo-card at 3x, scaled with the screen).
 // Usage (from mano/): node scripts/compose-store-frames.mjs <raw-captures-dir> <output-dir> [lang,...]
 // Output: <lang>-<screen>.jpg, 1320×2868, RGB without alpha (App Store 6.9" slot).
 import fs from 'node:fs';
@@ -13,54 +15,68 @@ if (!rawDir || !outDir) { console.error('usage: compose-store-frames.mjs <raw-di
 const copy = JSON.parse(fs.readFileSync(path.join(root, 'docs/apple-readiness/storefront/store-frames.json'), 'utf8'));
 const langs = only ? only.split(',') : Object.keys(copy.words);
 const uri = (file, type) => `data:${type};base64,${fs.readFileSync(file).toString('base64')}`;
+const asset = (rel, type = 'image/webp') => uri(path.join(root, 'mano/public/assets', rel), type);
 const library = name => uri(path.join(root, 'docs/apple-readiness/storefront/library', name), 'image/webp');
-const fredoka = uri(path.join(root, 'mano/public/assets/fonts/fredoka-latin-600.woff2'), 'font/woff2');
 const W = 1320, H = 2868;
+// The capture is 1320 px for a 440 pt screen (3x); shown 1000 px wide (whole screen visible) it is 2.27 px per point.
+const SHOT = 1000, PT = SHOT / 440;
 
 const css = `
-@font-face{font-family:Fredoka;src:url(${fredoka}) format('woff2');font-weight:600}
-:root{--petrol:#1D4042;--paper:#F2E7D5;--stamp:#B44238;--ink:#13292A}
+@font-face{font-family:Fredoka;src:url(${asset('fonts/fredoka-latin-600.woff2', 'font/woff2')}) format('woff2');font-weight:600}
+@font-face{font-family:'Patua One';src:url(${asset('fonts/patua-one-latin-400.woff2', 'font/woff2')}) format('woff2')}
+:root{--paper:#F2E7D5;--paper-light:#FAF6EE;--ink:#122D2E;--ink-soft:#3B4E4B;--coffee:#90481D;--teal:#1E7470;
+  --brand:Fredoka,"Hiragino Maru Gothic ProN","Yu Gothic UI","Meiryo","Segoe UI",Tahoma,sans-serif;
+  --text:-apple-system,"SF Pro Text","Segoe UI","Yu Gothic UI","Meiryo",Tahoma,sans-serif}
 *{box-sizing:border-box;margin:0}
 html,body{width:${W}px;height:${H}px;overflow:hidden}
-body{font-family:Fredoka,"Segoe UI","Yu Gothic UI","Meiryo","Noto Sans JP","Noto Sans Arabic",Tahoma,sans-serif;position:relative}
-.ground{position:absolute;inset:0}
-.ground.petrol{background:radial-gradient(1200px 900px at 50% 8%,#2B5A5C 0%,var(--petrol) 60%,#163436 100%)}
-.ground.paper{background:radial-gradient(1200px 900px at 50% 8%,#FBF4E8 0%,var(--paper) 62%,#E8D9C0 100%)}
-.copy{position:absolute;left:96px;right:96px;top:150px;display:flex;flex-direction:column;gap:30px}
-h1{font-weight:600;font-size:112px;line-height:1.04;letter-spacing:-.01em;text-wrap:balance}
-p{font-family:"Segoe UI","Yu Gothic UI","Meiryo","Noto Sans JP","Noto Sans Arabic",Tahoma,sans-serif;font-weight:500;font-size:52px;line-height:1.3;text-wrap:balance;opacity:.86}
-.petrol-ink{color:var(--paper)} .paper-ink{color:var(--petrol)}
-[dir=rtl] .copy{text-align:right}
-.phone{position:absolute;left:130px;top:640px;width:1060px;padding:20px;border-radius:124px;background:#0C1718;box-shadow:0 60px 120px rgba(5,20,21,.45)}
-.phone img,.phone .pending{display:block;width:1020px;height:${Math.round(1020 * H / W)}px;border-radius:104px;object-fit:cover}
-.phone .pending{background:repeating-linear-gradient(45deg,#ddd 0 40px,#eee 40px 80px);display:grid;place-items:center;font-size:60px;color:#777}
-.card{position:absolute;padding:14px;background:#fff;border-radius:30px;box-shadow:0 40px 80px rgba(5,20,21,.45)}
-.card img{display:block;width:100%;border-radius:18px}
-.stamp{position:absolute;left:50%;top:44%;translate:-50% -50%;rotate:-10deg;padding:6px 26px;border:8px solid var(--stamp);border-radius:18px;color:var(--stamp);background:rgba(255,255,255,.82);font-weight:600;font-size:66px;text-transform:uppercase;white-space:nowrap}
-.badge{position:absolute;display:grid;place-items:center;border-radius:50%;background:var(--stamp);color:var(--paper);font-weight:600;rotate:10deg;box-shadow:0 24px 50px rgba(5,20,21,.4)}
-.heart{position:absolute;left:-40px;top:-40px;width:128px;height:128px;border-radius:50%;background:var(--stamp);display:grid;place-items:center;box-shadow:0 16px 36px rgba(5,20,21,.4)}
+body{background:var(--paper) url(${asset('paper-cotton.webp')}) 0 0/${Math.round(512 * PT / 2)}px;position:relative;color:var(--ink)}
+.copy{position:absolute;inset-inline:104px;top:150px;display:flex;flex-direction:column;gap:26px}
+.has-coqui .copy{inset-inline-end:520px}
+h1{font-family:var(--brand);font-weight:600;font-size:108px;line-height:1.02;letter-spacing:-.012em;text-wrap:balance}
+h1 em{font-style:normal;color:var(--coffee)}
+p{font-family:var(--text);font-weight:500;font-size:46px;line-height:1.28;color:var(--ink-soft);text-wrap:pretty;max-width:1000px}
+.screen{position:absolute;left:${(W - SHOT) / 2 - 16}px;top:610px;padding:16px;border-radius:${Math.round(55 * PT) + 16}px;background:var(--ink);
+  box-shadow:0 2px 0 rgba(255,255,255,.35) inset,0 44px 90px rgba(18,45,46,.24),0 10px 24px rgba(18,45,46,.14)}
+.screen img,.screen .pending{display:block;width:${SHOT}px;height:${Math.round(SHOT * H / W)}px;border-radius:${Math.round(55 * PT)}px}
+.screen .pending{object-fit:cover;opacity:.92}
+/* prototype.css .photo-card: paper-light frame, 8 pt sides, 32 pt caption band, 3 pt radius, card shadow */
+.card{position:absolute;padding:${Math.round(8 * PT)}px ${Math.round(8 * PT)}px ${Math.round(32 * PT)}px;border-radius:${Math.round(3 * PT)}px;background:var(--paper-light);
+  box-shadow:0 0 0 2px rgba(18,45,46,.07),0 5px 10px rgba(18,45,46,.10),0 26px 60px rgba(18,45,46,.22)}
+.card img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover}
+.card time{position:absolute;inset-inline-end:${Math.round(10 * PT)}px;bottom:${Math.round(9 * PT)}px;font:400 ${Math.round(13 * PT)}px/1 "IBM Plex Mono",ui-monospace,Consolas,monospace;color:var(--ink-soft);letter-spacing:.04em}
+.stamp{position:absolute;width:300px;filter:drop-shadow(0 14px 22px rgba(18,45,46,.22))}
+/* The decision bar's «Conservar» pill: teal, ink outline, cream ring, Patua One capitals */
+.pill{position:absolute;padding:20px 54px 24px;border-radius:999px;background:var(--teal);border:8px solid var(--ink);box-shadow:inset 0 0 0 7px var(--paper-light),0 18px 36px rgba(18,45,46,.22);
+  font:400 64px/1 'Patua One',var(--brand);letter-spacing:.03em;text-transform:uppercase;color:var(--paper-light)}
+.coqui{position:absolute;top:150px;inset-inline-end:64px;height:340px}
 `;
 
-const heart = '<svg width="64" height="64" viewBox="0 0 24 24" fill="#F2E7D5"><path d="M12 21s-7.5-4.6-10-9.3C.4 8.4 2.3 4.5 6 4.5c2.2 0 3.6 1.2 4.4 2.5h3.2C14.4 5.7 15.8 4.5 18 4.5c3.7 0 5.6 3.9 4 7.2C19.5 16.4 12 21 12 21z"/></svg>';
+// The card caption is the photo's date, written the way the app writes it (Filters.tsx display()).
+const day = (lang, iso) => new Date(`${iso}T12:00:00`).toLocaleDateString(lang, { day: 'numeric', month: 'short', year: 'numeric' });
 
 function frame(lang, screen, raw) {
   const [headline, sub] = copy.frames[screen][lang];
   const words = copy.words[lang];
-  const ground = ['02-filters', '04-done'].includes(screen) ? 'paper' : 'petrol';
-  const shot = raw ? `<img src="${raw}" alt="">` : '<div class="pending">captura pendiente</div>';
-  let extra = '';
+  const shot = raw ? `<img src="${raw}" alt="">` : `<img class="pending" src="${copy.standIn ?? ''}" alt="">`;
+  let extra = '', coqui = false;
   if (screen === '01-hero') extra = `
-    <div class="card" style="left:34px;top:1240px;width:400px;rotate:-15deg"><img src="${library('k1-beach-dog-blurry.webp')}" alt=""><span class="stamp">${words.stamp}</span></div>
-    <div class="badge" style="right:60px;top:560px;width:250px;height:250px;font-size:${words.free.length > 6 ? 56 : 70}px">${words.free}</div>`;
+    <div class="card" style="left:-6px;top:1330px;width:430px;rotate:-13deg"><img src="${library('k1-beach-dog-blurry.webp')}" alt=""><time>${day(lang, '2026-11-22')}</time></div>
+    <img class="stamp" src="${asset('stamps/discard.webp')}" style="left:250px;top:1215px;rotate:-9deg" alt="">
+    <div class="pill" style="right:86px;top:540px;rotate:4deg">${words.free}</div>`;
   if (screen === '03-review') extra = `
-    <div class="card" style="right:34px;top:1180px;width:380px;rotate:9deg"><img src="${library('k2-cookies-hands.webp')}" alt=""><span class="heart">${heart}</span></div>`;
-  return `<!doctype html><html lang="${lang}" dir="${lang === 'ar' ? 'rtl' : 'ltr'}"><head><meta charset="utf-8"><style>${css}</style></head><body>
-    <div class="ground ${ground}"></div>
-    <div class="copy ${ground}-ink"><h1>${headline}</h1><p>${sub}</p></div>
-    <div class="phone">${shot}</div>${extra}</body></html>`;
+    <div class="card" style="right:-10px;top:1270px;width:420px;rotate:8deg"><img src="${library('k2-cookies-hands.webp')}" alt=""><time>${day(lang, '2026-11-21')}</time></div>
+    <img class="stamp" src="${asset('stamps/favorite.webp')}" style="right:250px;top:1150px;width:270px;rotate:-7deg" alt="">`;
+  if (screen === '05-pier') { coqui = true; extra = `<img class="coqui" src="${asset('characters/coqui-safe.webp')}" alt="">`; }
+  return `<!doctype html><html lang="${lang}" dir="${lang === 'ar' ? 'rtl' : 'ltr'}"><head><meta charset="utf-8"><style>${css}</style></head>
+    <body class="${coqui ? 'has-coqui' : ''}"><div class="copy"><h1>${headline}</h1><p>${sub}</p></div>
+    <div class="screen">${shot}</div>${extra}</body></html>`;
 }
 
 fs.mkdirSync(outDir, { recursive: true });
+// A design-only stand-in (the web demo's pile) may fill missing captures while drafting:
+// STORE_STAND_IN=<png>. It is labelled as such in the file name and never published.
+const standIn = process.env.STORE_STAND_IN;
+if (standIn) copy.standIn = uri(standIn, 'image/png');
 const browser = await chromium.launch({ channel: process.env.STORE_BROWSER_CHANNEL || (process.platform === 'win32' ? 'msedge' : undefined) });
 const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
 let made = 0, pending = 0;
@@ -71,12 +87,13 @@ for (const lang of langs) for (const screen of copy.order) {
   await page.setContent(frame(lang, screen, raw), { waitUntil: 'load' });
   await page.evaluate(async () => {
     await document.fonts.ready;
-    // Long headlines (German, French) step down until they fit in two lines.
+    // Long headlines step down until they fit in two lines.
     const h1 = document.querySelector('h1');
-    let size = 112;
-    while (h1.getBoundingClientRect().height > 112 * 1.04 * 2 + 4 && size > 80) { size -= 4; h1.style.fontSize = size + 'px'; }
+    let size = 108;
+    while (h1.getBoundingClientRect().height > size * 1.02 * 2 + 6 && size > 76) { size -= 4; h1.style.fontSize = size + 'px'; }
   });
-  await page.screenshot({ path: path.join(outDir, `${lang}-${screen}.jpg`), type: 'jpeg', quality: 92 });
+  const name = raw ? `${lang}-${screen}.jpg` : `DRAFT-${lang}-${screen}.jpg`;
+  await page.screenshot({ path: path.join(outDir, name), type: 'jpeg', quality: 92 });
   made++;
 }
 await browser.close();
