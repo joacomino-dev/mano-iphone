@@ -4,7 +4,7 @@
 
 Cinco pantallas (conservar, eliminar, favorita, revisión, espacio liberado) en 7 idiomas, con el carrete demo
 (`docs/apple-readiness/storefront/library`) y la carta sostenida por fuera del teléfono; textos en `store-frames.json`.
-Publicadas con 1.1.1 (52) a partir de la versión web de la app, por decisión del usuario. La captura nativa por idioma
+Orden: conservar, favorita, eliminar, revisión, espacio liberado. 1.1.1 (52) enviada a revisión el 2026-11-25 (WAITING_FOR_REVIEW), a partir de la versión web de la app, por decisión del usuario. La captura nativa por idioma
 (`apple-store-screens.yml`) queda por terminar: «Más recientes» corregido, gestos sostenidos sin probar aún.
 
 ## Claude CW-CL-100 — pantalla antes de la pregunta de rastreo, versión 1.1 (2026-11-20)
