@@ -1266,4 +1266,5 @@ Pedido del usuario: capturas que expliquen qué hace CocoWash y atraigan a quien
 - Decisión del usuario (2026-11-24): publicar con las capturas de la versión web de la app (mismo código, sus fotos), sin esperar a las del iPhone. Se ocultan el dedo simulado y la ubicación de demostración; la pila dice «4 fotos» y el espacio liberado sale de la demostración.
 - Orden final (usuario): conservar → favorita → eliminar → revisión → espacio liberado.
 - Enviada: 1.1.1 (52) creada en App Store Connect con las 5 capturas en 8 fichas y notas; **WAITING_FOR_REVIEW**, publicación automática al aprobarse (ejecución 45517854753).
+- Aprobada y a la venta: 1.1.1 (52) en READY_FOR_SALE el 2026-11-25 (ejecución 45696470100); la página de la App Store ya muestra las capturas nuevas.
 - Publicación: 1.1.1 (52) a TestFlight; `asc_publish.py` sube las 5 pantallas JPG de `docs/apple-readiness/storefront/screens` (lee tamaño PNG o JPEG); notas de 1.1.1 en 7 idiomas: la app no cambia.

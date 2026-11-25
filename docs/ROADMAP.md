@@ -285,9 +285,9 @@ textos con hablantes nativos, 1.0.1 para lo que salga.
 - **R-82 · Anuncios que no aparecen — Abierto · U + CL.** El código pide anuncios reales; falta llenado.
   Usuario: vincular la app con la ficha en AdMob y revisar su estado/política. Decisión pendiente: subir la
   categoría máxima de G a PG para más llenado. Código: huecos vacíos ya no se quedan (CW-CL-097).
-- **R-85 · Capturas de la App Store que explican la app (usuario, 2026-11-24) — En publicación · CL.**
+- **R-85 · Capturas de la App Store que explican la app (usuario, 2026-11-24) — Hecho · CL.**
   CW-CL-101: 5 pantallas (conservar, eliminar, favorita, revisión, espacio liberado) con carrete realista y la carta
-  sostenida fuera del teléfono, en 7 idiomas; 1.1.1 (52) enviada a revisión el 2026-11-25. Pendiente: vídeo (App Preview) y, si se quiere,
+  sostenida fuera del teléfono, en 7 idiomas; 1.1.1 (52) aprobada y a la venta el 2026-11-25. Pendiente: vídeo (App Preview) y, si se quiere,
   sustituirlas por la captura nativa del iPhone (`apple-store-screens.yml`, por terminar).
 - **R-84 · Pantalla propia antes de la pregunta de rastreo de Apple (usuario, 2026-11-20) — Hecho en código · CL.**
   CW-CL-100: Coqui explica por qué hay anuncios y abre la alerta de Apple con un único «Continuar». 1.1 (51) enviada
