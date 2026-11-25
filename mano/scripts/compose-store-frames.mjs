@@ -70,7 +70,7 @@ function frame(lang, screen, raw, standIn) {
   const [headline, sub] = copy.frames[screen][lang];
   const words = copy.words[lang];
   const shot = raw ? `<img id="shot" src="${raw}" alt="">` : `<img id="shot" class="pending" src="${standIn ?? ''}" alt="">`;
-  const extra = screen === '01-keep' ? `<div class="pill" style="right:86px;top:540px;rotate:4deg">${words.free}</div>` : '';
+  const extra = screen === '01-keep' ? `<div class="pill" style="inset-inline-end:86px;top:540px;rotate:4deg">${words.free}</div>` : '';
   const accent = ACCENT[screen] ? ` style="--accent:${ACCENT[screen]}"` : '';
   return `<!doctype html><html lang="${lang}" dir="${lang === 'ar' ? 'rtl' : 'ltr'}"><head><meta charset="utf-8"><style>${css}</style></head>
     <body${accent}><div class="copy"><h1>${headline}</h1><p>${sub}</p></div>
