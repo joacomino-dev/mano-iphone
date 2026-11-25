@@ -25,11 +25,11 @@ const SHOT = 1000, PT = SHOT / 440, SCREEN_X = (W - SHOT) / 2, SCREEN_Y = 626;
 // draws for each: the card's edge colour, the stamp's tilt (prototype.css .drag-stamp) and the photo.
 const HELD = {
   '01-keep': { kind: 'keep', edge: [30, 116, 112], tilt: -8, photo: 'k1-beach-dog.webp' },
-  '02-delete': { kind: 'discard', edge: [78, 90, 104], tilt: 6, photo: 'd1-pocket.webp' },
-  '03-favorite': { kind: 'favorite', edge: [163, 64, 90], tilt: 0, photo: 'k3-pier-friends.webp' },
+  '03-delete': { kind: 'discard', edge: [78, 90, 104], tilt: 6, photo: 'd1-pocket.webp' },
+  '02-favorite': { kind: 'favorite', edge: [163, 64, 90], tilt: 0, photo: 'k3-pier-friends.webp' },
 };
 // Highlight colour by action: turquoise keeps, graphite discards, pink favorites, coffee otherwise.
-const ACCENT = { '01-keep': '#1E7470', '02-delete': '#4E5A68', '03-favorite': '#B23E62' };
+const ACCENT = { '01-keep': '#1E7470', '02-favorite': '#B23E62', '03-delete': '#4E5A68' };
 const dateOf = Object.fromEntries(manifest.items.map(i => [i.file, i.capturedAt.slice(0, 10)]));
 
 const css = `

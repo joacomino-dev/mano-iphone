@@ -68,7 +68,7 @@ final class PhotosSmokeTests: XCTestCase {
         // Newest first: docs/apple-readiness/storefront/library/manifest.json. Thirteen decisions
         // before the review; the pier and the yard dog wait for «Keep reviewing». «held» ones are
         // swiped by hand and captured mid-drag (right keeps, left discards, up favorites: swipe.ts).
-        let plan:[(String,String?)]=[("keep","01-keep"),("discard",nil),("discard",nil),("discard","02-delete"),("favorite",nil),("keep",nil),("discard",nil),("discard",nil),("discard",nil),("discard",nil),("discard",nil),("discard",nil),("discard",nil)]
+        let plan:[(String,String?)]=[("keep","01-keep"),("discard",nil),("discard",nil),("discard","03-delete"),("favorite",nil),("keep",nil),("discard",nil),("discard",nil),("discard",nil),("discard",nil),("discard",nil),("discard",nil),("discard",nil)]
         for lang in languages {
             let labels=try XCTUnwrap(tables[lang])
             func label(_ key:String) throws -> String { try XCTUnwrap(labels[key],"missing store label \(key)") }
@@ -118,7 +118,7 @@ final class PhotosSmokeTests: XCTestCase {
             let controls=["keep":app.buttons[try label("Conservar")].firstMatch,"discard":app.buttons[try label("Eliminar")].firstMatch,"favorite":app.buttons[try label("Añadir a Favoritas")].firstMatch]
             for (index,(decision,held)) in plan.enumerated() {
                 // 01 · the best beach photo, held to the right with its look-alikes stacked behind.
-                // 02 · the pocket shot, held to the left.
+                // 03 · the pocket shot, held to the left.
                 if let held {
                     try heldSwipe(lang,held,dx:decision=="keep" ? 90:-90,dy:-6) // 90 pt arms the stamp (56) and keeps the lifted card inside the frame
                     continue
@@ -154,13 +154,13 @@ final class PhotosSmokeTests: XCTestCase {
             }
             Thread.sleep(forTimeInterval:3)
             try capture(lang,"05-done")
-            // 03 · after «Keep reviewing»: the pier, held upwards on its way to Favorites.
+            // 02 · after «Keep reviewing»: the pier, held upwards on its way to Favorites.
             guard tap(again,until:{ finish.exists && finish.isHittable },"again") else {
                 try? capture(lang,"zz-again");XCTFail("«Keep reviewing» must return to the pile");return
             }
             guard hittable(try XCTUnwrap(controls["favorite"]),25) else { try? capture(lang,"zz-pier");XCTFail("The pier photo must be next");return }
             Thread.sleep(forTimeInterval:1.5)
-            try heldSwipe(lang,"03-favorite",dx:0,dy:-170)
+            try heldSwipe(lang,"02-favorite",dx:0,dy:-170)
         }
         print("COCOWASH_UI_NATIVE_STORE_SCREENS_OK count=\(languages.count*5)")
     }

@@ -26,8 +26,8 @@ API = os.environ.get('ASC_API_BASE', 'https://api.appstoreconnect.apple.com')  #
 BUNDLE = 'work.joaquin.mano'
 MARKETING_URL = 'https://joaquinmino.work/cocowash/'
 # The five store frames (docs/apple-readiness/storefront/store-frames.json, composed by
-# mano/scripts/compose-store-frames.mjs): keep, delete, favorite, review, result.
-SCREENS = ['01-keep', '02-delete', '03-favorite', '04-review', '05-done']
+# mano/scripts/compose-store-frames.mjs): keep, favorite, delete, review, result.
+SCREENS = ['01-keep', '02-favorite', '03-delete', '04-review', '05-done']
 SCREENS_DIR = pathlib.Path(__file__).resolve().parents[1] / 'docs/apple-readiness/storefront/screens'
 SCREEN_SIZES = {(1320, 2868), (1290, 2796), (1260, 2736)}  # 6.9" display slot
 EDITABLE = {'PREPARE_FOR_SUBMISSION', 'DEVELOPER_REJECTED', 'REJECTED', 'METADATA_REJECTED', 'INVALID_BINARY'}

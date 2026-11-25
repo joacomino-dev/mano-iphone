@@ -1,9 +1,9 @@
 {
-  "purpose": "Headlines for the five App Store screenshots (revised 2026-11-24). Order: keep, delete, favorite, review, result. Each headline is the action and its gesture («Conserva deslizando a la derecha»), the subtitle what happens to the photo, and the highlighted phrase (<em>) takes the action's colour: turquoise keeps, graphite deletes, pink favorites, coffee for review and result. Screens 1–3 are real captures of a card held mid-swipe, lifted out of the phone by the composer; 4–5 are plain captures. Stamp words are the app's own (Stamp.tsx WORDS).",
+  "purpose": "Headlines for the five App Store screenshots (revised 2026-11-24). Order: keep, favorite, delete, review, result. Each headline is the action and its gesture («Conserva deslizando a la derecha»), the subtitle what happens to the photo, and the highlighted phrase (<em>) takes the action's colour: turquoise keeps, graphite deletes, pink favorites, coffee for review and result. Screens 1–3 are real captures of a card held mid-swipe, lifted out of the phone by the composer; 4–5 are plain captures. Stamp words are the app's own (Stamp.tsx WORDS).",
   "order": [
     "01-keep",
-    "02-delete",
-    "03-favorite",
+    "02-favorite",
+    "03-delete",
     "04-review",
     "05-done"
   ],
@@ -82,37 +82,7 @@
         "写真はライブラリに残り、しばらくは出てきません。"
       ]
     },
-    "02-delete": {
-      "es": [
-        "<em>Elimina</em> deslizando a la izquierda",
-        "Todavía no se borra: queda apartada hasta que confirmes."
-      ],
-      "en": [
-        "<em>Delete</em> by swiping left",
-        "Nothing is deleted yet: it waits until you confirm."
-      ],
-      "fr": [
-        "<em>Supprime</em> en glissant à gauche",
-        "Rien n’est supprimé tout de suite : elle attend ta confirmation."
-      ],
-      "de": [
-        "Nach links wischen zum <em>Löschen</em>",
-        "Noch wird nichts gelöscht: Es wartet, bis du bestätigst."
-      ],
-      "it": [
-        "<em>Elimina</em> scorrendo a sinistra",
-        "Non si elimina ancora: aspetta la tua conferma."
-      ],
-      "ar": [
-        "<em>احذف</em> بالسحب إلى اليسار",
-        "لا يُحذف شيء بعد: تنتظر حتى تؤكد."
-      ],
-      "ja": [
-        "左にスワイプで<em>削除</em>",
-        "まだ削除されません。確定するまで待機します。"
-      ]
-    },
-    "03-favorite": {
+    "02-favorite": {
       "es": [
         "<em>Añade a Favoritas</em> deslizando hacia arriba",
         "Se guarda en las Favoritas de tu app Fotos."
@@ -140,6 +110,36 @@
       "ja": [
         "上にスワイプで<em>お気に入り</em>",
         "写真アプリのお気に入りに保存されます。"
+      ]
+    },
+    "03-delete": {
+      "es": [
+        "<em>Elimina</em> deslizando a la izquierda",
+        "Todavía no se borra: queda apartada hasta que confirmes."
+      ],
+      "en": [
+        "<em>Delete</em> by swiping left",
+        "Nothing is deleted yet: it waits until you confirm."
+      ],
+      "fr": [
+        "<em>Supprime</em> en glissant à gauche",
+        "Rien n’est supprimé tout de suite : elle attend ta confirmation."
+      ],
+      "de": [
+        "Nach links wischen zum <em>Löschen</em>",
+        "Noch wird nichts gelöscht: Es wartet, bis du bestätigst."
+      ],
+      "it": [
+        "<em>Elimina</em> scorrendo a sinistra",
+        "Non si elimina ancora: aspetta la tua conferma."
+      ],
+      "ar": [
+        "<em>احذف</em> بالسحب إلى اليسار",
+        "لا يُحذف شيء بعد: تنتظر حتى تؤكد."
+      ],
+      "ja": [
+        "左にスワイプで<em>削除</em>",
+        "まだ削除されません。確定するまで待機します。"
       ]
     },
     "04-review": {
