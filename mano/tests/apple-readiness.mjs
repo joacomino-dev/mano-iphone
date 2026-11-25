@@ -110,7 +110,7 @@ try {
    await check('secondary screens: settings, support, album, inspector and video',async()=>{
      const {page,errors}=await open();
      await page.getByRole('button',{name:'Filtros',exact:true}).click();
-     for(const name of ['Ajustes','Apoyo']) {
+     for(const name of ['Ajustes','Adiós anuncios']) {
        await page.getByRole('button',{name,exact:true}).click();await page.waitForTimeout(250);
        await page.screenshot({path:path.join(output,`${name}.png`)});
      }

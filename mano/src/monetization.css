@@ -18,10 +18,38 @@
 .cw-ad-slot.is-covered .cw-ad-blank { visibility: hidden; }
 
 .ad-stage { position: absolute; inset: 0; display: grid; place-items: center; container-type: size; }
+/* 1.2: under the pile letter, the way to remove letters (the native letter covers only its slot). */
+.ad-stage.has-exit .cw-ad-deck { inset: 0 0 60px; height: min(380px, calc(100cqh - 60px)); }
+.ad-exit { position: absolute; bottom: 6px; left: 50%; translate: -50% 0; }
+
+/* CocoWash's own letter (1.2): the ad's paper, airmail edges, Coqui and one way out. */
+.house-letter { position: relative; color: var(--cw-ink); background: var(--cw-surface); border-radius: 8px;
+  box-shadow: 0 1px 0 var(--cw-paper-edge), 0 10px 24px rgba(37, 58, 58, .14); overflow: hidden; }
+.house-letter::before, .house-letter::after { content: ''; position: absolute; left: 0; right: 0; height: 6px;
+  background: repeating-linear-gradient(-45deg, var(--cw-turquoise) 0 9px, var(--cw-surface) 9px 14px, var(--cw-pink) 14px 23px, var(--cw-surface) 23px 28px); }
+.house-letter::before { top: 0; }
+.house-letter::after { bottom: 0; }
+.house-letter p { margin: 0; color: var(--cw-ink-soft); font: 400 var(--cw-text-sm)/1.45 var(--cw-font); text-wrap: pretty; }
+.house-letter.is-deck { width: min(calc(100% - 28px), 340px); max-height: 100cqh; overflow-y: auto; display: flex; flex-direction: column; align-items: center; gap: var(--cw-space-3);
+  padding: var(--cw-space-6) var(--cw-space-5) var(--cw-space-5); text-align: center; touch-action: pan-y; cursor: grab; }
+.house-letter.is-deck h2 { margin: 0; font: 600 var(--cw-text-xl)/1.2 var(--cw-font-brand); text-wrap: balance; }
+.house-letter.is-deck p { max-width: 30ch; }
+.house-stamp { position: absolute; top: 16px; inset-inline-end: 14px; padding: 3px 7px; border: 1.5px solid var(--cw-coconut-deep); border-radius: 3px;
+  color: var(--cw-coconut-deep); font: 600 var(--cw-text-xs)/1.2 var(--cw-font-mono); letter-spacing: .06em; text-transform: uppercase; transform: rotate(6deg); opacity: .85; }
+.house-remove { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 var(--cw-space-4); border: 0; border-radius: 999px;
+  background: var(--cw-turquoise-deep, #1E7470); color: #fff; font: 600 var(--cw-text-sm)/1.2 var(--cw-font); }
+.house-remove:active { transform: scale(.97); }
+.house-skip { min-height: 44px; padding: 0 var(--cw-space-3); border: 0; background: none; color: var(--cw-ink-soft); font: 500 var(--cw-text-sm)/1.2 var(--cw-font); }
+.house-letter.is-compact { width: min(100%, 360px); display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--cw-space-3);
+  padding: var(--cw-space-4) var(--cw-space-4) var(--cw-space-4) var(--cw-space-3); margin-inline: auto; text-align: start; }
+.house-copy { display: grid; gap: 4px; justify-items: start; min-width: 0; }
+.house-copy strong { font: 600 var(--cw-text-md)/1.25 var(--cw-font); }
+.house-copy .house-remove { margin-top: var(--cw-space-1); min-height: 40px; }
+@media (prefers-reduced-motion: reduce) { .house-remove:active { transform: none; } }
 .finish-monetization { display: grid; justify-items: center; width: 100%; margin-top: var(--cw-space-5); }
 .review-monetization { display: grid; justify-items: center; margin: 0 0 var(--cw-space-4); }
 
-/* «Apoyo» tab */
+/* «Adiós anuncios» tab (was «Apoyo») */
 .support-panel { display: grid; gap: var(--cw-space-4); padding: var(--cw-space-2) 0 var(--cw-space-5); }
 .support-hero { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--cw-space-3); align-items: center; }
 .support-hero h3 { margin: 0 0 var(--cw-space-1); color: var(--cw-ink); font: 600 var(--cw-text-xl)/1.2 var(--cw-font-brand); }
@@ -102,3 +130,5 @@
 .tracking-ask-icon { width: 30px; height: 30px; flex: none; display: grid; place-items: center; border-radius: 9px; background: var(--cw-pick, #E3F2EE); color: var(--cw-turquoise-deep, #1E7470); }
 .tracking-ask-next { width: 100%; flex: none; margin-top: var(--cw-space-3); }
 @media (max-height: 640px) { .tracking-ask-card { padding-top: 60px; gap: var(--cw-space-2); } .tracking-ask-coqui { top: -46px; height: 96px !important; } .tracking-ask h2 { font-size: 1.25rem; } }
+/* Narrow phones («Vista ampliada»): the compact letter drops Coqui so it stays short. */
+@media (max-width: 360px) { .house-letter.is-compact { grid-template-columns: minmax(0, 1fr); } .house-letter.is-compact > :first-child { display: none; } }

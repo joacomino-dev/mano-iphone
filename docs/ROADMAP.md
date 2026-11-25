@@ -285,6 +285,10 @@ textos con hablantes nativos, 1.0.1 para lo que salga.
 - **R-82 · Anuncios que no aparecen — Abierto · U + CL.** El código pide anuncios reales; falta llenado.
   Usuario: vincular la app con la ficha en AdMob y revisar su estado/política. Decisión pendiente: subir la
   categoría máxima de G a PG para más llenado. Código: huecos vacíos ya no se quedan (CW-CL-097).
+- **R-86 · Anuncios constantes, Filtros más claros, Vista ampliada y sello explicado (usuario, 2026-11-25) — Hecho en código · CL.**
+  CW-CL-102: carta cada 15–20 fotos (de Google o de CocoWash), siempre en revisión y espacio liberado; «Adiós anuncios»
+  bajo la carta y como nombre de la pestaña de compra; Filtros con barra segmentada, filtros rápidos en dos columnas y
+  «Afinar» desplegable; encabezado correcto a 320 pt; tip del sello con «Comprendo». Pendiente: QA en iPhone y versión 1.2.
 - **R-85 · Capturas de la App Store que explican la app (usuario, 2026-11-24) — Hecho · CL.**
   CW-CL-101: 5 pantallas (conservar, eliminar, favorita, revisión, espacio liberado) con carrete realista y la carta
   sostenida fuera del teléfono, en 7 idiomas; 1.1.1 (52) aprobada y a la venta el 2026-11-25. Pendiente: vídeo (App Preview) y, si se quiere,
@@ -477,3 +481,4 @@ Ya resuelto: responsable legal/contacto, mantener monetización, dos hosts de tr
 
 - 2026-11-08 · CW-CX-053: R-63 nativo acotado PASS; R-47 implementado con revisión y contratos ES/AR. Compilación y fullscreen nativos pendientes.
 - 2026-11-24 · Claude · CW-CL-101 · R-85: plan de marketing, carrete demo, compositor con carta despegada y colores por acción, captura nativa por idioma (en curso), 1.1.1 con capturas de la versión web por decisión del usuario.
+- 2026-11-25 · Claude · CW-CL-102 · R-86: anuncios cada 15–20 fotos con carta propia, «Adiós anuncios», Filtros con pestañas y «Afinar» en línea, encabezado a 320 pt, tip del sello. Unitarias, Playwright, apple-readiness y builds PASS; falta iPhone.

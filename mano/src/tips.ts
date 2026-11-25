@@ -3,8 +3,8 @@
  * makes sense, and a tap dismisses it. Ajustes › Trucos lists them all and can show
  * them again. Pure logic; ContextTips.tsx draws them. */
 
-export type TipId = 'stack' | 'zoom' | 'anchor' | 'album';
-export const TIP_IDS: readonly TipId[] = ['stack', 'zoom', 'anchor', 'album'];
+export type TipId = 'stack' | 'zoom' | 'anchor' | 'album' | 'seal';
+export const TIP_IDS: readonly TipId[] = ['stack', 'zoom', 'anchor', 'album', 'seal'];
 export const TIPS_KEY = 'cocowash-tips-v1';
 
 /** `decisions` / `keeps`: decisions made on the pile since tips exist (the record keeps
@@ -35,7 +35,8 @@ export const countDecision = (state: TipsState, action: string): TipsState => ({
 
 /** What the pile shows right now. `calm`: nothing else is on top (no sheet, anchored
  * view, grid, ad, alert, or a gesture in progress). */
-export type PileMoment = { calm: boolean; hand: number; front: 'photo' | 'live' | 'video' | null; albums: boolean };
+/** `sealed`: the front card shows a seal (it was kept before and comes back). */
+export type PileMoment = { calm: boolean; hand: number; front: 'photo' | 'live' | 'video' | null; albums: boolean; sealed?: boolean };
 
 /** Thresholds: «Zoom» after a few decisions on a single photo (there is detail to look
  * at and the basics are known); «Anclar» a few cards later, its own moment; «Álbum»
@@ -44,6 +45,9 @@ export const ZOOM_AFTER = 3, ANCHOR_AFTER = 6, ALBUM_AFTER_KEEPS = 5;
 export function nextTip(state: TipsState, now: PileMoment): TipId | null {
   if (!now.calm || !now.front || state.decisions - state.lastAt < GAP) return null;
   const unseen = (id: TipId) => !state.seen.includes(id);
+  // 1.2 (user, 2026-11-25): the first photo that comes back with a seal says what it means,
+  // before anything else: without it, a photo already decided looks like a repeat.
+  if (unseen('seal') && now.sealed) return 'seal';
   if (unseen('stack') && now.hand > 1) return 'stack';
   const still = now.front !== 'video' && now.hand === 1;
   if (unseen('zoom') && still && state.decisions >= ZOOM_AFTER) return 'zoom';

@@ -279,7 +279,11 @@
 .access-indicator:after{content:'';position:absolute;inset:calc(-1*var(--cw-space-2))}
 
 /* ---------- Card stack ---------- */
-.hand-space{position:relative;flex:1;min-height:100px;margin-top:var(--cw-space-3);container-type:size;touch-action:none}
+.hand-space{position:relative;z-index:55;flex:1;min-height:100px;margin-top:var(--cw-space-3);container-type:size;touch-action:none}
+/* A card dragged or flung upwards (favorite) passes over the header (z 50), never over the
+   decision bar or the tools below (user, 2026-11-25). */
+.decision-bar,.archive-tools{z-index:60}.archive-tools{position:relative}
+.tutorial:not(.is-card-step) .hand-space{z-index:auto}
 .polaroid-stack{position:absolute;inset:0;isolation:isolate}
 /* The stage keeps the same air above (progress) and below (the heart's top):
    cards are centred in it at 50 %, so they sit midway between both. */
@@ -1483,3 +1487,72 @@ button.inspect-set{left:0;right:0;margin-inline:auto;width:fit-content;transform
 .settings-panel .settings-actions{gap:0;border-radius:16px;background:var(--cw-row);box-shadow:inset 0 0 0 1px var(--cw-line);overflow:hidden}
 .settings-panel .settings-actions>.sheet-action{justify-content:flex-start;min-height:52px;margin:0;padding:0 var(--cw-space-3);border:0;border-top:1px solid var(--cw-line);border-radius:0;background:transparent;box-shadow:none;color:var(--cw-turquoise-deep);font:500 var(--cw-text-md)/1.25 var(--cw-font)}
 .settings-panel .settings-actions>.sheet-action:first-child{border-top:0}
+
+/* 1.2 (user, 2026-11-25) · Filters sheet. A segmented bar between Filtros, Ajustes and «Adiós
+   anuncios»; quick filters in two columns; «Afinar» opens in place (no sub-screens); the reset
+   sits next to «Aplicar». */
+.sheet-tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px;margin:0 0 var(--cw-space-4);padding:4px;border-radius:16px;background:color-mix(in srgb,var(--cw-ink) 7%,transparent)}
+.sheet-tabs button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:0;min-height:52px;padding:6px 4px;border:0;border-radius:12px;background:transparent;color:var(--cw-ink-soft);font:600 var(--cw-text-xs)/1.15 var(--cw-font);text-align:center;transition:background-color var(--cw-base) var(--cw-ease),color var(--cw-base) var(--cw-ease)}
+.sheet-tabs button span{overflow-wrap:anywhere}
+.sheet-tabs button[aria-current=page]{background:#fff;color:var(--cw-teal-800);box-shadow:0 1px 3px rgba(18,45,46,.16)}
+.sheet-tabs button:not([aria-current]):active{background:color-mix(in srgb,var(--cw-ink) 6%,transparent)}
+.mano-sheet-body:has(.settings-panel.is-detail) .sheet-tabs{display:none}
+
+.intent-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--cw-space-2)}
+.intent-card{grid-template-columns:auto minmax(0,1fr);grid-template-areas:"art count" "text text";align-items:center;align-content:start;gap:6px var(--cw-space-2);min-height:0;padding:10px var(--cw-space-3) var(--cw-space-3);text-align:start}
+.intent-art{grid-area:art;width:30px;height:30px;border-radius:9px}
+.intent-count{grid-area:count;justify-self:end}
+.intent-text{grid-area:text;align-self:start}
+.intent-text strong{font-size:var(--cw-text-sm);line-height:1.2}
+@container (max-width:240px){.intent-list{grid-template-columns:minmax(0,1fr)}}
+
+.tune-part{border-top:1px solid var(--cw-line);scroll-margin:var(--cw-space-4) 0 190px}
+.tune-part:first-child{border-top:0}
+.tune-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:var(--cw-space-3);width:100%;min-height:62px;padding:var(--cw-space-2) var(--cw-space-3);border:0;background:transparent;color:var(--cw-ink);text-align:start}
+.tune-head.is-static{grid-template-columns:auto minmax(0,1fr);min-height:0;padding-top:var(--cw-space-3)}
+button.tune-head:active{background:color-mix(in srgb,var(--cw-ink) 5%,transparent)}
+.tune-icon{width:34px;height:34px;display:grid;place-items:center;border-radius:10px;background:color-mix(in srgb,var(--tone) 15%,#fff);color:var(--tone)}
+.tune-text{display:flex;flex-direction:column;gap:2px;min-width:0}
+.tune-text strong{font:600 var(--cw-text-md)/1.2 var(--cw-font-brand)}
+.tune-text small{font-size:var(--cw-text-xs);line-height:1.3;color:var(--cw-ink-soft)}
+.tune-head .tune-value{max-width:9.5em;color:var(--cw-teal-800);font-weight:600;font-size:var(--cw-text-sm);line-height:1.25;text-align:end;overflow-wrap:anywhere}
+.tune-caret{color:var(--cw-ink-faint);transition:rotate var(--cw-base) var(--cw-ease)}
+.tune-part.is-open .tune-caret{rotate:180deg}
+.tune-body{display:flex;flex-direction:column;gap:var(--cw-space-3);padding:var(--cw-space-1) var(--cw-space-3) var(--cw-space-4)}
+.tune-body .switch-field{margin:0;min-height:52px}
+.tune-body .setting-note{margin:0}
+.tune-body .seal-details{margin:0}
+.chip-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--cw-space-2)}
+.chip-grid>.chip:first-child:nth-last-child(2n+1){grid-column:1/-1}
+.chip{min-width:0;min-height:44px;padding:6px var(--cw-space-3);border:0;border-radius:12px;background:var(--cw-paper-light);box-shadow:inset 0 0 0 1px var(--cw-line);color:var(--cw-ink);font:500 var(--cw-text-sm)/1.2 var(--cw-font);text-align:center;overflow-wrap:anywhere}
+.chip[aria-pressed=true]{background:var(--cw-pick);box-shadow:inset 0 0 0 2px var(--cw-pick-edge);color:var(--cw-teal-800);font-weight:600}
+.chip:active{transform:scale(.98)}
+/* Apple-like month: round days, the chosen ends filled, the days between tinted. */
+.tune-body .range-calendar{padding-top:0}
+.tune-body .calendar-days{gap:2px 0}
+.tune-body .calendar-days button{aspect-ratio:1;min-height:0;max-height:var(--cw-touch);border-radius:50%}
+.tune-body .calendar-days button.in-range{border-radius:0;background:var(--cw-pick)}
+.tune-body .calendar-days button[aria-pressed=true]{background:var(--cw-turquoise);color:#fff}
+
+.filter-actions{display:grid;grid-template-columns:auto minmax(0,1fr);gap:var(--cw-space-2);margin-top:var(--cw-space-2)}
+.filter-actions .sheet-action{margin:0}
+.filter-reset{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:var(--cw-control);padding:0 var(--cw-space-4);border:0;border-radius:var(--cw-radius-md);background:color-mix(in srgb,var(--cw-ink) 8%,transparent);color:var(--cw-ink);font:600 var(--cw-text-sm)/1.15 var(--cw-font)}
+.filter-reset:disabled{opacity:.4}
+@container (max-width:320px){.filter-actions{grid-template-columns:minmax(0,1fr)}}
+@media (prefers-reduced-motion:reduce){.tune-caret{transition:none}.chip:active{transform:none}}
+/* 1.2: tips that explain (the seal) close with «Comprendo», like the rest of the coaching. */
+.tip.is-seal .tip-bubble{cursor:default}
+.tip.is-seal .coach-bubble{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.mano-app .tip-ok{align-self:flex-end;min-height:40px;margin-top:6px;padding:0 var(--cw-space-4);border:0;border-radius:999px;background:var(--cw-turquoise-deep);color:#fff;font:600 var(--cw-text-sm)/1 var(--cw-font)}
+/* 1.2 (user, 2026-11-25: «Vista ampliada» on a friend's iPhone): on narrow headers the side
+   controls keep their natural width and the name fits the space left between them, so
+   «Filtros» never covers the logo. */
+@media (max-width:382px){.archive-header.is-session{grid-template-columns:auto minmax(0,1fr) auto;gap:6px}}
+@container (max-width:350px){
+  .is-session .brand-status{min-width:0;width:100%}
+  .is-session .brand-wordmark{width:100%;display:grid;place-items:center}
+  .is-session .wordmark{width:auto;height:auto;max-width:100%;max-height:42px;min-width:64px}
+  .is-session .filter-switch .filter-switch-toggle{padding:0 2px 0 5px}
+  .is-session .filter-switch .filter-switch-edit{padding:0 11px 0 4px}
+}
+@container (max-width:320px){.filter-reset{min-height:44px}}

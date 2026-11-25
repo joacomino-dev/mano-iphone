@@ -4,7 +4,7 @@ export function installAppleFixture({ onboarded = true, status = 'authorized', l
   if(resetStorage)localStorage.clear();
   localStorage.setItem('cocowash-language-v1', language);
   // Onboarded runs also have the pile’s tips behind them (ContextTips): flows stay deterministic.
-  if (onboarded) { localStorage.setItem('cocowash-onboarding-v2', 'done'); localStorage.setItem('cocowash-tips-v1', '{"seen":["stack","zoom","anchor","album"]}'); }
+  if (onboarded) { localStorage.setItem('cocowash-onboarding-v2', 'done'); localStorage.setItem('cocowash-tips-v1', '{"seen":["stack","zoom","anchor","album","seal"]}'); }
   const asset = (i) => ({ id: `fixture-${i}`, kind: 'photo', date: 1700000000000 + i * 86400000,
     width: 1000, height: 1500, duration: 0, hasLocation: false, demo: true, bytes: 1000000 });
   const fixture = window.appleFixture = { status, assets: video ? [{...asset(0),kind:'video',width:1500,height:1000,duration:2}] : [asset(0), asset(1), asset(2)], calls: [], deleteMode: 'cancel' };

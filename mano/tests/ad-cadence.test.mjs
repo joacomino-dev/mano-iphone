@@ -1,40 +1,37 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { AD_GAP_MS, INTRO_MS, TEST_RULES, AdCadence } from '../src/adCadence.ts';
+import { TEST_RULES, AdCadence } from '../src/adCadence.ts';
 
 const ids = (offset, count) => Array.from({ length: count }, (_, i) => 'asset-' + (offset + i));
 
-test('the pile letter waits a minute of sorting and counts distinct reviewed items (20–30)', () => {
+// 1.2 (user, 2026-11-25): a letter every 15–20 decided photos, from the first one, with no time gate.
+test('the pile letter comes after 15 distinct reviewed items at the earliest', () => {
   const cadence = new AdCadence(() => 0);
-  cadence.review(ids(0, 19));
-  cadence.review(ids(0, 19));
-  assert.equal(cadence.between(INTRO_MS), false);
-  cadence.review(ids(19, 1));
-  assert.equal(cadence.between(INTRO_MS - 1), false);
-  assert.equal(cadence.between(INTRO_MS), true);
+  cadence.review(ids(0, 14));
+  cadence.review(ids(0, 14));
+  assert.equal(cadence.between(0), false, 'the same items twice do not count twice');
+  cadence.review(ids(14, 1));
+  assert.equal(cadence.between(0), true, 'no minute of sorting is required');
 });
 
-test('long sessions keep a letter at most every 30 items, never closer than the gap', () => {
-  const cadence = new AdCadence(() => 0.99);
-  let now = INTRO_MS;
-  for (let i = 0; i < 5; i++) {
-    cadence.review(ids(i * 30, 29));
-    assert.equal(cadence.between(now), false);
-    cadence.review(ids(i * 30 + 29, 1));
-    assert.equal(cadence.between(now), true);
-    cadence.shown(now, 'deck');
-    now += AD_GAP_MS;
+test('every letter lands between 15 and 20 items, in a long session too', () => {
+  for (const roll of [0, 0.5, 0.99]) {
+    const cadence = new AdCadence(() => roll);
+    let offset = 0;
+    for (let round = 0; round < 6; round++) {
+      let count = 0;
+      while (!cadence.between(round * 1000)) { cadence.review(ids(offset++, 1)); count++; }
+      assert.ok(count >= 15 && count <= 20, `letter after ${count} items (roll ${roll})`);
+      cadence.shown(round * 1000, 'deck');
+    }
   }
-  cadence.review(ids(500, 30));
-  assert.equal(cadence.between(now - 1), false);
 });
 
-test('a fixed letter resets the gap but not the count of the pile letter', () => {
+test('a fixed letter (review, summary) neither delays nor advances the pile letter', () => {
   const cadence = new AdCadence(() => 0);
-  cadence.review(ids(0, 20));
-  cadence.shown(INTRO_MS, 'review');
-  assert.equal(cadence.between(INTRO_MS + AD_GAP_MS - 1), false);
-  assert.equal(cadence.between(INTRO_MS + AD_GAP_MS), true);
+  cadence.review(ids(0, 15));
+  cadence.shown(0, 'review');
+  assert.equal(cadence.between(0), true);
 });
 
 test('test mode shows the pile letter every 4–6 items', () => {

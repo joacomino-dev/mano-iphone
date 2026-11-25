@@ -58,3 +58,10 @@ test('stored state survives reloads and damaged values', () => {
   data.set(TIPS_KEY, 'not json');
   assert.deepEqual(readTips(storage).seen, []);
 });
+
+test('the first sealed photo explains its seal, before any other tip, once', () => {
+  assert.equal(nextTip(fresh(), moment({ sealed: true, hand: 3 })), 'seal', 'ahead of the stack tip');
+  assert.equal(nextTip(fresh(), moment({ sealed: false })), null);
+  assert.equal(nextTip(fresh(), moment({ sealed: true, calm: false })), null, 'never over something else');
+  assert.equal(nextTip(markSeen(fresh(), 'seal'), moment({ sealed: true })), null, 'once only');
+});

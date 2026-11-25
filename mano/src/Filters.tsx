@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { HeartIcon, ArrowCounterClockwiseIcon, BroomIcon, ClockCountdownIcon, DeviceMobileIcon, ImageBrokenIcon, ReceiptIcon, SparkleIcon, CaretRightIcon, CaretLeftIcon, CheckIcon } from '@phosphor-icons/react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { HeartIcon, ArrowCounterClockwiseIcon, BroomIcon, ClockCountdownIcon, DeviceMobileIcon, ImageBrokenIcon, ReceiptIcon, SparkleIcon, CaretDownIcon, CalendarBlankIcon, SortAscendingIcon, SealCheckIcon, ImagesIcon } from '@phosphor-icons/react';
 import { initialFilter, pileCount, favoritesTotal, LEVELS, type Asset, type Filter, type Order, type RecordState, type Smart } from './domain';
 import { AnimatedNumber } from './Loader';
 import { haptic } from './haptics';
@@ -64,13 +64,25 @@ const INTENT: Record<Smart, { title: () => string; line: () => string; tone: str
  favorites: { title: () => t('Repasar favoritas'), line: () => t('Aquí el corazón las quita de Favoritas'), tone: 'pink' },
 };
 type Detail = 'date' | 'order' | 'seal';
-/** One row of «Afinar»: the name, the current value, and a way into its own screen. */
-function TuneRow({ label, value, open }: { label: string; value: string; open: () => void }) {
- return <button type="button" className="tune-row" onClick={() => { haptic('selection'); open(); }}><span>{label}</span><span className="tune-value">{value}</span><CaretRightIcon size={14} weight="bold" className="flip-rtl"/></button>;
+/** One part of «Afinar» (1.2, user 2026-11-25: no sub-screens). An icon, what it is for in a
+ * few words and the current value; a tap opens its quick choices right below. */
+function TuneSection({ id, icon: Icon, tone, label, line, value, open, toggle, children }: { id: Detail; icon: typeof BroomIcon; tone: string; label: string; line: string; value: string; open: boolean; toggle: () => void; children: ReactNode }) {
+ const part = useRef<HTMLDivElement>(null);
+ // Opened below the fold: bring its choices into view (above the pinned «Aplicar»).
+ useEffect(() => { if (open) window.setTimeout(() => part.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 60); }, [open]);
+ return <div ref={part} className={`tune-part tone-${tone}${open ? ' is-open' : ''}`}>
+  <button type="button" className="tune-head" aria-expanded={open} aria-controls={`tune-${id}`} onClick={() => { haptic('selection'); toggle(); }}>
+   <span className="tune-icon" aria-hidden="true"><Icon size={18} weight="bold"/></span>
+   <span className="tune-text"><strong>{label}</strong><small>{line}</small></span>
+   <span className="tune-value">{value}</span>
+   <CaretDownIcon size={14} weight="bold" className="tune-caret" aria-hidden="true"/>
+  </button>
+  {open && <div className="tune-body" id={`tune-${id}`}>{children}</div>}
+ </div>;
 }
-/** A list where one option is chosen: rows with a check, one decision per screen. */
-function PickList<T extends string | number>({ label, value, options, change }: { label: string; value: T; options: [T, string][]; change: (value: T) => void }) {
- return <div className="pick-list" role="group" aria-label={label}>{options.map(([option, text]) => <button key={String(option)} type="button" aria-pressed={value === option} onClick={() => change(option)}><span>{text}</span>{value === option && <CheckIcon size={16} weight="bold"/>}</button>)}</div>;
+/** Quick choices: chips in two columns, one chosen. */
+function Chips<T extends string | number>({ label, value, options, change }: { label: string; value: T; options: [T, string][]; change: (value: T) => void }) {
+ return <div className="chip-grid" role="group" aria-label={label}>{options.map(([option, text]) => <button key={String(option)} type="button" className="chip" aria-pressed={value === option} onClick={() => change(option)}>{text}</button>)}</div>;
 }
 
 /** What enters the pile (user, 2026-11-20: the sheet overwhelmed). First a few
@@ -79,7 +91,7 @@ function PickList<T extends string | number>({ label, value, options, change }: 
  * draft until «Aplicar filtros». */
 export function Filters({filter,assets,state,apply,index,preview}: {filter:Filter;assets:Asset[];state:RecordState;apply:(f:Filter)=>void;index:IndexProgress;preview?:(draft:Filter)=>void}) {
  const [draft,setDraft]=useState<Filter>({...initialFilter,...filter});
- const [detail,setDetail]=useState<Detail|null>(null);
+ const [open,setOpen]=useState<Detail|null>(null);
  // While choosing, the first cards of the draft warm up in the background, so
  // «Aplicar» opens on ready previews.
  useEffect(()=>{if(!preview)return;const t=setTimeout(()=>preview(draft),350);return()=>clearTimeout(t);},[JSON.stringify(draft)]);
@@ -94,50 +106,49 @@ export function Filters({filter,assets,state,apply,index,preview}: {filter:Filte
  const rangeLabel=RANGES.find(([value])=>value===(draft.dateRange??'all'))![1]();
  const orderLabel=ORDER.find(([value])=>value===draft.order)![1]();
  const sealLabel=draft.seal==='all'?t('Todos los niveles'):draft.seal==='none'?t('Sin sello'):withStars(stars=>t('Sello {level}',{level:stars}),draft.seal);
- const footer=<div className="filter-apply"><span>{invalid?(!draft.from||!draft.to?t('Elige desde y hasta para aplicar'):t('La fecha inicial debe ir antes de la final')):<><AnimatedNumber value={count}/> {tn('pileTail',count)}</>}</span><button className="sheet-action" disabled={invalid} onClick={()=>apply({...draft,v:2})}>{t('Aplicar filtros')}</button></div>;
- if(detail) return <div className="filters-panel is-detail">
-  <button type="button" className="detail-back" onClick={()=>{haptic('selection');setDetail(null);}}><CaretLeftIcon size={16} weight="bold" className="flip-rtl"/>{t('Volver a los filtros')}</button>
-  {detail==='date'&&<section className="detail-section"><h3>{t('Fecha')}</h3>
-   <PickList label={t('Fecha')} value={draft.dateRange??'all'} options={RANGES.map(([value,label])=>[value,label()] as [typeof value,string])} change={dateRange=>update({dateRange})}/>
-   {draft.dateRange==='custom'&&<><DateCalendar from={draft.from} to={draft.to} change={update}/>{invalid&&<small className="date-error" role="status">{t('Elige una fecha inicial y una final válidas.')}</small>}</>}
-  </section>}
-  {detail==='order'&&<section className="detail-section"><h3>{t('Orden')}</h3>
-   <PickList label={t('Orden')} value={draft.order} options={ORDER.map(([value,label])=>[value,label()] as [Order,string])} change={order=>update({order})}/>
-   {(ORDER_HINT[draft.order]||draft.order==='largest'||draft.order==='smallest')&&<p className="setting-note" role="status">{ORDER_HINT[draft.order]?.()}{(draft.order==='largest'||draft.order==='smallest')&&<small>{sizePending?t('Midiendo el peso: {done} de {total}.',{done:index.sized,total:index.total})+' ':''}{t('Se mide lo que está en tu iPhone; lo que solo está en iCloud va al final.')}</small>}</p>}
-  </section>}
-  {detail==='seal'&&<section className="detail-section"><h3>{t('Sellos')}</h3>
-   <PickList label={t('Mostrar')} value={String(draft.seal)} options={[['all',t('Todos los niveles')],['none',t('Sin sello: pendientes de descubrir')],...LEVELS.map((_,i)=>[String(i+1),withStars(stars=>t('Sello {level}: {rest}',{level:stars,rest:sealRest(i+1)}),i+1)] as [string,string])]} change={value=>update({seal:value==='all'||value==='none'?value:Number(value)})}/>
-   <div className="settings-group"><label className="switch-field"><span>{t('Incluir las que descansan')}<small>{t('Las conservadas vuelven con menor frecuencia.')}</small></span><input type="checkbox" role="switch" checked={draft.includeWaiting} onChange={e=>update({includeWaiting:e.target.checked})}/></label></div>
-   {/* How seals work: one tap away, so the screen itself stays short. */}
-   <details className="seal-details"><summary>{t('Cómo funcionan los sellos')}</summary>
-   <div className="seal-explainer">
-    <span className="seal-sample" aria-hidden="true"><Stamp kind="keep" level={2}/></span>
-    <p>{t('Cuando conservas una foto, recibe un sello y descansa: no vuelve a aparecer en un tiempo. Si la conservas otra vez, el sello sube de nivel y descansa más, hasta quedarse para siempre. Así cada ronda trae lo que aún no has decidido.')}</p>
-   </div>
-   <ul className="seal-levels" aria-label={t('Niveles de sello')}>{LEVELS.map((label, i) => i + 1 === LEVELS.length
-     ? <li key={label} className="is-forever"><Level level={i + 1}/><span>{sealRest(i + 1)}</span><small>{withStars(stars => t('Para volver a verlas, elige «Sello {level}» en Mostrar.',{level:stars}), i + 1)}</small></li>
-     : <li key={label}><Level level={i + 1}/>{sealRest(i + 1)}</li>)}</ul></details>
-  </section>}
-  {footer}
- </div>;
+ const changed=JSON.stringify({...draft,v:undefined})!==JSON.stringify({...initialFilter,v:undefined});
+ const toggle=(part:Detail)=>setOpen(current=>current===part?null:part);
+ // The reset sits next to «Aplicar» (1.2, user 2026-11-25: it has to be obvious).
+ const footer=<div className="filter-apply"><span>{invalid?(!draft.from||!draft.to?t('Elige desde y hasta para aplicar'):t('La fecha inicial debe ir antes de la final')):<><AnimatedNumber value={count}/> {tn('pileTail',count)}</>}</span>
+  <div className="filter-actions"><button type="button" className="filter-reset" disabled={!changed} onClick={()=>{haptic('selection');setDraft({...initialFilter});setOpen(null);}}><ArrowCounterClockwiseIcon size={18} weight="bold" aria-hidden="true"/>{t('Resetear filtros')}</button>
+  <button className="sheet-action" disabled={invalid} onClick={()=>apply({...draft,v:2})}>{t('Aplicar filtros')}</button></div></div>;
  const chosen=SMART.find(s=>s.value===smart)!;
  return <div className="filters-panel">
   <section className="intent-section" aria-labelledby="intent-title">
-   <h3 id="intent-title" className="list-label">{t('¿Qué revisamos hoy?')}</h3>
+   <h3 id="intent-title" className="list-label">{t('Filtros rápidos')}</h3>
    <div className="intent-list" role="group" aria-labelledby="intent-title">{smarts().map(({value,icon:Icon})=><button key={value} type="button" className={`intent-card tone-${INTENT[value].tone}`} aria-pressed={smart===value} onClick={()=>update({smart:value})}>
-    <span className="intent-art" aria-hidden="true"><Icon size={20} weight="fill"/></span>
-    <span className="intent-text"><strong>{INTENT[value].title()}</strong><span>{INTENT[value].line()}</span></span>
+    <span className="intent-art" aria-hidden="true"><Icon size={18} weight="fill"/></span>
     <span className="intent-count" aria-label={t('{n} en la pila',{n:counts[value]})}>{formatNumber(counts[value])}</span>
+    <span className="intent-text"><strong>{INTENT[value].title()}</strong><span>{INTENT[value].line()}</span></span>
    </button>)}</div>
    {(chosen.hint||visionPending)&&smart!=='all'&&<p className="setting-note" role="status">{chosen.hint?.()}{visionPending&&<small>{t('Revisando tu fototeca en el iPhone: {done} de {total}. Irán apareciendo más.',{done:index.analyzed,total:index.photos})}</small>}</p>}
   </section>
   <section className="tune-section" aria-labelledby="tune-title">
-   <div className="list-head"><h3 id="tune-title" className="list-label">{t('Afinar')}</h3><button type="button" className="text-reset" onClick={()=>{haptic('selection');setDraft({...initialFilter});}}><ArrowCounterClockwiseIcon size={14} weight="bold"/>{t('Restablecer')}</button></div>
+   <h3 id="tune-title" className="list-label">{t('Afinar')}</h3>
    <div className="tune-group">
-    <div className="tune-inline"><span>{t('Tipo')}</span><div className="seg" role="group" aria-label={t('Contenido')}>{media().map(([value,label])=><button key={value} type="button" aria-pressed={draft.media===value} onClick={()=>update({media:value})}>{label()}</button>)}</div></div>
-    <TuneRow label={t('Fecha')} value={rangeLabel} open={()=>setDetail('date')}/>
-    <TuneRow label={t('Orden')} value={orderLabel} open={()=>setDetail('order')}/>
-    <TuneRow label={t('Sellos')} value={sealLabel} open={()=>setDetail('seal')}/>
+    <div className="tune-part tone-teal is-open"><div className="tune-head is-static"><span className="tune-icon" aria-hidden="true"><ImagesIcon size={18} weight="bold"/></span><span className="tune-text"><strong>{t('Tipo')}</strong><small>{onAndroid()?t('Fotos o vídeos'):t('Fotos, vídeos o Live Photos')}</small></span></div>
+     <div className="tune-body"><div className="seg" role="group" aria-label={t('Contenido')}>{media().map(([value,label])=><button key={value} type="button" aria-pressed={draft.media===value} onClick={()=>update({media:value})}>{label()}</button>)}</div></div></div>
+    <TuneSection id="date" icon={CalendarBlankIcon} tone="amber" label={t('Fecha')} line={t('Qué fechas entran')} value={rangeLabel} open={open==='date'} toggle={()=>toggle('date')}>
+     <Chips label={t('Fecha')} value={draft.dateRange??'all'} options={RANGES.map(([value,label])=>[value,label()] as [typeof value,string])} change={dateRange=>update({dateRange})}/>
+     {draft.dateRange==='custom'&&<><DateCalendar from={draft.from} to={draft.to} change={update}/>{invalid&&<small className="date-error" role="status">{t('Elige una fecha inicial y una final válidas.')}</small>}</>}
+    </TuneSection>
+    <TuneSection id="order" icon={SortAscendingIcon} tone="blue" label={t('Orden')} line={t('En qué orden salen')} value={orderLabel} open={open==='order'} toggle={()=>toggle('order')}>
+     <Chips label={t('Orden')} value={draft.order} options={ORDER.map(([value,label])=>[value,label()] as [Order,string])} change={order=>update({order})}/>
+     {(ORDER_HINT[draft.order]||draft.order==='largest'||draft.order==='smallest')&&<p className="setting-note" role="status">{ORDER_HINT[draft.order]?.()}{(draft.order==='largest'||draft.order==='smallest')&&<small>{sizePending?t('Midiendo el peso: {done} de {total}.',{done:index.sized,total:index.total})+' ':''}{t('Se mide lo que está en tu iPhone; lo que solo está en iCloud va al final.')}</small>}</p>}
+    </TuneSection>
+    <TuneSection id="seal" icon={SealCheckIcon} tone="coffee" label={t('Sellos')} line={t('Fotos que ya conservaste')} value={sealLabel} open={open==='seal'} toggle={()=>toggle('seal')}>
+     <Chips label={t('Mostrar')} value={String(draft.seal)} options={[['all',t('Todos los niveles')],['none',t('Sin sello')],...LEVELS.map((_,i)=>[String(i+1),withStars(stars=>t('Sello {level}',{level:stars}),i+1)] as [string,string])]} change={value=>update({seal:value==='all'||value==='none'?value:Number(value)})}/>
+     <label className="switch-field"><span>{t('Incluir las que descansan')}<small>{t('Las conservadas vuelven con menor frecuencia.')}</small></span><input type="checkbox" role="switch" checked={draft.includeWaiting} onChange={e=>update({includeWaiting:e.target.checked})}/></label>
+     {/* How seals work: one tap away, so the part itself stays short. */}
+     <details className="seal-details"><summary>{t('Cómo funcionan los sellos')}</summary>
+     <div className="seal-explainer">
+      <span className="seal-sample" aria-hidden="true"><Stamp kind="keep" level={2}/></span>
+      <p>{t('Cuando conservas una foto, recibe un sello y descansa: no vuelve a aparecer en un tiempo. Si la conservas otra vez, el sello sube de nivel y descansa más, hasta quedarse para siempre. Así cada ronda trae lo que aún no has decidido.')}</p>
+     </div>
+     <ul className="seal-levels" aria-label={t('Niveles de sello')}>{LEVELS.map((label, i) => i + 1 === LEVELS.length
+       ? <li key={label} className="is-forever"><Level level={i + 1}/><span>{sealRest(i + 1)}</span><small>{withStars(stars => t('Para volver a verlas, elige «Sello {level}» arriba.',{level:stars}), i + 1)}</small></li>
+       : <li key={label}><Level level={i + 1}/>{sealRest(i + 1)}</li>)}</ul></details>
+    </TuneSection>
    </div>
   </section>
   {footer}

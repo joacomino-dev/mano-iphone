@@ -1,6 +1,6 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { useEffect, useRef, useState } from 'react';
-import { ArrowCounterClockwiseIcon, CalendarCheckIcon, CaretRightIcon, CoffeeIcon, InfinityIcon, ShieldCheckIcon, SmileyIcon } from '@phosphor-icons/react';
+import { ArrowCounterClockwiseIcon, CalendarCheckIcon, CaretRightIcon, CoffeeIcon, HandWavingIcon, InfinityIcon, ShieldCheckIcon, SmileyIcon } from '@phosphor-icons/react';
 import { motion, useReducedMotion } from 'motion/react';
 import { AdCadence, DEFAULT_RULES, TEST_RULES, INTRO_MS } from './adCadence';
 import { Character } from './Characters';
@@ -62,19 +62,27 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
   // an empty white letter that never fills is worse than none (users, 2026-11-19).
   const lastEmpty = useRef(false);
   const giveUp = useRef<number | undefined>(undefined);
+  // 1.2 (user, 2026-11-25): a letter is always there when it is due. Without an ad to
+  // show (no fill, still loading after the wait), CocoWash's own letter takes the room:
+  // the same rhythm for everyone, and the way to remove letters is one tap away.
+  const [house, setHouseState] = useState<Placement>();
+  const houseRef = useRef<Placement | undefined>(undefined);
+  const setHouse = (where: Placement | undefined) => { houseRef.current = where; setHouseState(where); };
   const stopWaiting = () => { window.clearTimeout(giveUp.current); wanted.current = undefined; setAwaiting(undefined); };
+  const fallBack = (where: Placement) => { stopWaiting(); if (!current.current) setHouse(where); };
   const want = (where: Placement) => {
-    if (lastEmpty.current && !loading.current) return;
+    if (lastEmpty.current && !loading.current) { fallBack(where); return; }
     wanted.current = where; setAwaiting(where);
-    // Still nothing after a few seconds: the room closes (the letter may still come next time).
+    // Still nothing after a few seconds: CocoWash's own letter takes the room.
     window.clearTimeout(giveUp.current);
-    giveUp.current = window.setTimeout(() => { if (wanted.current === where && !current.current) stopWaiting(); }, WAIT_MS);
+    giveUp.current = window.setTimeout(() => { if (wanted.current === where && !current.current) fallBack(where); }, WAIT_MS);
   };
   const clear = () => {
     wanted.current = undefined;
     setAwaiting(undefined);
     current.current = undefined;
     setPlacement(undefined);
+    setHouse(undefined);
   };
   useEffect(() => {
     if (!available) return;
@@ -121,8 +129,9 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
         if (value.askTracking) { if (wanted.current) stopWaiting(); nextAttempt.current = 0; setAskingTracking(true); return; }
         ready.current = value.ready;
         lastEmpty.current = !value.ready;
+        // No fill: try again soon, so the next letter that is due finds an ad.
         if (value.ready) nextAttempt.current = 0;
-        else if (wanted.current) stopWaiting();
+        else { nextAttempt.current = performance.now() + 12_000; if (wanted.current) fallBack(wanted.current); }
         const pending = wanted.current;
         if (value.ready && pending && !current.current) { stopWaiting(); offer(pending); }
       }).catch(() => {}).finally(() => { loading.current = false; });
@@ -147,17 +156,22 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
     /** CocoWash's explainer is on screen; «Continuar» opens Apple's alert, then ads prepare again. */
     askingTracking,
     continueTracking: () => Store.askTracking().catch(() => undefined).finally(() => { nextAttempt.current = 0; setAskingTracking(false); }),
+    house,
     review(ids: string[]) {
       if (!available || off || status?.adFree) return;
       cadence.review(ids);
-      if (cadence.between(activeMs.current) && !offer('deck')) cadence.skipDeck();
+      if (!cadence.between(activeMs.current) || offer('deck')) return;
+      if (!status || current.current || houseRef.current) { cadence.skipDeck(); return; }
+      setHouse('deck');
+      cadence.shown(activeMs.current, 'deck');
     },
     /** «Una última mirada»: always a fixed letter under its buttons (9.8.3). */
     reviewing() {
       if (!available || off || !status || status.adFree) return;
       // A pile letter waiting behind the sheet is never seen: the review letter takes its turn.
       if (current.current === 'deck') { current.current = undefined; setPlacement(undefined); }
-      if (current.current) return;
+      if (houseRef.current === 'deck') setHouse(undefined);
+      if (current.current || houseRef.current === 'review') return;
       if (!offer('review')) want('review');
     },
     /** «Fototeca» (user-approved 2026-11-12): a letter strip every few rows, only
@@ -170,7 +184,7 @@ export function useMonetization(enabled: boolean, cleaning: boolean, testing = f
     },
     /** Leaving a screen: drop its letter, shown or still awaited. */
     release(where: Placement) {
-      if (current.current === where || wanted.current === where) clear();
+      if (current.current === where || wanted.current === where || houseRef.current === where) clear();
     },
     /** The «Espacio liberado» summary: always a fixed letter (9.8.3). */
     finish() {
@@ -283,12 +297,35 @@ export function AdRoom({ where }: { where: Placement }) {
   return <div className={'cw-ad-slot cw-ad-' + where} aria-hidden="true"><span className="cw-ad-blank"/></div>;
 }
 
+/** CocoWash's own letter (1.2, user 2026-11-25): it takes an ad's turn when there is no ad
+ * to show, so the rhythm is the same for everyone. It says so plainly and offers the way out.
+ * The pile version is dismissed like the native letter (a swipe either way) or with «Seguir». */
+export function HouseLetter({ where, onRemove, onDone }: { where: Placement; onRemove: () => void; onDone?: () => void }) {
+  const reduced = useReducedMotion();
+  const deck = where === 'deck';
+  const text = <p>{t('Esta vez te libraste. Si quieres que sea siempre, quítalos con un pago único, sin suscripciones.')}</p>;
+  const remove = <button type="button" className="house-remove" onClick={onRemove}><HandWavingIcon size={18} weight="bold" aria-hidden="true"/>{t('Adiós anuncios')}</button>;
+  if (!deck) return <aside className="house-letter is-compact" aria-label={t('Carta de CocoWash')}>
+    <Character pose="coqui-wave" height={64} motion="still"/>
+    <div className="house-copy"><strong>{t('Aquí iría un anuncio')}</strong>{text}{remove}</div>
+  </aside>;
+  return <motion.aside className="house-letter is-deck" aria-label={t('Carta de CocoWash')} drag={reduced ? false : 'x'} dragSnapToOrigin dragElastic={.6}
+    onDragEnd={(_, info) => { if (Math.abs(info.offset.x) > 90 || Math.abs(info.velocity.x) > 600) onDone?.(); }}>
+    <span className="house-stamp" aria-hidden="true">CocoWash</span>
+    <Character pose="coqui-wave" height={104} motion="still"/>
+    <h2>{t('Aquí iría un anuncio')}</h2>
+    {text}
+    {remove}
+    <button type="button" className="house-skip" onClick={onDone}>{t('Seguir revisando')}</button>
+  </motion.aside>;
+}
+
 const offers = [
   { id: 'work.joaquin.mano.noads.year', name: () => t('Un año sin anuncios'), detail: () => t('Pago único. Dura un año y no se renueva solo.'), icon: CalendarCheckIcon, tone: 'year' },
   { id: 'work.joaquin.mano.noads.lifetime', name: () => t('Sin anuncios para siempre'), detail: () => t('Pago único, sin vencimiento.'), icon: InfinityIcon, tone: 'forever' },
   { id: 'work.joaquin.mano.coffee', name: () => t('Invítame un café'), detail: () => t('CocoWash lo hace una sola persona. El café no quita anuncios: es un gracias.'), icon: CoffeeIcon, tone: 'coffee' },
 ] as const;
-/** «Apoyo»: the three purchases as real postage stamps — perforated paper
+/** «Adiós anuncios» (was «Apoyo»): the three purchases as real postage stamps — perforated paper
  * margin, a printed face with its frame and the price as the stamp's value.
  * CocoWash already speaks in stamps (Sellos), so buying one reads as sending
  * something, not a paywall. An active pass carries a postmark. */

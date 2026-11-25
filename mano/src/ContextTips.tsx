@@ -18,9 +18,17 @@ const LINE: Record<TipId, () => string> = {
   zoom: () => t('Pellizca para ampliar'),
   anchor: () => t('Mantén pulsada y arrastra hasta Anclar'),
   album: () => t('Guárdala en un álbum sin salir de aquí'),
+  seal: () => t('Esta foto ya la conservaste'),
 };
-const POSE: Record<TipId, Pose> = { stack: 'coqui-point', zoom: 'coqui-think', anchor: 'coqui-point', album: 'coqui-photos' };
-const TARGET: Record<TipId, string> = { stack: '.photo-card.front', zoom: '.photo-card.front', anchor: '.photo-card.front', album: '#album-trigger' };
+/** A longer word where a gesture alone does not explain it. */
+const BODY: Partial<Record<TipId, () => string>> = {
+  seal: () => t('El sello indica que ya la revisaste y te la quedaste. Vuelve de vez en cuando por si cambias de idea.'),
+};
+const POSE: Record<TipId, Pose> = { stack: 'coqui-point', zoom: 'coqui-think', anchor: 'coqui-point', album: 'coqui-photos', seal: 'coqui-point' };
+const TARGET: Record<TipId, string> = { stack: '.photo-card.front', zoom: '.photo-card.front', anchor: '.photo-card.front', album: '#album-trigger', seal: '.photo-card.front .seal' };
+/** Tips whose lit target only explains: a tap on it closes the tip, never acts (the seal
+ * would hide every seal). */
+const EXPLAIN: readonly TipId[] = ['seal'];
 /** A tip waits for the card to settle before it appears. */
 const SETTLE_MS = 700;
 const DECISIONS = ['keep', 'discard', 'favorite', 'later'];
@@ -65,7 +73,7 @@ export function ContextTips({ moment, front, history }: { moment: PileMoment; fr
       setShown({ id, front, target, shapes, bubble });
     }, SETTLE_MS);
     return () => clearTimeout(timer);
-  }, [shown, moment.calm, moment.hand, moment.front, moment.albums, front, version]);
+  }, [shown, moment.calm, moment.hand, moment.front, moment.albums, moment.sealed, front, version]);
   // Anything else on top, or another card: the tip has done its job.
   useEffect(() => { if (shown && (!moment.calm || front !== shown.front)) setShown(null); }, [moment.calm, front]);
 
@@ -83,7 +91,7 @@ export function ContextTips({ moment, front, history }: { moment: PileMoment; fr
       const inside = !!box && e.clientX >= box.left - 8 && e.clientX <= box.right + 8 && e.clientY >= box.top - 8 && e.clientY <= box.bottom + 8;
       const control = (e.target as Element | null)?.closest?.('button,a,input,[role=button],[role=switch]');
       setShown(null);
-      if (inside || control) return;
+      if ((inside && !EXPLAIN.includes(shown.id)) || (control && !inside)) return;
       e.preventDefault(); e.stopPropagation();
       unswallow();
       const eat = (event: Event) => { event.preventDefault(); event.stopPropagation(); unswallow(); };
@@ -102,8 +110,10 @@ export function ContextTips({ moment, front, history }: { moment: PileMoment; fr
       <Spotlight on target={shown.shapes} travelKey={shown.id} strong/>
       {hint && <span className={`tip-hint is-${shown.id}`} style={{ left: hint.x, top: shown.id === 'anchor' ? shown.target.y + shown.target.h * .3 : hint.y }} aria-hidden="true"><i/><i/></span>}
       <div className="tip-bubble" style={{ left: shown.bubble.x, top: shown.bubble.y, width: shown.bubble.w, height: shown.bubble.h }} onClick={close} role="status">
-        <Bubble pose={POSE[shown.id]} title={LINE[shown.id]()} tone="ask"/>
-        <button type="button" className="tip-close" onClick={e => { e.stopPropagation(); close(); }} aria-label={t('Cerrar aviso')}><XIcon size={16} weight="bold"/></button>
+        <Bubble pose={POSE[shown.id]} title={LINE[shown.id]()} body={BODY[shown.id]?.()} tone="ask">
+          {BODY[shown.id] && <button type="button" className="tip-ok" onClick={e => { e.stopPropagation(); close(); }}>{t('Comprendo')}</button>}
+        </Bubble>
+        {!BODY[shown.id] && <button type="button" className="tip-close" onClick={e => { e.stopPropagation(); close(); }} aria-label={t('Cerrar aviso')}><XIcon size={16} weight="bold"/></button>}
       </div>
     </motion.div>}</AnimatePresence>
   </div>;

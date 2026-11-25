@@ -3,7 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 // A decided card flies off; «Deshacer» must bring it back to the centre of the
 // table, visible and touchable, even when tapped before the flight ends.
 async function openDemo(page: Page) {
-  await page.addInitScript(() => { localStorage.setItem("cocowash-onboarding-v2", "done"); localStorage.setItem("cocowash-tips-v1", '{"seen":["stack","zoom","anchor","album"]}'); });
+  await page.addInitScript(() => { localStorage.setItem("cocowash-onboarding-v2", "done"); localStorage.setItem("cocowash-tips-v1", '{"seen":["stack","zoom","anchor","album","seal"]}'); });
   await page.goto("/");
   await expect(page.locator(".photo-card.front")).toBeVisible({ timeout: 15_000 });
   await page.waitForTimeout(800);

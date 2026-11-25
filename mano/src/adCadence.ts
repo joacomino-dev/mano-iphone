@@ -6,7 +6,9 @@ export const AD_GAP_MS = 30_000;
  * summary) always show when an ad is ready (Monetization.tsx); they only reset
  * the gap. TEST_RULES apply in «Modo de prueba» so ads can be judged quickly. */
 export type CadenceRules = { introMs: number; gapMs: number; min: number; span: number };
-export const DEFAULT_RULES: CadenceRules = { introMs: INTRO_MS, gapMs: AD_GAP_MS, min: 20, span: 11 };
+/** 1.2 (user, 2026-11-25): a letter every 15–20 photos decided, without time gates, so every
+ * user sees the same rhythm. When no ad is available the letter is CocoWash's own (HouseLetter). */
+export const DEFAULT_RULES: CadenceRules = { introMs: 0, gapMs: 0, min: 15, span: 6 };
 export const TEST_RULES: CadenceRules = { introMs: 0, gapMs: 0, min: 4, span: 3 };
 
 export class AdCadence {

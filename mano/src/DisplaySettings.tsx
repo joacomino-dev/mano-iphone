@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { CameraIcon, FilmStripIcon, HandTapIcon, BooksIcon, ImageSquareIcon, CloudArrowDownIcon, GraduationCapIcon, PlayCircleIcon, CaretLeftIcon, CaretRightIcon, CoffeeIcon, LightbulbIcon, StackIcon, MagnifyingGlassPlusIcon, PushPinIcon, FolderSimplePlusIcon, ArrowCounterClockwiseIcon, FlaskIcon, TranslateIcon, LifebuoyIcon, QuestionIcon, ShieldCheckIcon } from '@phosphor-icons/react';
+import { CameraIcon, FilmStripIcon, HandTapIcon, BooksIcon, ImageSquareIcon, CloudArrowDownIcon, GraduationCapIcon, PlayCircleIcon, CaretLeftIcon, CaretRightIcon, LightbulbIcon, StackIcon, MagnifyingGlassPlusIcon, PushPinIcon, FolderSimplePlusIcon, ArrowCounterClockwiseIcon, FlaskIcon, TranslateIcon, LifebuoyIcon, QuestionIcon, ShieldCheckIcon } from '@phosphor-icons/react';
 import { helpUrl, openLink, privacyUrl } from './links';
 import type { Asset } from './domain';
 import { DATE_FORMATS, formatDate, formatTime, polaroidCaption, type DateFormat, type DisplaySettings, type OsdSize } from './meta';
@@ -47,11 +47,9 @@ const dateOptions = (upper: boolean) => DATE_FORMATS.map(format => [format, form
 /** How information looks on cards. Applied live and saved; it never affects
  * which files the filters put in the pile. 9.8.5: grouped rows, one line of
  * help at most, the Polaroid and VHS previews as the only ornament. */
-export function DisplaySettingsPanel({ display, change, stampWordsAuto = true, geek, setGeek, library, replayIntro, testing, support }: {
+export function DisplaySettingsPanel({ display, change, stampWordsAuto = true, geek, setGeek, library, replayIntro, testing }: {
   display: DisplaySettings; change: (next: DisplaySettings) => void; stampWordsAuto?: boolean; geek: boolean; setGeek: (value: boolean) => void;
   library: ReactNode; replayIntro: () => void;
-  /** «Apoyo» (purchases), when the store is available. */
-  support?: () => void;
   /** iPhone only, until 1.0: «Modo de prueba» (testMode.ts). */
   testing?: { on: boolean; set: (on: boolean) => void; ads: boolean; setAds: (on: boolean) => void };
 }) {
@@ -153,7 +151,6 @@ export function DisplaySettingsPanel({ display, change, stampWordsAuto = true, g
     </Section>
     <div className="nav-group">
       <NavRow icon={<LifebuoyIcon size={18} weight="bold"/>} tone="pink" title={t('Ayuda y trucos')} open={() => go('help')}/>
-      {support && <NavRow icon={<CoffeeIcon size={18} weight="bold"/>} tone="amber" title={t('Apoyo')} open={support}/>}
     </div>
     {testing && <Section icon={<FlaskIcon size={18}/>} title={t('Modo developer')} className="test-mode-field">
       <div className="settings-group">

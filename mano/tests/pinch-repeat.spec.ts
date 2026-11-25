@@ -32,7 +32,7 @@ async function pinch(page: Page, client: CDPSession, mid: Point, spread: number,
 }
 
 async function open(page: Page) {
-  await page.addInitScript(() => { localStorage.setItem("cocowash-onboarding-v2", "done"); localStorage.setItem("cocowash-tips-v1", '{"seen":["stack","zoom","anchor","album"]}'); });
+  await page.addInitScript(() => { localStorage.setItem("cocowash-onboarding-v2", "done"); localStorage.setItem("cocowash-tips-v1", '{"seen":["stack","zoom","anchor","album","seal"]}'); });
   await page.goto("/");
   await expect(page.locator(".photo-card.front")).toBeVisible({ timeout: 15_000 });
   await page.waitForTimeout(800);

@@ -5,7 +5,7 @@ test.describe.configure({ retries: 2 });
 // The pile must read every real swipe (users, 2026-11-19: «a veces no les lee el deslizar a
 // la izquierda; se mueve un poco y no hace caso»): from anywhere on the photo, as a quick
 // flick, after a slow start, and never show a stamp that the release then ignores.
-const TIPS_SEEN = '{"seen":["stack","zoom","anchor","album"]}';
+const TIPS_SEEN = '{"seen":["stack","zoom","anchor","album","seal"]}';
 async function openDemo(page: Page) {
   await page.addInitScript(tips => { localStorage.setItem("cocowash-onboarding-v2", "done"); localStorage.setItem("cocowash-tips-v1", tips); }, TIPS_SEEN);
   await page.goto("/");

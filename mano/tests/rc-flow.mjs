@@ -9,7 +9,7 @@ async function scenario(name,run){if(process.env.APPLE_AUDIT_MATCH&&!name.includ
 }
 const stored=page=>page.evaluate(()=>JSON.parse(localStorage.getItem('cocowash-library-session-v1')));
 async function settings(page){await page.getByRole('button',{name:'Filtros',exact:true}).click();await page.getByRole('button',{name:'Ajustes',exact:true}).click();}
-async function support(page){await page.getByRole('button',{name:'Filtros',exact:true}).click();await page.getByRole('button',{name:'Apoyo',exact:true}).click();}
+async function support(page){await page.getByRole('button',{name:'Filtros',exact:true}).click();await page.getByRole('button',{name:'Adiós anuncios',exact:true}).click();}
 try{
  await scenario('favorite: stale manual snapshot cannot undo a confirmed favorite',async page=>{
   await settings(page);await page.evaluate(()=>appleFixture.holdAssets=true);await page.getByRole('button',{name:'Actualizar biblioteca',exact:true}).click();await page.waitForFunction(()=>appleFixture.pendingAssets?.length===1);await page.getByRole('button',{name:'Cerrar',exact:true}).click();

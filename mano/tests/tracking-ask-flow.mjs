@@ -20,7 +20,7 @@ try{
     window.androidBridge={postMessage(){throw Error('Real Android bridge forbidden');}};
     appleFixture.adFree=false;appleFixture.adReady=true;appleFixture.trackingStatus=tracking;appleFixture.trackingAnswer='authorized';
     localStorage.setItem('cocowash-ad-active-ms-v1','60000');
-    localStorage.setItem('cocowash-tips-v1','{"seen":["stack","zoom","anchor","album"]}');
+    localStorage.setItem('cocowash-tips-v1','{"seen":["stack","zoom","anchor","album","seal"]}');
    },tracking);
    const page=await context.newPage();await page.goto(url);
    await page.locator('.photo-card.front').waitFor();

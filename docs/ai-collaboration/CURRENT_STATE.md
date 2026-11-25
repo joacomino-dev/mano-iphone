@@ -1,5 +1,12 @@
 # CocoWash — estado vigente
 
+## Claude CW-CL-102 — anuncios constantes, Filtros más claros, Vista ampliada (2026-11-25)
+
+Anuncios: carta cada 15–20 fotos; sin anuncio de Google, carta de CocoWash; siempre en revisión y espacio liberado;
+«Adiós anuncios» lleva a la compra (antes «Apoyo»). Filtros: pestañas Filtros · Ajustes · Adiós anuncios, filtros rápidos
+en dos columnas, «Afinar» desplegable y reset junto a «Aplicar». Encabezado sin solaparse a 320 pt; favorita por encima
+del logo; tip del sello con «Comprendo». Sin commit de versión: falta QA en iPhone y decidir la 1.2.
+
 ## Claude CW-CL-101 — capturas nuevas de la App Store, 1.1.1 (2026-11-24)
 
 Cinco pantallas (conservar, eliminar, favorita, revisión, espacio liberado) en 7 idiomas, con el carrete demo
